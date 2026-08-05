@@ -1,0 +1,499 @@
+/*
+ * ویجت‌های زیگ (ZIG3D)
+ *
+ * قواعد اینجا فقط «پایه» می‌سازند: ساختار چیدمان، مقدارهای پیش‌فرض و
+ * رفتارهایی که کنترل ندارند. هر چیزی که کاربر تنظیم می‌کند از پنل المنتور
+ * می‌آید و چون سلکتور المنتور ({{WRAPPER}} .x) وزن بیشتری دارد، همیشه بر
+ * این فایل می‌چربد.
+ *
+ * به همین دلیل در کل فایل فقط یک !important هست، آن هم داخل
+ * prefers-reduced-motion: آنجا تنظیمِ سیستمیِ کاربر باید بر هر چیزی که در
+ * پنل انتخاب شده بچربد، وگرنه گزینه‌ای که کاربر برای سلامت خودش روشن کرده
+ * بی‌اثر می‌ماند. CI هم همین یکی را سقف گرفته تا مورد دوم اضافه نشود.
+ *
+ * متغیرها با پیشوند --zig- نقطهٔ اتصال بین دو طرف‌اند: پنل مقدار را روی
+ * متغیر می‌نویسد و این فایل تصمیم می‌گیرد آن مقدار کجا و چطور به کار برود.
+ * مزیتش این است که حالت هاور فقط یک متغیر را عوض می‌کند، نه یک قاعدهٔ کامل.
+ *
+ * این افزونه هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند؛ همهٔ حالت‌ها اعلانی‌اند.
+ */
+
+/* ==========================================================================
+   پایه‌های مشترک
+   ========================================================================== */
+
+.zig-card,
+.zig-list,
+.zig-list__item,
+.zig-btn,
+.zig-icon {
+	box-sizing: border-box;
+}
+
+.zig-card *,
+.zig-list *,
+.zig-btn * {
+	box-sizing: inherit;
+}
+
+/*
+ * پیش‌فرضِ گذار.
+ *
+ * ویژگی‌ها یکی‌یکی نام برده شده‌اند و «all» نیست: با all، هر تغییر محاسبه‌شدهٔ
+ * دیگری هم (مثلاً عرضی که با تغییر اندازهٔ پنجره عوض می‌شود) انیمیت می‌شود و
+ * هم بی‌ربط است هم گران.
+ */
+.zig-card,
+.zig-list__item,
+.zig-btn,
+.zig-icon,
+.zig-btn__icon,
+.zig-list__bullet {
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: color, background-color, background-image, border-color,
+		box-shadow, opacity, transform, fill, stroke;
+}
+
+/*
+ * احترام به تنظیم سیستمیِ «حرکت کمتر».
+ *
+ * کاربرانی که این گزینه را روشن کرده‌اند معمولاً به‌خاطر سرگیجه یا حساسیت
+ * وستیبولار است؛ حرکت برایشان صرفاً آزاردهنده نیست، می‌تواند علامت ایجاد کند.
+ * تغییر رنگ می‌ماند تا بازخورد از بین نرود، فقط جابه‌جایی و بزرگ‌نمایی حذف
+ * می‌شود.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.zig-card,
+	.zig-list__item,
+	.zig-btn,
+	.zig-icon,
+	.zig-btn__icon,
+	.zig-list__bullet {
+		transition-duration: 1ms;
+		transform: none !important;
+	}
+
+	.zig-btn--sweep::after {
+		display: none;
+	}
+}
+
+/* ==========================================================================
+   آیکون (مشترک بین کارت و هر جای دیگر)
+   ========================================================================== */
+
+.zig-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--zig-icon-box, auto);
+	height: var(--zig-icon-box, auto);
+	line-height: 1;
+	transform: rotate(var(--zig-icon-rotate, 0deg)) scale(var(--zig-icon-scale, 1));
+}
+
+.zig-icon > svg,
+.zig-icon > img,
+.zig-icon i {
+	display: block;
+	width: var(--zig-icon-size, 1em);
+	height: var(--zig-icon-size, 1em);
+	font-size: var(--zig-icon-size, 1em);
+	/* آیکون‌هایی که viewBox دارند ولی نسبتشان با جعبه یکی نیست، کشیده نشوند */
+	object-fit: contain;
+}
+
+/* فونت‌آیکون‌ها عرض/ارتفاع نمی‌گیرند؛ فقط اندازهٔ قلم برایشان معنا دارد */
+.zig-icon i {
+	width: auto;
+	height: auto;
+}
+
+.zig-icon__text {
+	font-size: var(--zig-icon-size, 1em);
+	font-weight: 700;
+	line-height: 1;
+	/*
+	 * ارقام فارسی و لاتین در یک قاب کوچک باید هم‌عرض بیفتند، وگرنه «۱» و «۸»
+	 * جعبه را جابه‌جا نشان می‌دهند.
+	 */
+	font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   کارت ویژگی
+   ========================================================================== */
+
+.zig-card {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+}
+
+.zig-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	/*
+	 * بدون این، فرزندِ فلکس هیچ‌وقت از محتوای خودش باریک‌تر نمی‌شود و متن
+	 * بلندِ بدون فاصله (مثل یک URL) کارت را پهن‌تر از ظرفش می‌کند.
+	 */
+	min-width: 0;
+}
+
+.zig-card__title,
+.zig-card__text {
+	margin: 0;
+	/* شکستن واژهٔ طولانی به‌جای سرریز از کارت */
+	overflow-wrap: anywhere;
+}
+
+.zig-card__title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	line-height: 1.6;
+}
+
+.zig-card__text {
+	line-height: 1.9;
+	opacity: 0.85;
+}
+
+/* کارتِ لینک‌دار نباید ظاهر لینک پیش‌فرض قالب را بگیرد */
+.zig-card--linked {
+	color: inherit;
+	text-decoration: none;
+}
+
+.zig-card--linked:hover,
+.zig-card--linked:focus {
+	text-decoration: none;
+}
+
+/*
+ * حلقهٔ فوکوس روی کارتِ لینک‌دار.
+ *
+ * outline و نه box-shadow: مرورگر outline را بیرون از overflow می‌کشد، پس
+ * حتی اگر کارت گوشهٔ بریده داشته باشد حلقه کامل دیده می‌شود.
+ */
+.zig-card--linked:focus-visible {
+	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
+	outline-offset: var(--zig-focus-offset, 3px);
+}
+
+/* ==========================================================================
+   لیست عنوان‌ها
+   ========================================================================== */
+
+.zig-list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: 28px;
+	row-gap: 12px;
+	/* قالب‌ها تقریباً همیشه به ul پدینگ و مارجین می‌دهند */
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-list__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+}
+
+.zig-list__label {
+	color: inherit;
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+a.zig-list__label:focus-visible {
+	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
+	outline-offset: var(--zig-focus-offset, 3px);
+	border-radius: 2px;
+}
+
+/* ---------- بولت ---------- */
+
+.zig-list__bullet {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: var(--zig-bullet-size, 7px);
+	height: var(--zig-bullet-size, 7px);
+	color: var(--zig-bullet-color, currentColor);
+	transform: translateY(var(--zig-bullet-offset, 0));
+}
+
+/*
+ * شکل‌های تمام‌رنگ.
+ *
+ * پس‌زمینه روی خودِ span است و نه یک شبه‌عنصر: یک گره کمتر، و مهم‌تر اینکه
+ * رنگِ هر آیتم (که از ریپیتر روی --zig-bullet-color می‌نشیند) بدون هیچ
+ * قاعدهٔ اضافه‌ای همین‌جا اثر می‌کند.
+ */
+.zig-list__bullet--circle,
+.zig-list__bullet--square,
+.zig-list__bullet--rounded,
+.zig-list__bullet--diamond {
+	background-color: currentColor;
+}
+
+.zig-list__bullet--circle {
+	border-radius: 50%;
+}
+
+.zig-list__bullet--rounded {
+	border-radius: 30%;
+}
+
+.zig-list__bullet--diamond {
+	transform: translateY(var(--zig-bullet-offset, 0)) rotate(45deg);
+}
+
+.zig-list__bullet--dash {
+	height: max(2px, calc(var(--zig-bullet-size, 7px) / 3));
+	width: calc(var(--zig-bullet-size, 7px) * 2);
+	background-color: currentColor;
+	border-radius: 999px;
+}
+
+/* بولت آیکونی: اندازه‌اش را به همان متغیر می‌بندیم تا با بقیه یکدست بماند */
+.zig-list__bullet--icon {
+	width: auto;
+	height: auto;
+}
+
+.zig-list__bullet--icon svg,
+.zig-list__bullet--icon i {
+	display: block;
+	width: var(--zig-bullet-size, 1em);
+	height: var(--zig-bullet-size, 1em);
+	font-size: var(--zig-bullet-size, 1em);
+	fill: currentColor;
+}
+
+/* ==========================================================================
+   دکمه
+   ========================================================================== */
+
+.zig-btn-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.zig-btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	/*
+	 * دکمه نباید در فلکس‌باکسِ والد کشیده شود؛ عرضش را محتوایش تعیین می‌کند
+	 * مگر آنکه کاربر «تمام‌عرض» را انتخاب کند (که align-items: stretch است).
+	 */
+	max-width: 100%;
+	font: inherit;
+	color: inherit;
+	text-align: center;
+	text-decoration: none;
+	/*
+	 * صفر کردن پدینگ و حاشیهٔ پیش‌فرضِ <button> در مرورگر و قالب.
+	 * بدون این، فاصلهٔ داخلیِ تنظیم‌شده در پنل با پدینگ قالب جمع می‌شد و
+	 * دکمه در حالت <a> و <button> دو اندازهٔ متفاوت می‌گرفت.
+	 */
+	margin: 0;
+	background: none;
+	border: 0;
+	cursor: pointer;
+	/* لبهٔ کلیک‌پذیر روی موبایل، مطابق حداقل ۴۴ پیکسل توصیه‌شده */
+	min-height: 2.75rem;
+	-webkit-appearance: none;
+	appearance: none;
+	transform: scale(var(--zig-btn-press, 1)) translateY(var(--zig-btn-lift, 0));
+	/* جلوگیری از انتخاب متن هنگام دابل‌کلیک روی دکمه */
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.zig-btn__text {
+	/* متن نباید زیر افکت درخشش برود */
+	position: relative;
+	z-index: 1;
+}
+
+.zig-btn__icon {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	transform: rotate(var(--zig-icon-rotate, 0deg)) translateX(var(--zig-btn-slide-x, 0));
+}
+
+.zig-btn__icon svg,
+.zig-btn__icon i {
+	display: block;
+	width: var(--zig-icon-size, 1em);
+	height: var(--zig-icon-size, 1em);
+	font-size: var(--zig-icon-size, 1em);
+	fill: currentColor;
+}
+
+/* ---------- اندازه‌های آماده ---------- */
+
+.zig-btn--sm {
+	padding: 0.4rem 0.9rem;
+	font-size: 0.85rem;
+	min-height: 2.25rem;
+}
+
+.zig-btn--md {
+	padding: 0.6rem 1.4rem;
+	font-size: 1rem;
+}
+
+.zig-btn--lg {
+	padding: 0.85rem 2rem;
+	font-size: 1.1rem;
+	min-height: 3.25rem;
+}
+
+.zig-btn--xl {
+	padding: 1.1rem 2.6rem;
+	font-size: 1.25rem;
+	min-height: 3.75rem;
+}
+
+/* ---------- حالت تمام‌عرض ---------- */
+
+/*
+ * وقتی تراز روی «کشیده» باشد، خودِ فلکس‌باکس دکمه را تمام‌عرض می‌کند و به
+ * هیچ قاعدهٔ جداگانه‌ای نیاز نیست. این قاعده فقط مطمئن می‌شود متن وسط بماند.
+ */
+.zig-btn-wrap > .zig-btn {
+	flex: none;
+}
+
+/* ---------- حرکت آیکون ---------- */
+
+/*
+ * جهتِ حرکت باید با جهت خط بخواند: «به سمت انتها» در چپ‌به‌راست یعنی راست و
+ * در راست‌به‌چپ یعنی چپ. علامت را یک متغیر جهت‌آگاه حمل می‌کند تا همین یک
+ * قاعده هر دو حالت را پوشش دهد.
+ */
+.zig-btn {
+	--zig-dir: 1;
+}
+
+[dir="rtl"] .zig-btn {
+	--zig-dir: -1;
+}
+
+.zig-btn:hover .zig-btn__icon,
+.zig-btn:focus-visible .zig-btn__icon {
+	--zig-btn-slide-x: calc(var(--zig-btn-slide, 0px) * var(--zig-dir));
+}
+
+/* ---------- افکت‌های هاور ---------- */
+
+.zig-btn--lift:hover,
+.zig-btn--lift:focus-visible {
+	--zig-btn-lift: -3px;
+}
+
+.zig-btn--sink:hover,
+.zig-btn--sink:focus-visible {
+	--zig-btn-lift: 3px;
+}
+
+.zig-btn--grow:hover,
+.zig-btn--grow:focus-visible {
+	--zig-btn-press: 1.04;
+}
+
+.zig-btn--shrink:hover,
+.zig-btn--shrink:focus-visible {
+	--zig-btn-press: 0.96;
+}
+
+/*
+ * درخششِ عبوری.
+ *
+ * روی شبه‌عنصر است تا نه گره‌ای به DOM اضافه شود و نه پس‌زمینهٔ تنظیم‌شدهٔ
+ * کاربر دست بخورد. overflow: hidden روی خود دکمه لازم است تا درخشش از
+ * گوشه‌های گرد بیرون نزند.
+ */
+.zig-btn--sweep {
+	overflow: hidden;
+}
+
+.zig-btn--sweep::after {
+	content: "";
+	position: absolute;
+	inset: 0 auto 0 -60%;
+	width: 40%;
+	background: linear-gradient(
+		100deg,
+		rgba(255, 255, 255, 0) 0%,
+		rgba(255, 255, 255, 0.35) 50%,
+		rgba(255, 255, 255, 0) 100%
+	);
+	transform: skewX(-20deg);
+	transition: inset var(--zig-transition, 600ms) ease;
+	pointer-events: none;
+}
+
+.zig-btn--sweep:hover::after,
+.zig-btn--sweep:focus-visible::after {
+	inset: 0 -60% 0 110%;
+}
+
+/* ---------- فوکوس ---------- */
+
+/*
+ * ‎:focus-visible‎ و نه ‎:focus‎ — حلقه فقط برای کاربر صفحه‌کلید ظاهر می‌شود و
+ * بعد از کلیک ماوس روی دکمه نمی‌ماند.
+ *
+ * مقدار پیش‌فرض عمداً ‎currentColor‎ است تا حتی وقتی کاربر رنگی تنظیم نکرده،
+ * حلقه روی هر پس‌زمینه‌ای دیده شود.
+ */
+.zig-btn:focus-visible {
+	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
+	outline-offset: var(--zig-focus-offset, 3px);
+}
+
+/* مرورگرهای قدیمی‌تر که focus-visible ندارند، دست‌کم حلقهٔ پیش‌فرض را نگه دارند */
+.zig-btn:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* ==========================================================================
+   چاپ
+   ========================================================================== */
+
+/*
+ * در چاپ، پس‌زمینه‌ها معمولاً حذف می‌شوند و دکمه به یک متن بی‌شکل تبدیل
+ * می‌شود. یک حاشیهٔ ساده آن را دوباره قابل تشخیص می‌کند.
+ */
+@media print {
+	.zig-btn {
+		border: 1px solid currentColor;
+		box-shadow: none;
+	}
+
+	.zig-card,
+	.zig-list__item {
+		box-shadow: none;
+		transform: none;
+	}
+}

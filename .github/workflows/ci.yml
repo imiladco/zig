@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # از پایین‌ترین نسخهٔ پشتیبانی‌شده تا جدیدترین پایدار
+        php: ['7.4', '8.1', '8.3']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, libxml, mbstring
+          coverage: none
+
+      - name: بررسی نحوی همهٔ فایل‌های PHP
+        run: |
+          find . -name '*.php' -not -path './vendor/*' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+      - name: تست‌ها
+        run: php tests/run.php
+
+  coding-standards:
+    name: WordPress Coding Standards
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: phpcs, cs2pr
+
+      - name: نصب استانداردهای وردپرس
+        run: |
+          composer global require --no-interaction --quiet \
+            wp-coding-standards/wpcs:^3 \
+            dealerdirect/phpcodesniffer-composer-installer:^1
+          phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+
+      - name: PHPCS
+        run: phpcs -q --report=checkstyle | cs2pr
+        continue-on-error: true
+
+  css:
+    name: CSS
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: بررسی تعادل آکولادها
+        run: |
+          file=assets/css/zig3d-widgets.css
+          open=$(tr -cd '{' < "$file" | wc -c)
+          close=$(tr -cd '}' < "$file" | wc -c)
+          echo "{ = $open   } = $close"
+          test "$open" -eq "$close"
+
+      - name: بدون important
+        # استایل‌های پنل باید همیشه بتوانند بر شیت پایه بچربند؛ یک !important
+        # کافی است تا یک کنترل برای همیشه بی‌اثر شود. تنها استثنای عمدی، داخل
+        # بلوک prefers-reduced-motion است. خطوط توضیح شمرده نمی‌شوند.
+        run: |
+          count=$(grep '!important' assets/css/zig3d-widgets.css | grep -vc '^\s*\*' || true)
+          echo "تعداد !important: $count"
+          test "$count" -le 1

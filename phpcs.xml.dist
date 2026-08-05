@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<ruleset name="ZIG3D Elementor Widgets">
+	<description>استانداردهای کدنویسی وردپرس، با چند استثنای آگاهانه.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="ps"/>
+
+	<rule ref="WordPress">
+		<!--
+			تورفتگی با فاصله است نه تب. کل افزونه یکدست چهار فاصله است و
+			تغییرش فقط دیف‌های بی‌ربط می‌سازد.
+		-->
+		<exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+		<exclude name="WordPress.WhiteSpace.PrecisionAlignment"/>
+
+		<!--
+			نام کلاس‌ها با نام‌فضا و PSR-ish است، نه الگوی فایل‌محورِ وردپرس.
+		-->
+		<exclude name="WordPress.Files.FileName"/>
+
+		<!--
+			فاصلهٔ داخل پرانتز طبق استاندارد وردپرس نیست؛ سبک این افزونه
+			فشرده‌تر است و یکدست رعایت شده.
+		-->
+		<exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature"/>
+
+		<!-- ترجمه‌ها فارسی‌اند و بررسی متن انگلیسی معنایی ندارد -->
+		<exclude name="WordPress.WP.I18n.MissingTranslatorsComment"/>
+	</rule>
+
+	<config name="minimum_wp_version" value="6.0"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="zig3d-widgets"/>
+			</property>
+		</properties>
+	</rule>
+</ruleset>
