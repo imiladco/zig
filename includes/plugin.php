@@ -83,6 +83,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/pulse.php';
 
         foreach (self::WIDGETS as $file => $class) {
             /*

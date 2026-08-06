@@ -20,6 +20,7 @@ require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
+require_once $root . '/includes/widgets/traits/pulse.php';
 require_once $root . '/includes/widgets/feature-card.php';
 require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
@@ -567,3 +568,79 @@ Tests::blocks(
     zig_render(Product_Stock::class, zig_stock_settings(['product_id' => 8001])),
     'itemprop'
 );
+
+/* ==========================================================================
+ * تپش نشان (مشترک بین لیست و وضعیت موجودی)
+ * ======================================================================= */
+
+Tests::group('رندر › تپش، لیست عنوان‌ها');
+
+$pulse_items = [
+    ['label' => 'مورد عادی', '_id' => 'p1', 'show_bullet' => 'yes'],
+    ['label' => 'مورد تازه', '_id' => 'p2', 'show_bullet' => 'yes', 'item_pulse' => 'yes'],
+];
+
+$none = zig_render(Bullet_List::class, ['items' => $pulse_items, 'bullet_pulse' => '']);
+
+Tests::same('فقط همان یک آیتم می‌تپد', substr_count($none, 'zig-pulse'), 1);
+
+/*
+ * کلاس تپش باید روی خودِ بولت باشد نه روی ریشه؛ وگرنه نمی‌شود در یک فهرست
+ * فقط یک آیتم را تپنده کرد — که کاربرد اصلی همین است.
+ */
+Tests::keeps('کلاس روی خودِ بولت می‌نشیند', $none, 'zig-list__bullet--circle zig-pulse');
+Tests::blocks('و روی ریشه نمی‌نشیند', $none, 'zig-list zig-pulse');
+
+$all = zig_render(Bullet_List::class, ['items' => $pulse_items, 'bullet_pulse' => 'yes']);
+
+Tests::same('کلید سراسری همه را می‌تپاند', substr_count($all, 'zig-pulse'), 2);
+
+$off = zig_render(Bullet_List::class, [
+    'items'        => [['label' => 'بی‌تپش', '_id' => 'p3', 'show_bullet' => 'yes']],
+    'bullet_pulse' => '',
+]);
+
+Tests::blocks('بدون هیچ‌کدام، تپشی نیست', $off, 'zig-pulse');
+
+// بولتی که اصلاً رندر نمی‌شود نباید کلاس تپش بگیرد
+$hidden_bullet = zig_render(Bullet_List::class, [
+    'items'        => [['label' => 'بدون بولت', '_id' => 'p4', 'show_bullet' => '', 'item_pulse' => 'yes']],
+    'bullet_pulse' => 'yes',
+]);
+
+Tests::blocks('بدون بولت، تپشی هم نیست', $hidden_bullet, 'zig-pulse');
+
+Tests::group('رندر › تپش، وضعیت موجودی');
+
+zig_reset_products();
+
+new WC_Product(['id' => 8501, 'status' => 'instock', 'managing' => true, 'qty' => 2, 'low' => 3]);
+
+$stock_pulse = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id'      => 8501,
+    'enable_lowstock' => 'yes',
+    'bullet_pulse'    => 'yes',
+    'pulse_states'    => [Stock::LOW_STOCK],
+]));
+
+Tests::keeps('وضعیت هدف می‌تپد', $stock_pulse, 'zig-pulse');
+Tests::keeps('و کلاس روی خودِ نشان است', $stock_pulse, 'zig-stock__bullet--circle zig-pulse');
+
+new WC_Product(['id' => 8502, 'status' => 'instock', 'managing' => true, 'qty' => 20]);
+
+$other_state = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id'      => 8502,
+    'enable_lowstock' => 'yes',
+    'bullet_pulse'    => 'yes',
+    'pulse_states'    => [Stock::LOW_STOCK],
+]));
+
+Tests::blocks('وضعیت دیگر نمی‌تپد', $other_state, 'zig-pulse');
+
+$every_state = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id'   => 8502,
+    'bullet_pulse' => 'yes',
+    'pulse_states' => [],
+]));
+
+Tests::keeps('فهرست خالی یعنی همهٔ وضعیت‌ها', $every_state, 'zig-pulse');

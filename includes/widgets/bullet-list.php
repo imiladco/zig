@@ -28,6 +28,7 @@ if (!defined('ABSPATH')) {
 final class Bullet_List extends Widget_Base {
 
     use Traits\Box;
+    use Traits\Pulse;
 
     public function get_name(): string {
         return 'zig3d-bullet-list';
@@ -118,6 +119,23 @@ final class Bullet_List extends Widget_Base {
                 'type'         => Controls_Manager::SWITCHER,
                 'default'      => 'yes',
                 'return_value' => 'yes',
+            ]
+        );
+
+        /*
+         * تپش در سطح آیتم.
+         *
+         * کاربرد اصلیِ تپش در یک فهرست، برجسته‌کردن یک موردِ خاص است — مثلاً
+         * «تازه اضافه شده». اگر فقط کلیدی سراسری بود، یا همه می‌تپیدند یا
+         * هیچ‌کدام، و آن دقیقاً همان چیزی نیست که به درد می‌خورد.
+         */
+        $repeater->add_control(
+            'item_pulse',
+            [
+                'label'        => __('تپش نشان این آیتم', 'zig3d-widgets'),
+                'type'         => Controls_Manager::SWITCHER,
+                'return_value' => 'yes',
+                'condition'    => ['show_bullet' => 'yes'],
             ]
         );
 
@@ -473,6 +491,32 @@ final class Bullet_List extends Widget_Base {
 
         $this->end_controls_tabs();
 
+        $this->add_control(
+            'pulse_heading',
+            [
+                'label'     => __('تپش', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
+        $this->add_control(
+            'bullet_pulse',
+            [
+                'label'        => __('تپش همهٔ نشان‌ها', 'zig3d-widgets'),
+                'type'         => Controls_Manager::SWITCHER,
+                'return_value' => 'yes',
+                'description'  => __('برای برجسته‌کردن یک موردِ خاص، به‌جای این کلید از گزینهٔ «تپش نشان این آیتم» در خودِ آن آیتم استفاده کنید.', 'zig3d-widgets'),
+            ]
+        );
+
+        /*
+         * تنظیم‌ها روی همهٔ نشان‌ها می‌نشینند، نه فقط تپنده‌ها: متغیرها روی
+         * نشانی که کلاس تپش ندارد هیچ اثری ندارند، و این‌طور با روشن‌کردن
+         * تپشِ یک آیتم، همان تنظیم‌ها بدون کار اضافه رویش اعمال می‌شوند.
+         */
+        $this->add_pulse_controls('.zig-list__bullet');
+
         $this->end_controls_section();
     }
 
@@ -639,7 +683,8 @@ final class Bullet_List extends Widget_Base {
         $bullet_icon = 'icon' === $shape ? ($settings['bullet_icon'] ?? []) : [];
 
         // یک بار بیرون از حلقه: تکرارش برای هر آیتم فقط کار اضافه است
-        $bullet_class = 'zig-list__bullet zig-list__bullet--' . sanitize_html_class($shape, 'circle');
+        $bullet_base = 'zig-list__bullet zig-list__bullet--' . sanitize_html_class($shape, 'circle');
+        $pulse_all   = 'yes' === ($settings['bullet_pulse'] ?? '');
 
         $rendered = 0;
         ob_start();
@@ -680,7 +725,14 @@ final class Bullet_List extends Widget_Base {
             $this->add_inline_editing_attributes($repeater_key, 'none');
             ?>
             <li <?php $this->print_render_attribute_string($item_key); ?>>
-                <?php if ('yes' === ($item['show_bullet'] ?? 'yes')) : ?>
+                <?php
+                if ('yes' === ($item['show_bullet'] ?? 'yes')) :
+                    $bullet_class = $bullet_base;
+
+                    if ($pulse_all || 'yes' === ($item['item_pulse'] ?? '')) {
+                        $bullet_class .= ' ' . self::PULSE_CLASS;
+                    }
+                    ?>
                     <span class="<?php echo esc_attr($bullet_class); ?>" aria-hidden="true"><?php
                         if (!empty($bullet_icon['value'])) {
                             \Elementor\Icons_Manager::render_icon($bullet_icon, ['aria-hidden' => 'true']);

@@ -25,6 +25,7 @@ require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
+require_once $root . '/includes/widgets/traits/pulse.php';
 require_once $root . '/includes/widgets/feature-card.php';
 require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';

@@ -650,47 +650,57 @@ a.zig-list__label:focus-visible {
 	border-radius: 50%;
 }
 
+/* ==========================================================================
+   تپش نشان (مشترک بین ویجت‌ها)
+   ========================================================================== */
+
 /*
- * تپش.
+ * هالهٔ آرامی که از نشان بیرون می‌زند و محو می‌شود.
  *
- * روی شبه‌عنصر است تا نه گره‌ای به DOM اضافه شود و نه خودِ نشان تغییر
- * اندازه بدهد (که چیدمان را می‌لرزاند). هالهٔ بزرگ‌شونده محو می‌شود و
- * ‎pointer-events: none‎ جلوی گرفتن کلیک را می‌گیرد.
+ * روی شبه‌عنصر است، نه روی خودِ نشان: این‌طور نه گره‌ای به DOM اضافه می‌شود و
+ * نه اندازهٔ نشان تغییر می‌کند — که اگر می‌کرد، هر تپش کل ردیف را می‌لرزاند.
+ *
+ * کلاس روی خودِ نشان می‌نشیند نه روی ریشه، تا در یک فهرست بشود فقط یک آیتم
+ * را تپنده کرد.
+ *
+ * رنگ از ‎currentColor‎ می‌آید، پس هاله همیشه هم‌رنگ همان نشانی است که دورش
+ * را گرفته و به هیچ تنظیم جداگانه‌ای نیاز ندارد.
  */
-.zig-stock--pulse .zig-stock__bullet {
+.zig-pulse {
 	position: relative;
 }
 
-.zig-stock--pulse .zig-stock__bullet::after {
+.zig-pulse::after {
 	content: "";
 	position: absolute;
 	inset: 0;
 	border-radius: inherit;
 	background-color: currentColor;
-	animation: zig-stock-pulse 1.8s ease-out infinite;
+	animation: zig-pulse var(--zig-pulse-duration, 1800ms) ease-out infinite;
+	/* هاله نباید کلیکِ آیتمِ زیرش را بگیرد */
 	pointer-events: none;
 }
 
-@keyframes zig-stock-pulse {
+@keyframes zig-pulse {
 	0% {
-		opacity: 0.55;
+		opacity: var(--zig-pulse-opacity, 0.55);
 		transform: scale(1);
 	}
 
 	70%,
 	100% {
 		opacity: 0;
-		transform: scale(2.6);
+		transform: scale(var(--zig-pulse-scale, 2.6));
 	}
 }
 
 /*
- * ضربان یک حرکت تکرارشوندهٔ بی‌پایان است — دقیقاً همان چیزی که تنظیم
- * «حرکت کمتر» برای حذفش وجود دارد. متن و رنگ می‌مانند، پس هیچ اطلاعاتی از
- * دست نمی‌رود.
+ * تپش یک حرکت تکرارشوندهٔ بی‌پایان است — دقیقاً همان چیزی که تنظیم «حرکت
+ * کمتر» برای حذفش وجود دارد. رنگ و متن می‌مانند، پس هیچ اطلاعاتی از دست
+ * نمی‌رود.
  */
 @media (prefers-reduced-motion: reduce) {
-	.zig-stock--pulse .zig-stock__bullet::after {
+	.zig-pulse::after {
 		display: none;
 	}
 }

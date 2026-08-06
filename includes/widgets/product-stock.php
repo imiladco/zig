@@ -31,6 +31,8 @@ if (!defined('ABSPATH')) {
  */
 final class Product_Stock extends Widget_Base {
 
+    use Traits\Pulse;
+
     /**
      * برچسب و متن پیش‌فرض هر وضعیت.
      *
@@ -387,6 +389,11 @@ final class Product_Stock extends Widget_Base {
             ]
         );
 
+        $this->add_pulse_controls(
+            '.zig-stock__bullet',
+            ['show_bullet' => 'yes', 'bullet_pulse' => 'yes']
+        );
+
         $this->end_controls_section();
     }
 
@@ -695,10 +702,6 @@ final class Product_Stock extends Widget_Base {
             $classes[] = 'zig-stock--has-bullet';
         }
 
-        if ($this->should_pulse($settings, $state)) {
-            $classes[] = 'zig-stock--pulse';
-        }
-
         $schema = '';
 
         if ('yes' === ($settings['schema'] ?? '')) {
@@ -712,10 +715,21 @@ final class Product_Stock extends Widget_Base {
         );
 
         if ('yes' === ($settings['show_bullet'] ?? 'yes')) {
-            printf(
-                '<span class="zig-stock__bullet zig-stock__bullet--%s" aria-hidden="true"></span>',
-                esc_attr(sanitize_html_class((string) ($settings['bullet_shape'] ?? 'circle'), 'circle'))
-            );
+            $bullet = [
+                'zig-stock__bullet',
+                'zig-stock__bullet--' . sanitize_html_class((string) ($settings['bullet_shape'] ?? 'circle'), 'circle'),
+            ];
+
+            /*
+             * کلاس تپش روی خودِ نشان می‌نشیند نه روی ریشه — همان قراردادی که
+             * ویجت فهرست هم به کار می‌برد، تا یک قاعدهٔ CSS مشترک هر دو را
+             * پوشش بدهد.
+             */
+            if ($this->should_pulse($settings, $state)) {
+                $bullet[] = self::PULSE_CLASS;
+            }
+
+            printf('<span class="%s" aria-hidden="true"></span>', esc_attr(implode(' ', $bullet)));
         }
 
         printf(
