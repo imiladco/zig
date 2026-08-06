@@ -32,6 +32,15 @@ foreach ([
 if (!function_exists('__')) {
     function __($text, $domain = null) { return $text; }
 }
+if (!function_exists('esc_html__')) {
+    function esc_html__($text, $domain = null) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+}
+if (!function_exists('esc_attr__')) {
+    function esc_attr__($text, $domain = null) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+}
+if (!function_exists('wp_kses_post')) {
+    function wp_kses_post($text) { return (string) $text; }
+}
 if (!function_exists('esc_html')) {
     function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
 }

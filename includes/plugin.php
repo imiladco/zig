@@ -8,10 +8,10 @@ if (!defined('ABSPATH')) {
 /**
  * هستهٔ افزونه: ثبت دسته، ویجت‌ها و دارایی‌ها.
  *
- * افزونه عمداً هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند. هر سه ویجت — کارت
- * ویژگی، لیست بولت و دکمه — کاملاً با CSS کار می‌کنند: حالت‌های هاور و فوکوس
- * و افکت‌ها همه اعلانی‌اند. یعنی صفر بایت JS، بدون هزینهٔ اجرا روی نخ اصلی و
- * بدون هیچ وابستگی‌ای که بتواند نصفه‌کاره بماند.
+ * افزونه عمداً هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند. هر چهار ویجت کاملاً
+ * با CSS کار می‌کنند: حالت‌های هاور و فوکوس و افکت‌ها همه اعلانی‌اند. یعنی
+ * صفر بایت JS، بدون هزینهٔ اجرا روی نخ اصلی و بدون هیچ وابستگی‌ای که بتواند
+ * نصفه‌کاره بماند.
  */
 final class Plugin {
 
@@ -24,9 +24,10 @@ final class Plugin {
 
     /** فایل هر ویجت => نام کلاس */
     private const WIDGETS = [
-        'feature-card' => Widgets\Feature_Card::class,
-        'bullet-list'  => Widgets\Bullet_List::class,
-        'button'       => Widgets\Button::class,
+        'feature-card'  => Widgets\Feature_Card::class,
+        'bullet-list'   => Widgets\Bullet_List::class,
+        'button'        => Widgets\Button::class,
+        'product-price' => Widgets\Product_Price::class,
     ];
 
     public static function instance(): self {
@@ -76,11 +77,20 @@ final class Plugin {
     public function register_widgets($manager): void {
         require_once ZIG3D_WIDGETS_PATH . 'includes/svg.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/markup.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
 
         foreach (self::WIDGETS as $file => $class) {
+            /*
+             * ویجت قیمت بدون ووکامرس فقط یک ورودی بی‌فایده در پنل است که
+             * کاربر رویش کلیک می‌کند و چیزی نمی‌بیند. پس اصلاً ثبت نمی‌شود.
+             */
+            if ('product-price' === $file && !class_exists('WooCommerce')) {
+                continue;
+            }
+
             require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/' . $file . '.php';
             $manager->register(new $class());
         }

@@ -9,21 +9,25 @@
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lib/elementor-stub.php';
+require_once __DIR__ . '/lib/woocommerce-stub.php';
 
 $root = dirname(__DIR__);
 
 require_once $root . '/includes/svg.php';
 require_once $root . '/includes/markup.php';
+require_once $root . '/includes/price.php';
 require_once $root . '/includes/widgets/traits/link.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
 require_once $root . '/includes/widgets/feature-card.php';
 require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
+require_once $root . '/includes/widgets/product-price.php';
 
 use Zig3d_Widgets\Widgets\Bullet_List;
 use Zig3d_Widgets\Widgets\Button;
 use Zig3d_Widgets\Widgets\Feature_Card;
+use Zig3d_Widgets\Widgets\Product_Price;
 
 /** یک نمونهٔ تازه از ویجت، بدون سازندهٔ المنتور */
 function zig_widget(string $class) {
@@ -265,3 +269,150 @@ Tests::ok(
     'آیکون پس از متن می‌آید',
     strpos($icon_end, 'zig-btn__icon') > strpos($icon_end, 'zig-btn__text')
 );
+
+/* ==========================================================================
+ * قیمت محصول
+ * ======================================================================= */
+
+Tests::group('رندر › قیمت محصول');
+
+zig_reset_products();
+
+$on_sale = new WC_Product([
+    'id' => 9001, 'price' => '80000', 'regular' => '100000', 'sale' => '80000', 'on_sale' => true,
+]);
+
+$price = zig_render(Product_Price::class, [
+    'product_id'      => 9001,
+    'show_old'        => 'yes',
+    'show_badge'      => 'yes',
+    'badge_mode'      => 'percent',
+    'badge_template'  => '{value}٪',
+    'currency_text'   => 'تومان',
+    'currency_on_now' => 'yes',
+    'persian_digits'  => 'yes',
+]);
+
+Tests::keeps('ریشهٔ قیمت رندر می‌شود', $price, 'class="zig-price');
+Tests::keeps('حالت تخفیف کلاس می‌گیرد', $price, 'zig-price--on-sale');
+Tests::keeps('قیمت فعلی رندر می‌شود', $price, 'zig-price__now');
+Tests::keeps('عدد با جداکننده و ارقام فارسی', $price, '۸۰,۰۰۰');
+Tests::keeps('واحد پول کنارش می‌آید', $price, 'تومان');
+Tests::keeps('بج درصد رندر می‌شود', $price, '۲۰٪');
+
+/*
+ * ‎<del>‎ و ‎<ins>‎ همان الگویی است که خودِ ووکامرس به کار می‌برد و برای
+ * صفحه‌خوان معنای «قبلاً این بود، حالا این است» را می‌رساند. ‎<span>‎ ساده
+ * فقط دو عدد پشت سر هم است.
+ */
+Tests::keeps('قیمت پیشین داخل del است', $price, '<del class="zig-price__old"');
+Tests::keeps('قیمت فعلی داخل ins است', $price, '<ins class="zig-price__now"');
+Tests::keeps('متن راهنمای صفحه‌خوان هست', $price, 'zig-price__sr');
+
+/*
+ * عدد در متن راست‌به‌چپ یک «اجرای چپ‌به‌راست» است؛ بدون ‎<bdi>‎ الگوریتم
+ * دوجهتهٔ یونیکد می‌تواند عدد و واحد را جابه‌جا کند.
+ */
+Tests::keeps('عدد داخل bdi است', $price, '<bdi class="zig-price__value">');
+Tests::keeps('بج برای صفحه‌خوان توضیح دارد', $price, 'aria-label=');
+
+Tests::group('رندر › قیمت، بدون تخفیف');
+
+$plain_price = new WC_Product(['id' => 9002, 'price' => '50000', 'regular' => '50000']);
+
+$out = zig_render(Product_Price::class, [
+    'product_id' => 9002, 'show_old' => 'yes', 'show_badge' => 'yes', 'persian_digits' => '',
+]);
+
+Tests::blocks('بدون تخفیف، قیمت پیشین نیست', $out, '<del');
+Tests::blocks('بدون تخفیف، بج نیست', $out, 'zig-price__badge');
+
+// بدون <del> متناظر، <ins> بی‌معناست
+Tests::blocks('و ins هم نمی‌آید', $out, '<ins');
+Tests::keeps('ولی قیمت فعلی هست', $out, '50,000');
+
+Tests::group('رندر › قیمت، حالت‌های خاص');
+
+$no_price = new WC_Product(['id' => 9003, 'price' => '', 'regular' => '']);
+
+Tests::same(
+    'محصول بی‌قیمت با تنظیم «پنهان»، چیزی رندر نمی‌کند',
+    trim(zig_render(Product_Price::class, ['product_id' => 9003, 'empty_behavior' => 'hide'])),
+    ''
+);
+
+$fallback = zig_render(Product_Price::class, [
+    'product_id'     => 9003,
+    'empty_behavior' => 'text',
+    'empty_text'     => 'تماس بگیرید',
+]);
+
+Tests::keeps('متن جایگزین نمایش داده می‌شود', $fallback, 'تماس بگیرید');
+Tests::keeps('و کلاس حالت خالی می‌گیرد', $fallback, 'zig-price--empty');
+
+$free = new WC_Product(['id' => 9004, 'price' => '0', 'regular' => '0']);
+
+$free_out = zig_render(Product_Price::class, [
+    'product_id' => 9004, 'free_text' => 'رایگان', 'persian_digits' => '',
+]);
+
+Tests::keeps('قیمت صفر، متن رایگان می‌گیرد', $free_out, 'رایگان');
+Tests::blocks('و عدد صفر چاپ نمی‌شود', $free_out, 'zig-price__amount');
+
+Tests::same(
+    'محصول ناموجود در سایت چیزی رندر نمی‌کند',
+    trim(zig_render(Product_Price::class, ['product_id' => 999999])),
+    ''
+);
+
+Tests::group('رندر › قیمت، محصول متغیر');
+
+zig_reset_products();
+
+new WC_Product(['id' => 9101, 'price' => '1000', 'regular' => '1000']);
+new WC_Product(['id' => 9102, 'price' => '3000', 'regular' => '3000']);
+
+$variable = new WC_Product([
+    'id' => 9100, 'type' => 'variable', 'children' => [9101, 9102], 'min' => '1000', 'max' => '3000',
+]);
+
+$min_out = zig_render(Product_Price::class, [
+    'product_id' => 9100, 'variable_mode' => 'min', 'prefix_text' => 'شروع از', 'persian_digits' => '',
+]);
+
+Tests::keeps('پیشوند برای محصول متغیر می‌آید', $min_out, 'شروع از');
+
+$range_out = zig_render(Product_Price::class, [
+    'product_id'      => 9100,
+    'variable_mode'   => 'range',
+    'range_separator' => 'تا',
+    'persian_digits'  => '',
+]);
+
+Tests::keeps('بازه کلاس می‌گیرد', $range_out, 'zig-price--range');
+Tests::keeps('جداکنندهٔ بازه می‌آید', $range_out, 'zig-price__sep');
+Tests::keeps('کمترین قیمت', $range_out, '1,000');
+Tests::keeps('بیشترین قیمت', $range_out, '3,000');
+Tests::blocks('در حالت بازه پیشوند نمی‌آید', $range_out, 'شروع از');
+
+/*
+ * «شروع از» روی محصول ساده به مشتری می‌گوید قیمت‌های دیگری هم هست — که
+ * وجود ندارند.
+ */
+$simple_prefix = zig_render(Product_Price::class, [
+    'product_id' => 9101, 'variable_mode' => 'min', 'prefix_text' => 'شروع از',
+]);
+
+Tests::blocks('پیشوند روی محصول ساده نمی‌آید', $simple_prefix, 'شروع از');
+
+Tests::group('رندر › قیمت، اسکیمای ساختاریافته');
+
+$schema = zig_render(Product_Price::class, ['product_id' => 9101, 'schema' => 'yes']);
+
+Tests::keeps('itemtype اعلام می‌شود', $schema, 'schema.org/Offer');
+Tests::keeps('قیمت خام در content می‌آید', $schema, 'itemprop="price"');
+Tests::keeps('واحد پول هم اعلام می‌شود', $schema, 'priceCurrency');
+
+$no_schema = zig_render(Product_Price::class, ['product_id' => 9101]);
+
+Tests::blocks('پیش‌فرض خاموش است', $no_schema, 'itemprop');

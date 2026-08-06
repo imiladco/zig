@@ -478,6 +478,113 @@ a.zig-list__label:focus-visible {
 }
 
 /* ==========================================================================
+   قیمت محصول
+   ========================================================================== */
+
+.zig-price {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: 8px;
+	row-gap: 4px;
+}
+
+/*
+ * ‎<del>‎ و ‎<ins>‎ در مرورگر خط پیش‌فرض می‌گیرند. خطِ قیمت پیشین کنترل خودش
+ * را دارد، و خطِ زیرِ ‎<ins>‎ اصلاً خواسته نیست — پس هر دو صفر می‌شوند و
+ * تصمیم به پنل واگذار می‌شود.
+ */
+.zig-price__old,
+.zig-price__now {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	text-decoration: none;
+}
+
+.zig-price__old {
+	text-decoration-line: line-through;
+	opacity: 0.7;
+}
+
+.zig-price__value {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--zig-unit-gap, 0.25em);
+}
+
+/*
+ * ارقام هم‌عرض.
+ *
+ * وقتی قیمت با فیلتر یا انتخاب گزینه عوض می‌شود، ارقامِ با عرض متغیر باعث
+ * می‌شوند کل ردیف کمی جابه‌جا شود. ‎tabular-nums‎ عرض هر رقم را ثابت می‌کند و
+ * این پرشِ کوچک ولی آزاردهنده از بین می‌رود.
+ */
+.zig-price__amount {
+	font-variant-numeric: tabular-nums;
+}
+
+.zig-price__unit {
+	font-size: 0.8em;
+	/* واحد نباید با عدد بشکند و تنها به خط بعد بیفتد */
+	white-space: nowrap;
+}
+
+.zig-price__badge {
+	display: inline-flex;
+	align-items: center;
+	white-space: nowrap;
+	line-height: 1;
+}
+
+.zig-price__prefix,
+.zig-price__sep,
+.zig-price__suffix {
+	white-space: nowrap;
+}
+
+.zig-price__suffix {
+	font-size: 0.8em;
+	opacity: 0.75;
+}
+
+/* ووکامرس یادداشت مالیات را داخل <small> می‌فرستد */
+.zig-price__suffix small {
+	font-size: inherit;
+}
+
+/*
+ * متنی که فقط صفحه‌خوان باید بشنود.
+ *
+ * «۱۰۰٬۰۰۰ ۸۰٬۰۰۰» بدون توضیح یعنی دو عدد پشت سر هم؛ با «قیمت پیشین:» و
+ * «قیمت فعلی:» معنا کامل می‌شود. عمداً ‎display: none‎ نیست — آن، متن را از
+ * صفحه‌خوان هم پنهان می‌کند.
+ */
+.zig-price__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* پیام راهنما، فقط در ادیتور رندر می‌شود */
+.zig-price__notice {
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}
+
+/* ==========================================================================
    چاپ
    ========================================================================== */
 
