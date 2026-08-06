@@ -6,6 +6,7 @@ use Elementor\Group_Control_Background;
 use Elementor\Group_Control_Border;
 use Elementor\Group_Control_Box_Shadow;
 use Elementor\Group_Control_Typography;
+use Zig3d_Widgets\Selector;
 use Zig3d_Widgets\Svg;
 
 if (!defined('ABSPATH')) {
@@ -142,7 +143,12 @@ trait Icon {
             ? $box
             : '{{WRAPPER}} ' . $hover_scope . ':hover ' . $selector;
         $box_hover = $selector === $hover_scope ? $box . ':hover' : $scope;
-        $glyph     = $box . ' > svg, ' . $box . ' > img, ' . $box . ' i';
+
+        /*
+         * سه فرزند با یک فراخوانی ساخته می‌شوند، نه با الحاق رشته: الحاق،
+         * پسوند را فقط به آخرین بخش می‌چسباند و بقیه بی‌صدا از قلم می‌افتند.
+         */
+        $glyph = Selector::descend($box, '> svg, > img, i');
 
         $this->add_responsive_control(
             $prefix . '_size',
@@ -200,7 +206,7 @@ trait Icon {
             $prefix,
             'hover',
             $box_hover,
-            $box_hover . ' > svg, ' . $box_hover . ' > img, ' . $box_hover . ' i'
+            Selector::descend($box_hover, '> svg, > img, i')
         );
 
         $this->add_control(
@@ -269,7 +275,7 @@ trait Icon {
                     // …و fill/stroke صریح روی SVG، چون فایل‌های صادرشده از
                     // فیگما تقریباً همیشه رنگ را روی خودِ path می‌نویسند و
                     // بدون این، currentColor هیچ اثری ندارد.
-                    $glyph . ', ' . $glyph . ' *' => 'fill: {{VALUE}}; color: {{VALUE}};',
+                    Selector::join($glyph, Selector::descend($glyph, '*')) => 'fill: {{VALUE}}; color: {{VALUE}};',
                 ],
             ]
         );
@@ -280,7 +286,7 @@ trait Icon {
                 'label'       => __('رنگ خط SVG', 'zig3d-widgets'),
                 'type'        => Controls_Manager::COLOR,
                 'description' => __('فقط برای آیکون‌های خطی که به‌جای پرکردن، از stroke استفاده می‌کنند.', 'zig3d-widgets'),
-                'selectors'   => [$glyph . ' [stroke]' => 'stroke: {{VALUE}};'],
+                'selectors'   => [Selector::descend($glyph, '[stroke]') => 'stroke: {{VALUE}};'],
             ]
         );
 

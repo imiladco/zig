@@ -20,6 +20,7 @@ $root = dirname(__DIR__);
 
 require_once $root . '/includes/svg.php';
 require_once $root . '/includes/markup.php';
+require_once $root . '/includes/selector.php';
 require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';

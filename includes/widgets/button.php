@@ -10,6 +10,7 @@ use Elementor\Group_Control_Typography;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Markup;
 use Zig3d_Widgets\Plugin;
+use Zig3d_Widgets\Selector;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -37,6 +38,16 @@ if (!defined('ABSPATH')) {
 final class Button extends Widget_Base {
 
     use Traits\Link;
+
+    /**
+     * دامنهٔ «هاور یا فوکوس».
+     *
+     * یک بار تعریف می‌شود چون در چند کنترل تکرار می‌شود و هر بار نوشتنش
+     * دوباره، یک فرصت دیگر برای جاانداختن ‎{{WRAPPER}}‎ روی یکی از دو بخش
+     * است — همان اشتباهی که یک بار رنگ آیکون همهٔ دکمه‌های صفحه را به هم
+     * ریخت.
+     */
+    private const HOVER = '{{WRAPPER}} .zig-btn:hover, {{WRAPPER}} .zig-btn:focus-visible';
 
     public function get_name(): string {
         return 'zig3d-button';
@@ -313,10 +324,7 @@ final class Button extends Widget_Base {
          * را می‌چسباند و دکمه بعد از کلیک «گیر کرده» به نظر می‌رسد.
          */
         $this->start_controls_tab('button_tab_hover', ['label' => __('هاور و فوکوس', 'zig3d-widgets')]);
-        $this->add_button_state_controls(
-            'hover',
-            '{{WRAPPER}} .zig-btn:hover, {{WRAPPER}} .zig-btn:focus-visible'
-        );
+        $this->add_button_state_controls('hover', self::HOVER);
         $this->end_controls_tab();
 
         $this->start_controls_tab('button_tab_active', ['label' => __('فشرده', 'zig3d-widgets')]);
@@ -362,7 +370,7 @@ final class Button extends Widget_Base {
                     // ارث ببرند، و صریح روی SVG چون آیکون‌های صادرشده رنگ را
                     // معمولاً روی path می‌نویسند
                     $selector => 'color: {{VALUE}};',
-                    $this->descendant($selector, '.zig-btn__icon svg, .zig-btn__icon svg *') => 'fill: {{VALUE}};',
+                    Selector::descend($selector, '.zig-btn__icon svg, .zig-btn__icon svg *') => 'fill: {{VALUE}};',
                 ],
             ]
         );
@@ -392,21 +400,6 @@ final class Button extends Widget_Base {
                 'selector' => $selector,
             ]
         );
-    }
-
-    /**
-     * افزودن یک سلکتور فرزند به سلکتوری که ممکن است چند بخشی باشد.
-     *
-     * ‎'a, b' . ' c'‎ می‌شود ‎'a, b c'‎ — یعنی قاعده فقط به بخش آخر می‌چسبد و
-     * بقیه بی‌صدا از قلم می‌افتند. این تابع همان اشتباه را ممکن نمی‌کند.
-     */
-    private function descendant(string $selector, string $child): string {
-        $parts = array_map(
-            static fn(string $part): string => trim($part) . ' ' . $child,
-            explode(',', $selector)
-        );
-
-        return implode(', ', $parts);
     }
 
     /* =====================================================================
@@ -497,8 +490,8 @@ final class Button extends Widget_Base {
                 'type'      => Controls_Manager::COLOR,
                 'separator' => 'before',
                 'selectors' => [
-                    '{{WRAPPER}} .zig-btn:hover .zig-btn__icon, {{WRAPPER}} .zig-btn:focus-visible .zig-btn__icon'         => 'color: {{VALUE}};',
-                    '{{WRAPPER}} .zig-btn:hover .zig-btn__icon svg *, {{WRAPPER}} .zig-btn:focus-visible .zig-btn__icon svg *' => 'fill: {{VALUE}};',
+                    Selector::descend(self::HOVER, '.zig-btn__icon')       => 'color: {{VALUE}};',
+                    Selector::descend(self::HOVER, '.zig-btn__icon svg *') => 'fill: {{VALUE}};',
                 ],
             ]
         );

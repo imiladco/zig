@@ -54,9 +54,35 @@ class Repeater {
 }
 
 class Widget_Base {
-    public function add_control($name, $args = []) { $GLOBALS['ZIG'][] = $name; }
-    public function add_responsive_control($name, $args = []) { $GLOBALS['ZIG'][] = $name; }
-    public function add_group_control($type, $args = []) { $GLOBALS['ZIG'][] = 'group:' . ($args['name'] ?? '?'); }
+    public function add_control($name, $args = []) {
+        $GLOBALS['ZIG'][] = $name;
+        self::zig_record_selectors($name, $args);
+    }
+    public function add_responsive_control($name, $args = []) {
+        $GLOBALS['ZIG'][] = $name;
+        self::zig_record_selectors($name, $args);
+    }
+    public function add_group_control($type, $args = []) {
+        $name = 'group:' . ($args['name'] ?? '?');
+        $GLOBALS['ZIG'][] = $name;
+
+        // گروه‌کنترل‌ها سلکتورهایشان را از همین یک رشته می‌سازند
+        if (isset($args['selector'])) {
+            $GLOBALS['ZIG_SELECTORS'][] = [$name, (string) $args['selector']];
+        }
+    }
+
+    /**
+     * ثبت هر سلکتوری که کنترل تولید می‌کند، برای سنجهٔ دامنه.
+     *
+     * بدون این، سلکتوری که ‎{{WRAPPER}}‎ ندارد در تست‌ها نامرئی است: خروجی
+     * رندر درست می‌ماند و فقط CSS تولیدشده به کل صفحه نشت می‌کند.
+     */
+    private static function zig_record_selectors($name, $args) {
+        foreach ((array) ($args['selectors'] ?? []) as $selector => $rule) {
+            $GLOBALS['ZIG_SELECTORS'][] = [$name, (string) $selector];
+        }
+    }
     public function start_controls_section($name, $args = []) { $GLOBALS['ZIG'][] = 'SECTION:' . $name; }
     public function end_controls_section() { $GLOBALS['ZIG'][] = '/SECTION'; }
     public function start_controls_tabs($name, $args = []) { $GLOBALS['ZIG'][] = 'TABS:' . $name; }
@@ -196,7 +222,8 @@ namespace {
         function get_attached_file($id) { return $GLOBALS['__zig_file'][$id] ?? false; }
     }
 
-    $GLOBALS['ZIG'] = $GLOBALS['ZIG'] ?? [];
+    $GLOBALS['ZIG']           = $GLOBALS['ZIG'] ?? [];
+    $GLOBALS['ZIG_SELECTORS'] = $GLOBALS['ZIG_SELECTORS'] ?? [];
 
     /**
      * فهرست کامل ثبت‌های یک ویجت، به ترتیب.
@@ -212,5 +239,21 @@ namespace {
         $method->invoke($widget);
 
         return $GLOBALS['ZIG'];
+    }
+
+    /**
+     * همهٔ سلکتورهایی که یک ویجت تولید می‌کند.
+     *
+     * @return array<int,array{0:string,1:string}> [نام کنترل، سلکتور]
+     */
+    function zig_collect_selectors(string $class): array {
+        $GLOBALS['ZIG_SELECTORS'] = [];
+
+        $widget = (new ReflectionClass($class))->newInstanceWithoutConstructor();
+        $method = new ReflectionMethod($widget, 'register_controls');
+        $method->setAccessible(true);
+        $method->invoke($widget);
+
+        return $GLOBALS['ZIG_SELECTORS'];
     }
 }
