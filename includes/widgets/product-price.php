@@ -66,6 +66,7 @@ final class Product_Price extends Widget_Base {
         $this->register_display_section();
         $this->register_states_section();
         $this->register_layout_section();
+        $this->register_font_section();
         $this->register_now_style_section();
         $this->register_old_style_section();
         $this->register_badge_style_section();
@@ -461,6 +462,137 @@ final class Product_Price extends Widget_Base {
                 ]
             );
         }
+
+        $this->end_controls_section();
+    }
+
+    /* =====================================================================
+     * ارقام و ویژگی‌های فونت
+     * =================================================================== */
+
+    /**
+     * دو تنظیمِ تایپوگرافیک که کنترل استاندارد المنتور ندارد ولی برای قیمت
+     * فارسی هر دو مهم‌اند.
+     */
+    private function register_font_section(): void {
+        $this->start_controls_section(
+            'font_section',
+            [
+                'label' => __('ارقام و ویژگی‌های فونت', 'zig3d-widgets'),
+                'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        /*
+         * ارقام هم‌عرض در برابر ارقام متنی.
+         *
+         * ‎tabular-nums‎ عرض هر رقم را ثابت می‌کند. مزیتش وقتی معلوم می‌شود که
+         * قیمت عوض شود — با فیلتر، با انتخاب گزینه، یا در ستونی از قیمت‌ها —
+         * چون هیچ‌چیز جابه‌جا نمی‌شود. عیبش این است که در دلِ یک جملهٔ معمولی
+         * کمی مصنوعی می‌نشیند، و آنجا ارقام متنی طبیعی‌ترند.
+         *
+         * روی ریشه اعمال می‌شود تا همهٔ اعداد ویجت — قیمت فعلی، قیمت پیشین و
+         * عدد داخل بج — یکدست بمانند. هیچ چیز بدتر از این نیست که دو عدد در
+         * یک ردیف دو جور رندر شوند.
+         */
+        $this->add_control(
+            'figures',
+            [
+                'label'       => __('نوع ارقام', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SELECT,
+                'default'     => 'tabular-nums',
+                'options'     => [
+                    ''                  => __('پیش‌فرض فونت', 'zig3d-widgets'),
+                    'tabular-nums'      => __('هم‌عرض (Tabular)', 'zig3d-widgets'),
+                    'proportional-nums' => __('متنی (Proportional)', 'zig3d-widgets'),
+                ],
+                'description' => __('هم‌عرض یعنی عرض همهٔ ارقام یکی است، پس با عوض‌شدن قیمت چیدمان نمی‌پرد. اگر فونت شما این ویژگی را نداشته باشد، تفاوتی دیده نمی‌شود.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-price' => 'font-variant-numeric: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'unit_feature_heading',
+            [
+                'label'     => __('نماد واحد پول', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
+        /*
+         * ست‌های سبکیِ فونت روی واحد پول.
+         *
+         * فونت‌های فارسی معمولاً یک «ست سبکی» دارند که واژهٔ «تومان» و «ریال»
+         * را به نماد تک‌گلیفشان تبدیل می‌کند. متن در HTML همان واژه می‌ماند —
+         * یعنی قابل کپی، قابل جست‌وجو و قابل خواندن برای صفحه‌خوان — و فقط
+         * شکلِ نمایشش عوض می‌شود. این خیلی بهتر از گذاشتنِ خودِ کاراکتر نماد
+         * در متن است، چون آن کاراکتر در فونت‌هایی که ندارندش به مربع تبدیل
+         * می‌شود.
+         *
+         * شمارهٔ ست بین فونت‌ها فرق می‌کند و هیچ استانداردی ندارد، برای همین
+         * گزینهٔ «دلخواه» هم هست.
+         */
+        $this->add_control(
+            'unit_feature',
+            [
+                'label'       => __('ست سبکی فونت', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SELECT,
+                'default'     => '',
+                'options'     => [
+                    ''     => __('بدون تغییر', 'zig3d-widgets'),
+                    'ss01' => 'ss01',
+                    'ss02' => 'ss02',
+                    'ss03' => 'ss03',
+                    'ss04' => 'ss04',
+                    'ss05' => 'ss05',
+                    'ss06' => __('ss06 — معمولاً نماد تومان و ریال', 'zig3d-widgets'),
+                    'ss07' => 'ss07',
+                    'ss08' => 'ss08',
+                ],
+                'description' => __('شمارهٔ ست در هر فونت فرق می‌کند و استانداردی ندارد؛ اگر تفاوتی ندیدید شمارهٔ دیگری را امتحان کنید یا از راهنمای فونت‌تان بخوانید.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-price__unit' => 'font-feature-settings: "{{VALUE}}";'],
+            ]
+        );
+
+        /*
+         * فیلد دلخواه، همیشه در دسترس و بدون شرط.
+         *
+         * نسخهٔ اولِ این بخش، «دلخواه» را یک گزینه در همان دراپ‌داون گذاشته
+         * بود و کنترل را به مقدار خودش مشروط می‌کرد — که یعنی به‌محض انتخاب
+         * «دلخواه»، خودِ دراپ‌داون از پنل غیب می‌شد و راه برگشتی نمی‌ماند.
+         *
+         * حالا هر دو همیشه دیده می‌شوند. چون این یکی دیرتر ثبت می‌شود،
+         * قاعده‌اش هم دیرتر تولید می‌شود و روی همان ویژگی بر انتخاب بالا
+         * می‌چربد — که دقیقاً همان چیزی است که از یک فیلد «دلخواه» انتظار
+         * می‌رود.
+         */
+        $this->add_control(
+            'unit_feature_custom',
+            [
+                'label'       => __('ویژگی‌های دلخواه', 'zig3d-widgets'),
+                'type'        => Controls_Manager::TEXT,
+                'placeholder' => '"ss06", "ss02"',
+                'description' => __('اگر پر شود بر انتخاب بالا می‌چربد. عیناً همان چیزی که در ‎font-feature-settings‎ می‌نویسید، با گیومه و کاما.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-price__unit' => 'font-feature-settings: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'unit_offset',
+            [
+                'label'       => __('جابه‌جایی عمودی واحد', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px', 'em'],
+                'range'       => [
+                    'px' => ['min' => -20, 'max' => 20],
+                    'em' => ['min' => -1, 'max' => 1, 'step' => 0.05],
+                ],
+                'separator'   => 'before',
+                'description' => __('نمادِ تک‌گلیف معمولاً روی خط پایه طور دیگری می‌نشیند؛ با این می‌شود دقیق هم‌ترازش کرد.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-price__unit' => 'transform: translateY({{SIZE}}{{UNIT}});'],
+            ]
+        );
 
         $this->end_controls_section();
     }

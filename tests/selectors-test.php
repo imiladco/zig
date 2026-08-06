@@ -58,7 +58,7 @@ foreach ($widgets as $label => $class) {
 
     $leaked = [];
 
-    foreach ($selectors as [$control, $selector]) {
+    foreach ($selectors as [$control, $selector, $rule]) {
         foreach (explode(',', $selector) as $part) {
             $part = trim($part);
 
@@ -85,7 +85,7 @@ foreach ($widgets as $label => $class) {
      */
     $duplicated = [];
 
-    foreach ($selectors as [$control, $selector]) {
+    foreach ($selectors as [$control, $selector, $rule]) {
         $parts = array_map('trim', explode(',', $selector));
 
         if (count($parts) !== count(array_unique($parts))) {
@@ -142,3 +142,81 @@ Tests::same(
 
 Tests::same('فرزند خالی، والد را دست‌نخورده برمی‌گرداند', Selector::descend('{{W}} .a', '  '), '{{W}} .a');
 Tests::same('والد خالی، رشتهٔ خالی', Selector::descend('  ', '.b'), '');
+
+/* ==========================================================================
+ * سیم‌کشیِ کنترل‌های تایپوگرافیک قیمت
+ * ======================================================================= */
+
+/*
+ * این‌ها فقط CSS تولید می‌کنند و هیچ اثری در خروجی رندر ندارند، پس تنها
+ * راه سنجیدنشان همین است: کدام کنترل، کدام ویژگی را، روی کدام عنصر
+ * می‌نویسد. اشتباه در هر سه، بی‌سروصدا بی‌اثر می‌ماند.
+ */
+
+Tests::group('سلکتور › ارقام و فونت قیمت');
+
+$price_rules = [];
+
+foreach (zig_collect_selectors(\Zig3d_Widgets\Widgets\Product_Price::class) as [$control, $selector, $rule]) {
+    $price_rules[$control][] = $selector . ' ⇒ ' . $rule;
+}
+
+Tests::ok(
+    'نوع ارقام روی ریشهٔ قیمت می‌نشیند',
+    isset($price_rules['figures'][0])
+        && false !== strpos($price_rules['figures'][0], '{{WRAPPER}} .zig-price ⇒ font-variant-numeric'),
+    $price_rules['figures'][0] ?? 'ثبت نشده'
+);
+
+/*
+ * روی ریشه و نه روی ‎.zig-price__amount‎: عدد داخل بج تخفیف span جدا ندارد،
+ * پس اگر روی amount می‌نشست، دو عدد در یک ردیف دو جور رندر می‌شدند.
+ */
+Tests::ok(
+    'و نه فقط روی عدد، تا بج هم یکدست بماند',
+    isset($price_rules['figures'][0]) && false === strpos($price_rules['figures'][0], '__amount'),
+    $price_rules['figures'][0] ?? ''
+);
+
+Tests::ok(
+    'ست سبکی روی واحد پول می‌نشیند',
+    isset($price_rules['unit_feature'][0])
+        && false !== strpos($price_rules['unit_feature'][0], '{{WRAPPER}} .zig-price__unit ⇒ font-feature-settings'),
+    $price_rules['unit_feature'][0] ?? 'ثبت نشده'
+);
+
+// مقدار باید داخل گیومه برود، وگرنه font-feature-settings آن را نمی‌پذیرد
+Tests::ok(
+    'شمارهٔ ست داخل گیومه قرار می‌گیرد',
+    isset($price_rules['unit_feature'][0])
+        && false !== strpos($price_rules['unit_feature'][0], '"{{VALUE}}"'),
+    $price_rules['unit_feature'][0] ?? ''
+);
+
+/*
+ * فیلد دلخواه باید دیرتر از دراپ‌داون ثبت شود؛ ترتیبِ ثبت همان ترتیب تولید
+ * CSS است و تنها چیزی است که «دلخواه بر انتخاب می‌چربد» را تضمین می‌کند.
+ */
+$order  = array_keys($price_rules);
+$select = array_search('unit_feature', $order, true);
+$custom = array_search('unit_feature_custom', $order, true);
+
+Tests::ok(
+    'فیلد دلخواه بعد از دراپ‌داون ثبت می‌شود',
+    false !== $select && false !== $custom && $custom > $select,
+    sprintf('دراپ‌داون %s، دلخواه %s', var_export($select, true), var_export($custom, true))
+);
+
+Tests::ok(
+    'و بدون گیومه، چون کاربر خودش می‌نویسد',
+    isset($price_rules['unit_feature_custom'][0])
+        && false === strpos($price_rules['unit_feature_custom'][0], '"{{VALUE}}"'),
+    $price_rules['unit_feature_custom'][0] ?? ''
+);
+
+Tests::ok(
+    'جابه‌جایی عمودی هم روی واحد است',
+    isset($price_rules['unit_offset'][0])
+        && false !== strpos($price_rules['unit_offset'][0], '.zig-price__unit ⇒ transform'),
+    $price_rules['unit_offset'][0] ?? 'ثبت نشده'
+);

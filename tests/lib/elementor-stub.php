@@ -68,7 +68,7 @@ class Widget_Base {
 
         // گروه‌کنترل‌ها سلکتورهایشان را از همین یک رشته می‌سازند
         if (isset($args['selector'])) {
-            $GLOBALS['ZIG_SELECTORS'][] = [$name, (string) $args['selector']];
+            $GLOBALS['ZIG_SELECTORS'][] = [$name, (string) $args['selector'], ''];
         }
     }
 
@@ -80,7 +80,7 @@ class Widget_Base {
      */
     private static function zig_record_selectors($name, $args) {
         foreach ((array) ($args['selectors'] ?? []) as $selector => $rule) {
-            $GLOBALS['ZIG_SELECTORS'][] = [$name, (string) $selector];
+            $GLOBALS['ZIG_SELECTORS'][] = [$name, (string) $selector, (string) $rule];
         }
     }
     public function start_controls_section($name, $args = []) { $GLOBALS['ZIG'][] = 'SECTION:' . $name; }
@@ -244,7 +244,7 @@ namespace {
     /**
      * همهٔ سلکتورهایی که یک ویجت تولید می‌کند.
      *
-     * @return array<int,array{0:string,1:string}> [نام کنترل، سلکتور]
+     * @return array<int,array{0:string,1:string,2:string}> [نام کنترل، سلکتور، قاعده]
      */
     function zig_collect_selectors(string $class): array {
         $GLOBALS['ZIG_SELECTORS'] = [];
