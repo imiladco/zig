@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 /**
  * هستهٔ افزونه: ثبت دسته، ویجت‌ها و دارایی‌ها.
  *
- * افزونه عمداً هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند. هر چهار ویجت کاملاً
+ * افزونه عمداً هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند. هر پنج ویجت کاملاً
  * با CSS کار می‌کنند: حالت‌های هاور و فوکوس و افکت‌ها همه اعلانی‌اند. یعنی
  * صفر بایت JS، بدون هزینهٔ اجرا روی نخ اصلی و بدون هیچ وابستگی‌ای که بتواند
  * نصفه‌کاره بماند.
@@ -28,6 +28,7 @@ final class Plugin {
         'bullet-list'   => Widgets\Bullet_List::class,
         'button'        => Widgets\Button::class,
         'product-price' => Widgets\Product_Price::class,
+        'product-stock' => Widgets\Product_Stock::class,
     ];
 
     public static function instance(): self {
@@ -78,16 +79,18 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/svg.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/markup.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
 
         foreach (self::WIDGETS as $file => $class) {
             /*
-             * ویجت قیمت بدون ووکامرس فقط یک ورودی بی‌فایده در پنل است که
-             * کاربر رویش کلیک می‌کند و چیزی نمی‌بیند. پس اصلاً ثبت نمی‌شود.
+             * ویجت‌های فروشگاهی بدون ووکامرس فقط ورودی‌های بی‌فایده‌ای در
+             * پنل‌اند که کاربر رویشان کلیک می‌کند و چیزی نمی‌بیند. پس اصلاً
+             * ثبت نمی‌شوند.
              */
-            if ('product-price' === $file && !class_exists('WooCommerce')) {
+            if (0 === strpos($file, 'product-') && !class_exists('WooCommerce')) {
                 continue;
             }
 

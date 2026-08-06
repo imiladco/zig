@@ -21,6 +21,7 @@ $root = dirname(__DIR__);
 require_once $root . '/includes/svg.php';
 require_once $root . '/includes/markup.php';
 require_once $root . '/includes/price.php';
+require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
@@ -28,12 +29,14 @@ require_once $root . '/includes/widgets/feature-card.php';
 require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
+require_once $root . '/includes/widgets/product-stock.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
     'لیست عنوان‌ها' => \Zig3d_Widgets\Widgets\Bullet_List::class,
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
+    'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
 ];
 
 foreach ($widgets as $label => $class) {

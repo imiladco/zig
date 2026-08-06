@@ -16,6 +16,7 @@ $root = dirname(__DIR__);
 require_once $root . '/includes/svg.php';
 require_once $root . '/includes/markup.php';
 require_once $root . '/includes/price.php';
+require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
@@ -23,11 +24,14 @@ require_once $root . '/includes/widgets/feature-card.php';
 require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
+require_once $root . '/includes/widgets/product-stock.php';
 
 use Zig3d_Widgets\Widgets\Bullet_List;
 use Zig3d_Widgets\Widgets\Button;
 use Zig3d_Widgets\Widgets\Feature_Card;
 use Zig3d_Widgets\Widgets\Product_Price;
+use Zig3d_Widgets\Widgets\Product_Stock;
+use Zig3d_Widgets\Stock;
 
 /** یک نمونهٔ تازه از ویجت، بدون سازندهٔ المنتور */
 function zig_widget(string $class) {
@@ -416,3 +420,150 @@ Tests::keeps('واحد پول هم اعلام می‌شود', $schema, 'priceCur
 $no_schema = zig_render(Product_Price::class, ['product_id' => 9101]);
 
 Tests::blocks('پیش‌فرض خاموش است', $no_schema, 'itemprop');
+
+/* ==========================================================================
+ * وضعیت موجودی
+ * ======================================================================= */
+
+Tests::group('رندر › وضعیت موجودی');
+
+zig_reset_products();
+
+/** تنظیمات پایه با متن‌های پیش‌فرض هر وضعیت */
+function zig_stock_settings(array $overrides = []): array {
+    return $overrides + [
+        'show_bullet'          => 'yes',
+        'bullet_shape'         => 'circle',
+        'enable_backorder'     => 'yes',
+        'persian_digits'       => 'yes',
+        'text_instock'         => 'موجود در انبار',
+        'text_lowstock'        => 'تنها {qty} عدد باقی مانده',
+        'text_available'       => 'موجود در انبار',
+        'text_onbackorder'     => 'قابل سفارش',
+        'text_outofstock'      => 'تماس برای موجودی',
+    ];
+}
+
+new WC_Product(['id' => 8001, 'status' => 'instock', 'managing' => true, 'qty' => 5]);
+
+$in = zig_render(Product_Stock::class, zig_stock_settings(['product_id' => 8001]));
+
+Tests::keeps('کلاس وضعیت روی ریشه می‌نشیند', $in, 'zig-stock--instock');
+Tests::keeps('متن وضعیت رندر می‌شود', $in, 'موجود در انبار');
+Tests::keeps('نشان رندر می‌شود', $in, 'zig-stock__bullet--circle');
+Tests::keeps('نشان تزئینی است', $in, 'aria-hidden="true"');
+
+// «در نهایت فقط یک وضعیت نمایش داده می‌شود»
+Tests::same('فقط یک وضعیت رندر می‌شود', substr_count($in, 'class="zig-stock zig-stock--'), 1);
+Tests::blocks('و متن وضعیت‌های دیگر نمی‌آید', $in, 'تماس برای موجودی');
+
+new WC_Product(['id' => 8002, 'status' => 'outofstock', 'in_stock' => false]);
+
+$out = zig_render(Product_Stock::class, zig_stock_settings(['product_id' => 8002]));
+
+Tests::keeps('ناموجود کلاس خودش را می‌گیرد', $out, 'zig-stock--outofstock');
+Tests::keeps('و متن خودش را', $out, 'تماس برای موجودی');
+Tests::blocks('و متن موجود نمی‌آید', $out, 'موجود در انبار');
+
+new WC_Product(['id' => 8003, 'status' => 'onbackorder', 'in_stock' => true]);
+
+$back = zig_render(Product_Stock::class, zig_stock_settings(['product_id' => 8003]));
+
+Tests::keeps('پیش‌خرید کلاس خودش را می‌گیرد', $back, 'zig-stock--onbackorder');
+Tests::keeps('و متن «قابل سفارش»', $back, 'قابل سفارش');
+
+$back_off = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id' => 8003, 'enable_backorder' => '',
+]));
+
+Tests::keeps('با خاموش بودن، به وضعیت «موجود» می‌افتد', $back_off, 'zig-stock--available');
+Tests::blocks('و متن پیش‌خرید نمی‌آید', $back_off, 'قابل سفارش');
+
+Tests::group('رندر › موجودی، جای‌گذاری تعداد');
+
+new WC_Product(['id' => 8004, 'status' => 'instock', 'managing' => true, 'qty' => 2, 'low' => 3]);
+
+$low = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id' => 8004, 'enable_lowstock' => 'yes',
+]));
+
+Tests::keeps('تعداد در متن می‌نشیند', $low, 'تنها ۲ عدد باقی مانده');
+
+$latin = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id' => 8004, 'enable_lowstock' => 'yes', 'persian_digits' => '',
+]));
+
+Tests::keeps('ارقام لاتین هم پشتیبانی می‌شود', $latin, 'تنها 2 عدد');
+
+/*
+ * وقتی تعدادی در کار نیست، نشانه و فاصله‌های دو طرفش با هم حذف می‌شوند —
+ * وگرنه «تنها  عدد» با دو فاصله چاپ می‌شد.
+ */
+new WC_Product(['id' => 8005, 'status' => 'instock', 'managing' => false]);
+
+$no_qty = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id'     => 8005,
+    'text_available' => 'موجود {qty} در انبار',
+]));
+
+Tests::keeps('نشانهٔ تعداد بدون فاصلهٔ اضافه حذف می‌شود', $no_qty, 'موجود در انبار');
+Tests::blocks('و {qty} خام باقی نمی‌ماند', $no_qty, '{qty}');
+
+Tests::group('رندر › موجودی، حالت‌های مرزی');
+
+Tests::same(
+    'وضعیت پنهان‌شده چیزی رندر نمی‌کند',
+    trim(zig_render(Product_Stock::class, zig_stock_settings([
+        'product_id'    => 8002,
+        'hidden_states' => [Stock::OUT_OF_STOCK],
+    ]))),
+    ''
+);
+
+Tests::same(
+    'متن خالی هم چیزی رندر نمی‌کند',
+    trim(zig_render(Product_Stock::class, zig_stock_settings([
+        'product_id'      => 8002,
+        'text_outofstock' => '   ',
+    ]))),
+    ''
+);
+
+Tests::same(
+    'محصول ناموجود در سایت چیزی رندر نمی‌کند',
+    trim(zig_render(Product_Stock::class, zig_stock_settings(['product_id' => 999999]))),
+    ''
+);
+
+$no_bullet = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id' => 8001, 'show_bullet' => '',
+]));
+
+Tests::blocks('بدون نشان، عنصر نشان رندر نمی‌شود', $no_bullet, 'zig-stock__bullet');
+Tests::keeps('ولی متن سر جایش است', $no_bullet, 'موجود در انبار');
+
+Tests::group('رندر › موجودی، اسکیپ و اسکیما');
+
+$dirty_stock = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id'   => 8001,
+    'text_instock' => 'موجود <script>alert(1)</script> <span class="ok">حالا</span>',
+    'bullet_shape' => 'circle" onload="alert(1)',
+]));
+
+Tests::blocks('اسکریپت داخل متن وضعیت حذف می‌شود', $dirty_stock, '<script');
+Tests::keeps('span مجاز باقی می‌ماند', $dirty_stock, '<span class="ok">');
+Tests::blocks('شکل دستکاری‌شده ویژگی تازه نمی‌سازد', $dirty_stock, 'onload=');
+
+$schema_stock = zig_render(Product_Stock::class, zig_stock_settings([
+    'product_id' => 8001, 'schema' => 'yes',
+]));
+
+Tests::keeps('اسکیمای Offer اعلام می‌شود', $schema_stock, 'schema.org/Offer');
+Tests::keeps('و وضعیت موجودی به‌صورت لینک', $schema_stock, 'itemprop="availability"');
+Tests::keeps('با نشانی درست', $schema_stock, 'schema.org/InStock');
+
+Tests::blocks(
+    'پیش‌فرض خاموش است',
+    zig_render(Product_Stock::class, zig_stock_settings(['product_id' => 8001])),
+    'itemprop'
+);

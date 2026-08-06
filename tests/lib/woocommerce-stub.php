@@ -46,6 +46,13 @@ namespace {
                     'suffix'     => '',
                     'min'        => '',
                     'max'        => '',
+                    // موجودی
+                    'status'    => 'instock',
+                    'in_stock'  => null,   // null = از status حساب شود
+                    'managing'  => false,
+                    'qty'       => null,
+                    'backorder' => false,
+                    'low'       => '',
                 ];
 
                 if ($this->props['id']) {
@@ -67,6 +74,34 @@ namespace {
 
             public function get_variation_price($which = 'min', $display = false) {
                 return $this->props['max' === $which ? 'max' : 'min'];
+            }
+
+            /* ---------------------- موجودی ---------------------- */
+
+            public function get_stock_status() { return $this->props['status']; }
+            public function managing_stock() { return (bool) $this->props['managing']; }
+            public function get_stock_quantity() { return $this->props['qty']; }
+            public function get_low_stock_amount() { return $this->props['low']; }
+
+            /**
+             * پیش‌فرضِ ووکامرس: هم ‎instock‎ و هم ‎onbackorder‎ «موجود» حساب
+             * می‌شوند. همین رفتار است که تشخیص وضعیت را غیربدیهی می‌کند، پس
+             * استاب هم باید همان را داشته باشد وگرنه تست چیز دیگری می‌سنجد.
+             */
+            public function is_in_stock() {
+                if (null !== $this->props['in_stock']) {
+                    return (bool) $this->props['in_stock'];
+                }
+
+                return in_array($this->props['status'], ['instock', 'onbackorder'], true);
+            }
+
+            public function is_on_backorder($qty_in_cart = 0) {
+                if (!$this->props['backorder'] || !$this->props['managing']) {
+                    return false;
+                }
+
+                return (int) $this->props['qty'] - (int) $qty_in_cart < 1;
             }
         }
     }
@@ -112,6 +147,11 @@ namespace {
     }
     if (!function_exists('get_queried_object_id')) {
         function get_queried_object_id() { return $GLOBALS['__zig_queried'] ?? 0; }
+    }
+    if (!function_exists('get_option')) {
+        function get_option($name, $default = false) {
+            return $GLOBALS['__zig_options'][$name] ?? $default;
+        }
     }
     if (!function_exists('get_the_ID')) {
         function get_the_ID() { return $GLOBALS['__zig_post'] ?? 0; }

@@ -585,6 +585,117 @@ a.zig-list__label:focus-visible {
 }
 
 /* ==========================================================================
+   وضعیت موجودی
+   ========================================================================== */
+
+.zig-stock-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.zig-stock {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	max-width: 100%;
+	line-height: 1.6;
+}
+
+.zig-stock__label {
+	overflow-wrap: anywhere;
+}
+
+/*
+ * نشان همان قواعد بولتِ فهرست را دنبال می‌کند تا دو ویجت ظاهر یکدست
+ * داشته باشند، ولی کلاس‌شان جداست چون اندازه و رنگشان مستقل تنظیم می‌شود.
+ *
+ * رنگ پیش‌فرض ‎currentColor‎ است: بدون هیچ تنظیمی، نشان هم‌رنگ متنِ همان
+ * وضعیت درمی‌آید. یعنی تنظیم رنگِ وضعیت به‌تنهایی کافی است.
+ */
+.zig-stock__bullet {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: var(--zig-bullet-size, 8px);
+	height: var(--zig-bullet-size, 8px);
+	color: var(--zig-bullet-color, currentColor);
+	background-color: currentColor;
+	transform: translateY(var(--zig-bullet-offset, 0));
+}
+
+.zig-stock__bullet--circle {
+	border-radius: 50%;
+}
+
+.zig-stock__bullet--rounded {
+	border-radius: 30%;
+}
+
+.zig-stock__bullet--diamond {
+	transform: translateY(var(--zig-bullet-offset, 0)) rotate(45deg);
+}
+
+.zig-stock__bullet--dash {
+	width: calc(var(--zig-bullet-size, 8px) * 2);
+	height: max(2px, calc(var(--zig-bullet-size, 8px) / 3));
+	border-radius: 999px;
+}
+
+/* حلقه: پس‌زمینه برداشته می‌شود و خودِ حاشیه شکل را می‌سازد */
+.zig-stock__bullet--ring {
+	background-color: transparent;
+	border: max(1px, calc(var(--zig-bullet-size, 8px) / 4)) solid currentColor;
+	border-radius: 50%;
+}
+
+/*
+ * تپش.
+ *
+ * روی شبه‌عنصر است تا نه گره‌ای به DOM اضافه شود و نه خودِ نشان تغییر
+ * اندازه بدهد (که چیدمان را می‌لرزاند). هالهٔ بزرگ‌شونده محو می‌شود و
+ * ‎pointer-events: none‎ جلوی گرفتن کلیک را می‌گیرد.
+ */
+.zig-stock--pulse .zig-stock__bullet {
+	position: relative;
+}
+
+.zig-stock--pulse .zig-stock__bullet::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background-color: currentColor;
+	animation: zig-stock-pulse 1.8s ease-out infinite;
+	pointer-events: none;
+}
+
+@keyframes zig-stock-pulse {
+	0% {
+		opacity: 0.55;
+		transform: scale(1);
+	}
+
+	70%,
+	100% {
+		opacity: 0;
+		transform: scale(2.6);
+	}
+}
+
+/*
+ * ضربان یک حرکت تکرارشوندهٔ بی‌پایان است — دقیقاً همان چیزی که تنظیم
+ * «حرکت کمتر» برای حذفش وجود دارد. متن و رنگ می‌مانند، پس هیچ اطلاعاتی از
+ * دست نمی‌رود.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.zig-stock--pulse .zig-stock__bullet::after {
+		display: none;
+	}
+}
+
+/* ==========================================================================
    چاپ
    ========================================================================== */
 
