@@ -89,6 +89,20 @@ Tests::same('تاکسونومی مجاز خوانده می‌شود', $state->se
  */
 Tests::same('تاکسونومیِ خارج از فهرست سفید نادیده گرفته می‌شود', $state->selected('pa_secret'), []);
 
+/*
+ * ‎query_type_*‎ نوشته می‌شود ولی خوانده نمی‌شود. اپراتور یک تصمیم طرحِ
+ * فیلتر است؛ اگر آدرس هم می‌توانست عوضش کند، بازدیدکننده می‌توانست معنای
+ * فیلتری را عوض کند که مدیر عمداً روی AND گذاشته.
+ */
+Tests::same(
+    'اپراتور از آدرس خوانده نمی‌شود',
+    Query_State::from_request(
+        ['filter_brand' => 'a,b', 'query_type_brand' => 'and'],
+        ['pa_brand']
+    )->to_query_vars(),
+    ['filter_brand' => 'a,b', 'query_type_brand' => 'or']
+);
+
 Tests::same('ترتیب خوانده می‌شود', $state->sort(), 'price');
 Tests::same('صفحه خوانده می‌شود', $state->page(), 3);
 
@@ -127,6 +141,44 @@ Tests::same(
     Query_State::create(['pa_brand' => ['up3d']], 'price', 2)->to_query_vars(),
     ['filter_brand' => 'up3d', 'orderby' => 'price', 'paged' => '2']
 );
+
+/* --------------------------------------------------------------------------
+ * اپراتور در آدرس
+ *
+ * ووکامرس وقتی ‎query_type_*‎ نباشد ‎and‎ فرض می‌کند
+ * (‎WC_Query::get_layered_nav_chosen_attributes()‎). یعنی
+ * ‎?filter_brand=up3d,vhf‎ به‌تنهایی «هم UP3D و هم VHF» است — که برای دو
+ * برند همیشه صفر نتیجه می‌دهد. لینکِ اشتراکی، رندر سمت سرور، دکمهٔ back و
+ * حالت بدون جاوااسکریپت همه از همین آدرس می‌خوانند.
+ * ----------------------------------------------------------------------- */
+
+Tests::same(
+    'دو ترم در یک گروه، اپراتور را صریح می‌نویسد',
+    Query_State::create(['pa_brand' => ['up3d', 'vhf']])->to_query_vars(),
+    ['filter_brand' => 'up3d,vhf', 'query_type_brand' => 'or']
+);
+
+/*
+ * با یک ترم، ‎and‎ و ‎or‎ دقیقاً یک نتیجه می‌دهند. نوشتنش فقط یک آدرس دوم
+ * برای همان محتوا می‌ساخت که canonical باید حلش می‌کرد.
+ */
+Tests::same(
+    'با یک ترم نوشته نمی‌شود',
+    Query_State::create(['pa_brand' => ['up3d']])->to_query_vars(),
+    ['filter_brand' => 'up3d']
+);
+
+/*
+ * گروهی که مدیر عمداً روی AND گذاشته، همان پیش‌فرض ووکامرس است و چیزی
+ * لازم ندارد.
+ */
+Tests::same(
+    'گروه AND چیزی اضافه نمی‌کند',
+    Query_State::create(['pa_fit' => ['x', 'y']])->to_query_vars(['pa_fit' => 'and']),
+    ['filter_fit' => 'x,y']
+);
+
+Tests::same('pa_brand ⇒ query_type_brand', Query_State::query_type_for('pa_brand'), 'query_type_brand');
 
 /* ==========================================================================
  * تغییر وضعیت

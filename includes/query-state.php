@@ -27,6 +27,22 @@ final class Query_State {
     /** پیشوند پارامتر فیلتر در آدرس، مطابق ووکامرس */
     public const FILTER_PREFIX = 'filter_';
 
+    /**
+     * پیشوند پارامتر اپراتور، مطابق ووکامرس.
+     *
+     * وجودش اختیاری نیست. ووکامرس وقتی این پارامتر نباشد، ‎and‎ فرض می‌کند:
+     *
+     *     $chosen[$taxonomy]['query_type'] = $query_type
+     *         ? $query_type
+     *         : apply_filters('woocommerce_layered_nav_default_query_type', 'and');
+     *                                                                      ^^^^^
+     *
+     * یعنی ‎?filter_brand=up3d,vhf‎ به‌تنهایی «هم UP3D و هم VHF» معنا
+     * می‌دهد — که برای دو برند، همیشه صفر نتیجه است. ما درون هر گروه ‎OR‎
+     * می‌خواهیم، پس باید صریح بگوییم.
+     */
+    public const QUERY_TYPE_PREFIX = 'query_type_';
+
     /** پیشوندی که ووکامرس به تاکسونومیِ ویژگی‌ها می‌دهد */
     public const ATTRIBUTE_PREFIX = 'pa_';
 
@@ -68,6 +84,13 @@ final class Query_State {
      * فهرست سفید اجباری است و پیش‌فرضی ندارد. بدون آن، هر پارامتری که با
      * ‎filter_‎ شروع شود به یک ‎tax_query‎ تبدیل می‌شد و کافی بود کسی
      * ‎?filter_anything=x‎ صدا بزند تا کوئری‌های دلخواه بسازد.
+     *
+     * ‎query_type_*‎ عمداً خوانده نمی‌شود، با اینکه نوشته می‌شود. اپراتور هر
+     * گروه یک تصمیم طرحِ فیلتر است و از ‎Filter_Schema‎ می‌آید؛ اگر آدرس هم
+     * می‌توانست عوضش کند، دو منبع برای یک چیز داشتیم و بازدیدکننده می‌توانست
+     * با دست‌کاری آدرس، معنای فیلتری را عوض کند که مدیر عمداً روی ‎AND‎
+     * گذاشته. نوشتنش فقط برای این است که ابزارک‌های خودِ ووکامرس همان لینک
+     * را درست بخوانند.
      *
      * @param array    $params        معمولاً ‎$_GET‎ — خام و غیرقابل‌اعتماد.
      * @param string[] $taxonomies    تاکسونومی‌های مجاز، مثل ‎pa_brand‎.
@@ -217,13 +240,29 @@ final class Query_State {
      * آدرس خام دسته بماند؛ وگرنه دو آدرس متفاوت با یک محتوا می‌ساختیم و
      * canonical باید مشکلی را حل می‌کرد که خودمان درست کرده‌ایم.
      *
+     * ‎query_type_*‎ فقط وقتی نوشته می‌شود که واقعاً نتیجه را عوض کند: با یک
+     * ترم انتخاب‌شده، ‎and‎ و ‎or‎ دقیقاً یک چیزند و نوشتنش فقط یک آدرسِ
+     * دوم برای همان محتوا می‌ساخت.
+     *
+     * @param array<string,string> $operators تاکسونومی ⇒ ‎or‎ / ‎and‎
      * @return array<string,string>
      */
-    public function to_query_vars(): array {
+    public function to_query_vars(array $operators = []): array {
         $vars = [];
 
         foreach ($this->filters as $taxonomy => $terms) {
             $vars[self::param_for($taxonomy)] = implode(',', $terms);
+
+            if (count($terms) < 2) {
+                continue;
+            }
+
+            $operator = strtolower((string) ($operators[$taxonomy] ?? 'or'));
+
+            // ‎and‎ همان پیش‌فرض ووکامرس است و نوشتنش چیزی اضافه نمی‌کند
+            if ('and' !== $operator) {
+                $vars[self::query_type_for($taxonomy)] = 'or';
+            }
         }
 
         if ('' !== $this->sort) {
@@ -274,6 +313,11 @@ final class Query_State {
         }
 
         return self::FILTER_PREFIX . $taxonomy;
+    }
+
+    /** ‎pa_brand‎ ⇒ ‎query_type_brand‎ */
+    public static function query_type_for(string $taxonomy): string {
+        return self::QUERY_TYPE_PREFIX . substr(self::param_for($taxonomy), strlen(self::FILTER_PREFIX));
     }
 
     /**
@@ -348,24 +392,46 @@ final class Query_State {
         return explode(',', (string) $value);
     }
 
-    /** نام تاکسونومی: فقط حروف کوچک، عدد، خط تیره و زیرخط */
+    /**
+     * نام تاکسونومی.
+     *
+     * وقتی ووکامرس هست، از تابع خودش استفاده می‌شود. این وسواس نیست: کل
+     * ارزش پذیرفتن قرارداد آدرس ووکامرس به این است که *دقیقاً* همان‌طور
+     * خوانده شود. یک تفاوت کوچک در پاک‌سازی یعنی لینکی که ابزارک ووکامرس
+     * ساخته، اینجا به فیلتر دیگری (یا هیچ) تبدیل می‌شود.
+     */
     private static function key(string $value): string {
-        return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim($value)));
+        $value = trim($value);
+
+        if (function_exists('wc_sanitize_taxonomy_name')) {
+            return (string) wc_sanitize_taxonomy_name($value);
+        }
+
+        return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower($value));
     }
 
     /**
      * اسلاگ ترم.
      *
-     * برخلاف نام تاکسونومی، اینجا حروف غیرلاتین باید بمانند: اسلاگ فارسی
-     * («۵-محور») در وردپرس کاملاً معتبر است و پاک‌کردنش یعنی آن فیلتر هرگز
-     * چیزی پیدا نمی‌کند. پس فقط کاراکترهایی حذف می‌شوند که در آدرس یا
-     * کوئری معنای ساختاری دارند.
+     * باز هم از خودِ وردپرس: ووکامرس روی همین مقادیر ‎sanitize_title()‎
+     * اجرا می‌کند و اسلاگ‌های غیرلاتین در دیتابیس به همان شکلِ کدشده ذخیره
+     * شده‌اند. اگر خودمان چیز دیگری بسازیم، اسلاگ فارسی هیچ‌وقت با ردیف
+     * دیتابیس نمی‌خورد و فیلتر بی‌سروصدا هیچ نتیجه‌ای نمی‌دهد.
+     *
+     * جایگزینِ بدون وردپرس فقط برای تست است و ادعای برابری ندارد.
      */
     private static function slug(string $value): string {
-        $value = trim(rawurldecode($value));
-        $value = (string) preg_replace('/[\x00-\x1F\x7F<>"\'`\\\\\/&?#,|=\s]+/u', '', $value);
+        $value = trim($value);
 
-        return $value;
+        if ('' === $value) {
+            return '';
+        }
+
+        if (function_exists('sanitize_title')) {
+            return (string) sanitize_title($value);
+        }
+
+        return (string) preg_replace('/[\x00-\x1F\x7F<>"\'`\\\\\/&?#,|=\s]+/u', '', rawurldecode($value));
     }
 
     /** کلید ترتیب: مثل نام تاکسونومی، ولی نقطه هم مجاز است */
