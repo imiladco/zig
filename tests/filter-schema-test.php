@@ -216,6 +216,31 @@ Tests::same(
     Facets::OP_AND
 );
 
+/*
+ * معنای فست. پیش‌فرض «ویژگی محصول» است و امروز تنها مسیرِ ساخته‌شده.
+ *
+ * وجود این کلید یک تصمیم رو به آینده است: فیلتری مثل «رنگ موجود» سؤال
+ * دیگری می‌پرسد و اگر بی‌سروصدا سوار مسیر محصول شود، ادعای «موجود» دارد و
+ * ناموجود هم برمی‌گرداند — با عددی که کاملاً معقول به نظر می‌رسد.
+ */
+Tests::same(
+    'معنای پیش‌فرض، ویژگی محصول است',
+    Filter_Schema::sanitize_facets([['taxonomy' => 'pa_brand']])[0]['semantics'],
+    Facets::SEMANTICS_PRODUCT
+);
+
+Tests::same(
+    'معنای موجودیِ گزینه هم قابل بیان است',
+    Filter_Schema::sanitize_facets([['taxonomy' => 'pa_color', 'semantics' => 'variation']])[0]['semantics'],
+    Facets::SEMANTICS_VARIATION
+);
+
+Tests::same(
+    'مقدار ناشناخته به ویژگی محصول برمی‌گردد',
+    Filter_Schema::sanitize_facets([['taxonomy' => 'pa_x', 'semantics' => 'ghost']])[0]['semantics'],
+    Facets::SEMANTICS_PRODUCT
+);
+
 Tests::same(
     'اپراتور نامعتبر به OR برمی‌گردد',
     Filter_Schema::sanitize_facets([['taxonomy' => 'pa_x', 'operator' => 'xor']])[0]['operator'],

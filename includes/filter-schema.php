@@ -37,6 +37,7 @@ final class Filter_Schema {
         'taxonomy'   => '',
         'operator'   => Facets::OP_OR,
         'show_empty' => false,
+        'semantics'  => Facets::SEMANTICS_PRODUCT,
     ];
 
     /* =====================================================================
@@ -165,8 +166,8 @@ final class Filter_Schema {
      * فهرست کشف‌شده را به شکل گروه فیلتر درمی‌آورد.
      *
      * ورودی می‌تواند فهرست سادهٔ نام تاکسونومی‌ها باشد یا آرایه‌های کامل —
-     * چون لایهٔ کشف بسته به منبعش (جدول جست‌وجو یا پیمایش ترم‌ها) یکی از
-     * این دو را می‌دهد.
+     * چون لایهٔ کشف بسته به اینکه برچسب‌ها را هم آورده باشد یا نه، یکی از
+     * این دو شکل را می‌دهد.
      */
     private static function from_discovered(array $discovered): array {
         $facets = [];
@@ -213,6 +214,15 @@ final class Filter_Schema {
                 'taxonomy'   => $taxonomy,
                 'operator'   => Facets::OP_AND === ($facet['operator'] ?? '') ? Facets::OP_AND : Facets::OP_OR,
                 'show_empty' => !empty($facet['show_empty']),
+                /*
+                 * پیش‌فرض «ویژگی محصول» است و امروز تنها مقدار پشتیبانی‌شده.
+                 * وجودِ این کلید یک تصمیم رو به آینده است: فیلترهایی مثل
+                 * «رنگ موجود» معنای دیگری دارند و باید مسیر خودشان را
+                 * بگیرند، نه اینکه بی‌سروصدا سوار این یکی شوند.
+                 */
+                'semantics'  => Facets::SEMANTICS_VARIATION === ($facet['semantics'] ?? '')
+                    ? Facets::SEMANTICS_VARIATION
+                    : Facets::SEMANTICS_PRODUCT,
             ];
         }
 
