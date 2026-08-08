@@ -157,6 +157,21 @@ namespace {
         function get_the_ID() { return $GLOBALS['__zig_post'] ?? 0; }
     }
 
+    if (!function_exists('wc_get_product_visibility_term_ids')) {
+        function wc_get_product_visibility_term_ids() {
+            return $GLOBALS['__zig_visibility'] ?? [
+                'exclude-from-catalog' => 0,
+                'outofstock'           => 0,
+            ];
+        }
+    }
+
+    if (!function_exists('wp_json_encode')) {
+        function wp_json_encode($value, $flags = 0, $depth = 512) {
+            return json_encode($value, (int) $flags | JSON_UNESCAPED_UNICODE, (int) $depth);
+        }
+    }
+
     /** پاک‌کردن وضعیت بین گروه‌های تست */
     function zig_reset_products(): void {
         \WC_Product::$registry = [];
@@ -165,6 +180,7 @@ namespace {
         $GLOBALS['__zig_is_product'] = false;
         $GLOBALS['__zig_queried']    = 0;
         $GLOBALS['__zig_post']       = 0;
-        unset($GLOBALS['product']);
+        $GLOBALS['__zig_options']    = [];
+        unset($GLOBALS['product'], $GLOBALS['__zig_visibility']);
     }
 }
