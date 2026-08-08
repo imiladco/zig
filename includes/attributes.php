@@ -25,6 +25,15 @@ if (!defined('ABSPATH')) {
  *    برای گروهی با پنجاه برند، یک ‎GROUP BY‎ اجرا می‌شود نه پنجاه کوئری.
  *    این تفاوت روی کاغذ کوچک است و در عمل تفاوت بین صفحه‌ای است که باز
  *    می‌شود و صفحه‌ای که تایم‌اوت می‌دهد.
+ *
+ * هر دو، همان کاری است که ووکامرسِ امروز می‌کند
+ * (‎Internal\ProductFilters\FilterData‎). یک تفاوت عمدی داریم: ووکامرس
+ * شناسه‌ها را می‌خواند و به رشتهٔ کاما‌جدا تبدیل می‌کند، ما همان SQL را
+ * مستقیم به‌عنوان زیرکوئری می‌گذاریم. نتیجه یکی است، ولی مسیر ما یک رفت
+ * و برگشت و یک آرایهٔ بزرگ کمتر دارد.
+ *
+ * جدول ‎wc_product_attributes_lookup‎ عمداً استفاده نمی‌شود — چرایش در
+ * ‎Facets::count_sql()‎ توضیح داده شده.
  */
 final class Attributes {
 
@@ -42,38 +51,6 @@ final class Attributes {
      * دیگر خوانده نمی‌شوند و خودشان منقضی می‌شوند.
      */
     private const VERSION_OPTION = 'zig3d_facet_cache_version';
-
-    /* =====================================================================
-     * در دسترس بودن
-     * =================================================================== */
-
-    public static function lookup_table(): string {
-        global $wpdb;
-
-        return $wpdb->prefix . Facets::LOOKUP_TABLE;
-    }
-
-    /**
-     * آیا جدول جست‌وجوی ویژگی‌های ووکامرس روشن و پر است؟
-     *
-     * نام گزینه از خودِ ووکامرس آمده — ‎Filterer::filtering_via_lookup_table_is_active()‎.
-     * بررسی وجود جدول هم اضافه است چون روشن‌بودن گزینه تضمین نمی‌کند
-     * بازتولید تمام شده باشد؛ جدولِ نیمه‌پر، عددهای کمتر از واقعیت می‌دهد.
-     *
-     * وقتی خاموش است، مسیر جایگزین کندتر است ولی — با شکل کوئری ما —
-     * غلط‌تر نیست. توضیح کامل در ‎Facets::count_sql_terms()‎.
-     */
-    public static function lookup_enabled(): bool {
-        if ('yes' !== get_option('woocommerce_attribute_lookup_enabled', 'no')) {
-            return false;
-        }
-
-        global $wpdb;
-
-        $table = self::lookup_table();
-
-        return (bool) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
-    }
 
     /* =====================================================================
      * کشف
@@ -115,14 +92,20 @@ final class Attributes {
             return [];
         }
 
-        if (self::lookup_enabled()) {
-            $sql = 'SELECT DISTINCT lookup.taxonomy FROM ' . self::lookup_table() . ' AS lookup'
-                . ' WHERE lookup.product_or_parent_id IN (' . $base . ')';
-        } else {
-            $sql = 'SELECT DISTINCT tt.taxonomy FROM ' . $wpdb->term_relationships . ' AS tr'
-                . ' INNER JOIN ' . $wpdb->term_taxonomy . ' AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id'
-                . ' WHERE tr.object_id IN (' . $base . ')';
-        }
+        /*
+         * محدودکردن به فهرست شناخته‌شده در خودِ SQL، نه بعد از خواندن: بدون
+         * آن، هر دسته و برچسب و ترمِ دیده‌شدنِ محصول هم برمی‌گشت و روی
+         * کاتالوگ بزرگ، بیشترِ ردیف‌های خوانده‌شده دور ریخته می‌شدند.
+         */
+        $escaped = array_map(
+            static fn(string $taxonomy): string => "'" . esc_sql(self::taxonomy_name($taxonomy)) . "'",
+            $known
+        );
+
+        $sql = 'SELECT DISTINCT tt.taxonomy FROM ' . $wpdb->term_relationships . ' AS tr'
+            . ' INNER JOIN ' . $wpdb->term_taxonomy . ' AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id'
+            . ' WHERE tt.taxonomy IN (' . implode(',', $escaped) . ')'
+            . ' AND tr.object_id IN (' . $base . ')';
 
         $found = $wpdb->get_col($sql);
         $found = is_array($found) ? array_map('strval', $found) : [];
@@ -153,23 +136,8 @@ final class Attributes {
         Query_State $state,
         string $facet,
         array $operators,
-        string $context,
-        bool $in_stock_only = false
+        string $context
     ): ?array {
-        /*
-         * ثابتِ این کلاس: عددِ نادرست هرگز نمایش داده نمی‌شود — حتی با
-         * هشدار در پنل.
-         *
-         * تنها قیدی که مسیر جایگزین نمی‌تواند بیان کند، ‎in_stock‎ است
-         * (ستونش فقط در جدول جست‌وجوی ووکامرس وجود دارد). امروز به‌صورت
-         * پیش‌فرض از آن استفاده نمی‌کنیم، چون شمارش باید دقیقاً همان قیدهای
-         * فهرست را داشته باشد. ولی اگر روزی کسی روشنش کند و جدول خاموش
-         * باشد، اینجا باید بایستد نه اینکه عددِ بزرگ‌ترِ بی‌سروصدا بدهد.
-         */
-        if ($in_stock_only && !self::lookup_enabled()) {
-            return null;
-        }
-
         $key    = Facets::cache_key(self::version() . '|' . $context, $facet, $state);
         $cached = get_transient($key);
 
@@ -193,25 +161,25 @@ final class Attributes {
 
         global $wpdb;
 
-        if (self::lookup_enabled()) {
-            $sql = Facets::count_sql(self::lookup_table(), $base, $in_stock_only);
-        } else {
-            $sql = Facets::count_sql_terms($wpdb->term_relationships, $wpdb->term_taxonomy, $base);
-        }
-
         /*
-         * چرا ‎prepare()‎ روی کل رشته اجرا نمی‌شود: کوئری پایه می‌تواند
-         * قانوناً ‎%‎ داشته باشد — هر جست‌وجویی یک ‎LIKE '%…%'‎ می‌سازد — و
-         * ‎prepare()‎ آن را جای‌نگهدار می‌خواند و با «تعداد آرگومان‌ها
-         * نمی‌خواند» شکست می‌خورد. نام تاکسونومی هم بالادست به
-         * ‎[a-z0-9_-]‎ محدود شده و اینجا دوباره بررسی می‌شود، پس چیزی برای
-         * فرار از کوتیشن نمی‌ماند.
+         * ‎prepare()‎ اینجا قابل استفاده نیست و این محدودیت خودِ وردپرس است،
+         * نه انتخاب ما: کوئری پایه یک زیرکوئریِ آمادهٔ ‎WP_Query‎ است و
+         * می‌تواند قانوناً ‎%‎ داشته باشد (هر جست‌وجویی یک ‎LIKE '%…%'‎
+         * می‌سازد). ‎prepare()‎ آن را جای‌نگهدار می‌خواند و شکست می‌خورد.
+         *
+         * ووکامرس دقیقاً به همین بن‌بست رسیده و همین راه را رفته:
+         * ‎esc_sql(wc_sanitize_taxonomy_name(...))‎ و درج مستقیم، با این
+         * توضیح در سورس — «We can't use $wpdb->prepare() here because using
+         * %s with $wpdb->prepare() for a subquery won't work».
          */
-        if ('' === $facet || preg_match('/[^a-z0-9_\-]/', $facet)) {
-            return null;
-        }
+        $sql = Facets::count_sql(
+            $wpdb->term_relationships,
+            $wpdb->term_taxonomy,
+            esc_sql(self::taxonomy_name($facet)),
+            $base
+        );
 
-        $rows = $wpdb->get_results(str_replace('%s', "'" . esc_sql($facet) . "'", $sql));
+        $rows = $wpdb->get_results($sql);
 
         if (!is_array($rows)) {
             return null;
@@ -409,6 +377,15 @@ final class Attributes {
         $args['tax_query'] = ['relation' => 'AND', $existing, $tax];
 
         return $args;
+    }
+
+    /** نام تاکسونومی، با همان تابعی که ووکامرس روی ورودی آدرس اجرا می‌کند */
+    private static function taxonomy_name(string $taxonomy): string {
+        if (function_exists('wc_sanitize_taxonomy_name')) {
+            return (string) wc_sanitize_taxonomy_name($taxonomy);
+        }
+
+        return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim($taxonomy)));
     }
 
     /** تاکسونومی‌های ویژگی که ووکامرس می‌شناسد، به ترتیب خودش */

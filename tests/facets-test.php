@@ -216,46 +216,41 @@ Tests::same('وضعیت بدون فیلتر، tax_query خالی', Facets::tax_q
 
 Tests::group('فست › SQL');
 
-$sql = Facets::count_sql('wp_wc_product_attributes_lookup', 'SELECT ID FROM wp_posts');
+$sql = Facets::count_sql('wp_term_relationships', 'wp_term_taxonomy', 'pa_brand', 'SELECT ID FROM wp_posts');
 
 /*
- * بدون DISTINCT، محصولی که چند گزینه دارد چند بار شمرده می‌شود و عددها
+ * بدون DISTINCT، محصولی که چند ترم دارد چند بار شمرده می‌شود و عددها
  * بی‌سروصدا از تعداد واقعی بزرگ‌تر می‌شوند — دقیقاً همان‌قدر بزرگ‌تر که
  * «معقول» به نظر برسد.
  */
-Tests::keeps('شمارش روی محصول یکتاست', $sql, 'COUNT(DISTINCT lookup.product_or_parent_id)');
+Tests::keeps('شمارش روی محصول یکتاست', $sql, 'COUNT(DISTINCT tr.object_id)');
 
 /*
  * واحد بهینه‌سازی «گروه» است نه «گزینه»: یک GROUP BY برای پنجاه برند، نه
  * پنجاه کوئری.
  */
-Tests::keeps('همهٔ گزینه‌ها با یک GROUP BY', $sql, 'GROUP BY lookup.term_id');
+Tests::keeps('همهٔ گزینه‌ها با یک GROUP BY', $sql, 'GROUP BY tt.term_id');
 Tests::keeps('کوئری پایه به‌صورت زیرکوئری می‌آید', $sql, 'IN (SELECT ID FROM wp_posts)');
-Tests::keeps('تاکسونومی به‌صورت پارامتر می‌ماند', $sql, 'lookup.taxonomy = %s');
-Tests::blocks('بدون فیلتر موجودی وقتی خواسته نشده', $sql, 'in_stock');
-
-Tests::keeps(
-    'و با فیلتر موجودی وقتی خواسته شده',
-    Facets::count_sql('t', 'SELECT ID FROM wp_posts', true),
-    'lookup.in_stock = 1'
-);
+Tests::keeps('تاکسونومی داخل کوتیشن درج می‌شود', $sql, "tt.taxonomy = 'pa_brand'");
 
 /*
- * مسیر جایگزین برای وقتی جدول جست‌وجوی ووکامرس خاموش است. معادل دقیق
- * نیست — ویژگی‌های سطح گزینه را نمی‌بیند — ولی همان قواعد ساختاری باید
- * برقرار باشند، وگرنه دو مسیر دو جور عدد می‌دهند.
+ * جای‌نگهدار نباید بماند. prepare() روی این رشته قابل اجرا نیست — کوئری
+ * پایه می‌تواند قانوناً ٪ داشته باشد (هر جست‌وجویی یک LIKE می‌سازد) — پس
+ * اگر %s جا بماند، مستقیم به دیتابیس می‌رود.
  */
-$fallback = Facets::count_sql_terms('wp_term_relationships', 'wp_term_taxonomy', 'SELECT ID FROM wp_posts');
-
-Tests::keeps('مسیر جایگزین هم روی محصول یکتا می‌شمارد', $fallback, 'COUNT(DISTINCT tr.object_id)');
-Tests::keeps('و آن هم یک GROUP BY دارد', $fallback, 'GROUP BY tt.term_id');
-Tests::keeps('و تاکسونومی را پارامتر می‌گذارد', $fallback, 'tt.taxonomy = %s');
-Tests::keeps('و کوئری پایه را زیرکوئری می‌کند', $fallback, 'IN (SELECT ID FROM wp_posts)');
+Tests::blocks('هیچ جای‌نگهداری باقی نمی‌ماند', $sql, '%s');
 
 /*
- * هر دو مسیر باید دقیقاً یک جای‌نگهدار داشته باشند: بالادست به‌جای
- * ‎prepare()‎ جایگزینی رشته‌ای می‌کند (چون کوئری پایه می‌تواند ‎%‎ داشته
- * باشد) و جای‌نگهدارِ دوم، بی‌سروصدا دست‌نخورده می‌ماند.
+ * in_stock عمداً نیست. مسیر امروزی ووکامرس هم آن را نمی‌گذارد، و مهم‌تر:
+ * مجموعهٔ پایهٔ ما همان کوئریِ فهرست است و در سطح محصول فیلتر می‌کند. اگر
+ * این قید فقط به شمارش اضافه شود، کاربر «۷» را می‌بیند، کلیک می‌کند و ۹
+ * محصول می‌آید.
  */
-Tests::same('جای‌نگهدار تکی در مسیر اصلی', substr_count($sql, '%s'), 1);
-Tests::same('و در مسیر جایگزین', substr_count($fallback, '%s'), 1);
+Tests::blocks('قید موجودی به شمارش اضافه نمی‌شود', $sql, 'in_stock');
+
+/*
+ * و هیچ ارجاعی به جدول جست‌وجو نمی‌ماند: دو مسیری که باید عدد یکسان بدهند،
+ * بدون تست یکپارچگی روی محصول متغیر، ریسک است بدون سود اثبات‌شده — و خودِ
+ * ووکامرس هم بعد از بنچمارک همین را کنار گذاشته.
+ */
+Tests::blocks('جدول جست‌وجو دیگر در مسیر نیست', $sql, 'lookup');
