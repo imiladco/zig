@@ -38,18 +38,123 @@ final class Schema_Store {
      * خواندن و نوشتن
      * =================================================================== */
 
-    /** @return array<string,array{label:string,facets:array}> */
+    /** نتیجهٔ پاک‌سازی‌شده، تا در یک درخواست چند بار ساخته نشود */
+    private static ?array $cache = null;
+
+    /**
+     * طرح‌های مشترک.
+     *
+     * ‎get_option()‎ خودش کش دارد ولی پاک‌سازی ندارد، و این تابع در رندر یک
+     * آرشیو به ازای هر گروه فیلتر صدا زده می‌شود. پاک‌سازیِ تکراریِ یک
+     * آرایهٔ ثابت، کارِ بی‌خودی است که در نگاه اول دیده نمی‌شود.
+     *
+     * @return array<string,array{label:string,facets:array}>
+     */
     public static function schemas(): array {
-        return self::sanitize_schemas((array) get_option(self::OPTION, []));
+        if (null === self::$cache) {
+            self::$cache = self::sanitize_schemas((array) get_option(self::OPTION, []));
+        }
+
+        return self::$cache;
     }
 
     public static function save_schemas(array $schemas): bool {
-        return (bool) update_option(self::OPTION, self::sanitize_schemas($schemas), false);
+        $schemas     = self::sanitize_schemas($schemas);
+        self::$cache = $schemas;
+
+        /*
+         * ‎update_option()‎ وقتی مقدار عوض نشده باشد ‎false‎ می‌دهد — که یعنی
+         * «چیزی ننوشتم»، نه «نشد». برگرداندنِ خامش، هر ذخیرهٔ بدون‌تغییر را
+         * به چشم مدیر یک شکست نشان می‌داد.
+         */
+        if (get_option(self::OPTION) === $schemas) {
+            return true;
+        }
+
+        return (bool) update_option(self::OPTION, $schemas, false);
+    }
+
+    /**
+     * ثبت متای دسته.
+     *
+     * بدون ثبت هم ‎get_term_meta()‎ کار می‌کند، ولی آن‌وقت این متا در REST
+     * و در هر ابزار همگام‌سازی، یک ردیف بی‌صاحب است. ‎show_in_rest‎ عمداً
+     * خاموش است: این تنظیم فقط از صفحهٔ دسته معنا دارد و بازکردنش روی REST
+     * یعنی یک راه دیگر برای نوشتنش که پاک‌سازی‌اش را دور می‌زند.
+     */
+    public static function register(): void {
+        register_term_meta(self::TAXONOMY, self::TERM_META, [
+            'type'              => 'array',
+            'single'            => true,
+            'show_in_rest'      => false,
+            'sanitize_callback' => [self::class, 'sanitize_binding'],
+            'auth_callback'     => static fn(): bool => current_user_can('manage_product_terms'),
+        ]);
     }
 
     /** @return array{mode:string,schema:string,overrides:array} */
     public static function binding(int $term_id): array {
-        return self::sanitize_binding((array) get_term_meta($term_id, self::TERM_META, true));
+        $stored = get_term_meta($term_id, self::TERM_META, true);
+
+        return self::sanitize_binding(is_array($stored) ? $stored : []);
+    }
+
+    /**
+     * دسته‌هایی که به یک طرح مشترک وصل‌اند.
+     *
+     * برای حذف لازم است. طرحی که پاک شود ولی هنوز چهار دسته به آن ارجاع
+     * داشته باشند، هر چهار دسته را بی‌صدا به حالت خودکار می‌اندازد —
+     * ‎Filter_Schema‎ هشدارش را می‌دهد، ولی فقط وقتی کسی سراغ آن دسته
+     * برود. بهتر است همان لحظهٔ حذف بدانیم.
+     *
+     * @return \WP_Term[]
+     */
+    public static function categories_using(string $schema): array {
+        $schema = self::name($schema);
+
+        return '' === $schema ? [] : (self::usage()[$schema] ?? []);
+    }
+
+    /**
+     * نگاشت «هر طرح ⇒ دسته‌هایی که به آن وصل‌اند».
+     *
+     * یک بار ساخته می‌شود، نه یک بار به ازای هر طرح. جدول طرح‌ها به ازای هر
+     * ردیف یک بار می‌پرسد «چه کسی از این استفاده می‌کند؟» و بدون این
+     * نگاشت، با پنج طرح، پنج بار کل دسته‌ها پیمایش می‌شد.
+     *
+     * @return array<string,\WP_Term[]>
+     */
+    public static function usage(): array {
+        static $usage = null;
+
+        if (null !== $usage) {
+            return $usage;
+        }
+
+        $usage = [];
+
+        $terms = get_terms([
+            'taxonomy'   => self::TAXONOMY,
+            'hide_empty' => false,
+        ]);
+
+        if (!is_array($terms)) {
+            return $usage;
+        }
+
+        foreach ($terms as $term) {
+            if (!$term instanceof \WP_Term) {
+                continue;
+            }
+
+            $binding = self::binding((int) $term->term_id);
+
+            if (Filter_Schema::MODE_SCHEMA === $binding['mode'] && '' !== $binding['schema']) {
+                $usage[$binding['schema']][] = $term;
+            }
+        }
+
+        return $usage;
     }
 
     public static function save_binding(int $term_id, array $binding): bool {

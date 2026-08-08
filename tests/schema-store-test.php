@@ -186,6 +186,37 @@ Tests::same('طرح اعمال می‌شود', Filter_Schema::taxonomies($resolv
 Tests::same('و بازنویسی شمرده می‌شود', $resolved['overrides'], 1);
 Tests::same('و هشداری در کار نیست', $resolved['notes'], []);
 
+/* ==========================================================================
+ * ورودیِ فرمِ صفحهٔ طرح‌ها
+ * ======================================================================= */
+
+Tests::group('ذخیره‌سازی › ورودی فرم');
+
+/*
+ * فرم برای هر گروه یک عدد ترتیب می‌فرستد. آن عدد فقط برای مرتب‌سازی است و
+ * نباید در چیزی که ذخیره می‌شود بماند — وگرنه شکل گروه‌ها بین «ساخته‌شده از
+ * فرم» و «ساخته‌شده از کد» فرق می‌کرد و مقایسه‌شان بی‌معنا می‌شد.
+ */
+$from_form = Schema_Store::sanitize_schemas([
+    'milling' => [
+        'label'  => 'فرزکاری',
+        'facets' => [
+            ['taxonomy' => 'pa_brand', 'operator' => 'or', 'show_empty' => false, 'order' => 2, '_seq' => 0],
+            ['taxonomy' => 'pa_axis', 'operator' => 'and', 'show_empty' => true, 'order' => 1, '_seq' => 1],
+        ],
+    ],
+]);
+
+Tests::same(
+    'کلیدهای کمکیِ فرم وارد ذخیره‌سازی نمی‌شوند',
+    array_keys($from_form['milling']['facets'][0]),
+    ['taxonomy', 'operator', 'show_empty', 'semantics']
+);
+
+Tests::same('ترتیبِ داده‌شده حفظ می‌شود', $from_form['milling']['facets'][0]['taxonomy'], 'pa_brand');
+Tests::same('اپراتور از فرم می‌آید', $from_form['milling']['facets'][1]['operator'], Facets::OP_AND);
+Tests::ok('و نمایشِ خالی هم', $from_form['milling']['facets'][1]['show_empty']);
+
 Tests::same(
     'معنای فست هم از ذخیره‌سازی رد می‌شود',
     Schema_Store::sanitize_schemas([

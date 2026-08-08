@@ -56,8 +56,10 @@ final class Plugin {
 
         add_action('init', [$this, 'maybe_flush_after_update'], 20);
 
+        add_action('init', [$this, 'boot_filters'], 5);
+
         if (is_admin()) {
-            add_action('init', [$this, 'boot_admin'], 5);
+            add_action('init', [$this, 'boot_admin'], 6);
         }
 
         $this->watch_facet_cache();
@@ -68,24 +70,40 @@ final class Plugin {
      * =================================================================== */
 
     /**
-     * بخش «فیلترهای این دسته» در صفحهٔ ویرایش دستهٔ محصول.
+     * لایهٔ فیلترها — در سایت و پنل هر دو.
      *
-     * فقط با ووکامرس معنا دارد: بدون آن نه تاکسونومی ‎product_cat‎ هست و نه
-     * ویژگی‌ای برای فهرست‌کردن.
+     * ثبت متای دسته باید همه‌جا انجام شود، نه فقط در پنل: بدون آن،
+     * ‎sanitize_callback‎ روی هر نوشتنِ دیگری (مثلاً از یک اسکریپت مهاجرت)
+     * اعمال نمی‌شود.
+     */
+    public function boot_filters(): void {
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
+
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'attributes'] as $file) {
+            require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
+        }
+
+        Schema_Store::register();
+    }
+
+    /**
+     * پنل: بخش «فیلترهای این دسته» و صفحهٔ طرح‌های مشترک.
+     *
+     * فقط با ووکامرس معنا دارد — بدون آن نه ‎product_cat‎ هست و نه ویژگی‌ای
+     * برای فهرست‌کردن.
      */
     public function boot_admin(): void {
         if (!class_exists('WooCommerce')) {
             return;
         }
 
-        require_once ZIG3D_WIDGETS_PATH . 'includes/query-state.php';
-        require_once ZIG3D_WIDGETS_PATH . 'includes/facets.php';
-        require_once ZIG3D_WIDGETS_PATH . 'includes/filter-schema.php';
-        require_once ZIG3D_WIDGETS_PATH . 'includes/schema-store.php';
-        require_once ZIG3D_WIDGETS_PATH . 'includes/attributes.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/admin/category-filters.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/admin/schemas-page.php';
 
         Admin\Category_Filters::boot();
+        Admin\Schemas_Page::boot();
     }
 
     /**

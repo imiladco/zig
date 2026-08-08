@@ -91,6 +91,22 @@ final class Category_Filters {
             return;
         }
 
+        /*
+         * اگر دسته به طرحی وصل است که دیگر وجود ندارد، آن شناسه در دراپ‌داون
+         * نیست و ‎selected‎ روی هیچ گزینه‌ای نمی‌نشیند — یعنی فرم بی‌صدا
+         * طرحِ اول را انتخاب‌شده نشان می‌داد و اولین ذخیره، اتصال را عوض
+         * می‌کرد بدون اینکه کسی چیزی زده باشد.
+         */
+        if ('' !== $binding['schema'] && !isset($schemas[$binding['schema']])) {
+            $schemas = [$binding['schema'] => [
+                'label' => sprintf(
+                    /* translators: %s: شناسهٔ طرح */
+                    __('%s — پیدا نشد', 'zig3d-widgets'),
+                    $binding['schema']
+                ),
+            ]] + $schemas;
+        }
+
         printf(
             '<p><label><input type="radio" name="zig3d_filter_mode" value="%1$s"%2$s> %3$s</label> ',
             esc_attr(Filter_Schema::MODE_SCHEMA),
@@ -224,9 +240,27 @@ final class Category_Filters {
 
         printf('<p class="description">%s</p>', esc_html($summary));
 
+        /*
+         * فهرست خالی، بدترین حالتِ بی‌صداست: صفحهٔ آرشیو یک سایدبار خالی
+         * می‌گیرد و هیچ‌جا نوشته نمی‌شود چرا. اینجا تنها جایی است که می‌شود
+         * قبل از دیده‌شدنش گفت.
+         */
+        if (!$resolved['facets']) {
+            printf(
+                '<p class="description" style="color:#b32d2e">%s</p>',
+                esc_html__('هیچ گروهی نمی‌ماند؛ سایدبار این دسته خالی رندر می‌شود.', 'zig3d-widgets')
+            );
+        }
+
         foreach ($resolved['notes'] as $note) {
             printf('<p class="description" style="color:#b32d2e">%s</p>', esc_html($note));
         }
+
+        printf(
+            '<p class="description"><a href="%s">%s</a></p>',
+            esc_url(Schemas_Page::url()),
+            esc_html__('مدیریت طرح‌های مشترک', 'zig3d-widgets')
+        );
     }
 
     /* =====================================================================
