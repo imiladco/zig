@@ -8,10 +8,14 @@ if (!defined('ABSPATH')) {
 /**
  * هستهٔ افزونه: ثبت دسته، ویجت‌ها و دارایی‌ها.
  *
- * افزونه عمداً هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند. هر پنج ویجت کاملاً
- * با CSS کار می‌کنند: حالت‌های هاور و فوکوس و افکت‌ها همه اعلانی‌اند. یعنی
- * صفر بایت JS، بدون هزینهٔ اجرا روی نخ اصلی و بدون هیچ وابستگی‌ای که بتواند
- * نصفه‌کاره بماند.
+ * هر پنج ویجت فعلی کاملاً با CSS کار می‌کنند: حالت‌های هاور و فوکوس و
+ * افکت‌ها همه اعلانی‌اند. یعنی صفر بایت JS، بدون هزینهٔ اجرا روی نخ اصلی و
+ * بدون هیچ وابستگی‌ای که بتواند نصفه‌کاره بماند.
+ *
+ * این قاعده تا وقتی برقرار است که ویجتی وضعیت نداشته باشد. آرشیو محصولات
+ * دارد — فیلتر، ترتیب، صفحه، تاریخچهٔ مرورگر — و اولین ویجتی خواهد بود که
+ * جاوااسکریپت لازم دارد. آنجا هم قاعده این است: HTML اولیه کامل از PHP
+ * می‌آید و JS فقط رفتار را رویش سوار می‌کند.
  */
 final class Plugin {
 
@@ -51,6 +55,68 @@ final class Plugin {
         add_action('elementor/editor/after_enqueue_styles', [$this, 'enqueue_editor_styles']);
 
         add_action('init', [$this, 'maybe_flush_after_update'], 20);
+
+        if (is_admin()) {
+            add_action('init', [$this, 'boot_admin'], 5);
+        }
+
+        $this->watch_facet_cache();
+    }
+
+    /* =====================================================================
+     * فیلترهای آرشیو
+     * =================================================================== */
+
+    /**
+     * بخش «فیلترهای این دسته» در صفحهٔ ویرایش دستهٔ محصول.
+     *
+     * فقط با ووکامرس معنا دارد: بدون آن نه تاکسونومی ‎product_cat‎ هست و نه
+     * ویژگی‌ای برای فهرست‌کردن.
+     */
+    public function boot_admin(): void {
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
+
+        require_once ZIG3D_WIDGETS_PATH . 'includes/query-state.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/facets.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/filter-schema.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/schema-store.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/attributes.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/admin/category-filters.php';
+
+        Admin\Category_Filters::boot();
+    }
+
+    /**
+     * باطل‌کردن کشِ شمارش فست.
+     *
+     * شمارش‌ها با TTL کوتاه هم منقضی می‌شوند، ولی TTL تنها ضامنِ کهنه‌نبودن
+     * نیست: مدیری که محصولی را منتشر می‌کند و بلافاصله آرشیو را باز می‌کند،
+     * باید عدد تازه ببیند نه چیزی که تا پنج دقیقهٔ دیگر درست می‌شود.
+     *
+     * پاک‌کردن واقعیِ کلیدها ممکن نیست — نمی‌دانیم چند ترکیب فیلتر ذخیره
+     * شده — پس ‎flush()‎ فقط شمارهٔ نسخه را جلو می‌برد و کلیدهای قدیمی
+     * خودشان می‌میرند.
+     */
+    private function watch_facet_cache(): void {
+        /*
+         * هوک‌های خودِ ووکامرس، نه ‎save_post‎: آن یکی برای پیش‌نویس خودکار و
+         * بازبینی هم صدا زده می‌شود و کش را بی‌دلیل دور می‌ریخت.
+         */
+        foreach (['woocommerce_update_product', 'woocommerce_delete_product'] as $hook) {
+            add_action($hook, [$this, 'flush_facet_cache'], 20);
+        }
+
+        /*
+         * ترم‌ها هم مهم‌اند: ترم تازه یعنی یک گزینهٔ تازه در سایدبار. ولی این
+         * هوک‌ها برای *هر* تاکسونومی صدا زده می‌شوند — هر برچسب نوشته، هر
+         * دستهٔ وبلاگ. بدون بررسی، ویرایش یک برچسب بی‌ربط کل شمارش‌های
+         * فروشگاه را باطل می‌کرد.
+         */
+        foreach (['created_term', 'edited_term', 'delete_term'] as $hook) {
+            add_action($hook, [$this, 'flush_facet_cache_for_term'], 20, 3);
+        }
     }
 
     /* =====================================================================
@@ -113,6 +179,27 @@ final class Plugin {
     public function enqueue_editor_styles(): void {
         $this->register_styles();
         wp_enqueue_style('zig3d-widgets');
+    }
+
+    public function flush_facet_cache(): void {
+        require_once ZIG3D_WIDGETS_PATH . 'includes/attributes.php';
+
+        Attributes::flush();
+    }
+
+    /**
+     * @param int    $term_id
+     * @param int    $tt_id
+     * @param string $taxonomy
+     */
+    public function flush_facet_cache_for_term($term_id, $tt_id = 0, $taxonomy = ''): void {
+        $taxonomy = (string) $taxonomy;
+
+        if ('product_cat' !== $taxonomy && 0 !== strpos($taxonomy, 'pa_')) {
+            return;
+        }
+
+        $this->flush_facet_cache();
     }
 
     /* =====================================================================

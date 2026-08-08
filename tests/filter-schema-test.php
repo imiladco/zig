@@ -157,6 +157,61 @@ Tests::same('بازنویسیِ بی‌هدف اثری ندارد', count($stale
 Tests::same('و به‌عنوان بازنویسی شمرده نمی‌شود', $stale['overrides'], 0);
 Tests::same('ولی هشدار می‌دهد', count($stale['notes']), 1);
 
+/* --------------------------------------------------------------------------
+ * افزودن
+ *
+ * «حالت کاستوم» اگر فقط بتواند کم کند، نصفِ کار است. حالت پرتکرارِ واقعی
+ * این است: ویژگی تعریف شده، محصولاتش دارند می‌آیند، و مدیر می‌خواهد گروهش
+ * از همین حالا در سایدبار باشد.
+ * ----------------------------------------------------------------------- */
+
+$extended = Filter_Schema::resolve(
+    [
+        'mode'      => 'auto',
+        'overrides' => ['pa_coating' => ['added' => true, 'show_empty' => true]],
+    ],
+    $schemas,
+    $discovered
+);
+
+Tests::same(
+    'گروه افزوده ته فهرست می‌نشیند',
+    Filter_Schema::taxonomies($extended['facets']),
+    ['pa_brand', 'pa_axis_count', 'pa_coating']
+);
+
+Tests::ok('و تنظیم نمایشِ خالی‌اش می‌آید', $extended['facets'][2]['show_empty']);
+Tests::same('و به‌عنوان بازنویسی شمرده می‌شود', $extended['overrides'], 1);
+Tests::same('و هشداری در کار نیست', $extended['notes'], []);
+
+/*
+ * همین است که نشانِ صریح ‎added‎ را لازم می‌کند: بدون آن، «مدیر این را
+ * عمداً اضافه کرده» و «این ارجاع از گروهی پاک‌شده مانده» یک شکل داشتند و
+ * یکی از آن دو بی‌صدا اشتباه رفتار می‌کرد.
+ */
+$without_flag = Filter_Schema::resolve(
+    ['mode' => 'auto', 'overrides' => ['pa_coating' => ['show_empty' => true]]],
+    $schemas,
+    $discovered
+);
+
+Tests::same('بدون نشانِ افزودن، اضافه نمی‌شود', count($without_flag['facets']), 2);
+Tests::same('و به‌جایش هشدار می‌دهد', count($without_flag['notes']), 1);
+
+Tests::same(
+    'افزودن به یک طرح مشترک هم ممکن است',
+    count(Filter_Schema::resolve(
+        [
+            'mode'      => 'schema',
+            'schema'    => 'milling',
+            'overrides' => ['pa_coating' => ['added' => true]],
+        ],
+        $schemas,
+        $discovered
+    )['facets']),
+    5
+);
+
 Tests::same(
     'بازنویسی در حالت خودکار هم کار می‌کند',
     Filter_Schema::taxonomies(

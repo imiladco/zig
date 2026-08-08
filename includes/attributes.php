@@ -406,6 +406,18 @@ final class Attributes {
         return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim($taxonomy)));
     }
 
+    /**
+     * همهٔ ویژگی‌های تعریف‌شدهٔ فروشگاه، به ترتیب خودِ ووکامرس.
+     *
+     * برای پنل لازم است: مدیر باید بتواند ویژگی‌ای را که هنوز هیچ محصولی در
+     * این دسته ندارد هم اضافه کند — همان حالتی که «به‌زودی می‌آید» است.
+     *
+     * @return string[]
+     */
+    public static function all(): array {
+        return self::known_taxonomies();
+    }
+
     /** تاکسونومی‌های ویژگی که ووکامرس می‌شناسد، به ترتیب خودش */
     private static function known_taxonomies(): array {
         if (function_exists('wc_get_attribute_taxonomy_names')) {
