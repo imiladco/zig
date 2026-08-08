@@ -146,6 +146,26 @@ final class Facets {
         return $sql . ' GROUP BY lookup.term_id';
     }
 
+    /**
+     * همان شمارش، از روی رابطهٔ ترم‌ها — برای وقتی جدول جست‌وجو خاموش است.
+     *
+     * دقیقاً معادلِ مسیر بالا نیست و نباید وانمود کند که هست: ویژگی‌هایی که
+     * فقط روی گزینه‌های یک محصول متغیر تعریف شده‌اند اینجا دیده نمی‌شوند، و
+     * ستون موجودی هم وجود ندارد. یعنی عددها می‌توانند از واقعیت کمی
+     * بزرگ‌تر باشند.
+     *
+     * پس این مسیر، جایگزین نیست؛ فقط جلوی «سایدبار بدون هیچ عددی» را
+     * می‌گیرد تا وقتی مدیر جدول را روشن کند. پنل باید این را صریح بگوید.
+     */
+    public static function count_sql_terms(string $relationships, string $taxonomies, string $base_sql): string {
+        return 'SELECT tt.term_id AS term_id, COUNT(DISTINCT tr.object_id) AS product_count'
+            . ' FROM ' . $relationships . ' AS tr'
+            . ' INNER JOIN ' . $taxonomies . ' AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id'
+            . ' WHERE tt.taxonomy = %s'
+            . ' AND tr.object_id IN (' . $base_sql . ')'
+            . ' GROUP BY tt.term_id';
+    }
+
     /* =====================================================================
      * وضعیت نمایشیِ گزینه‌ها
      * =================================================================== */

@@ -239,3 +239,23 @@ Tests::keeps(
     Facets::count_sql('t', 'SELECT ID FROM wp_posts', true),
     'lookup.in_stock = 1'
 );
+
+/*
+ * مسیر جایگزین برای وقتی جدول جست‌وجوی ووکامرس خاموش است. معادل دقیق
+ * نیست — ویژگی‌های سطح گزینه را نمی‌بیند — ولی همان قواعد ساختاری باید
+ * برقرار باشند، وگرنه دو مسیر دو جور عدد می‌دهند.
+ */
+$fallback = Facets::count_sql_terms('wp_term_relationships', 'wp_term_taxonomy', 'SELECT ID FROM wp_posts');
+
+Tests::keeps('مسیر جایگزین هم روی محصول یکتا می‌شمارد', $fallback, 'COUNT(DISTINCT tr.object_id)');
+Tests::keeps('و آن هم یک GROUP BY دارد', $fallback, 'GROUP BY tt.term_id');
+Tests::keeps('و تاکسونومی را پارامتر می‌گذارد', $fallback, 'tt.taxonomy = %s');
+Tests::keeps('و کوئری پایه را زیرکوئری می‌کند', $fallback, 'IN (SELECT ID FROM wp_posts)');
+
+/*
+ * هر دو مسیر باید دقیقاً یک جای‌نگهدار داشته باشند: بالادست به‌جای
+ * ‎prepare()‎ جایگزینی رشته‌ای می‌کند (چون کوئری پایه می‌تواند ‎%‎ داشته
+ * باشد) و جای‌نگهدارِ دوم، بی‌سروصدا دست‌نخورده می‌ماند.
+ */
+Tests::same('جای‌نگهدار تکی در مسیر اصلی', substr_count($sql, '%s'), 1);
+Tests::same('و در مسیر جایگزین', substr_count($fallback, '%s'), 1);
