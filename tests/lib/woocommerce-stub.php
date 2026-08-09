@@ -178,11 +178,18 @@ namespace {
             private array $props;
 
             public function __construct(array $props = []) {
-                $this->props = $props + ['name' => '', 'visible' => true, 'taxonomy' => false, 'options' => []];
+                $this->props = $props + [
+                    'name'      => '',
+                    'visible'   => true,
+                    'variation' => false,
+                    'taxonomy'  => false,
+                    'options'   => [],
+                ];
             }
 
             public function get_name() { return $this->props['name']; }
             public function get_visible() { return (bool) $this->props['visible']; }
+            public function get_variation() { return (bool) $this->props['variation']; }
             public function is_taxonomy() { return (bool) $this->props['taxonomy']; }
             public function get_options() { return $this->props['options']; }
         }
@@ -210,11 +217,11 @@ namespace {
         function get_permalink($id = 0) { return 'https://zig3d.test/?p=' . (int) $id; }
     }
 
-    if (!function_exists('get_the_post_thumbnail')) {
-        function get_the_post_thumbnail($id = null, $size = 'post-thumbnail', $attr = '') {
+    if (!function_exists('get_post_thumbnail_id')) {
+        function get_post_thumbnail_id($id = null) {
             $product = \WC_Product::$registry[(int) $id] ?? null;
 
-            return $product ? $product->zig_thumb() : '';
+            return $product ? (int) $product->zig_thumb() : 0;
         }
     }
 

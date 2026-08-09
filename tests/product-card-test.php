@@ -41,7 +41,7 @@ new WC_Product([
     'name'    => 'فرز پنج محور',
     'price'   => '120000000',
     'regular' => '120000000',
-    'thumb'   => '<img src="a.jpg">',
+    'thumb'   => 900,
     'meta'    => [
         '_zig_suggested' => '1',
         '_zig_summary'   => 'میلینگ ۵ محور خشک با تعویض خودکار ابزار',
@@ -63,7 +63,12 @@ Tests::same('توضیح', $card['description'], 'میلینگ ۵ محور خشک
 Tests::ok('ریبون پیشنهاد', $card['suggested']);
 Tests::same('سه ویژگی، نه بیشتر', count($card['features']), 3);
 Tests::same('و از زیرفیلد درست', $card['features'][1], '۵ محور');
-Tests::keeps('تصویر', $card['image'], '<img');
+/*
+ * تصویر فقط شناسه است، نه تگ. اسکیپ و مارک‌آپ هر دو کار لحظهٔ خروجی‌اند —
+ * و همین باعث می‌شود این داده برای پاسخ AJAX و دادهٔ ساختاریافته هم قابل
+ * استفاده باشد.
+ */
+Tests::same('تصویر، شناسهٔ اتچمنت', $card['image'], 900);
 Tests::same('حالت قیمت', $card['price_mode'], Card::PRICE_NUMERIC);
 Tests::same('و لیبلش دقیق است، نه «از»', $card['price_label'], Card::LABEL_EXACT);
 Tests::same('اقدام خودکار روی محصول قیمت‌دار', $card['cta'], Card::CTA_DETAILS);
@@ -193,16 +198,51 @@ Tests::same(
     Card::PRICE_HIDDEN
 );
 
+/* ==========================================================================
+ * صلاحیت ویژگی
+ * ======================================================================= */
+
+Tests::group('کارت › صلاحیت ویژگی');
+
 /*
- * ووکامرس در فهرست‌ها اندازهٔ thumbnail را می‌سازد. استفاده از اندازهٔ کامل
- * یعنی هر کارت چند صد کیلوبایت تصویر بگیرد که مرورگر بعد کوچکش می‌کند.
+ * get_visible() و get_variation() در ووکامرس دو محور مستقل‌اند و سند خودش
+ * صریح است: «If is visible on Product's additional info tab» و «If is used
+ * for variations». استفاده از اولی به‌عنوان معیارِ «ویژگی فنی»، دو چیز
+ * بی‌ربط را یکی گرفتن است.
  */
-Tests::group('کارت › تصویر');
+new WC_Product([
+    'id'    => 60,
+    'attrs' => [
+        new Zig_Test_Attribute(['name' => 'نوع فرزکاری', 'options' => ['خشک']]),
+        new Zig_Test_Attribute(['name' => 'رنگ', 'variation' => true, 'options' => ['قرمز']]),
+        new Zig_Test_Attribute(['name' => 'پنهان', 'visible' => false, 'options' => ['نباید بیاید']]),
+    ],
+]);
 
-new WC_Product(['id' => 50, 'thumb' => '<img src="b.jpg" loading="lazy">']);
+$auto = Product_Card::data(WC_Product::$registry[60], [])['features'];
 
-Tests::keeps(
-    'تصویر با بارگذاری تنبل',
-    Product_Card::data(WC_Product::$registry[50], [])['image'],
-    'loading="lazy"'
+Tests::same('ویژگی نمایشیِ غیرگزینه‌ساز می‌آید', $auto, ['خشک']);
+
+/*
+ * رنگ در کارت یک دستگاه صنعتی معنایی ندارد: انتخاب خرید است، نه مشخصهٔ
+ * دستگاه. و مهم‌تر، «نمایشی» بودنش هیچ ربطی به این نداشت.
+ */
+Tests::blocks('ویژگی گزینه‌ساز نمی‌آید، حتی اگر نمایشی باشد', implode('|', $auto), 'قرمز');
+Tests::blocks('ویژگی نانمایشی هم نه', implode('|', $auto), 'نباید بیاید');
+
+/*
+ * فهرست صریح مقدم است و ترتیبش هم رعایت می‌شود: کارت سه حباب دارد و
+ * «کدام سه‌تا» یک تصمیم طراحی است، نه چیزی که از ترتیب ذخیره‌سازی دربیاید.
+ */
+$picked = Product_Card::data(
+    WC_Product::$registry[60],
+    ['features_attrs' => ['رنگ', 'نوع فرزکاری']]
+)['features'];
+
+Tests::same('فهرست صریح، حتی گزینه‌ساز را هم می‌آورد', $picked, ['قرمز', 'خشک']);
+
+Tests::same(
+    'نامِ ناموجود در فهرست، کنار می‌رود',
+    Product_Card::data(WC_Product::$registry[60], ['features_attrs' => ['نیست', 'خشک‌کن']])['features'],
+    []
 );

@@ -18,6 +18,21 @@ if (!defined('ABSPATH')) {
  * خروجی همیشه همان کلیدها را دارد، حتی وقتی خالی‌اند. یعنی رندر می‌تواند
  * بی‌قید و شرط بخواند و خودش تصمیم بگیرد که خالی را چاپ نکند — به‌جای
  * اینکه هر بار ‎isset‎ بزند و یکی را جا بیندازد.
+ *
+ * و هیچ‌چیز اینجا اسکیپ نمی‌شود. مقدارها خام برمی‌گردند و اسکیپ در لحظهٔ
+ * خروجی انجام می‌شود — همان قاعدهٔ «دیر اسکیپ کن» که وردپرس توصیه می‌کند.
+ * دلیلش این است که اسکیپ به *زمینه* وابسته است: همان رشته در متن
+ * ‎esc_html()‎ می‌خواهد، در صفت ‎esc_attr()‎، و در ‎href‎ چیز دیگری. اگر
+ * اینجا اسکیپ شود، یا در جای اشتباه اسکیپ شده یا جای دیگری دوباره اسکیپ
+ * می‌شود و کاربر ‎&amp;‎ می‌بیند.
+ *
+ * به همین دلیل هیچ مارک‌آپی هم اینجا ساخته نمی‌شود: تصویر فقط شناسه است، نه
+ * تگ ‎<img>‎. غیر از تفکیک تمیزتر، همین باعث می‌شود این داده برای پاسخ
+ * AJAX و برای دادهٔ ساختاریافته هم قابل استفاده باشد.
+ *
+ * تنها استثنا ‎wp_strip_all_tags()‎ روی توضیح است، و آن اسکیپ نیست بلکه
+ * *عادی‌سازیِ محتواست*: آن جایگاه یک خط متن ساده است و اگر متایی تگ داشته
+ * باشد، خروجیِ اسکیپ‌شده‌اش تگ‌های قابل‌دیدن به کاربر نشان می‌داد.
  */
 final class Product_Card {
 
@@ -26,7 +41,7 @@ final class Product_Card {
         'id'          => 0,
         'url'         => '',
         'title'       => '',
-        'image'       => '',
+        'image'       => 0,
         'suggested'   => false,
         'brand'       => '',
         'description' => '',
@@ -60,6 +75,7 @@ final class Product_Card {
             'features_meta'    => '',
             'features_field'   => '',
             'brand_taxonomy'   => '',
+            'features_attrs'   => [],
             'features_max'     => 3,
             'variable_mode'    => 'min',
             'no_price'         => Card::PRICE_INQUIRY,
@@ -67,14 +83,18 @@ final class Product_Card {
         ];
 
         $id    = $product->get_id();
-        $price = Price::data($product, (string) $fields['variable_mode']);
+        /*
+         * مسیر سبک، عمداً. توضیح کاملش در ‎Price::data()‎ است؛ خلاصه‌اش این
+         * است که مسیر عمیق برای پانزده کارت، صدها بارگذاری محصول می‌شود.
+         */
+        $price = Price::data($product, (string) $fields['variable_mode'], false);
         $state = Card::price_state($price, (string) $fields['no_price']);
 
         return [
             'id'          => $id,
             'url'         => (string) get_permalink($id),
             'title'       => (string) $product->get_name(),
-            'image'       => self::image($id),
+            'image'       => (int) get_post_thumbnail_id($id),
             'suggested'   => self::flag($id, (string) $fields['suggested_meta']),
             'brand'       => self::brand($id, (string) $fields['brand_taxonomy']),
             'description' => self::text($id, (string) $fields['description_meta']),
@@ -158,7 +178,7 @@ final class Product_Card {
         return Card::features(
             [
                 self::repeater($product->get_id(), (string) $fields['features_meta'], (string) $fields['features_field']),
-                self::attributes($product),
+                self::attributes($product, (array) $fields['features_attrs']),
             ],
             (int) $fields['features_max']
         );
@@ -200,23 +220,53 @@ final class Product_Card {
     /**
      * ویژگی‌های ووکامرس، به‌عنوان منبع دوم.
      *
-     * فقط ویژگی‌های «قابل نمایش» — همان‌هایی که مدیر تیک «نمایش در صفحهٔ
-     * محصول» را برایشان زده. بقیه معمولاً ویژگی‌های گزینه‌سازند و در کارت
-     * معنایی ندارند.
+     * فهرست صریح مقدم است و ترتیبش هم رعایت می‌شود: کارت سه حباب دارد و
+     * «کدام سه‌تا» یک تصمیم طراحی است، نه چیزی که باید از ترتیب ذخیره‌سازی
+     * دربیاید.
+     *
+     * وقتی فهرستی نیست، دو شرط اعمال می‌شود و هر دو لازم‌اند:
+     *
+     *   • ‎get_visible()‎ — یعنی مدیر گفته این را به مشتری نشان بده. ولی
+     *     دقیقاً همین و بس. سند خودِ ووکامرس می‌گوید
+     *     «If is visible on Product's additional info tab» — نه «فنی
+     *     است»، نه «گزینه‌ساز نیست». استفاده از آن به‌عنوان معیار
+     *     «ویژگی فنی»، دو چیز بی‌ربط را یکی گرفتن است.
+     *
+     *   • ‎!get_variation()‎ — یعنی این ویژگی گزینهٔ خرید نمی‌سازد. رنگ و
+     *     سایز در کارت یک دستگاه صنعتی معنایی ندارند؛ آن‌ها انتخاب‌های
+     *     خریدند نه مشخصهٔ دستگاه.
+     *
+     * این دو در ووکامرس محورهای مستقل‌اند و یک ویژگی می‌تواند هر دو را
+     * داشته باشد. جداکردنشان همان تفاوت «آنچه نمایش داده می‌شود» و
+     * «آنچه خریدنی است» است.
+     *
+     * @param string[] $allowed فهرست صریح تاکسونومی‌ها؛ خالی یعنی خودکار.
      */
-    private static function attributes(\WC_Product $product): array {
+    private static function attributes(\WC_Product $product, array $allowed = []): array {
         if (!method_exists($product, 'get_attributes')) {
             return [];
         }
 
-        $labels = [];
+        $attributes = [];
 
         foreach ($product->get_attributes() as $attribute) {
-            if (!is_object($attribute) || !method_exists($attribute, 'get_visible') || !$attribute->get_visible()) {
+            if (!is_object($attribute) || !method_exists($attribute, 'get_name')) {
                 continue;
             }
 
-            $name = method_exists($attribute, 'get_name') ? (string) $attribute->get_name() : '';
+            $attributes[(string) $attribute->get_name()] = $attribute;
+        }
+
+        $order = $allowed ?: array_keys(array_filter($attributes, [self::class, 'is_feature']));
+        $labels = [];
+
+        foreach ($order as $name) {
+            $attribute = $attributes[(string) $name] ?? null;
+
+            if (null === $attribute) {
+                continue;
+            }
+
             $term = self::first_term($product->get_id(), $attribute);
 
             if ('' !== $term) {
@@ -225,12 +275,19 @@ final class Product_Card {
                 continue;
             }
 
-            if ('' !== $name) {
-                $labels[] = $name;
-            }
+            $labels[] = (string) $attribute->get_name();
         }
 
         return $labels;
+    }
+
+    /** ویژگی‌ای که در حالت خودکار به کارت می‌آید */
+    private static function is_feature($attribute): bool {
+        if (!method_exists($attribute, 'get_visible') || !$attribute->get_visible()) {
+            return false;
+        }
+
+        return !method_exists($attribute, 'get_variation') || !$attribute->get_variation();
     }
 
     private static function first_term(int $id, $attribute): string {
@@ -256,15 +313,16 @@ final class Product_Card {
     }
 
     /**
-     * تصویر شاخص.
+     * آماده‌کردن کش برای یک صفحه از محصولات.
      *
-     * اندازهٔ ‎woocommerce_thumbnail‎ چون همان چیزی است که ووکامرس برای
-     * فهرست‌ها می‌سازد؛ استفاده از اندازهٔ کامل یعنی هر کارت چند صد کیلوبایت
-     * تصویر بگیرد که مرورگر بعد کوچکش می‌کند.
+     * وردپرس متا و ترم‌های پست‌های یک ‎WP_Query‎ را خودش یک‌جا می‌خواند، ولی
+     * پستِ *تصویر شاخص* را نه. بدون این، هر کارت یک کوئری جدا برای
+     * اتچمنتش می‌زند — پانزده کارت، پانزده رفت‌وبرگشت اضافه که هیچ‌جا هم
+     * دیده نمی‌شوند.
      */
-    private static function image(int $id): string {
-        $size = function_exists('wc_get_image_size') ? 'woocommerce_thumbnail' : 'medium';
-
-        return (string) get_the_post_thumbnail($id, $size, ['loading' => 'lazy', 'decoding' => 'async']);
+    public static function prime(\WP_Query $query): void {
+        if (function_exists('update_post_thumbnail_cache')) {
+            update_post_thumbnail_cache($query);
+        }
     }
 }
