@@ -69,6 +69,19 @@ final class Product_Archive extends Widget_Base {
         return ['product', 'archive', 'filter', 'shop', 'محصول', 'فیلتر', 'فروشگاه'];
     }
 
+    /**
+     * این ویجت هرگز نباید کش شود.
+     *
+     * المنتور پیش‌فرض را روی «پویا» گذاشته، پس امروز هم بدون این متد درست
+     * کار می‌کند. صریح نوشتنش برای این است که خروجی این ویجت به
+     * ‎$_GET‎ بند است — فیلتر، ترتیب و صفحه — و اگر روزی کسی این متد را
+     * ‎false‎ کند (یا پیش‌فرض عوض شود)، همهٔ بازدیدکننده‌ها نتیجهٔ فیلترشدهٔ
+     * *اولین* کسی را می‌بینند که صفحه را باز کرده. هیچ خطایی هم نمی‌دهد.
+     */
+    protected function is_dynamic_content(): bool {
+        return true;
+    }
+
     /* =====================================================================
      * کنترل‌ها
      * =================================================================== */
@@ -1225,9 +1238,21 @@ final class Product_Archive extends Widget_Base {
      * یک گزینهٔ فیلتر.
      *
      * ‎<a href>‎ واقعی است، نه چک‌باکس تنها: بدون جاوااسکریپت هم باید کار
-     * کند و خزنده هم باید بتواند دنبالش برود. چک‌باکس فقط نشانهٔ بصری
-     * وضعیت است و ‎aria-hidden‎ دارد تا برای اسکرین‌ریدر دو بار خوانده
-     * نشود.
+     * کند و خزنده هم باید بتواند دنبالش برود.
+     *
+     * ولی همین‌جا یک مرز هست که راحت رد می‌شود: چون *ظاهرش* چک‌باکس است،
+     * وسوسه می‌شود ‎role="checkbox"‎ یا ‎aria-pressed‎ بگیرد. هیچ‌کدام درست
+     * نیست. این عنصر از نظر رفتاری یک پیوند ناوبری است — فعال‌کردنش صفحه
+     * را عوض می‌کند، نه یک وضعیت را. و ‎aria-pressed‎ اصلاً روی ‎link‎
+     * پشتیبانی نمی‌شود؛ می‌ماند به‌عنوان صفتی که یا نادیده گرفته می‌شود یا
+     * بدتر، وضعیتی را اعلام می‌کند که رفتار عنصر تأییدش نمی‌کند.
+     *
+     * پس وضعیت از راه *نام دسترس‌پذیر* گفته می‌شود: متن پنهانی که می‌گوید
+     * فعال‌کردن این پیوند چه می‌کند. برای گزینهٔ انتخاب‌شده «حذف فیلتر»
+     * است، نه «انتخاب‌شده» — چون کاری که انجام می‌شود همان است، و صفحه‌خوان
+     * باید عمل را بگوید نه فقط حالت را.
+     *
+     * چک‌باکس تصویری ‎aria-hidden‎ می‌ماند تا همان حرف دو بار زده نشود.
      *
      * گزینهٔ صفرِ انتخاب‌نشده لینک نمی‌شود ولی حذف هم نمی‌شود — ارتفاع
      * سایدبار نباید با هر درخواست بپرد.
@@ -1249,13 +1274,22 @@ final class Product_Archive extends Widget_Base {
             return;
         }
 
+        $action = sprintf(
+            '<span class="zig-sr">%s</span>',
+            esc_html(
+                $option['selected']
+                    ? __('— حذف این فیلتر', 'zig3d-widgets')
+                    : __('— افزودن این فیلتر', 'zig3d-widgets')
+            )
+        );
+
         printf(
-            '<li class="zig-facet__item%1$s"><a href="%2$s" rel="nofollow"%3$s>'
-                . '<span class="zig-facet__box" aria-hidden="true"></span>%4$s</a></li>',
+            '<li class="zig-facet__item%1$s"><a href="%2$s" rel="nofollow">'
+                . '<span class="zig-facet__box" aria-hidden="true"></span>%3$s%4$s</a></li>',
             $option['selected'] ? ' is-selected' : '',
             esc_url(Seo::url($url, $state->toggle($taxonomy, $option['slug']), $operators)),
-            $option['selected'] ? ' aria-pressed="true"' : '',
-            $label
+            $label,
+            $action
         );
     }
 
@@ -1315,7 +1349,7 @@ final class Product_Archive extends Widget_Base {
 
     private function render_grid(array $settings, \WP_Query $query, Query_State $state): void {
         if (!$query->have_posts()) {
-            $this->render_empty($settings);
+            $this->render_empty($settings, $state, (int) $query->found_posts);
 
             return;
         }
@@ -1505,8 +1539,36 @@ final class Product_Archive extends Widget_Base {
 
     /* ---------------------------------------------------------------- */
 
-    private function render_empty(array $settings): void {
+    /**
+     * حالت «چیزی نیست».
+     *
+     * دو حالتِ کاملاً متفاوت یک ظاهر دارند و باید از هم جدا شوند:
+     *
+     *   • واقعاً هیچ محصولی با این فیلترها نیست.
+     *   • محصول هست، ولی در *این صفحه* نیست — آدرسی با ‎paged‎ی که از
+     *     تعداد صفحه‌های این ترکیب بیشتر است.
+     *
+     * دومی با پیمایش داخل ویجت پیش نمی‌آید (هر تغییر فیلتر صفحه را به اول
+     * برمی‌گرداند) ولی از بوکمارک و نوار آدرس می‌آید. نشان‌دادن «چیزی پیدا
+     * نشد» به کسی که ۴۰ محصول در انتظارش است، دروغ است — و راه خروجی هم
+     * نمی‌دهد. پس اینجا صریح می‌گوییم و یک پیوند به صفحهٔ اولِ *همین*
+     * فیلترها می‌گذاریم.
+     */
+    private function render_empty(array $settings, Query_State $state, int $found): void {
         echo '<div class="zig-archive__empty">';
+
+        if ($found > 0 && $state->page() > 1) {
+            printf(
+                '<p class="zig-archive__empty-title">%s</p><a class="zig-archive__empty-link" href="%s">%s</a>',
+                esc_html__('این صفحه از نتایجِ فعلی وجود ندارد.', 'zig3d-widgets'),
+                esc_url(Seo::url($this->base_url(), $state->with_page(1))),
+                esc_html__('رفتن به صفحهٔ اول همین فیلترها', 'zig3d-widgets')
+            );
+
+            echo '</div>';
+
+            return;
+        }
 
         if (!empty($settings['empty_template'])) {
             $this->render_template((int) $settings['empty_template']);

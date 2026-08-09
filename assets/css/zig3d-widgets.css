@@ -558,7 +558,8 @@ a.zig-list__label:focus-visible {
  * «قیمت فعلی:» معنا کامل می‌شود. عمداً ‎display: none‎ نیست — آن، متن را از
  * صفحه‌خوان هم پنهان می‌کند.
  */
-.zig-price__sr {
+.zig-price__sr,
+.zig-sr {
 	position: absolute;
 	width: 1px;
 	height: 1px;

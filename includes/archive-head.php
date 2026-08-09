@@ -54,7 +54,8 @@ final class Archive_Head {
             $state,
             self::operators(),
             self::policy(),
-            isset($wp_query) ? (int) $wp_query->found_posts : null
+            isset($wp_query) ? (int) $wp_query->found_posts : null,
+            isset($wp_query) ? (int) $wp_query->max_num_pages : 0
         );
 
         self::$decision = $decision;

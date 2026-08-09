@@ -126,10 +126,29 @@ final class Seo {
      * می‌کند. ‎404‎ دادن به آن یعنی بیرون‌انداختن صفحه‌ای که خودمان
      * ساخته‌ایم، و لینک‌های داخلی به آن هم می‌شکنند.
      *
-     * @param int $found تعداد نتیجه‌های همین حالت.
+     * قاعدهٔ دومی هم هست و آن به صفحه ربط دارد، نه به فیلتر: گوگل در همان
+     * سند «pagination URLs that don't exist» را هم در فهرست ‎404‎ آورده.
+     * صفحهٔ چهارمِ چیزی که دو صفحه بیشتر ندارد وجود ندارد، چه فیلتری در
+     * کار باشد چه نباشد.
+     *
+     * این حالت با پیمایش داخل خودِ ویجت پیش نمی‌آید — هر تغییر فیلتر یا
+     * ترتیب، صفحه را به اول برمی‌گرداند — ولی آدرس‌ها از جاهای دیگری هم
+     * می‌آیند: بوکمارک، لینکِ ابزارک دیگر، یا دستِ خودِ کاربر در نوار آدرس.
+     * و آنجا شمارشِ کل به صفر نمی‌رسد (نتیجه هست، فقط در این صفحه نیست)،
+     * پس قاعدهٔ اول نمی‌گیردش و صفحه ‎200‎ با گریدِ خالی می‌داد.
+     *
+     * ‎$max_pages‎ صفر یعنی «اصلاً نتیجه‌ای نیست» و آن را قاعدهٔ اول
+     * می‌سنجد؛ وگرنه دستهٔ خالیِ بدون فیلتر هم ‎404‎ می‌گرفت.
+     *
+     * @param int $found     تعداد کل نتیجه‌های همین حالت.
+     * @param int $max_pages تعداد صفحه‌های موجود؛ صفر یعنی نامعلوم.
      */
-    public static function is_not_found(Query_State $state, int $found): bool {
-        return $found < 1 && $state->is_filtered();
+    public static function is_not_found(Query_State $state, int $found, int $max_pages = 0): bool {
+        if ($found < 1 && $state->is_filtered()) {
+            return true;
+        }
+
+        return $max_pages > 0 && $state->page() > $max_pages;
     }
 
     /* =====================================================================
@@ -182,9 +201,10 @@ final class Seo {
         Query_State $state,
         array $operators = [],
         string $policy = self::INDEX_CLEAN,
-        ?int $found = null
+        ?int $found = null,
+        int $max_pages = 0
     ): array {
-        $not_found = null !== $found && self::is_not_found($state, $found);
+        $not_found = null !== $found && self::is_not_found($state, $found, $max_pages);
 
         return [
             /*
