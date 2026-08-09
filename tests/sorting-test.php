@@ -163,47 +163,84 @@ foreach (['default', 'date', 'title', 'meta'] as $type) {
     );
 }
 
-// بدون ووکامرس هم باید بی‌خطر باشد، چون دفاعی صدا زده می‌شود
-Sorting::release();
-Tests::ok('پاک‌سازی بدون ووکامرس خطا نمی‌دهد', true);
-
 /* ==========================================================================
- * ترجمه به کوئری
+ * نگه‌داشتن و بازگرداندن
  * ======================================================================= */
 
-Tests::group('ترتیب › ترجمه به کوئری');
+Tests::group('ترتیب › وضعیت سراسری');
 
-$meta = Sorting::query_args([
-    'type'      => 'meta',
-    'order'     => 'ASC',
-    'meta_key'  => '_zig_axis',
-    'meta_type' => 'num',
-]);
+/**
+ * جای ‎WC()->query‎ — فقط برای اینکه فیلترها روی چیزی بنشینند.
+ */
+final class Zig_Fake_WC_Query {
+    public function order_by_price_asc_post_clauses($args) { return $args; }
+    public function order_by_price_desc_post_clauses($args) { return $args; }
+    public function order_by_popularity_post_clauses($args) { return $args; }
+    public function order_by_rating_post_clauses($args) { return $args; }
+    public function remove_ordering_args() {}
+}
 
-Tests::same('فیلد دلخواه عددی', $meta['orderby'], 'meta_value_num');
-Tests::same('با همان کلید متا', $meta['meta_key'], '_zig_axis');
-Tests::same('و همان جهت', $meta['order'], 'ASC');
+$wc = new Zig_Fake_WC_Query();
 
-Tests::same(
-    'فیلد دلخواه متنی',
-    Sorting::query_args(['type' => 'meta', 'meta_key' => '_x', 'meta_type' => 'text'])['orderby'],
-    'meta_value'
+zig_reset_filters();
+
+/*
+ * سناریوی اصلی: افزونهٔ دیگری (یا خودِ ووکامرس در میانهٔ چرخهٔ کوئری اصلی)
+ * یک فیلتر ثبت کرده. اگر ما با ‎remove_ordering_args()‎ همه را پاک کنیم،
+ * وضعیتی را نابود کرده‌ایم که مالکش نیستیم — و آن‌طرف هیچ‌وقت نمی‌فهمد چرا
+ * مرتب‌سازی‌اش از کار افتاد.
+ */
+add_filter('posts_clauses', [$wc, 'order_by_popularity_post_clauses'], 17);
+
+$snapshot = Sorting::suspend($wc);
+
+Tests::same('عکسِ وضعیت، فیلترِ دیگری را ثبت می‌کند', $snapshot, ['order_by_popularity_post_clauses' => 17]);
+Tests::ok(
+    'و برای بازهٔ کار ما برداشته می‌شود',
+    false === has_filter('posts_clauses', [$wc, 'order_by_popularity_post_clauses'])
+);
+
+// حالا فیلتر خودمان را می‌بندیم، مثل چیزی که ووکامرس داخل query_args می‌کند
+add_filter('posts_clauses', [$wc, 'order_by_price_asc_post_clauses'], 10);
+
+Sorting::restore($snapshot, $wc);
+
+Tests::ok(
+    'فیلتر خودمان بعد از کار برداشته می‌شود',
+    false === has_filter('posts_clauses', [$wc, 'order_by_price_asc_post_clauses'])
 );
 
 /*
- * بدون ووکامرس، ترجمهٔ جایگزین. ادعای برابری با ووکامرس ندارد — فقط جلوی
- * مرتب‌سازی تصادفی را می‌گیرد.
+ * و مهم‌تر: مالِ دیگری دقیقاً همان‌طور که بود برمی‌گردد — با همان اولویت.
+ * اولویت اگر جا بیفتد، ترتیب اجرای فیلترها عوض می‌شود و باگش از این هم
+ * نامرئی‌تر است.
  */
-Tests::same('قیمت صعودی', Sorting::fallback_args('price')['meta_key'], '_price');
-Tests::same('و جهتش', Sorting::fallback_args('price')['order'], 'ASC');
-Tests::same('قیمت نزولی', Sorting::fallback_args('price-desc')['order'], 'DESC');
-Tests::same('پرفروش‌ترین از total_sales', Sorting::fallback_args('popularity')['meta_key'], 'total_sales');
-Tests::same('امتیاز از میانگین ووکامرس', Sorting::fallback_args('rating')['meta_key'], '_wc_average_rating');
-Tests::same('ناشناخته به ترتیب دستی برمی‌گردد', Sorting::fallback_args('ghost')['orderby'], 'menu_order title');
+Tests::same(
+    'و مالِ دیگری با همان اولویت برمی‌گردد',
+    has_filter('posts_clauses', [$wc, 'order_by_popularity_post_clauses']),
+    17
+);
+
+zig_reset_filters();
+
+Tests::same('وضعیت خالی، عکس خالی می‌دهد', Sorting::suspend($wc), []);
+
+Sorting::restore([], $wc);
+
+Tests::ok('و بازگرداندنِ عکس خالی چیزی اضافه نمی‌کند', !has_filter('posts_clauses'));
 
 /*
- * مرتب‌سازی بر اساس تاریخ باید شناسه را هم بچسباند: دو محصول که در یک
- * ثانیه ثبت شده‌اند بدون آن، ترتیب غیرقطعی می‌گیرند و بین دو صفحه تکرار یا
- * حذف می‌شوند.
+ * ورودیِ دست‌کاری‌شده نباید بتواند هر متدی را به هوک ببندد. عکسِ وضعیت
+ * از دیتابیس نمی‌آید، ولی ارزان‌ترین محافظ ممکن است و جلوی یک اشتباه
+ * تایپی هم می‌گیرد.
  */
-Tests::keeps('تاریخ با شناسه گره می‌خورد', Sorting::fallback_args('date')['orderby'], 'ID');
+Sorting::restore(['some_other_method' => 10], $wc);
+
+Tests::ok('متدِ خارج از فهرست بسته نمی‌شود', !has_filter('posts_clauses'));
+
+zig_reset_filters();
+
+// بدون ووکامرس هم باید بی‌خطر باشد
+Tests::same('بدون ووکامرس، عکس خالی', Sorting::suspend(), []);
+Sorting::restore([]);
+Tests::ok('و بازگرداندن هم خطا نمی‌دهد', true);

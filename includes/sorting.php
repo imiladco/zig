@@ -200,7 +200,8 @@ final class Sorting {
      * مرتب‌سازی قیمتِ ما با ‎_price‎ برای محصول متغیر غلط می‌شد، چون
      * ووکامرس برای صعودی ‎min_price‎ و برای نزولی ‎max_price‎ می‌گذارد.
      *
-     * ⚠ این تابع اثر جانبیِ سراسری دارد و باید حتماً با ‎release()‎ جفت شود.
+     * ⚠ این تابع اثر جانبیِ سراسری دارد و فقط باید داخل بازهٔ
+     * ‎suspend()‎…‎restore()‎ صدا زده شود.
      *
      * نگاه کنید به خودِ ووکامرس:
      *
@@ -238,23 +239,97 @@ final class Sorting {
     }
 
     /**
-     * برداشتن فیلترهای مرتب‌سازیِ ووکامرس.
+     * فیلترهایی که ‎get_catalog_ordering_args()‎ ممکن است ثبت کند.
      *
-     * چیزی خراب نمی‌شود اگر وقتی چیزی ثبت نشده هم صدا زده شود؛
-     * ‎remove_filter()‎ روی فیلتر نبوده بی‌اثر است. پس می‌شود دفاعی هم
-     * صدایش زد — و باید، چون افزونهٔ دیگری هم ممکن است
-     * ‎get_catalog_ordering_args()‎ را بدون پاک‌سازی صدا زده باشد.
+     * فهرست از خودِ ‎WC_Query::remove_ordering_args()‎ آمده.
      */
-    public static function release(): void {
-        if (function_exists('WC') && isset(WC()->query) && method_exists(WC()->query, 'remove_ordering_args')) {
-            WC()->query->remove_ordering_args();
+    public const CLAUSE_CALLBACKS = [
+        'order_by_price_asc_post_clauses',
+        'order_by_price_desc_post_clauses',
+        'order_by_popularity_post_clauses',
+        'order_by_rating_post_clauses',
+    ];
+
+    /**
+     * برداشتن موقتِ فیلترهای مرتب‌سازی، با یادداشت اینکه چه بود.
+     *
+     * چرا نه ‎WC()->query->remove_ordering_args()‎: آن تابع هر چهار فیلتر
+     * را پاک می‌کند بدون اینکه بپرسد چه کسی ثبتشان کرده. اگر افزونهٔ دیگری
+     * (یا خودِ ووکامرس، در میانهٔ چرخهٔ کوئری اصلی) یکی را ثبت کرده باشد و
+     * ما پاکش کنیم، وضعیتی را نابود کرده‌ایم که مالکش نیستیم — و آن‌طرف
+     * هیچ‌وقت نمی‌فهمد چرا مرتب‌سازی‌اش از کار افتاد.
+     *
+     * پس به‌جای پاک‌کردن، عکس می‌گیریم: چه فیلتری با چه اولویتی هست. بعد
+     * برمی‌داریم، کار خودمان را می‌کنیم، و دقیقاً همان را برمی‌گردانیم.
+     *
+     * @param object|null $target شیء ‎WC()->query‎؛ برای تست قابل تزریق.
+     * @return array<string,int> نام متد ⇒ اولویت
+     */
+    public static function suspend($target = null): array {
+        $target = $target ?? self::target();
+
+        if (null === $target) {
+            return [];
         }
+
+        $snapshot = [];
+
+        foreach (self::CLAUSE_CALLBACKS as $method) {
+            $priority = has_filter('posts_clauses', [$target, $method]);
+
+            if (false !== $priority) {
+                $snapshot[$method] = (int) $priority;
+            }
+
+            remove_filter('posts_clauses', [$target, $method], false === $priority ? 10 : (int) $priority);
+        }
+
+        return $snapshot;
+    }
+
+    /**
+     * برگرداندن دقیقاً همان چیزی که بود.
+     *
+     * اول هر چهار فیلتر برداشته می‌شوند — این همان جایی است که فیلترِ
+     * *خودمان* پاک می‌شود — و بعد فقط عکسِ اولیه دوباره بسته می‌شود.
+     *
+     * @param array<string,int> $snapshot خروجی ‎suspend()‎.
+     */
+    public static function restore(array $snapshot, $target = null): void {
+        $target = $target ?? self::target();
+
+        if (null === $target) {
+            return;
+        }
+
+        foreach (self::CLAUSE_CALLBACKS as $method) {
+            $priority = has_filter('posts_clauses', [$target, $method]);
+
+            if (false !== $priority) {
+                remove_filter('posts_clauses', [$target, $method], (int) $priority);
+            }
+        }
+
+        foreach ($snapshot as $method => $priority) {
+            if (in_array($method, self::CLAUSE_CALLBACKS, true)) {
+                add_filter('posts_clauses', [$target, $method], $priority);
+            }
+        }
+    }
+
+    /** شیئی که فیلترها روی آن بسته شده‌اند، یا ‎null‎ بدون ووکامرس */
+    private static function target() {
+        if (function_exists('WC') && isset(WC()->query) && method_exists(WC()->query, 'remove_ordering_args')) {
+            return WC()->query;
+        }
+
+        return null;
     }
 
     /**
      * آیا این نوع، فیلتر سراسری ثبت می‌کند؟
      *
-     * فقط برای خوانایی و تست است؛ ‎release()‎ به‌هرحال بی‌خطر است.
+     * فقط برای خوانایی و تست است؛ ‎suspend()‎/‎restore()‎ به‌هرحال بی‌خطرند.
      */
     public static function has_side_effects(array $option): bool {
         return in_array(self::TYPES[$option['type'] ?? '']['orderby'] ?? '', ['price', 'price-desc', 'popularity', 'rating'], true);

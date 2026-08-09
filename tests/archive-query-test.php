@@ -113,7 +113,7 @@ Tests::group('کوئری آرشیو › فیلتر و ترتیب');
 $base  = Archive_Query::base_args(['categories' => [12]]);
 $state = Query_State::create(['pa_brand' => ['up3d']], 'price', 3);
 
-$built = Archive_Query::build($base, $state, ['pa_brand' => Facets::OP_OR], null, 9);
+$built = Archive_Query::build($base, $state, ['pa_brand' => Facets::OP_OR], [], 9);
 
 Tests::same('صفحه از وضعیت می‌آید', $built['paged'], 3);
 Tests::same('تعداد در صفحه', $built['posts_per_page'], 9);
@@ -135,11 +135,17 @@ Tests::ok(
  * ترتیب می‌تواند meta_key بیاورد و باید روی آرگومان‌های پایه بنشیند نه
  * زیرشان؛ ادغام برعکس یعنی هر ترتیبی بی‌صدا بی‌اثر می‌ماند.
  */
+/*
+ * ‎build()‎ آرگومان‌های *از پیش محاسبه‌شده* می‌گیرد، نه گزینهٔ ترتیب. چون
+ * محاسبه‌شان اثر جانبی سراسری دارد و یک تابعِ «بساز» نباید چیزی را در
+ * دنیای بیرون عوض کند — هزار بار صدا زدنش هم باید همان نتیجه را بدهد و
+ * هیچ ردی جا نگذارد.
+ */
 $sorted = Archive_Query::build(
     $base,
     Query_State::create(),
     [],
-    Sorting::sanitize_options([['type' => 'price']])[0],
+    Sorting::fallback_args('price'),
     12
 );
 

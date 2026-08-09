@@ -96,6 +96,52 @@ if (!function_exists('set_transient')) {
 }
 
 /* --------------------------------------------------------------------------
+ * حداقلِ سیستم هوک
+ *
+ * فقط برای سنجیدن یک چیز هست: نگه‌داشتن و بازگرداندن فیلترهای مرتب‌سازی
+ * ووکامرس. آن منطق دقیقاً همان جایی است که «وضعیت سراسری را کورکورانه
+ * پاک نکن» تصمیم گرفته شد، و بدون یک ثبت‌کنندهٔ واقعی نمی‌شد سنجیدش.
+ * ----------------------------------------------------------------------- */
+
+if (!function_exists('add_filter')) {
+    function add_filter($hook, $callback, $priority = 10, $args = 1) {
+        $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)] = $priority;
+
+        return true;
+    }
+}
+if (!function_exists('remove_filter')) {
+    function remove_filter($hook, $callback, $priority = 10) {
+        unset($GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)]);
+
+        return true;
+    }
+}
+if (!function_exists('has_filter')) {
+    function has_filter($hook, $callback = false) {
+        if (false === $callback) {
+            return !empty($GLOBALS['__zig_filters'][$hook]);
+        }
+
+        return $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)] ?? false;
+    }
+}
+if (!function_exists('zig_filter_id')) {
+    function zig_filter_id($callback): string {
+        if (is_array($callback)) {
+            return (is_object($callback[0]) ? spl_object_hash($callback[0]) : (string) $callback[0]) . '::' . $callback[1];
+        }
+
+        return is_string($callback) ? $callback : spl_object_hash($callback);
+    }
+}
+if (!function_exists('zig_reset_filters')) {
+    function zig_reset_filters(): void {
+        $GLOBALS['__zig_filters'] = [];
+    }
+}
+
+/* --------------------------------------------------------------------------
  * چارچوب کوچک assert
  * ----------------------------------------------------------------------- */
 

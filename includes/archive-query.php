@@ -136,32 +136,33 @@ final class Archive_Query {
     /**
      * کوئری کامل: پایه + فیلترها + ترتیب + صفحه.
      *
+     * خالص است و می‌ماند. ‎$sort_args‎ آرگومان‌های *از پیش محاسبه‌شده*‌اند،
+     * نه گزینهٔ ترتیب — چون محاسبه‌شان اثر جانبی سراسری دارد و یک تابعِ
+     * «بساز» نباید چیزی را در دنیای بیرون عوض کند. صدازدنش هزار بار هم
+     * باید همان نتیجه را بدهد و هیچ ردی جا نگذارد.
+     *
      * @param array       $base      خروجی ‎base_args()‎.
      * @param Query_State $state     انتخاب‌های کاربر.
      * @param array       $operators تاکسونومی ⇒ ‎or‎/‎and‎، از طرح فیلتر.
-     * ⚠ وقتی ‎$sort‎ داده شود، این تابع اثر جانبیِ سراسری دارد (توضیح در
-     * ‎run()‎). مستقیم صدایش نزنید مگر خودتان ‎Sorting::release()‎ را جفت
-     * کنید؛ راه درست ‎run()‎ است.
-     *
-     * @param array|null  $sort      گزینهٔ ترتیب، یا ‎null‎ برای پیش‌فرض.
+     * @param array       $sort_args خروجی ‎Sorting::query_args()‎.
      * @param int         $per_page  تعداد در هر صفحه.
      */
     public static function build(
         array $base,
         Query_State $state,
         array $operators = [],
-        ?array $sort = null,
+        array $sort_args = [],
         int $per_page = 12
     ): array {
         $args = self::with_filters($base, $state, $operators);
 
-        if (null !== $sort) {
+        if ($sort_args) {
             /*
              * ترتیب می‌تواند ‎meta_key‎ بیاورد و باید روی آرگومان‌های پایه
              * بنشیند، نه زیرشان: اگر آرایه‌ها برعکس ادغام شوند، هر ترتیبی
              * بی‌صدا بی‌اثر می‌ماند و فهرست همیشه به ترتیب پیش‌فرض می‌آید.
              */
-            $args = array_merge($args, Sorting::query_args($sort));
+            $args = array_merge($args, $sort_args);
         }
 
         $args['posts_per_page'] = self::per_page($per_page);
@@ -171,9 +172,7 @@ final class Archive_Query {
     }
 
     /**
-     * اجرای کوئری آرشیو — تنها راه سانکشن‌شده.
-     *
-     * ‎build()‎ به‌تنهایی امن نیست و این تنها دلیل وجود این تابع است.
+     * اجرای کوئری آرشیو — تنها جایی که اثر جانبی رخ می‌دهد.
      *
      * ‎Sorting::query_args()‎ برای قیمت و پرفروش‌ترین و امتیاز، یک فیلتر
      * ‎posts_clauses‎ سراسری ثبت می‌کند که *نمی‌تواند* بفهمد روی کدام کوئری
@@ -186,10 +185,10 @@ final class Archive_Query {
      * هم می‌رود. هیچ‌کدام خطا نمی‌دهند؛ فقط جای دیگری از صفحه بی‌صدا عوض
      * می‌شود.
      *
-     * پس ثبت، اجرا و پاک‌سازی در یک تابع می‌مانند و ‎finally‎ تضمین می‌کند
-     * حتی اگر کوئری استثنا بدهد، فیلتر جا نماند. یک ‎release()‎ ابتدایی هم
-     * هست، چون افزونهٔ دیگری ممکن است قبل از ما همین کار را کرده و پاک
-     * نکرده باشد.
+     * ولی راهِ حلش «پاک‌کردن همه‌چیز» نیست — آن‌وقت وضعیتی را نابود می‌کنیم
+     * که مالکش نیستیم. به‌جایش عکس می‌گیریم، بازهٔ خودمان را می‌سازیم، و
+     * دقیقاً همان را برمی‌گردانیم. ‎finally‎ تضمین می‌کند حتی اگر کوئری
+     * استثنا بدهد، دنیای بیرون همان‌طور که بود بماند.
      */
     public static function run(
         array $base,
@@ -198,12 +197,14 @@ final class Archive_Query {
         ?array $sort = null,
         int $per_page = 12
     ): \WP_Query {
-        Sorting::release();
+        $snapshot = Sorting::suspend();
 
         try {
-            return new \WP_Query(self::build($base, $state, $operators, $sort, $per_page));
+            $sort_args = null === $sort ? [] : Sorting::query_args($sort);
+
+            return new \WP_Query(self::build($base, $state, $operators, $sort_args, $per_page));
         } finally {
-            Sorting::release();
+            Sorting::restore($snapshot);
         }
     }
 

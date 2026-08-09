@@ -342,20 +342,6 @@ final class Attributes {
             return '';
         }
 
-        /*
-         * پاک‌کردن دفاعیِ فیلترهای مرتب‌سازیِ ووکامرس، قبل از ساختن SQL.
-         *
-         * ‎orderby => 'ID'‎ پایین کافی نیست: فیلتر ‎posts_clauses‎ ووکامرس
-         * روی *خروجی* SQL می‌نشیند، نه روی آرگومان‌ها. اگر جایی
-         * ‎get_catalog_ordering_args()‎ صدا زده و پاک نکرده باشد، این
-         * زیرکوئری یک ‎JOIN‎ روی ‎wc_product_meta_lookup‎ و یک ‎ORDER BY‎
-         * می‌گیرد — که بعد داخل یک ‎IN (...)‎ می‌نشیند.
-         *
-         * خودمان با ‎Archive_Query::run()‎ این را جفت می‌کنیم، ولی افزونهٔ
-         * دیگری هم می‌تواند مقصر باشد و آن‌وقت عیب اینجا ظاهر می‌شود.
-         */
-        Sorting::release();
-
         $args = array_merge($args, [
             'fields'                 => 'ids',
             'posts_per_page'         => -1,
@@ -373,10 +359,26 @@ final class Attributes {
 
         add_filter('posts_pre_query', $short_circuit, 100);
 
-        $query = new \WP_Query();
-        $query->query($args);
+        /*
+         * مرتب‌سازی برای بازهٔ این کوئری کنار گذاشته می‌شود، نه پاک.
+         *
+         * ‎orderby => 'ID'‎ بالا کافی نیست: فیلتر ‎posts_clauses‎ ووکامرس روی
+         * *خروجی* SQL می‌نشیند، نه روی آرگومان‌ها. اگر فعال بماند، این
+         * زیرکوئری یک ‎JOIN‎ روی ‎wc_product_meta_lookup‎ و یک ‎ORDER BY‎
+         * می‌گیرد و بعد داخل یک ‎IN (...)‎ می‌نشیند.
+         *
+         * ولی مالکِ آن فیلتر ما نیستیم، پس حق پاک‌کردنش را هم نداریم: عکس
+         * می‌گیریم، برمی‌داریم، و در ‎finally‎ دقیقاً همان را برمی‌گردانیم.
+         */
+        $snapshot = Sorting::suspend();
 
-        remove_filter('posts_pre_query', $short_circuit, 100);
+        try {
+            $query = new \WP_Query();
+            $query->query($args);
+        } finally {
+            Sorting::restore($snapshot);
+            remove_filter('posts_pre_query', $short_circuit, 100);
+        }
 
         $sql = (string) $query->request;
 
