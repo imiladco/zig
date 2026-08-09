@@ -85,7 +85,51 @@ final class Seo {
      * نکن» را از «محصولاتِ پشت فیلتر را گم کن» جدا می‌کند.
      */
     public static function robots(Query_State $state, string $policy = self::INDEX_CLEAN): string {
-        return self::is_indexable($state, $policy) ? 'index, follow' : 'noindex, follow';
+        return implode(', ', self::directives($state, $policy));
+    }
+
+    /**
+     * همان تصمیم، ولی تفکیک‌شده.
+     *
+     * افزونه‌های سئو دستورها را آرایه‌ای نگه می‌دارند، نه رشته‌ای. دادن
+     * رشته به آن‌ها یعنی جایی باید دوباره شکسته شود — و شکستنِ رشته در
+     * لایه‌ای که به وردپرس وصل است، همان‌جایی است که تست به آن نمی‌رسد.
+     *
+     * @return array{index:string,follow:string}
+     */
+    public static function directives(Query_State $state, string $policy = self::INDEX_CLEAN): array {
+        return [
+            'index'  => self::is_indexable($state, $policy) ? 'index' : 'noindex',
+            'follow' => 'follow',
+        ];
+    }
+
+    /* =====================================================================
+     * نتیجهٔ خالی
+     * =================================================================== */
+
+    /**
+     * آیا این آدرس باید ‎404‎ بدهد؟
+     *
+     * توصیهٔ صریح گوگل برای ناوبری وجهی:
+     *
+     *     «Return an HTTP 404 status code when a filter combination
+     *      doesn't return results… don't redirect to a generic error
+     *      page — serve the 404 directly at the problematic URL.»
+     *
+     * دلیلش هم روشن است: ترکیب فیلترها بی‌نهایت آدرس می‌سازد و بیشترشان
+     * خالی‌اند. اگر همه ‎200‎ بدهند، خزنده باید همه را ببیند تا بفهمد
+     * چیزی ندارند.
+     *
+     * ولی «فیلترشده» شرط لازم است، نه فقط «خالی». دسته‌ای که هنوز محصولی
+     * ندارد یک آدرس کاملاً معتبر است — مدیر همین امروز ساخته و فردا پرش
+     * می‌کند. ‎404‎ دادن به آن یعنی بیرون‌انداختن صفحه‌ای که خودمان
+     * ساخته‌ایم، و لینک‌های داخلی به آن هم می‌شکنند.
+     *
+     * @param int $found تعداد نتیجه‌های همین حالت.
+     */
+    public static function is_not_found(Query_State $state, int $found): bool {
+        return $found < 1 && $state->is_filtered();
     }
 
     /* =====================================================================
@@ -114,6 +158,48 @@ final class Seo {
         $vars = $target->to_query_vars($operators);
 
         return $vars ? add_query_arg($vars, $base_url) : $base_url;
+    }
+
+    /* =====================================================================
+     * تگ‌های ‎<head>‎
+     * =================================================================== */
+
+    /**
+     * تصمیم‌های سئوی این حالت، آمادهٔ نشستن در ‎<head>‎.
+     *
+     * تصمیم‌گرفتن بدون رندرکردن، هیچ ارزشی ندارد. این تابع همان سه تصمیم را
+     * به شکلی می‌دهد که هم خودمان بتوانیم چاپش کنیم و هم به فیلترهای
+     * افزونه‌های سئو بدهیمش — چون دو ‎canonical‎ روی یک صفحه، از نداشتنش
+     * بدتر است.
+     *
+     * ‎404‎ اگر لازم باشد اینجا فقط *گزارش* می‌شود؛ فرستادنش کار لایهٔ
+     * بالاتر است که به هدرهای HTTP دسترسی دارد.
+     *
+     * @return array{directives:array{index:string,follow:string},robots:string,canonical:string,not_found:bool}
+     */
+    public static function head(
+        string $base_url,
+        Query_State $state,
+        array $operators = [],
+        string $policy = self::INDEX_CLEAN,
+        ?int $found = null
+    ): array {
+        $not_found = null !== $found && self::is_not_found($state, $found);
+
+        return [
+            /*
+             * حالتِ ‎404‎ همیشه ‎noindex‎ می‌گیرد، حتی وقتی سیاست بازتر است.
+             * وضعیت ‎404‎ به‌تنهایی کافی است، ولی صفحه‌ای که هنوز محتوا
+             * رندر می‌کند ممکن است جایی به‌عنوان «نرم» خوانده شود؛ گفتن هر
+             * دو هزینه‌ای ندارد.
+             */
+            'directives' => $not_found
+                ? ['index' => 'noindex', 'follow' => 'follow']
+                : self::directives($state, $policy),
+            'robots'     => $not_found ? 'noindex, follow' : self::robots($state, $policy),
+            'canonical'  => self::canonical($base_url, $state, $operators, $policy),
+            'not_found'  => $not_found,
+        ];
     }
 
     /* =====================================================================

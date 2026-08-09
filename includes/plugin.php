@@ -81,11 +81,19 @@ final class Plugin {
             return;
         }
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
         Schema_Store::register();
+
+        /*
+         * فقط در سایت. در پنل نه کوئری آرشیوی هست و نه ‎<head>‎ی که این
+         * تصمیم‌ها به آن تعلق داشته باشند.
+         */
+        if (!is_admin()) {
+            Archive_Head::boot();
+        }
     }
 
     /**
