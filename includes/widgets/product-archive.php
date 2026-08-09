@@ -65,6 +65,16 @@ final class Product_Archive extends Widget_Base {
         return ['zig3d-widgets'];
     }
 
+    /**
+     * تنها ویجت این افزونه که اسکریپت دارد.
+     *
+     * از راه ‎get_script_depends‎ می‌آید و نه ‎wp_enqueue_script‎ سراسری:
+     * صفحه‌ای که این ویجت رویش نیست، هیچ فایلی لود نمی‌کند.
+     */
+    public function get_script_depends(): array {
+        return ['zig3d-archive'];
+    }
+
     public function get_keywords(): array {
         return ['product', 'archive', 'filter', 'shop', 'محصول', 'فیلتر', 'فروشگاه'];
     }
@@ -1087,35 +1097,13 @@ final class Product_Archive extends Widget_Base {
 
         $settings = $this->get_settings_for_display();
         $sorts    = Sorting::sanitize_options((array) ($settings['sorting_options'] ?? []));
-        $base     = Archive_Query::base_args($this->scope($settings));
-        $context  = Archive_Query::context_key($base);
-        $facets   = $this->facets();
-        $state    = $this->state($facets, $sorts);
-        $sort     = Sorting::resolve($sorts, $state->sort(), isset($base['s']));
-        $per_page = Archive_Query::per_page((int) ($settings['per_page'] ?? 9));
+        $context = $this->context($settings);
 
-        /*
-         * اپراتور هر گروه از یک جا می‌آید و از همان‌جا هم به کوئری، هم به
-         * لینک‌ها، هم به شمارش‌ها می‌رود. اگر لینک‌ها آن را نگیرند — که
-         * تا همین امروز نمی‌گرفتند — لینکِ «مرتب‌سازی» روی گروهی که مدیر
-         * ‎AND‎ گذاشته، ‎query_type=or‎ می‌نویسد و معنای فیلتر را وسط
-         * کلیک عوض می‌کند.
-         */
-        $operators = Archive_Query::honored($facets);
-
-        $query = Archive_Query::run(
-            $base,
-            $state,
-            $operators,
-            $sort,
-            $per_page
-        );
-
-        /*
-         * وردپرس متا و ترم‌های یک کوئری را یک‌جا می‌خواند ولی پستِ تصویر
-         * شاخص را نه؛ بدون این، هر کارت یک کوئری جدا برای اتچمنتش می‌زند.
-         */
-        update_post_thumbnail_cache($query);
+        $base      = $context['base'];
+        $facets    = $context['facets'];
+        $state     = $context['state'];
+        $operators = $context['operators'];
+        $query     = $context['query'];
 
         $this->add_render_attribute('root', [
             'class'                => 'zig-archive zig-archive--filters-' . ($settings['filters_position'] ?? 'start'),
@@ -1130,30 +1118,143 @@ final class Product_Archive extends Widget_Base {
              * است تا اولین کلیک کار نمی‌کند و هیچ‌کس هم متوجه نمی‌شود، چون
              * کلیک اول همیشه سریع می‌آید.
              */
-            'data-zig-state'       => $this->page_state($settings, $query, $state),
+            'data-zig-state'       => $context['page_state'],
             'data-zig-debounce'    => (string) (int) ($settings['filters_debounce'] ?? 250),
             'data-zig-scroll-max'  => (string) (int) ($settings['scroll_pages'] ?? 0),
             'data-zig-restore'     => 'yes' === ($settings['restore_state'] ?? '') ? '1' : '0',
             'data-zig-page'        => (string) $state->page(),
             'data-zig-pages'       => (string) max(1, (int) $query->max_num_pages),
+            'data-zig-endpoint'    => Archive_Endpoint::url(),
+            'data-zig-nonce'       => Archive_Endpoint::nonce(),
+            'data-zig-post'        => (string) get_the_ID(),
+            'data-zig-term'        => (string) ($this->queried_term()->term_id ?? 0),
+            'data-zig-widget'      => (string) $this->get_id(),
         ]);
 
         echo '<div ' . $this->get_render_attribute_string('root') . '>';
 
-        if ('yes' === ($settings['filters_on'] ?? '') && $facets) {
-            $this->render_sidebar($settings, $facets, $state, $base, $context, $operators);
+        if ($this->has_sidebar($settings, $facets)) {
+            echo '<aside class="zig-archive__filters" aria-label="'
+                . esc_attr($settings['filters_title'] ?? '') . '" data-zig-part="facets">';
+            echo $this->fragment('facets', $context);
+            echo '</aside>';
         }
 
         echo '<div class="zig-archive__main">';
 
         $this->render_toolbar($settings, $sorts, $state, (int) $query->found_posts, $operators);
-        $this->render_grid($settings, $query, $state, $operators);
-        $this->render_pagination($settings, $state, (int) $query->max_num_pages, $operators);
+
+        echo '<div data-zig-part="grid">' . $this->fragment('grid', $context) . '</div>';
+        echo '<div data-zig-part="pagination">' . $this->fragment('pagination', $context) . '</div>';
+
         $this->render_error($settings);
 
         echo '</div></div>';
 
         wp_reset_postdata();
+    }
+
+    /* =====================================================================
+     * قطعه‌ها
+     *
+     * رندر سرور و پاسخ آژاکس از یک مسیر می‌آیند. اگر دو مسیر می‌بودند،
+     * اختلافشان همان‌جایی ظاهر می‌شد که کسی نگاه نمی‌کند: بارِ اول درست، و
+     * بعد از اولین کلیک یک کلاس کم، یک ‎aria-current‎ جامانده، یک شمارشِ
+     * قدیمی.
+     * =================================================================== */
+
+    /**
+     * همه‌چیزِ لازم برای یک بار رندر.
+     *
+     * ‎$_GET‎ فقط اینجا خوانده می‌شود — یا در مسیر آژاکس، از رشتهٔ پرس‌وجویی
+     * که کلاینت فرستاده. بقیهٔ متدها هرچه لازم دارند را از همین آرایه
+     * می‌گیرند.
+     *
+     * @param array|null $params جایگزین ‎$_GET‎، برای درخواست آژاکس
+     */
+    public function context(array $settings, ?array $params = null, int $term_id = 0): array {
+        if ($term_id > 0) {
+            $term = get_term($term_id, Schema_Store::TAXONOMY);
+
+            // ترمی که وجود ندارد یعنی «کل فروشگاه»، نه خطا: آدرس کهنه
+            // نباید درخواست را بشکند، فقط دامنه‌اش بازتر می‌شود.
+            $this->term = $term instanceof \WP_Term ? $term : null;
+        }
+
+        $sorts    = Sorting::sanitize_options((array) ($settings['sorting_options'] ?? []));
+        $base     = Archive_Query::base_args($this->scope($settings));
+        $key      = Archive_Query::context_key($base);
+        $facets   = $this->facets();
+        $state    = $this->state($facets, $sorts, $params);
+        $sort     = Sorting::resolve($sorts, $state->sort(), isset($base['s']));
+        $per_page = Archive_Query::per_page((int) ($settings['per_page'] ?? 9));
+
+        /*
+         * اپراتور هر گروه از یک جا می‌آید و از همان‌جا هم به کوئری، هم به
+         * لینک‌ها، هم به شمارش‌ها می‌رود. اگر لینک‌ها آن را نگیرند — که
+         * تا همین امروز نمی‌گرفتند — لینکِ «مرتب‌سازی» روی گروهی که مدیر
+         * ‎AND‎ گذاشته، ‎query_type=or‎ می‌نویسد و معنای فیلتر را وسط
+         * کلیک عوض می‌کند.
+         */
+        $operators = Archive_Query::honored($facets);
+
+        $query = Archive_Query::run($base, $state, $operators, $sort, $per_page);
+
+        /*
+         * وردپرس متا و ترم‌های یک کوئری را یک‌جا می‌خواند ولی پستِ تصویر
+         * شاخص را نه؛ بدون این، هر کارت یک کوئری جدا برای اتچمنتش می‌زند.
+         */
+        update_post_thumbnail_cache($query);
+
+        return [
+            'settings'   => $settings,
+            'sorts'      => $sorts,
+            'base'       => $base,
+            'key'        => $key,
+            'facets'     => $facets,
+            'state'      => $state,
+            'operators'  => $operators,
+            'query'      => $query,
+            'page_state' => $this->page_state($settings, $query, $state, $params),
+        ];
+    }
+
+    /**
+     * یک قطعه، به‌صورت رشته.
+     *
+     * بافر خروجی چون رندرکننده‌های داخلی ‎echo‎ می‌کنند و بازنویسی همه‌شان
+     * به «رشته برگردان» یعنی دو نسخه از یک منطق تا وقتی که یکی‌شان عقب
+     * بماند.
+     */
+    public function fragment(string $name, array $ctx): string {
+        $settings = $ctx['settings'];
+
+        ob_start();
+
+        switch ($name) {
+            case 'facets':
+                $this->render_facets($settings, $ctx['facets'], $ctx['state'], $ctx['base'], $ctx['key'], $ctx['operators']);
+                break;
+
+            case 'grid':
+                $this->render_grid($settings, $ctx['query'], $ctx['state'], $ctx['operators']);
+                break;
+
+            case 'pagination':
+                $this->render_pagination($settings, $ctx['state'], (int) $ctx['query']->max_num_pages, $ctx['operators']);
+                break;
+
+            case 'count':
+                $this->render_count($settings, (int) $ctx['query']->found_posts);
+                break;
+        }
+
+        return (string) ob_get_clean();
+    }
+
+    /** آیا سایدبار اصلاً رندر می‌شود */
+    public function has_sidebar(array $settings, array $facets): bool {
+        return 'yes' === ($settings['filters_on'] ?? '') && [] !== $facets;
     }
 
     /* ---------------------------------------------------------------- */
@@ -1165,12 +1266,36 @@ final class Product_Archive extends Widget_Base {
      * روی قالب دستهٔ محصول نشسته باید همان دسته را نشان بدهد، وگرنه یک
      * قالب برای همهٔ دسته‌ها بی‌معنا می‌شود.
      */
+    /**
+     * دسته‌ای که این ویجت رویش نشسته.
+     *
+     * روی رندر سرور همان ‎get_queried_object()‎ است. روی درخواست آژاکس
+     * چیزی برای پرسیدن نیست — ‎admin-ajax.php‎ نه دسته‌ای دارد نه شرطی‌ای —
+     * پس دسته صریح داده می‌شود.
+     *
+     * سه جا به آن نیاز دارند (دامنهٔ کوئری، طرح فیلتر، آدرس پایه) و همین
+     * دلیل وجود این متد است: اگر هرکدام جدا ‎get_queried_object()‎ صدا
+     * می‌زد، مسیر آژاکس باید سه بار جداگانه وصله می‌شد و اولین جایی که
+     * فراموش می‌شد، بی‌صدا کل فروشگاه را به‌جای یک دسته نشان می‌داد.
+     */
+    private ?\WP_Term $term = null;
+
+    private function queried_term(): ?\WP_Term {
+        if ($this->term instanceof \WP_Term) {
+            return $this->term;
+        }
+
+        $term = get_queried_object();
+
+        return $term instanceof \WP_Term ? $term : null;
+    }
+
     private function scope(array $settings): array {
         if ('custom' === ($settings['source'] ?? 'archive')) {
             return ['categories' => (array) ($settings['categories'] ?? [])];
         }
 
-        $term = get_queried_object();
+        $term = $this->queried_term();
 
         return [
             'categories' => $term instanceof \WP_Term ? [(int) $term->term_id] : [],
@@ -1180,7 +1305,7 @@ final class Product_Archive extends Widget_Base {
 
     /** گروه‌های فیلتر این دسته، از طرحِ خودِ دسته */
     private function facets(): array {
-        $term = get_queried_object();
+        $term = $this->queried_term();
 
         if (!$term instanceof \WP_Term || Schema_Store::TAXONOMY !== $term->taxonomy) {
             return [];
@@ -1208,8 +1333,14 @@ final class Product_Archive extends Widget_Base {
      * را نشان می‌دهد. آنجا وضعیت از کوئری خودمان می‌آید — و ‎invalid‎ هم
      * نمی‌گیرد، چون ادعای آدرس مالِ صفحه است نه مالِ ویجتی که رویش نشسته.
      */
-    private function page_state(array $settings, \WP_Query $query, Query_State $state): string {
-        if ('custom' !== ($settings['source'] ?? 'archive')) {
+    private function page_state(array $settings, \WP_Query $query, Query_State $state, ?array $params = null): string {
+        /*
+         * روی رندر سرور، همان تصمیمی که کد HTTP از آن آمده. روی آژاکس
+         * ‎null‎ است — آنجا درخواستی به ‎template_redirect‎ نرسیده — و
+         * وضعیت از همان قواعد، ولی روی پارامترهای فرستاده‌شده، دوباره
+         * حساب می‌شود.
+         */
+        if (null === $params && 'custom' !== ($settings['source'] ?? 'archive')) {
             $shared = Archive_Head::page_state();
 
             if (null !== $shared) {
@@ -1217,7 +1348,12 @@ final class Product_Archive extends Widget_Base {
             }
         }
 
-        return Seo::state($state, (int) $query->found_posts, (int) $query->max_num_pages);
+        $invalid = null !== $params && [] !== array_merge(
+            Query_State::unknown_filters($params, Archive_Query::honored_taxonomies($this->facets())),
+            Query_State::duplicate_filters($params)
+        );
+
+        return Seo::state($state, (int) $query->found_posts, (int) $query->max_num_pages, $invalid);
     }
 
     /**
@@ -1233,9 +1369,11 @@ final class Product_Archive extends Widget_Base {
      * سایدبار همچنان فقط طرح را نشان می‌دهد؛ «چه چیزی نمایش داده شود» و
      * «آدرس چه چیزی را ادعا می‌کند» دو سؤال جدا هستند.
      */
-    private function state(array $facets, array $sorts): Query_State {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $params = is_array($_GET) ? wp_unslash($_GET) : [];
+    private function state(array $facets, array $sorts, ?array $params = null): Query_State {
+        if (null === $params) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $params = is_array($_GET) ? wp_unslash($_GET) : [];
+        }
 
         return Query_State::from_request(
             $params,
@@ -1246,7 +1384,7 @@ final class Product_Archive extends Widget_Base {
 
     /** آدرس پایه، بدون هیچ پارامتری */
     private function base_url(): string {
-        $term = get_queried_object();
+        $term = $this->queried_term();
 
         if ($term instanceof \WP_Term) {
             $link = get_term_link($term);
@@ -1261,10 +1399,16 @@ final class Product_Archive extends Widget_Base {
 
     /* ---------------------------------------------------------------- */
 
-    private function render_sidebar(array $settings, array $facets, Query_State $state, array $base, string $context, array $operators = []): void {
+    /**
+     * درونهٔ سایدبار — بدون خودِ ‎<aside>‎.
+     *
+     * ظرف در ‎render()‎ می‌ماند و فقط محتوایش عوض می‌شود. اگر ظرف هم جزو
+     * قطعه بود، هر بار جایگزین می‌شد و فوکوسِ کاربری که همین حالا روی یک
+     * چک‌باکس بود می‌پرید به ‎<body>‎ — بدترین اتفاقی که برای کاربر کیبورد
+     * وسط فیلترکردن می‌افتد.
+     */
+    private function render_facets(array $settings, array $facets, Query_State $state, array $base, string $context, array $operators = []): void {
         $url = $this->base_url();
-
-        echo '<aside class="zig-archive__filters" aria-label="' . esc_attr($settings['filters_title'] ?? '') . '">';
 
         printf('<h2 class="zig-filters__title">%s</h2>', esc_html($settings['filters_title'] ?? ''));
 
@@ -1279,8 +1423,6 @@ final class Product_Archive extends Widget_Base {
         foreach ($facets as $facet) {
             $this->render_facet($facet, $state, $base, $context, $operators, $url);
         }
-
-        echo '</aside>';
     }
 
     private function render_facet(array $facet, Query_State $state, array $base, string $context, array $operators, string $url): void {
@@ -1377,18 +1519,9 @@ final class Product_Archive extends Widget_Base {
         echo '<div class="zig-archive__toolbar">';
 
         if ('yes' === ($settings['count_on'] ?? '')) {
-            /*
-             * ‎aria-live‎ چون بعد از هر فیلتر عوض می‌شود و کاربر اسکرین‌ریدر
-             * وگرنه هیچ نشانه‌ای از اینکه چیزی تغییر کرده نمی‌گیرد.
-             */
-            printf(
-                '<p class="zig-archive__count" aria-live="polite">%s</p>',
-                esc_html(str_replace(
-                    '{count}',
-                    Price::persian((string) $found),
-                    (string) ($settings['count_text'] ?? '')
-                ))
-            );
+            echo '<div data-zig-part="count">';
+            $this->render_count($settings, $found);
+            echo '</div>';
         }
 
         if ('yes' === ($settings['sorting_on'] ?? '') && $sorts) {
@@ -1396,6 +1529,26 @@ final class Product_Archive extends Widget_Base {
         }
 
         echo '</div>';
+    }
+
+    /**
+     * شمارش نتیجه‌ها.
+     *
+     * ‎aria-live="polite"‎ چون بعد از هر فیلتر عوض می‌شود و کاربر
+     * اسکرین‌ریدر وگرنه هیچ نشانه‌ای از اینکه چیزی تغییر کرده نمی‌گیرد.
+     *
+     * ‎polite‎ و نه ‎assertive‎: این یک نتیجه است، نه یک بن‌بست؛ نباید
+     * وسط جملهٔ در حال خواندن بپرد. آلرت خطا آن یکی است.
+     */
+    private function render_count(array $settings, int $found): void {
+        printf(
+            '<p class="zig-archive__count" aria-live="polite">%s</p>',
+            esc_html(str_replace(
+                '{count}',
+                Price::persian((string) $found),
+                (string) ($settings['count_text'] ?? '')
+            ))
+        );
     }
 
     private function render_sorts(array $sorts, Query_State $state, array $operators = []): void {

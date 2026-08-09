@@ -8,14 +8,14 @@ if (!defined('ABSPATH')) {
 /**
  * هستهٔ افزونه: ثبت دسته، ویجت‌ها و دارایی‌ها.
  *
- * هر پنج ویجت فعلی کاملاً با CSS کار می‌کنند: حالت‌های هاور و فوکوس و
- * افکت‌ها همه اعلانی‌اند. یعنی صفر بایت JS، بدون هزینهٔ اجرا روی نخ اصلی و
- * بدون هیچ وابستگی‌ای که بتواند نصفه‌کاره بماند.
+ * پنج ویجت اول کاملاً با CSS کار می‌کنند: حالت‌های هاور و فوکوس و افکت‌ها
+ * همه اعلانی‌اند. یعنی صفر بایت JS روی صفحه‌ای که فقط آن‌ها را دارد.
  *
- * این قاعده تا وقتی برقرار است که ویجتی وضعیت نداشته باشد. آرشیو محصولات
- * دارد — فیلتر، ترتیب، صفحه، تاریخچهٔ مرورگر — و اولین ویجتی خواهد بود که
- * جاوااسکریپت لازم دارد. آنجا هم قاعده این است: HTML اولیه کامل از PHP
- * می‌آید و JS فقط رفتار را رویش سوار می‌کند.
+ * آرشیو محصولات استثناست، چون وضعیت دارد: فیلتر، ترتیب، صفحه، تاریخچهٔ
+ * مرورگر. قاعده آنجا هم برقرار است، فقط شکلش فرق می‌کند: HTML اولیه کامل
+ * از PHP می‌آید و JS فقط رفتار را رویش سوار می‌کند — اگر لود نشود، صفحه
+ * هنوز کار می‌کند، فقط کندتر. و اسکریپت از راه ‎get_script_depends‎ می‌آید،
+ * پس صفحه‌ای که این ویجت رویش نیست همچنان صفر بایت می‌گیرد.
  */
 final class Plugin {
 
@@ -52,6 +52,9 @@ final class Plugin {
         // پس صفحه‌ای که ویجتی از این افزونه ندارد هیچ فایلی لود نمی‌کند.
         add_action('elementor/frontend/after_register_styles', [$this, 'register_styles']);
 
+        // همان‌طور برای اسکریپت: ویجتی که JS لازم ندارد، هیچ فایلی نمی‌آورد
+        add_action('elementor/frontend/after_register_scripts', [$this, 'register_scripts']);
+
         // در ادیتور همیشه لود می‌شود تا پیش‌نمایش با سایت یکی باشد
         add_action('elementor/editor/after_enqueue_styles', [$this, 'enqueue_editor_styles']);
 
@@ -85,11 +88,19 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
         Schema_Store::register();
+
+        /*
+         * بیرون از شرط پایین، و این عمدی است: ‎admin-ajax.php‎ از نظر
+         * وردپرس «پنل» است و ‎is_admin()‎ آنجا ‎true‎ می‌دهد. اگر داخل شرط
+         * می‌رفت، نقطهٔ آژاکس هیچ‌وقت ثبت نمی‌شد و هر درخواست ‎0‎ برمی‌گرداند
+         * — بدون هیچ خطایی، فقط یک ویجتی که کلیک‌هایش کار نمی‌کنند.
+         */
+        Archive_Endpoint::boot();
 
         /*
          * فقط در سایت. در پنل نه کوئری آرشیوی هست و نه ‎<head>‎ی که این
@@ -213,6 +224,28 @@ final class Plugin {
             ZIG3D_WIDGETS_URL . 'assets/css/zig3d-widgets.css',
             [],
             ZIG3D_WIDGETS_VERSION
+        );
+    }
+
+    /**
+     * اسکریپت آرشیو.
+     *
+     * ‎in_footer‎ چون هیچ کاری قبل از رسیدن DOM ندارد. آرگومان آرایه‌ایِ
+     * ‎strategy‎ عمداً استفاده نشده: از وردپرس ۶٫۳ آمده و این افزونه ۶٫۰ را
+     * هم پشتیبانی می‌کند، جایی که آن آرایه به‌عنوان «درست است» تفسیر
+     * می‌شود و رفتارش تصادفاً یکی درمی‌آید — تا روزی که نیاید.
+     *
+     * وابستگی خالی است: این فایل به jQuery نیاز ندارد. آوردن jQuery فقط
+     * برای یک ‎querySelectorAll‎، هشتاد کیلوبایت به صفحه‌ای اضافه می‌کرد که
+     * ممکن است اصلاً به آن نیاز نداشته باشد.
+     */
+    public function register_scripts(): void {
+        wp_register_script(
+            'zig3d-archive',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-archive.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
         );
     }
 
