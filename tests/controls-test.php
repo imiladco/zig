@@ -32,6 +32,17 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/query-state.php';
+require_once $root . '/includes/facets.php';
+require_once $root . '/includes/filter-schema.php';
+require_once $root . '/includes/schema-store.php';
+require_once $root . '/includes/sorting.php';
+require_once $root . '/includes/attributes.php';
+require_once $root . '/includes/archive-query.php';
+require_once $root . '/includes/seo.php';
+require_once $root . '/includes/card.php';
+require_once $root . '/includes/product-card.php';
+require_once $root . '/includes/widgets/product-archive.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -39,6 +50,7 @@ $widgets = [
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
+    'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
 ];
 
 foreach ($widgets as $label => $class) {

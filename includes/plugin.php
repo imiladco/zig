@@ -33,6 +33,7 @@ final class Plugin {
         'button'        => Widgets\Button::class,
         'product-price' => Widgets\Product_Price::class,
         'product-stock' => Widgets\Product_Stock::class,
+        'product-archive' => Widgets\Product_Archive::class,
     ];
 
     public static function instance(): self {
@@ -180,6 +181,16 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/pulse.php';
+
+        /*
+         * آرشیو به کل لایهٔ فیلتر تکیه دارد. ‎boot_filters()‎ روی ‎init‎
+         * می‌نشیند و ثبت ویجت‌ها هم بعد از آن است، ولی المنتور در بعضی
+         * مسیرها زودتر صدا می‌زند؛ ‎require_once‎ بی‌هزینه است و جای
+         * «کلاس پیدا نشد» را می‌بندد.
+         */
+        if (class_exists('WooCommerce')) {
+            $this->boot_filters();
+        }
 
         foreach (self::WIDGETS as $file => $class) {
             /*

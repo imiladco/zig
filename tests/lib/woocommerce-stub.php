@@ -239,6 +239,19 @@ namespace {
         }
     }
 
+    if (!function_exists('get_terms')) {
+        function get_terms($args = []) { return $GLOBALS['__zig_wp_terms'] ?? []; }
+    }
+    if (!function_exists('get_posts')) {
+        function get_posts($args = []) { return []; }
+    }
+    if (!function_exists('wc_get_attribute_taxonomy_names')) {
+        function wc_get_attribute_taxonomy_names() { return $GLOBALS['__zig_attr_names'] ?? []; }
+    }
+    if (!function_exists('wc_attribute_label')) {
+        function wc_attribute_label($name) { return (string) $name; }
+    }
+
     if (!function_exists('wc_get_product_visibility_term_ids')) {
         function wc_get_product_visibility_term_ids() {
             return $GLOBALS['__zig_visibility'] ?? [

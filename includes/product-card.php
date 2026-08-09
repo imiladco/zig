@@ -311,18 +311,4 @@ final class Product_Card {
 
         return '';
     }
-
-    /**
-     * آماده‌کردن کش برای یک صفحه از محصولات.
-     *
-     * وردپرس متا و ترم‌های پست‌های یک ‎WP_Query‎ را خودش یک‌جا می‌خواند، ولی
-     * پستِ *تصویر شاخص* را نه. بدون این، هر کارت یک کوئری جدا برای
-     * اتچمنتش می‌زند — پانزده کارت، پانزده رفت‌وبرگشت اضافه که هیچ‌جا هم
-     * دیده نمی‌شوند.
-     */
-    public static function prime(\WP_Query $query): void {
-        if (function_exists('update_post_thumbnail_cache')) {
-            update_post_thumbnail_cache($query);
-        }
-    }
 }
