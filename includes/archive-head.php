@@ -63,12 +63,12 @@ final class Archive_Head {
 
         $decision = Seo::head(
             self::base_url(),
-            Query_State::from_request($params, Attributes::all()),
+            Query_State::from_request($params, Archive_Query::honored_taxonomies(self::facets())),
             self::operators(),
             self::policy(),
             isset($wp_query) ? (int) $wp_query->found_posts : null,
             isset($wp_query) ? (int) $wp_query->max_num_pages : 0,
-            [] !== self::unknown($params)
+            [] !== self::invalid($params)
         );
 
         self::$decision = $decision;
@@ -132,45 +132,53 @@ final class Archive_Head {
     }
 
     /**
-     * پارامترهای ‎filter_*‎ که هیچ‌کس ادعایشان را ندارد.
+     * آدرس‌هایی که گوگل برایشان ‎404‎ خواسته: ادعای بی‌صاحب و فیلتر تکراری.
      *
-     * وجودشان یعنی آدرس چیزی را می‌گوید که در این فروشگاه معنا ندارد —
-     * همان «ترکیب بی‌معنا»یی که گوگل در فهرست ‎404‎ آورده. ولی سه چیز را
-     * باید از هم جدا نگه داشت:
+     * فهرست مجاز از ‎Archive_Query::honored_taxonomies()‎ می‌آید و این
+     * انتخاب، خودش نگهدارندهٔ یک قاعده است: چیزی «شناخته‌شده» شمرده می‌شود
+     * که واقعاً روی کوئری اثر بگذارد. اگر اینجا فهرست دومی می‌ساختیم، دو
+     * تعریف از یک کلمه داشتیم و روزی یکی‌شان جلو می‌افتاد — آن روز یا
+     * صفحهٔ سالم ‎404‎ می‌گرفت، یا آدرسِ تکراری ‎200‎.
      *
-     *   • ویژگی‌های فروشگاه: از ‎Attributes::all()‎، نه از طرح فیلترِ دسته.
-     *     سؤال «آدرس چه چیزی را ادعا می‌کند» است، نه «سایدبار چه چیزی نشان
-     *     می‌دهد»؛ ویژگی‌ای که در سایدبارِ این دسته نیست ولی وجود دارد، هنوز
-     *     یک ادعای معتبر است و ووکامرس هم اعمالش می‌کند.
-     *
-     *   • پارامترهای خودِ ووکامرس: بلاک «وضعیت موجودی» آدرسِ
-     *     ‎?filter_stock_status=instock‎ می‌سازد. اگر آن را نشناسیم، به
-     *     آدرسی که خودِ ووکامرس ساخته ‎404‎ می‌دهیم.
-     *
-     *   • هر چیز دیگری که افزونه‌ای اضافه کرده: فیلتر دارد، چون فهرستِ بستهٔ
-     *     ما نمی‌تواند از افزونه‌های نصب‌نشده خبر داشته باشد و هزینهٔ اشتباه
-     *     اینجا ‎404‎ روی صفحه‌ای سالم است.
+     * صفحه‌بندیِ ناموجود — سومین مورد فهرست گوگل — اینجا نیست چون از
+     * شمارش می‌آید نه از شکل آدرس؛ ‎Seo::state()‎ آن را جدا می‌سنجد.
      *
      * @return string[]
      */
-    private static function unknown(array $params): array {
-        $taxonomies = Attributes::all();
+    private static function invalid(array $params): array {
+        $taxonomies = Archive_Query::honored_taxonomies(self::facets());
 
-        /**
-         * تاکسونومی‌هایی که ‎filter_*‎ آن‌ها معتبر شمرده می‌شود.
-         *
-         * @param string[] $taxonomies
-         */
-        $taxonomies = (array) apply_filters('zig3d_known_filter_taxonomies', $taxonomies);
+        return array_merge(
+            Query_State::unknown_filters($params, $taxonomies),
+            Query_State::duplicate_filters($params, self::query_string())
+        );
+    }
 
-        /*
-         * ‎stock_status‎ تاکسونومی نیست، ولی ‎unknown_filters()‎ فقط نام
-         * پارامتر را می‌سنجد و ‎param_for()‎ پیشوند ‎pa_‎ را می‌اندازد؛ پس
-         * دادنش به همین فهرست، دقیقاً ‎filter_stock_status‎ را مجاز می‌کند.
-         */
-        $taxonomies[] = 'stock_status';
+    /**
+     * رشتهٔ خام پرس‌وجو.
+     *
+     * ‎$_GET‎ کافی نیست: ‎?filter_brand=a&filter_brand=b‎ در PHP فقط ‎b‎
+     * می‌شود و ‎a‎ بی‌صدا ناپدید می‌شود. تنها جایی که آن تکرار هنوز دیده
+     * می‌شود همین‌جاست. اگر در دسترس نباشد، رشتهٔ خالی برمی‌گردد و سنجش
+     * تکرارِ کلید بی‌سروصدا کنار می‌رود — که از ‎404‎ دادن به صفحهٔ سالم
+     * بهتر است.
+     */
+    private static function query_string(): string {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $raw = $_SERVER['QUERY_STRING'] ?? '';
 
-        return Query_State::unknown_filters($params, $taxonomies);
+        return is_string($raw) ? $raw : '';
+    }
+
+    /** گروه‌های فیلترِ دستهٔ جاری، اگر روی دسته باشیم */
+    private static function facets(): array {
+        $term = get_queried_object();
+
+        if (!$term instanceof \WP_Term || Schema_Store::TAXONOMY !== $term->taxonomy) {
+            return [];
+        }
+
+        return Schema_Store::resolve((int) $term->term_id, [])['facets'];
     }
 
     /* =====================================================================
@@ -344,14 +352,6 @@ final class Archive_Head {
      * اپراتور هر گروه، برای بازتولید درستِ ‎query_type_*‎ در کانونیکال.
      */
     private static function operators(): array {
-        $term = get_queried_object();
-
-        if (!$term instanceof \WP_Term || Schema_Store::TAXONOMY !== $term->taxonomy) {
-            return [];
-        }
-
-        $resolved = Schema_Store::resolve((int) $term->term_id, []);
-
-        return Filter_Schema::operators($resolved['facets']);
+        return Filter_Schema::operators(self::facets());
     }
 }

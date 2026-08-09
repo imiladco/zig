@@ -111,9 +111,43 @@ if (!function_exists('set_transient')) {
  */
 if (!function_exists('add_filter')) {
     function add_filter($hook, $callback, $priority = 10, $args = 1) {
-        $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)][(int) $priority] = true;
+        $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)][(int) $priority] = [
+            'callback' => $callback,
+            'args'     => max(1, (int) $args),
+        ];
 
         return true;
+    }
+}
+if (!function_exists('apply_filters')) {
+    /**
+     * اجرای واقعی، نه فقط ثبت.
+     *
+     * نقاط توسعهٔ افزونه بدون این، تست‌نشده می‌مانند: می‌شد دید که کسی
+     * ثبت شده، ولی نه اینکه مقدارش واقعاً به کجا می‌رسد — و تفاوت این دو
+     * همان‌جایی است که یک فیلترِ بی‌اثر ماه‌ها بی‌سروصدا می‌ماند.
+     */
+    function apply_filters($hook, $value, ...$args) {
+        $queue = [];
+
+        foreach ($GLOBALS['__zig_filters'][$hook] ?? [] as $registered) {
+            foreach ($registered as $priority => $entry) {
+                $queue[$priority][] = $entry;
+            }
+        }
+
+        ksort($queue, SORT_NUMERIC);
+
+        foreach ($queue as $entries) {
+            foreach ($entries as $entry) {
+                $value = call_user_func_array(
+                    $entry['callback'],
+                    array_slice(array_merge([$value], $args), 0, $entry['args'])
+                );
+            }
+        }
+
+        return $value;
     }
 }
 if (!function_exists('remove_filter')) {

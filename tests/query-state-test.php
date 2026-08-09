@@ -277,3 +277,135 @@ Tests::same(
     Query_State::unknown_filters(['filter_' => 'x'], $known),
     ['filter_']
 );
+
+/* ==========================================================================
+ * فیلتر تکراری
+ *
+ * «مطمئن شوید ترتیب منطقی فیلترها همیشه یکسان می‌ماند و هیچ فیلتر
+ * تکراری‌ای نمی‌تواند وجود داشته باشد» — و گوگل برای همان‌ها ۴۰۴ خواسته.
+ * دلیلش ساده است: ?filter_brand=up3d,up3d همان چیزی را نشان می‌دهد که
+ * ?filter_brand=up3d، پس یک آدرس دوم رایگان برای یک محتوا — و چون تکرار
+ * حد ندارد، تعدادشان هم بی‌نهایت است.
+ * ======================================================================= */
+
+Tests::group('وضعیت › فیلتر تکراری');
+
+Tests::same(
+    'ترم تکراری داخل یک گروه',
+    Query_State::duplicate_filters(['filter_brand' => 'up3d,up3d']),
+    ['filter_brand']
+);
+
+Tests::same(
+    'ترم‌های متفاوت تکرار نیستند',
+    Query_State::duplicate_filters(['filter_brand' => 'up3d,vhf']),
+    []
+);
+
+/*
+ * normalize() این را بی‌صدا یکی می‌کند — یعنی بدون این سنجش، آدرس ۲۰۰
+ * می‌گرفت و هیچ‌جا معلوم نمی‌شد چیزی تکراری بوده.
+ */
+Tests::same(
+    'و وضعیت واقعاً یکی‌شان می‌کند',
+    Query_State::create(['pa_brand' => ['up3d', 'up3d']])->selected('pa_brand'),
+    ['up3d']
+);
+
+Tests::same(
+    'نحو آرایه‌ای هم همین‌طور',
+    Query_State::duplicate_filters(['filter_brand' => ['up3d', 'up3d']]),
+    ['filter_brand']
+);
+
+/*
+ * ?filter_brand=a&filter_brand=b در PHP فقط b می‌شود و a بی‌صدا ناپدید
+ * می‌شود. تنها جایی که آن تکرار هنوز دیده می‌شود، رشتهٔ خام است.
+ */
+Tests::same(
+    'کلید تکراری فقط از رشتهٔ خام دیده می‌شود',
+    Query_State::duplicate_filters(['filter_brand' => 'vhf'], 'filter_brand=up3d&filter_brand=vhf'),
+    ['filter_brand']
+);
+
+Tests::same(
+    'و بدون رشتهٔ خام، دیده نمی‌شود',
+    Query_State::duplicate_filters(['filter_brand' => 'vhf']),
+    []
+);
+
+/*
+ * filter_brand[] نحو آرایه‌ای خودِ PHP است، نه کلید تکراری: مقدارهایش
+ * سالم می‌رسند و اگر تکراری باشند، سنجش اول می‌گیردشان.
+ */
+Tests::same(
+    'کروشه تکرار حساب نمی‌شود',
+    Query_State::duplicate_filters(['filter_brand' => ['up3d', 'vhf']], 'filter_brand[]=up3d&filter_brand[]=vhf'),
+    []
+);
+
+Tests::same(
+    'پارامتر غیرفیلتر تکراری، کار ما نیست',
+    Query_State::duplicate_filters([], 'utm_source=a&utm_source=b'),
+    []
+);
+
+Tests::same(
+    'رشتهٔ خام خالی چیزی نمی‌شکند',
+    Query_State::duplicate_filters(['filter_brand' => 'up3d'], ''),
+    []
+);
+
+/*
+ * اسلاگ‌ها قبل از مقایسه پاک‌سازی می‌شوند، وگرنه UP3D و up3d دو ترم
+ * متفاوت شمرده می‌شدند در حالی که دیتابیس یکی‌شان می‌داند.
+ */
+Tests::same(
+    'تفاوت حروف بزرگ و کوچک تکرار است',
+    Query_State::duplicate_filters(['filter_brand' => 'UP3D,up3d']),
+    ['filter_brand']
+);
+
+Tests::same(
+    'مقدار خالیِ وسط، تکرار نیست',
+    Query_State::duplicate_filters(['filter_brand' => 'up3d,,vhf']),
+    []
+);
+
+/* ==========================================================================
+ * قاعدهٔ «شناخته‌شده یعنی اعمال‌شده»
+ *
+ * هر پارامتری که ناشناخته شمرده نشود، باید واقعاً روی وضعیت اثر بگذارد.
+ * نقض این قاعده بی‌صداست: آدرس ۲۰۰ می‌گیرد، کاربر فکر می‌کند فیلتر اعمال
+ * شده، و همان محتوای بدون فیلتر را می‌بیند.
+ * ======================================================================= */
+
+Tests::group('وضعیت › شناخته‌شده یعنی اعمال‌شده');
+
+$cases = [
+    'همه شناخته‌شده'   => [['filter_brand' => 'up3d', 'filter_axis' => '5'], ['pa_brand', 'pa_axis']],
+    'یکی ناشناخته'     => [['filter_brand' => 'up3d', 'filter_ghost' => 'x'], ['pa_brand']],
+    'هیچ‌کدام شناخته'  => [['filter_a' => '1', 'filter_b' => '2'], []],
+    'کنار پارامترهای دیگر' => [['filter_brand' => 'up3d', 'orderby' => 'price', 'paged' => '2'], ['pa_brand']],
+];
+
+foreach ($cases as $name => [$params, $honored]) {
+    $applied = [];
+
+    foreach (array_keys(Query_State::from_request($params, $honored)->filters()) as $taxonomy) {
+        $applied[] = Query_State::param_for($taxonomy);
+    }
+
+    $unknown = Query_State::unknown_filters($params, $honored);
+
+    foreach (array_keys($params) as $key) {
+        if (0 !== strpos((string) $key, 'filter_') || '' === trim((string) $params[$key])) {
+            continue;
+        }
+
+        Tests::ok(
+            $name . ' › ' . $key . ' یا اعمال می‌شود یا ناشناخته است',
+            in_array($key, $applied, true) !== in_array($key, $unknown, true)
+        );
+    }
+}

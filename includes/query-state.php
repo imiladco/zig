@@ -186,6 +186,107 @@ final class Query_State {
         return $unknown;
     }
 
+    /**
+     * پارامترهای ‎filter_*‎ که یک چیز را دو بار می‌گویند.
+     *
+     * گوگل در همان سند ناوبری وجهی، «فیلتر تکراری» را کنار «ترکیب
+     * بی‌معنا» و «صفحه‌بندی ناموجود» گذاشته و برای هر سه ‎404‎ خواسته، و
+     * جای دیگری صریح‌تر: «مطمئن شوید ترتیب منطقی فیلترها همیشه یکسان
+     * می‌ماند و هیچ فیلتر تکراری‌ای نمی‌تواند وجود داشته باشد.»
+     *
+     * دلیلش هم همان دلیل همیشگی است: ‎?filter_brand=up3d,up3d‎ دقیقاً همان
+     * چیزی را نشان می‌دهد که ‎?filter_brand=up3d‎، پس یک آدرسِ دومِ رایگان
+     * برای یک محتوا. و چون تکرار حد ندارد، تعدادشان هم بی‌نهایت است.
+     *
+     * دو شکل دارد و هر دو باید دیده شوند:
+     *
+     *   • تکرار داخل یک گروه — ‎?filter_brand=up3d,up3d‎ یا
+     *     ‎?filter_brand[]=up3d&filter_brand[]=UP3D‎. این را از ‎$params‎
+     *     می‌شود دید، چون ‎normalize()‎ بی‌صدا یکی‌شان می‌کند.
+     *
+     *   • تکرار خودِ کلید — ‎?filter_brand=a&filter_brand=b‎. این را از
+     *     ‎$params‎ *نمی‌شود* دید: PHP فقط آخری را نگه می‌دارد و اولی بی‌صدا
+     *     ناپدید می‌شود. تنها جایی که هنوز هست، رشتهٔ خام پرس‌وجوست.
+     *
+     * ‎$query_string‎ خالی یعنی فقط شکل اول سنجیده می‌شود — روی محیط‌هایی
+     * که ‎QUERY_STRING‎ در دسترس نیست، بی‌سروصدا کمتر سخت‌گیر می‌شویم، که
+     * از ‎404‎ دادن به صفحهٔ سالم بهتر است.
+     *
+     * @param array  $params       همان ‎$_GET‎.
+     * @param string $query_string رشتهٔ خام پرس‌وجو، معمولاً ‎$_SERVER['QUERY_STRING']‎.
+     * @return string[] نام پارامترهای تکراری
+     */
+    public static function duplicate_filters(array $params, string $query_string = ''): array {
+        $duplicates = [];
+
+        foreach ($params as $key => $value) {
+            $key = (string) $key;
+
+            if (0 !== strpos($key, self::FILTER_PREFIX)) {
+                continue;
+            }
+
+            $terms = [];
+
+            foreach (is_array($value) ? $value : self::split(self::scalar($value)) as $term) {
+                $slug = is_scalar($term) ? self::slug((string) $term) : '';
+
+                if ('' !== $slug) {
+                    $terms[] = $slug;
+                }
+            }
+
+            if (count($terms) !== count(array_unique($terms))) {
+                $duplicates[] = $key;
+            }
+        }
+
+        foreach (self::repeated_keys($query_string) as $key) {
+            $duplicates[] = $key;
+        }
+
+        return array_values(array_unique($duplicates));
+    }
+
+    /**
+     * کلیدهای ‎filter_*‎ که در رشتهٔ خام بیش از یک بار آمده‌اند.
+     *
+     * ‎filter_brand[]‎ تکرار حساب نمی‌شود: آن نحوِ آرایه‌ایِ خودِ PHP است و
+     * مقدارهایش سالم به ‎$params‎ می‌رسند، پس اگر تکراری در کار باشد حلقهٔ
+     * بالا می‌گیردش. چیزی که اینجا دنبالش هستیم، کلیدِ بدونِ کروشه است که
+     * PHP بی‌سروصدا رویش می‌نویسد.
+     *
+     * @return string[]
+     */
+    private static function repeated_keys(string $query_string): array {
+        if ('' === trim($query_string)) {
+            return [];
+        }
+
+        $seen     = [];
+        $repeated = [];
+
+        foreach (explode('&', $query_string) as $pair) {
+            if ('' === $pair) {
+                continue;
+            }
+
+            $name = urldecode(explode('=', $pair, 2)[0]);
+
+            if (0 !== strpos($name, self::FILTER_PREFIX) || false !== strpos($name, '[')) {
+                continue;
+            }
+
+            if (isset($seen[$name])) {
+                $repeated[] = $name;
+            }
+
+            $seen[$name] = true;
+        }
+
+        return $repeated;
+    }
+
     /* =====================================================================
      * خواندن
      * =================================================================== */
@@ -502,7 +603,12 @@ final class Query_State {
             return (string) sanitize_title($value);
         }
 
-        return (string) preg_replace('/[\x00-\x1F\x7F<>"\'`\\\\\/&?#,|=\s]+/u', '', rawurldecode($value));
+        /*
+         * ‎strtolower‎ چون خودِ وردپرس هم همین کار را می‌کند
+         * (‎sanitize_title_with_dashes()‎). بدون آن، ‎UP3D‎ و ‎up3d‎ اینجا
+         * دو ترم متفاوت شمرده می‌شوند در حالی که دیتابیس یکی‌شان می‌داند.
+         */
+        return (string) preg_replace('/[\x00-\x1F\x7F<>"\'`\\\\\/&?#,|=\s]+/u', '', strtolower(rawurldecode($value)));
     }
 
     /** کلید ترتیب: مثل نام تاکسونومی، ولی نقطه هم مجاز است */

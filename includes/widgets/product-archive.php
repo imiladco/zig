@@ -1199,11 +1199,28 @@ final class Product_Archive extends Widget_Base {
         return Seo::state($state, (int) $query->found_posts, (int) $query->max_num_pages);
     }
 
+    /**
+     * وضعیت، از روی آدرس.
+     *
+     * فهرست مجاز از ‎Archive_Query::honored_taxonomies()‎ می‌آید، نه فقط از
+     * طرحِ فیلترِ این دسته. تفاوتش مهم است: ویژگی‌ای که در سایدبار نیست ولی
+     * در فروشگاه ثبت شده، هنوز روی کوئری *اصلی* اعمال می‌شود چون ووکامرس
+     * خودش اعمالش می‌کند. اگر ویجت نادیده‌اش بگیرد، شمارشی که ‎Archive_Head‎
+     * از کوئری اصلی خوانده با گریدی که ویجت نشان می‌دهد فرق می‌کند — و آن
+     * اختلاف می‌تواند یعنی سرور ‎404‎ بفرستد و گرید محصول نشان بدهد.
+     *
+     * سایدبار همچنان فقط طرح را نشان می‌دهد؛ «چه چیزی نمایش داده شود» و
+     * «آدرس چه چیزی را ادعا می‌کند» دو سؤال جدا هستند.
+     */
     private function state(array $facets, array $sorts): Query_State {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $params = is_array($_GET) ? wp_unslash($_GET) : [];
 
-        return Query_State::from_request($params, Filter_Schema::taxonomies($facets), Sorting::keys($sorts));
+        return Query_State::from_request(
+            $params,
+            Archive_Query::honored_taxonomies($facets),
+            Sorting::keys($sorts)
+        );
     }
 
     /** آدرس پایه، بدون هیچ پارامتری */

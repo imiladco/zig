@@ -220,3 +220,60 @@ Tests::ok(
 );
 
 $GLOBALS['__zig_options'] = [];
+
+/* ==========================================================================
+ * قاعدهٔ «شناخته‌شده یعنی اعمال‌شده»
+ *
+ * فهرست تاکسونومی‌های مجاز کنار کدی زندگی می‌کند که اعمالشان می‌کند، و
+ * دلیلش همین است: اگر جای دیگری تعریف دومی داشتیم، روزی یکی جلو می‌افتاد
+ * و آن روز یا صفحهٔ سالم ۴۰۴ می‌گرفت، یا آدرس تکراری ۲۰۰.
+ * ======================================================================= */
+
+Tests::group('کوئری › تاکسونومی‌های اعمال‌شدنی');
+
+$facets = [
+    ['taxonomy' => 'pa_brand', 'name' => 'brand'],
+    ['taxonomy' => 'pa_axis', 'name' => 'axis'],
+];
+
+Tests::same(
+    'تاکسونومی‌های طرح، اعمال‌شدنی‌اند',
+    Archive_Query::honored_taxonomies($facets),
+    ['pa_brand', 'pa_axis']
+);
+
+Tests::same('بدون طرح و بدون ویژگی، چیزی نیست', Archive_Query::honored_taxonomies(), []);
+
+/*
+ * تکراری‌ها یکی می‌شوند: یک ویژگی می‌تواند هم ثبت‌شدهٔ فروشگاه باشد و هم
+ * در طرحِ دسته. دو بار آمدنش فهرست را خراب نمی‌کند ولی سنجش‌های بعدی را
+ * گیج می‌کند.
+ */
+Tests::same(
+    'تکراری یکی می‌شود',
+    Archive_Query::honored_taxonomies([
+        ['taxonomy' => 'pa_brand'],
+        ['taxonomy' => 'pa_brand'],
+    ]),
+    ['pa_brand']
+);
+
+/*
+ * سایتی که واقعاً مصرف‌کننده‌ای برای یک پارامتر دارد، از این راه اضافه‌اش
+ * می‌کند — نه با یک فهرست سفتِ حدسی داخل افزونه.
+ */
+$extra = static fn(array $taxonomies): array => array_merge($taxonomies, ['pa_material']);
+
+add_filter('zig3d_honored_filter_taxonomies', $extra);
+
+Tests::ok(
+    'فیلتر می‌تواند اضافه کند',
+    in_array('pa_material', Archive_Query::honored_taxonomies($facets), true)
+);
+
+remove_filter('zig3d_honored_filter_taxonomies', $extra);
+
+Tests::ok(
+    'و برداشتنش هم واقعاً برش می‌دارد',
+    !in_array('pa_material', Archive_Query::honored_taxonomies($facets), true)
+);
