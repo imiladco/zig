@@ -724,3 +724,677 @@ a.zig-list__label:focus-visible {
 		transform: none;
 	}
 }
+
+/* ==========================================================================
+   آرشیو محصولات
+
+   همان قاعدهٔ کل فایل اینجا هم برقرار است: این بخش فقط ساختار و رفتار
+   می‌سازد. رنگ، گِرد بودن گوشه، پدینگ و فاصله از پنل المنتور می‌آیند و چون
+   سلکتور المنتور وزن بیشتری دارد، بر هرچه اینجاست می‌چربند.
+
+   همه‌جا از خصوصیت‌های منطقی (inline/block) استفاده شده نه چپ و راست:
+   این ویجت روی فروشگاه فارسی می‌نشیند ولی قرار نیست فقط آنجا کار کند، و
+   یک margin-left در RTL دقیقاً همان‌جایی است که چیدمان بی‌صدا آینه می‌شود.
+   ========================================================================== */
+
+.zig-archive,
+.zig-archive * {
+	box-sizing: border-box;
+}
+
+/*
+ * دو ستون: سایدبار و بدنه.
+ *
+ * minmax(0, 1fr) و نه 1fr: ستون گرید به‌طور پیش‌فرض از محتوای خودش
+ * کوچک‌تر نمی‌شود، پس یک عنوان بلندِ بدون فاصله یا یک تصویر پهن، ستون را
+ * از ظرفش بیرون می‌زند و کل صفحه اسکرول افقی می‌گیرد.
+ */
+.zig-archive {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 32px;
+	align-items: start;
+}
+
+/*
+ * چیدمان تک‌ستونی زیرِ این عرض، طراحیِ موبایل نیست — فقط جلوگیری از
+ * شکستن است تا سایدبار ۲۸۰ پیکسلی روی نمایشگر ۳۶۰ پیکسلی بدنه را له
+ * نکند. طرح موبایل جای خودش را دارد.
+ */
+@media (min-width: 880px) {
+	.zig-archive--filters-start {
+		grid-template-columns: var(--zig-archive-sidebar, 280px) minmax(0, 1fr);
+	}
+
+	.zig-archive--filters-end {
+		grid-template-columns: minmax(0, 1fr) var(--zig-archive-sidebar, 280px);
+	}
+
+	/*
+	 * سایدبار در HTML اول می‌آید — چون در ترتیب خواندن، «با چه چیزی
+	 * فیلتر کنم» قبل از نتیجه می‌آید. برای حالت «انتهای ردیف» فقط جای
+	 * دیداری‌اش عوض می‌شود، نه ترتیب DOM.
+	 *
+	 * شمارهٔ ستون در گرید از جهت نوشتار پیروی می‌کند، پس ۲ در RTL یعنی
+	 * سمت چپ و در LTR یعنی سمت راست — همان معنایی که «انتها» دارد.
+	 */
+	.zig-archive--filters-end > .zig-archive__filters {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.zig-archive--filters-end > .zig-archive__main {
+		grid-column: 1;
+		grid-row: 1;
+	}
+}
+
+.zig-archive__main {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	/* لنگرِ حالت «بالای گرید» پیام خطا */
+	position: relative;
+	min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   سایدبار فیلتر
+   ----------------------------------------------------------------------- */
+
+/*
+ * چسبنده، ولی بدون ارتفاع ثابت: با max-height و overflow، کاربری که وسط
+ * فهرست برندهاست ناگهان دو ناحیهٔ اسکرول تودرتو دارد و چرخ ماوس در یکی
+ * گیر می‌کند.
+ */
+.zig-archive__filters {
+	position: sticky;
+	inset-block-start: var(--zig-archive-sticky, 16px);
+	align-self: start;
+	min-width: 0;
+}
+
+.zig-filters__title {
+	margin: 0 0 12px;
+	font-size: 1.05rem;
+	font-weight: 700;
+	line-height: 1.6;
+}
+
+.zig-filters__clear {
+	display: inline-block;
+	margin-block-end: 16px;
+	font-size: 0.85rem;
+	text-decoration: underline;
+}
+
+.zig-facet {
+	border-block-end: 1px solid var(--zig-archive-rule, rgba(0, 0, 0, 0.08));
+	padding-block: 12px;
+}
+
+.zig-facet__title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	font-size: 0.95rem;
+	font-weight: 600;
+	line-height: 1.7;
+	/* نشانگر پیش‌فرض مرورگر جای خودش را به فلشِ خودمان می‌دهد */
+	list-style: none;
+}
+
+.zig-facet__title::-webkit-details-marker {
+	display: none;
+}
+
+/*
+ * فلش، با چرخش در حالت باز.
+ *
+ * margin-inline-start: auto آن را به انتهای ردیف می‌برد بدون اینکه لازم
+ * باشد بدانیم متن چقدر است.
+ */
+.zig-facet__title::after {
+	content: "";
+	margin-inline-start: auto;
+	inline-size: 8px;
+	block-size: 8px;
+	border-inline-end: 2px solid currentColor;
+	border-block-end: 2px solid currentColor;
+	transform: rotate(45deg);
+	transition: transform var(--zig-transition, 200ms ease);
+}
+
+.zig-facet[open] > .zig-facet__title::after {
+	transform: rotate(-135deg);
+}
+
+.zig-facet__list {
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.zig-facet__item > a,
+.zig-facet__item > span {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 4px;
+	color: inherit;
+	text-decoration: none;
+	line-height: 1.8;
+	border-radius: 6px;
+}
+
+.zig-facet__item > a:hover {
+	background-color: var(--zig-archive-hover, rgba(0, 0, 0, 0.04));
+}
+
+/*
+ * چک‌باکس تصویری.
+ *
+ * یک <span> است و نه <input>: عنصر واقعیِ کلیک‌شدنی همان لینک است و یک
+ * input اینجا فقط یک هدف فوکوسِ دوم می‌ساخت که هیچ کاری نمی‌کند.
+ * aria-hidden هم دارد، پس صفحه‌خوان دو بار همان حرف را نمی‌زند.
+ */
+.zig-facet__box {
+	flex: none;
+	inline-size: 18px;
+	block-size: 18px;
+	border: 2px solid currentColor;
+	border-radius: 4px;
+	opacity: 0.45;
+	position: relative;
+	transition: opacity var(--zig-transition, 200ms ease);
+}
+
+.zig-facet__item.is-selected .zig-facet__box {
+	opacity: 1;
+	background-color: currentColor;
+}
+
+/* تیک، با رنگِ پس‌زمینهٔ ظرف تا روی مربعِ پرشده دیده شود */
+.zig-facet__item.is-selected .zig-facet__box::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 1px;
+	inset-inline-start: 4px;
+	inline-size: 4px;
+	block-size: 9px;
+	border-inline-end: 2px solid var(--zig-archive-tick, #fff);
+	border-block-end: 2px solid var(--zig-archive-tick, #fff);
+	transform: rotate(45deg);
+}
+
+.zig-facet__count {
+	margin-inline-start: auto;
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.7;
+}
+
+/*
+ * گزینهٔ صفر می‌ماند ولی غیرفعال است.
+ *
+ * حذفش ارتفاع سایدبار را با هر درخواست می‌پراند و کاربر جای گزینه‌ای را
+ * که یک لحظه پیش دیده بود گم می‌کند.
+ */
+.zig-facet__item.is-disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   نوار بالا: شمارش و ترتیب
+   ----------------------------------------------------------------------- */
+
+.zig-archive__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px 20px;
+}
+
+.zig-archive__count {
+	margin: 0;
+	font-size: 0.9rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.zig-sorts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-sorts__pill {
+	display: inline-block;
+	padding: 6px 14px;
+	border-radius: 999px;
+	font-size: 0.85rem;
+	line-height: 1.8;
+	text-decoration: none;
+	color: inherit;
+	transition: background-color var(--zig-transition, 200ms ease);
+}
+
+.zig-sorts__pill:hover {
+	background-color: var(--zig-archive-hover, rgba(0, 0, 0, 0.04));
+}
+
+/* --------------------------------------------------------------------------
+   گرید
+   ----------------------------------------------------------------------- */
+
+.zig-archive__grid {
+	display: grid;
+	grid-template-columns: repeat(var(--zig-archive-columns, 3), minmax(0, 1fr));
+	gap: 24px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * سه ستون روی نمایشگر باریک یعنی کارت‌های صد پیکسلی.
+ *
+ * این با کنترل واکنش‌گرای «تعداد ستون» نمی‌جنگد: سلکتور المنتور
+ * ({{WRAPPER}} .zig-archive__grid) وزن بیشتری دارد، پس به‌محض اینکه مدیر
+ * مقدار تبلت یا موبایل را بگذارد همان می‌نشیند. این فقط جای خالی را پر
+ * می‌کند تا چیدمانِ تنظیم‌نشده نشکند — طرح موبایل جای خودش را دارد.
+ */
+@media (max-width: 879px) {
+	.zig-archive__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+/* سلول کشیده می‌شود تا کارت‌های یک ردیف هم‌قد باشند */
+.zig-archive__cell {
+	display: flex;
+	min-width: 0;
+}
+
+/*
+ * کارت محصول، نه کارت ویژگی.
+ *
+ * نام کلاس یکی است ولی معنایش فرق دارد: آن یکی یک ردیف افقیِ آیکون و متن
+ * است. محدودکردن به داخل گرید، هر دو را بدون تغییر نام کلاس نگه می‌دارد —
+ * و تغییر نام یعنی شکستن هر سایتی که روی این کلاس CSS نوشته.
+ */
+.zig-archive__grid .zig-card {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0;
+	inline-size: 100%;
+}
+
+.zig-archive__grid .zig-card__body {
+	flex: 1 1 auto;
+	gap: 8px;
+}
+
+.zig-card__media {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.zig-card__image {
+	display: block;
+	max-inline-size: 100%;
+	block-size: 100%;
+	object-fit: contain;
+}
+
+/*
+ * نشان و وضعیت موجودی روی تصویر می‌نشینند.
+ *
+ * inset-inline به‌جای left/right: در RTL خودشان جابه‌جا می‌شوند و لازم
+ * نیست قاعدهٔ دومی برای جهت نوشته شود.
+ */
+.zig-card__ribbon,
+.zig-card__stock {
+	position: absolute;
+	inset-block-start: 10px;
+	z-index: 1;
+	padding: 3px 10px;
+	font-size: 0.75rem;
+	line-height: 1.8;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.zig-card__ribbon {
+	inset-inline-start: 10px;
+}
+
+.zig-card__stock {
+	inset-inline-end: 10px;
+}
+
+.zig-card__brand {
+	margin: 0;
+	font-size: 0.8rem;
+	line-height: 1.8;
+	opacity: 0.8;
+}
+
+/*
+ * عنوان و توضیح با تعداد خط محدود.
+ *
+ * -webkit-line-clamp با اینکه پیشوند دارد، در همهٔ مرورگرهای امروزی کار
+ * می‌کند و جایگزین استانداردش هنوز همه‌جا نیست. اگر روزی کار نکرد، متن
+ * کامل دیده می‌شود — یعنی بدترین حالتش هم چیزی را پنهان نمی‌کند.
+ */
+.zig-card__desc {
+	margin: 0;
+	font-size: 0.85rem;
+	line-height: 1.9;
+	overflow-wrap: anywhere;
+}
+
+.zig-archive__grid .zig-card__title,
+.zig-card__desc {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.zig-archive__grid .zig-card__title a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.zig-card__features {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-card__feature {
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	line-height: 1.8;
+}
+
+.zig-card__price {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px;
+	font-variant-numeric: tabular-nums;
+}
+
+/*
+ * دکمه به کف کارت می‌چسبد.
+ *
+ * بدون این، کارتی که توضیح کوتاه‌تری دارد دکمه‌اش وسط می‌ماند و ردیفِ
+ * دکمه‌ها در گرید پله‌پله می‌شود.
+ */
+.zig-card__cta {
+	margin-block-start: auto;
+	align-self: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   بدون نتیجه
+   ----------------------------------------------------------------------- */
+
+.zig-archive__empty {
+	padding: 48px 24px;
+	text-align: center;
+}
+
+.zig-archive__empty-title {
+	margin: 0 0 12px;
+	font-size: 1.05rem;
+	line-height: 1.8;
+}
+
+.zig-archive__empty-link {
+	text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   صفحه‌بندی
+   ----------------------------------------------------------------------- */
+
+.zig-archive__pagination {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.zig-page {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-inline-size: 36px;
+	min-block-size: 36px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-variant-numeric: tabular-nums;
+	text-decoration: none;
+	color: inherit;
+	transition: background-color var(--zig-transition, 200ms ease);
+}
+
+.zig-page:hover {
+	background-color: var(--zig-archive-hover, rgba(0, 0, 0, 0.04));
+}
+
+/* --------------------------------------------------------------------------
+   خطای فنی
+
+   این جعبه فقط برای خطای *فنی* است: تایم‌اوت، ۵۰۰، نانس منقضی، قطعی شبکه.
+   «هیچ محصولی با این فیلتر نیست» از این مسیر نمی‌آید — آن پاسخ درستِ
+   سیستم است و جایش داخل گرید است، نه یک آلرت قرمز با دکمهٔ تلاش مجدد که
+   هرچه بزنی همان برمی‌گردد.
+   ----------------------------------------------------------------------- */
+
+.zig-archive__error {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	border-radius: 10px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+	z-index: 9;
+}
+
+/* صفت hidden باید بر display: flex بچربد، وگرنه جعبه همیشه دیده می‌شود */
+.zig-archive__error[hidden] {
+	display: none;
+}
+
+.zig-archive__error--bottom-center,
+.zig-archive__error--bottom-start,
+.zig-archive__error--bottom-end {
+	position: fixed;
+	inset-block-end: 24px;
+	z-index: 999;
+	max-inline-size: min(420px, calc(100vw - 32px));
+}
+
+.zig-archive__error--bottom-center {
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+}
+
+.zig-archive__error--bottom-start {
+	inset-inline-start: 24px;
+}
+
+.zig-archive__error--bottom-end {
+	inset-inline-end: 24px;
+}
+
+/* لنگرش .zig-archive__main است که position: relative دارد */
+.zig-archive__error--top-grid {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline: 0;
+}
+
+.zig-archive__error-text {
+	margin: 0;
+	flex: 1 1 auto;
+	font-size: 0.9rem;
+	line-height: 1.8;
+}
+
+.zig-archive__retry {
+	flex: none;
+	padding: 6px 14px;
+	border: 1px solid currentColor;
+	border-radius: 8px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 0.85rem;
+	cursor: pointer;
+}
+
+/*
+ * انیمیشن ورود.
+ *
+ * روی جعبه‌ای که تازه از hidden درآمده اجرا می‌شود. حالت وسط‌چینِ پایین
+ * transform خودش را دارد، پس کی‌فریم جداگانه‌ای لازم دارد وگرنه انیمیشن،
+ * وسط‌چینی را از بین می‌برد.
+ */
+@keyframes zig-archive-error-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+}
+
+@keyframes zig-archive-error-in-center {
+	from {
+		opacity: 0;
+		transform: translate(-50%, 12px);
+	}
+}
+
+@keyframes zig-archive-error-fade {
+	from {
+		opacity: 0;
+	}
+}
+
+.zig-archive__error--anim-slide {
+	animation: zig-archive-error-in var(--zig-archive-error-duration, 240ms) ease-out;
+}
+
+.zig-archive__error--anim-slide.zig-archive__error--bottom-center {
+	animation-name: zig-archive-error-in-center;
+}
+
+.zig-archive__error--anim-fade {
+	animation: zig-archive-error-fade var(--zig-archive-error-duration, 240ms) ease-out;
+}
+
+/* --------------------------------------------------------------------------
+   حالت‌ها
+   ----------------------------------------------------------------------- */
+
+/*
+ * در حال گرفتن نتیجهٔ تازه.
+ *
+ * aria-busy همان صفتی است که جاوااسکریپت می‌گذارد و صفحه‌خوان هم می‌فهمدش،
+ * پس یک کلاسِ فقط-تزئینی برای همین کار اضافه نمی‌کنیم.
+ *
+ * pointer-events: none تا کاربر روی کارتی که همین حالا جایش عوض می‌شود
+ * کلیک نکند — کلیک روی محصولِ اشتباه بدتر از کمی صبر است.
+ */
+.zig-archive[aria-busy="true"] .zig-archive__grid {
+	opacity: 0.55;
+	pointer-events: none;
+	transition: opacity var(--zig-transition, 200ms ease);
+}
+
+/*
+ * صفحه‌بندی روی حالتی که چیزی برای صفحه‌بندی ندارد بی‌معناست. رندر سرور
+ * هم آن را نمی‌سازد؛ این برای بعد از یک درخواست آژاکس است که هنوز
+ * صفحه‌بندی قبلی در DOM مانده.
+ */
+.zig-archive[data-zig-state="filtered_empty"] .zig-archive__pagination,
+.zig-archive[data-zig-state="empty"] .zig-archive__pagination,
+.zig-archive[data-zig-state="page_missing"] .zig-archive__pagination {
+	display: none;
+}
+
+/* --------------------------------------------------------------------------
+   دسترس‌پذیری و چاپ
+   ----------------------------------------------------------------------- */
+
+/*
+ * حلقهٔ فوکوس روی هر چیزی که با کیبورد به آن می‌رسیم.
+ *
+ * outline و نه box-shadow: مرورگر outline را بیرون از overflow می‌کشد، پس
+ * حتی داخل ظرفی با گوشهٔ بریده هم کامل دیده می‌شود.
+ */
+.zig-facet__item > a:focus-visible,
+.zig-filters__clear:focus-visible,
+.zig-sorts__pill:focus-visible,
+.zig-page:focus-visible,
+.zig-facet__title:focus-visible,
+.zig-archive__retry:focus-visible,
+.zig-archive__grid .zig-card__title a:focus-visible {
+	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
+	outline-offset: var(--zig-focus-offset, 3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-archive__error {
+		animation: none;
+	}
+
+	.zig-facet__title::after,
+	.zig-facet__box,
+	.zig-sorts__pill,
+	.zig-page,
+	.zig-archive__grid {
+		transition: none;
+	}
+}
+
+/*
+ * در چاپ، فیلتر و ترتیب و صفحه‌بندی معنایی ندارند — کاغذ صفحهٔ بعدی
+ * ندارد. جعبهٔ خطا هم اگر باز باشد، روی متن چاپ می‌افتد.
+ */
+@media print {
+	.zig-archive__filters,
+	.zig-archive__toolbar,
+	.zig-archive__pagination,
+	.zig-archive__error {
+		display: none;
+	}
+
+	.zig-archive {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.zig-archive__grid .zig-card {
+		break-inside: avoid;
+	}
+}

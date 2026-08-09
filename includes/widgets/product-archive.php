@@ -614,6 +614,18 @@ final class Product_Archive extends Widget_Base {
             ],
         ]);
 
+        $this->add_control('error_anim', [
+            'label'       => __('نحوهٔ ظاهرشدن', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SELECT,
+            'default'     => 'slide',
+            'options'     => [
+                'slide' => __('سُر خوردن', 'zig3d-widgets'),
+                'fade'  => __('محو', 'zig3d-widgets'),
+                'none'  => __('بدون حرکت', 'zig3d-widgets'),
+            ],
+            'description' => __('اگر کاربر «حرکت کمتر» را روشن کرده باشد، حرکت خودکار حذف می‌شود.', 'zig3d-widgets'),
+        ]);
+
         $this->end_controls_section();
     }
 
@@ -1705,11 +1717,13 @@ final class Product_Archive extends Widget_Base {
      */
     private function render_error(array $settings): void {
         printf(
-            '<div class="zig-archive__error zig-archive__error--%s" role="alert" aria-live="assertive" hidden>'
+            '<div class="zig-archive__error zig-archive__error--%s zig-archive__error--anim-%s"'
+                . ' role="alert" aria-live="assertive" hidden>'
                 . '<p class="zig-archive__error-text">%s</p>'
                 . '<button type="button" class="zig-archive__retry">%s</button>'
                 . '</div>',
             esc_attr($settings['error_position'] ?? 'bottom-center'),
+            esc_attr($settings['error_anim'] ?? 'slide'),
             esc_html($settings['error_text'] ?? ''),
             esc_html($settings['error_retry'] ?? '')
         );
