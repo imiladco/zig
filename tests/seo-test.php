@@ -172,35 +172,76 @@ Tests::ok(
 Tests::ok('دستهٔ خالیِ بدون فیلتر همچنان ۲۰۰ است', !Seo::is_not_found($clean, 0, 0));
 
 /* ==========================================================================
- * تگ‌های head
+ * ماتریس وضعیت
  * ======================================================================= */
 
-Tests::group('سئو › head');
-
-$head = Seo::head($base, $clean, [], Seo::INDEX_CLEAN, 12);
-
-Tests::same('حالت تمیز، ایندکس‌پذیر', $head['robots'], 'index, follow');
-Tests::same('و کانونیکالش خودش', $head['canonical'], $base);
-Tests::ok('و ۴۰۴ نیست', !$head['not_found']);
-
-$empty = Seo::head($base, $two_groups, [], Seo::INDEX_ALL, 0);
+Tests::group('سئو › وضعیت صفحه');
 
 /*
- * حالتِ ۴۰۴ همیشه noindex می‌گیرد، حتی وقتی سیاست بازتر است. وضعیت ۴۰۴
- * به‌تنهایی کافی است، ولی صفحه‌ای که هنوز محتوا رندر می‌کند ممکن است جایی
- * «نرم» خوانده شود.
+ * چهار حالت، و هر تصمیم دیگری از همین یکی مشتق می‌شود. قبلاً این‌ها چند
+ * بولینِ مستقل بودند و مشکلش این بود که ترکیب‌های ناممکن را ممکن می‌کرد —
+ * مثلاً «۴۰۴ ولی ایندکس‌پذیر». با یک وضعیت واحد، آن ترکیب‌ها قابل بیان
+ * نیستند.
  */
-Tests::ok('نتیجهٔ خالی، ۴۰۴ اعلام می‌شود', $empty['not_found']);
-Tests::same('و noindex می‌گیرد حتی با سیاست باز', $empty['robots'], 'noindex, follow');
+$matrix = [
+    // [وضعیت، شمارش، صفحه‌ها]  ⇒  [حالت، کد، robots، کانونیکال دارد؟، ItemList؟]
+    'نتیجه‌دار'          => [$clean, 12, 2, Seo::STATE_OK, 200, 'index, follow', true, true],
+    'دستهٔ خالی'         => [$clean, 0, 0, Seo::STATE_EMPTY, 200, 'noindex, follow', true, false],
+    'فیلترِ بی‌نتیجه'    => [$two_groups, 0, 0, Seo::STATE_FILTERED_EMPTY, 404, 'noindex, follow', false, false],
+    'صفحهٔ ناموجود'      => [Query_State::create([], '', 9), 40, 3, Seo::STATE_PAGE_MISSING, 404, 'noindex, follow', false, false],
+];
 
-Tests::ok(
-    'بدون دانستن تعداد، ادعای ۴۰۴ نمی‌شود',
-    !Seo::head($base, $two_groups)['not_found']
+foreach ($matrix as $name => [$query, $found, $pages, $state, $status, $robots, $has_canonical, $list]) {
+    $head = Seo::head($base, $query, [], Seo::INDEX_CLEAN, $found, $pages);
+
+    Tests::same($name . ' › حالت', $head['state'], $state);
+    Tests::same($name . ' › کد', $head['status'], $status);
+    Tests::same($name . ' › robots', $head['robots'], $robots);
+    Tests::same($name . ' › کانونیکال', '' !== $head['canonical'], $has_canonical);
+    Tests::same($name . ' › ItemList', $head['item_list'], $list);
+}
+
+/*
+ * دستهٔ خالی ۲۰۰ می‌ماند ولی noindex می‌گیرد. ایندکس‌کردن صفحه‌ای که هیچ
+ * محصولی ندارد نه به کاربر چیزی می‌دهد و نه به سایت: در نتایج جستجو یک
+ * صفحهٔ خالی می‌نشیند که کاربر بلافاصله برمی‌گردد. ولی ۴۰۴ هم نمی‌شود —
+ * آدرس معتبری است که فردا پر می‌شود.
+ */
+Tests::keeps(
+    'ولی دستهٔ خالی همچنان follow می‌گیرد',
+    Seo::head($base, $clean, [], Seo::INDEX_CLEAN, 0, 0)['robots'],
+    'follow'
+);
+
+/*
+ * روی ۴۰۴ کانونیکال چاپ نمی‌شود. اشاره‌دادنش به آدرسی دیگر یعنی هم‌زمان
+ * گفتن «این صفحه وجود ندارد» و «اصلش آنجاست».
+ */
+Tests::same(
+    'کانونیکالِ ۴۰۴ خالی است',
+    Seo::head($base, $two_groups, [], Seo::INDEX_ALL, 0, 0)['canonical'],
+    ''
+);
+
+/*
+ * و سیاستِ بازتر هم نمی‌تواند یک ۴۰۴ را ایندکس‌پذیر کند — همان ترکیب
+ * ناممکنی که ماشین وضعیت برای نبودنش ساخته شد.
+ */
+Tests::same(
+    'سیاست باز، ۴۰۴ را ایندکس‌پذیر نمی‌کند',
+    Seo::head($base, $two_groups, [], Seo::INDEX_ALL, 0, 0)['robots'],
+    'noindex, follow'
+);
+
+Tests::same(
+    'بدون دانستن شمارش، حالت خوش‌بینانه است',
+    Seo::state($two_groups, null),
+    Seo::STATE_OK
 );
 
 Tests::ok(
-    'صفحهٔ ناموجود هم از مسیر head رد می‌شود',
-    Seo::head($base, Query_State::create(['pa_brand' => ['x']], '', 9), [], Seo::INDEX_ALL, 40, 3)['not_found']
+    'و ادعای ۴۰۴ نمی‌شود',
+    !Seo::head($base, $two_groups)['not_found']
 );
 
 /* ==========================================================================

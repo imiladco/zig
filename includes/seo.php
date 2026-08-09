@@ -47,6 +47,34 @@ final class Seo {
      */
     public const INDEX_SINGLE = 'single';
 
+    /* ---------------------------------------------------------------------
+     * وضعیت صفحه
+     *
+     * چهار حالت، و هر تصمیم دیگری از همین یکی مشتق می‌شود: کد HTTP،
+     * دستورهای ‎robots‎، اینکه ‎canonical‎ اصلاً معنا دارد یا نه، و اینکه
+     * دادهٔ ساختاریافته چاپ شود یا نه.
+     *
+     * قبلاً این‌ها چند بولینِ مستقل بودند و مشکلش این بود که ترکیب‌های
+     * ناممکن را ممکن می‌کرد — مثلاً «۴۰۴ ولی ایندکس‌پذیر». با یک وضعیتِ
+     * واحد، آن ترکیب‌ها اصلاً قابل بیان نیستند.
+     * ------------------------------------------------------------------ */
+
+    /** نتیجه دارد و صفحه‌اش وجود دارد */
+    public const STATE_OK = 'ok';
+
+    /**
+     * بدون فیلتر و بدون نتیجه — دستهٔ تازه‌ساخته.
+     *
+     * آدرس معتبری است و ‎200‎ می‌گیرد، ولی چیزی برای ایندکس ندارد.
+     */
+    public const STATE_EMPTY = 'empty';
+
+    /** ترکیب فیلترها هیچ نتیجه‌ای ندارد */
+    public const STATE_FILTERED_EMPTY = 'filtered_empty';
+
+    /** نتیجه هست، ولی این صفحه از آن وجود ندارد */
+    public const STATE_PAGE_MISSING = 'page_missing';
+
     /* =====================================================================
      * ایندکس
      * =================================================================== */
@@ -144,11 +172,51 @@ final class Seo {
      * @param int $max_pages تعداد صفحه‌های موجود؛ صفر یعنی نامعلوم.
      */
     public static function is_not_found(Query_State $state, int $found, int $max_pages = 0): bool {
-        if ($found < 1 && $state->is_filtered()) {
-            return true;
+        return 404 === self::status(self::state($state, $found, $max_pages));
+    }
+
+    /* =====================================================================
+     * وضعیت
+     * =================================================================== */
+
+    /**
+     * کدام‌یک از چهار حالت.
+     *
+     * ‎$found === null‎ یعنی هنوز نمی‌دانیم؛ آن‌وقت خوش‌بینانه ‎ok‎ فرض
+     * می‌شود، چون ادعای ‎404‎ بدون شمارش، بدترین حدسِ ممکن است.
+     */
+    public static function state(Query_State $query, ?int $found, int $max_pages = 0): string {
+        if (null === $found) {
+            return self::STATE_OK;
         }
 
-        return $max_pages > 0 && $state->page() > $max_pages;
+        if ($found < 1) {
+            return $query->is_filtered() ? self::STATE_FILTERED_EMPTY : self::STATE_EMPTY;
+        }
+
+        return $max_pages > 0 && $query->page() > $max_pages ? self::STATE_PAGE_MISSING : self::STATE_OK;
+    }
+
+    /**
+     * کد HTTP این حالت.
+     *
+     * ‎404‎ فقط برای دو حالتی که آدرسشان واقعاً چیزی را نشان نمی‌دهد. دستهٔ
+     * خالی از این دو نیست: یک آدرس معتبر است که مدیر ساخته و فردا پرش
+     * می‌کند.
+     */
+    public static function status(string $state): int {
+        return in_array($state, [self::STATE_FILTERED_EMPTY, self::STATE_PAGE_MISSING], true) ? 404 : 200;
+    }
+
+    /**
+     * آیا دادهٔ ساختاریافته چاپ شود؟
+     *
+     * فقط وقتی چیزی برای توصیف هست. یک ‎ItemList‎ خالی، دادهٔ ساختاریافته‌ای
+     * است که هیچ چیزی نمی‌گوید — از نبودنش بدتر، چون ادعای وجود فهرستی را
+     * می‌کند که خالی است.
+     */
+    public static function emits_item_list(string $state): bool {
+        return self::STATE_OK === $state;
     }
 
     /* =====================================================================
@@ -194,7 +262,7 @@ final class Seo {
      * ‎404‎ اگر لازم باشد اینجا فقط *گزارش* می‌شود؛ فرستادنش کار لایهٔ
      * بالاتر است که به هدرهای HTTP دسترسی دارد.
      *
-     * @return array{directives:array{index:string,follow:string},robots:string,canonical:string,not_found:bool}
+     * @return array{state:string,status:int,directives:array{index:string,follow:string},robots:string,canonical:string,item_list:bool,not_found:bool}
      */
     public static function head(
         string $base_url,
@@ -204,20 +272,40 @@ final class Seo {
         ?int $found = null,
         int $max_pages = 0
     ): array {
-        $not_found = null !== $found && self::is_not_found($state, $found, $max_pages);
+        $page      = self::state($state, $found, $max_pages);
+        $status    = self::status($page);
+        $not_found = 404 === $status;
+
+        /*
+         * دستهٔ خالی هم ‎noindex‎ می‌گیرد، با اینکه ‎200‎ است.
+         *
+         * ایندکس‌کردن صفحه‌ای که هیچ محصولی ندارد، نه به کاربر چیزی می‌دهد
+         * و نه به سایت: در نتایج جستجو یک صفحهٔ خالی می‌نشیند که کاربر
+         * بلافاصله برمی‌گردد، و همان چیزی است که «محتوای نازک» خوانده
+         * می‌شود. وقتی محصولی اضافه شد، خودش برمی‌گردد به ایندکس‌پذیر.
+         *
+         * ولی ‎404‎ نمی‌شود و ‎follow‎ هم می‌ماند: آدرس معتبری است، لینک‌های
+         * داخلی به آن اشاره دارند، و زیردسته‌هایش باید کشف شوند.
+         */
+        $indexable = self::STATE_OK === $page && self::is_indexable($state, $policy);
 
         return [
+            'state'      => $page,
+            'status'     => $status,
+            'directives' => [
+                'index'  => $indexable ? 'index' : 'noindex',
+                'follow' => 'follow',
+            ],
+            'robots'     => $indexable ? 'index, follow' : 'noindex, follow',
+
             /*
-             * حالتِ ‎404‎ همیشه ‎noindex‎ می‌گیرد، حتی وقتی سیاست بازتر است.
-             * وضعیت ‎404‎ به‌تنهایی کافی است، ولی صفحه‌ای که هنوز محتوا
-             * رندر می‌کند ممکن است جایی به‌عنوان «نرم» خوانده شود؛ گفتن هر
-             * دو هزینه‌ای ندارد.
+             * روی ‎404‎ کانونیکال چاپ نمی‌شود. موتور جستجو آن را روی صفحهٔ
+             * خطا نادیده می‌گیرد، و اشاره‌دادنش به آدرسی *دیگر* یعنی
+             * هم‌زمان گفتن «این صفحه وجود ندارد» و «اصلش آنجاست» — دو
+             * پیامِ متناقض دربارهٔ یک آدرس.
              */
-            'directives' => $not_found
-                ? ['index' => 'noindex', 'follow' => 'follow']
-                : self::directives($state, $policy),
-            'robots'     => $not_found ? 'noindex, follow' : self::robots($state, $policy),
-            'canonical'  => self::canonical($base_url, $state, $operators, $policy),
+            'canonical'  => $not_found ? '' : self::canonical($base_url, $state, $operators, $policy),
+            'item_list'  => self::emits_item_list($page),
             'not_found'  => $not_found,
         ];
     }

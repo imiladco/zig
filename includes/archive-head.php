@@ -114,7 +114,14 @@ final class Archive_Head {
 
         $state = Query_State::from_request($params, Attributes::all());
 
-        return $state->is_filtered() || '' !== $state->sort() || $state->page() > 1 ? $state : null;
+        /*
+         * حالت کاملاً تمیز هم برمی‌گردد، نه ‎null‎.
+         *
+         * قبلاً فقط وقتی چیزی تصمیم‌گرفتنی بود که پارامتری در آدرس باشد.
+         * ولی دستهٔ خالیِ بدونِ هیچ پارامتری هم یک تصمیم دارد: ‎noindex‎.
+         * برگرداندن ‎null‎ یعنی آن حالت هیچ‌وقت دیده نشود.
+         */
+        return $state;
     }
 
     /* =====================================================================
@@ -156,6 +163,17 @@ final class Archive_Head {
             esc_attr(self::$decision['robots'])
         );
 
+        /*
+         * روی ‎404‎ کانونیکالی در کار نیست — نه مالِ ما و نه مالِ وردپرس.
+         * توضیحش در ‎Seo::head()‎ است: اشاره‌دادن به آدرسی دیگر روی صفحه‌ای
+         * که وجود ندارد، دو پیام متناقض است.
+         */
+        if ('' === self::$decision['canonical']) {
+            remove_action('wp_head', 'rel_canonical');
+
+            return;
+        }
+
         printf(
             '<link rel="canonical" href="%s">' . "\n",
             esc_url(self::$decision['canonical'])
@@ -173,7 +191,12 @@ final class Archive_Head {
      * @param string $canonical
      */
     public static function filter_canonical($canonical): string {
-        return null === self::$decision ? (string) $canonical : self::$decision['canonical'];
+        if (null === self::$decision) {
+            return (string) $canonical;
+        }
+
+        // رشتهٔ خالی به یوست و رنک‌مث هم می‌گوید چیزی چاپ نکنند
+        return self::$decision['canonical'];
     }
 
     /**
