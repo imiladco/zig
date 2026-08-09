@@ -266,14 +266,44 @@ final class Archive_Query {
      * چیزی اعمالش نمی‌کند؛ پذیرفتنش یعنی نقض همان قاعدهٔ بالا. سایتی که
      * واقعاً مصرف‌کننده‌ای برایش دارد، از راه فیلتر اضافه‌اش می‌کند.
      *
+     * و فقط «کدام تاکسونومی» کافی نیست: اپراتورِ هر گروه هم باید از همین
+     * یک جا بیاید. ‎?filter_color=red,blue‎ با ‎AND‎ و با ‎OR‎ دو نتیجهٔ
+     * کاملاً متفاوت می‌دهد؛ اگر ویجت اپراتور را از طرح بخواند و جای دیگری
+     * از چیز دیگری، همان اختلافِ بی‌صدا برمی‌گردد — این بار روی *معنا* نه
+     * روی فهرست.
+     *
+     * پیش‌فرضِ تاکسونومی‌ای که در طرح نیست، ‎and‎ است نه ‎or‎. این را از
+     * ووکامرس گرفته‌ایم، نه از سلیقه:
+     *
+     *     $chosen[$taxonomy]['query_type'] = $query_type
+     *         ? $query_type
+     *         : apply_filters('woocommerce_layered_nav_default_query_type', 'and');
+     *
+     * روی آرشیو واقعی، کوئری اصلی را ووکامرس اجرا می‌کند و شمارشِ همان
+     * کوئری است که ‎Archive_Head‎ تصمیم ‎404‎ را از آن می‌گیرد. اگر ما برای
+     * گروهی که طرحی ندارد ‎or‎ فرض کنیم، ویجت چیزی نشان می‌دهد که با آن
+     * شمارش نمی‌خواند.
+     *
      * @param array $facets گروه‌های طرحِ فیلتر، اگر در دست باشد
-     * @return string[]
+     * @return array<string,string> تاکسونومی ⇒ ‎or‎ / ‎and‎
      */
-    public static function honored_taxonomies(array $facets = []): array {
-        $taxonomies = array_merge(
-            class_exists(__NAMESPACE__ . '\\Attributes') ? Attributes::all() : [],
-            $facets ? Filter_Schema::taxonomies($facets) : []
-        );
+    public static function honored(array $facets = []): array {
+        $honored = [];
+
+        /*
+         * ویژگی‌های ثبت‌شدهٔ فروشگاه، با پیش‌فرض ووکامرس. اول می‌آیند تا
+         * طرحِ دسته بتواند رویشان بنویسد.
+         */
+        if (class_exists(__NAMESPACE__ . '\\Attributes')) {
+            foreach (Attributes::all() as $taxonomy) {
+                $honored[(string) $taxonomy] = Facets::OP_AND;
+            }
+        }
+
+        foreach ($facets ? Filter_Schema::operators($facets) : [] as $taxonomy => $operator) {
+            // مقدار ناشناخته به پیش‌فرض ووکامرس برمی‌گردد، نه به OR
+            $honored[(string) $taxonomy] = Facets::OP_OR === $operator ? Facets::OP_OR : Facets::OP_AND;
+        }
 
         /**
          * تاکسونومی‌های دیگری که این سایت واقعاً روی کوئری اعمال می‌کند.
@@ -281,13 +311,32 @@ final class Archive_Query {
          * فقط چیزی را اضافه کنید که کسی هم مصرفش می‌کند. پارامتری که
          * پذیرفته شود و اعمال نشود، یک آدرسِ تکراریِ ‎200‎ می‌سازد.
          *
-         * @param string[] $taxonomies
+         * @param array<string,string> $honored تاکسونومی ⇒ اپراتور
          */
-        $taxonomies = (array) apply_filters('zig3d_honored_filter_taxonomies', $taxonomies, $facets);
+        $honored = (array) apply_filters('zig3d_honored_filters', $honored, $facets);
 
-        $taxonomies = array_filter(array_map('strval', $taxonomies), static fn(string $t): bool => '' !== $t);
+        $clean = [];
 
-        return array_values(array_unique($taxonomies));
+        foreach ($honored as $taxonomy => $operator) {
+            $taxonomy = trim((string) $taxonomy);
+
+            if ('' === $taxonomy) {
+                continue;
+            }
+
+            $clean[$taxonomy] = Facets::OP_OR === $operator ? Facets::OP_OR : Facets::OP_AND;
+        }
+
+        return $clean;
+    }
+
+    /**
+     * همان فهرست، بدون اپراتور — برای جاهایی که فقط «کدام» را می‌پرسند.
+     *
+     * @return string[]
+     */
+    public static function honored_taxonomies(array $facets = []): array {
+        return array_keys(self::honored($facets));
     }
 
     /**

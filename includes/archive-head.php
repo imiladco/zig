@@ -59,11 +59,17 @@ final class Archive_Head {
             return;
         }
 
+        $state = Query_State::from_request($params, Archive_Query::honored_taxonomies(self::facets()));
+
+        if (self::normalize($params, $state)) {
+            return;
+        }
+
         global $wp_query;
 
         $decision = Seo::head(
             self::base_url(),
-            Query_State::from_request($params, Archive_Query::honored_taxonomies(self::facets())),
+            $state,
             self::operators(),
             self::policy(),
             isset($wp_query) ? (int) $wp_query->found_posts : null,
@@ -152,6 +158,65 @@ final class Archive_Head {
             Query_State::unknown_filters($params, $taxonomies),
             Query_State::duplicate_filters($params, self::query_string())
         );
+    }
+
+    /**
+     * صریح‌کردن اپراتور در آدرس، اگر مبهم مانده باشد.
+     *
+     * چرا اصلاً لازم است: ‎?filter_color=red,blue‎ بدون ‎query_type_color‎
+     * برای ووکامرس یعنی ‎AND‎ و برای طرحِ ما یعنی ‎OR‎. روی آرشیو واقعی هر
+     * دو اجرا می‌شوند — ووکامرس کوئری اصلی را، ما کوئری ویجت را — و
+     * ‎Archive_Head‎ تصمیم ‎404‎ را از شمارشِ اولی می‌گیرد در حالی که کاربر
+     * نتیجهٔ دومی را می‌بیند.
+     *
+     * به‌جای اینکه یکی تسلیم دیگری شود، ابهام برداشته می‌شود.
+     *
+     * ‎302‎ و نه ‎301‎: مدیر می‌تواند فردا همان گروه را از ‎OR‎ به ‎AND‎
+     * ببرد. مرورگرها ‎301‎ را سرسختانه کش می‌کنند و آن‌وقت بازدیدکننده‌ای
+     * که یک بار این مسیر را رفته، تا پاک‌کردن کش مرورگرش به آدرسِ قدیمی
+     * فرستاده می‌شود. این صفحه‌ها ‎noindex‎ هستند، پس ‎301‎ سودی هم ندارد.
+     *
+     * حلقه نمی‌سازد چون مقصد، خودش دیگر چیزی برای اصلاح ندارد: بعد از
+     * نشستنِ ‎query_type_x=or‎، محاسبهٔ بعدی ‎set‎ و ‎remove‎ خالی می‌دهد.
+     *
+     * @return bool آیا ریدایرکت شد
+     */
+    private static function normalize(array $params, Query_State $state): bool {
+        if (headers_sent()) {
+            return false;
+        }
+
+        $fixes = $state->query_type_fixes($params, Archive_Query::honored(self::facets()));
+
+        if (!$fixes['set'] && !$fixes['remove']) {
+            return false;
+        }
+
+        /*
+         * آدرسِ فعلی، نه آدرسِ بازساخته. ‎utm_*‎ و هر چیز دیگری که ما
+         * نمی‌شناسیم باید سر جایش بماند: ریدایرکتی که پارامتر کمپین را
+         * می‌اندازد، گزارش‌های تبلیغات را می‌شکند و کسی هم به این کد شک
+         * نمی‌کند.
+         */
+        $url = home_url(add_query_arg([]));
+
+        if ($fixes['remove']) {
+            $url = remove_query_arg($fixes['remove'], $url);
+        }
+
+        if ($fixes['set']) {
+            $url = add_query_arg($fixes['set'], $url);
+        }
+
+        /*
+         * ‎wp_redirect()‎ اگر فیلتری آدرس را خالی کند ‎false‎ می‌دهد و
+         * هیچ هدری نمی‌فرستد؛ ‎exit‎ در آن حالت یعنی صفحهٔ سفید.
+         */
+        if (!wp_safe_redirect($url, 302)) {
+            return false;
+        }
+
+        exit;
     }
 
     /**

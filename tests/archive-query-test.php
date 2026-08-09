@@ -232,8 +232,8 @@ $GLOBALS['__zig_options'] = [];
 Tests::group('کوئری › تاکسونومی‌های اعمال‌شدنی');
 
 $facets = [
-    ['taxonomy' => 'pa_brand', 'name' => 'brand'],
-    ['taxonomy' => 'pa_axis', 'name' => 'axis'],
+    ['taxonomy' => 'pa_brand', 'name' => 'brand', 'operator' => 'or'],
+    ['taxonomy' => 'pa_axis', 'name' => 'axis', 'operator' => 'and'],
 ];
 
 Tests::same(
@@ -242,38 +242,46 @@ Tests::same(
     ['pa_brand', 'pa_axis']
 );
 
+/*
+ * و فقط «کدام» نه — «با چه معنایی» هم. ?filter_color=red,blue با AND و
+ * با OR دو نتیجهٔ کاملاً متفاوت است؛ اگر ویجت اپراتور را از طرح بخواند و
+ * جای دیگری از چیز دیگری، همان اختلاف بی‌صدا برمی‌گردد.
+ */
+Tests::same(
+    'و اپراتور هم از همین‌جا می‌آید',
+    Archive_Query::honored($facets),
+    ['pa_brand' => 'or', 'pa_axis' => 'and']
+);
+
 Tests::same('بدون طرح و بدون ویژگی، چیزی نیست', Archive_Query::honored_taxonomies(), []);
 
 /*
- * تکراری‌ها یکی می‌شوند: یک ویژگی می‌تواند هم ثبت‌شدهٔ فروشگاه باشد و هم
- * در طرحِ دسته. دو بار آمدنش فهرست را خراب نمی‌کند ولی سنجش‌های بعدی را
- * گیج می‌کند.
+ * اپراتور ناشناخته به and برمی‌گردد، نه or: پیش‌فرض خودِ ووکامرس همین
+ * است و روی آرشیو واقعی، کوئری اصلی را ووکامرس می‌سازد.
  */
 Tests::same(
-    'تکراری یکی می‌شود',
-    Archive_Query::honored_taxonomies([
-        ['taxonomy' => 'pa_brand'],
-        ['taxonomy' => 'pa_brand'],
-    ]),
-    ['pa_brand']
+    'اپراتور بی‌معنا، پیش‌فرض ووکامرس را می‌گیرد',
+    Archive_Query::honored([['taxonomy' => 'pa_brand', 'operator' => 'xor']]),
+    ['pa_brand' => 'and']
 );
 
 /*
  * سایتی که واقعاً مصرف‌کننده‌ای برای یک پارامتر دارد، از این راه اضافه‌اش
  * می‌کند — نه با یک فهرست سفتِ حدسی داخل افزونه.
  */
-$extra = static fn(array $taxonomies): array => array_merge($taxonomies, ['pa_material']);
+$extra = static fn(array $honored): array => $honored + ['pa_material' => 'or'];
 
-add_filter('zig3d_honored_filter_taxonomies', $extra);
+add_filter('zig3d_honored_filters', $extra);
 
-Tests::ok(
+Tests::same(
     'فیلتر می‌تواند اضافه کند',
-    in_array('pa_material', Archive_Query::honored_taxonomies($facets), true)
+    Archive_Query::honored($facets)['pa_material'] ?? '',
+    'or'
 );
 
-remove_filter('zig3d_honored_filter_taxonomies', $extra);
+remove_filter('zig3d_honored_filters', $extra);
 
 Tests::ok(
     'و برداشتنش هم واقعاً برش می‌دارد',
-    !in_array('pa_material', Archive_Query::honored_taxonomies($facets), true)
+    !isset(Archive_Query::honored($facets)['pa_material'])
 );

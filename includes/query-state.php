@@ -108,7 +108,7 @@ final class Query_State {
 
             $param = self::param_for($taxonomy);
 
-            if (!isset($params[$param])) {
+            if (!isset($params[$param]) || !self::honorable($params[$param])) {
                 continue;
             }
 
@@ -157,7 +157,17 @@ final class Query_State {
         foreach (array_keys($params) as $key) {
             $key = (string) $key;
 
-            if (0 !== strpos($key, self::FILTER_PREFIX) || isset($allowed[$key])) {
+            if (0 !== strpos($key, self::FILTER_PREFIX)) {
+                continue;
+            }
+
+            /*
+             * تاکسونومیِ شناخته‌شده هم اگر مقدارش اعمال‌نشدنی باشد، ادعای
+             * بی‌صاحب است: ‎?filter_brand[]=up3d‎ را نه ووکامرس اعمال
+             * می‌کند و نه ما. «شناخته‌شده» یعنی *این درخواست* اثر می‌گذارد،
+             * نه اینکه اسمِ پارامتر آشناست.
+             */
+            if (isset($allowed[$key]) && self::honorable($params[$key] ?? null)) {
                 continue;
             }
 
@@ -436,6 +446,70 @@ final class Query_State {
     }
 
     /**
+     * فاصلهٔ آدرسِ فعلی تا آدرسی که اپراتورش صریح است.
+     *
+     * مسئله‌ای که این حل می‌کند از یک جملهٔ ووکامرس می‌آید:
+     *
+     *     $chosen[$taxonomy]['query_type'] = $query_type
+     *         ? $query_type
+     *         : apply_filters('woocommerce_layered_nav_default_query_type', 'and');
+     *
+     * یعنی ‎?filter_color=red,blue‎ بدون ‎query_type_color‎ برای ووکامرس
+     * «هم قرمز و هم آبی» است. طرحِ ما همان گروه را ‎OR‎ می‌داند. روی آرشیو
+     * واقعی هر دو هم‌زمان اجرا می‌شوند: ووکامرس کوئری اصلی را می‌سازد (که
+     * ‎Archive_Head‎ شمارشش را می‌خواند) و ویجت کوئری خودش را. دو معنا، دو
+     * شمارش — و روزی که به هم برسند، سرور ‎404‎ می‌فرستد و گرید محصول نشان
+     * می‌دهد.
+     *
+     * راه‌حل این نیست که یکی تسلیم دیگری شود، این است که آدرس دیگر مبهم
+     * نماند: اگر گروهی ‎OR‎ است و بیش از یک ترم دارد، ‎query_type_x=or‎ در
+     * آدرس بنشیند. آن‌وقت هر دو طرف یک چیز می‌خوانند.
+     *
+     * پارامترِ بی‌اثر هم برداشته می‌شود — ‎query_type_x=and‎ روی گروهی که
+     * یک ترم دارد هیچ چیزی را عوض نمی‌کند و فقط یک آدرسِ دومِ رایگان برای
+     * همان محتوا می‌سازد؛ همان تکراری که قرار بود نساخته شود.
+     *
+     * @param array                $params    همان ‎$_GET‎.
+     * @param array<string,string> $operators تاکسونومی ⇒ ‎or‎ / ‎and‎
+     * @return array{set:array<string,string>,remove:string[]}
+     */
+    public function query_type_fixes(array $params, array $operators = []): array {
+        $desired = [];
+
+        foreach ($this->filters as $taxonomy => $terms) {
+            if (count($terms) < 2) {
+                continue;
+            }
+
+            // ‎and‎ همان پیش‌فرض ووکامرس است؛ نوشتنش فقط آدرس دوم می‌سازد
+            if ('and' === strtolower((string) ($operators[$taxonomy] ?? 'or'))) {
+                continue;
+            }
+
+            $desired[self::query_type_for($taxonomy)] = 'or';
+        }
+
+        $set    = [];
+        $remove = [];
+
+        foreach ($desired as $param => $value) {
+            if (self::scalar($params[$param] ?? '') !== $value) {
+                $set[$param] = $value;
+            }
+        }
+
+        foreach (array_keys($params) as $key) {
+            $key = (string) $key;
+
+            if (0 === strpos($key, self::QUERY_TYPE_PREFIX) && !isset($desired[$key])) {
+                $remove[] = $key;
+            }
+        }
+
+        return ['set' => $set, 'remove' => $remove];
+    }
+
+    /**
      * امضای متنیِ وضعیت — پایدار و مستقل از ترتیب کلیک کاربر.
      *
      * بدون مرتب‌سازی، «برند بعد محور» و «محور بعد برند» دو کلید کش متفاوت
@@ -553,6 +627,29 @@ final class Query_State {
      */
     private static function scalar($value): string {
         return is_scalar($value) ? (string) $value : '';
+    }
+
+    /**
+     * آیا این مقدار اصلاً اعمال می‌شود؟
+     *
+     * ووکامرس مقدارِ غیررشته‌ای را صریحاً می‌اندازد:
+     *
+     *     if ( 0 === strpos( $key, 'filter_' ) ) {
+     *         if ( ! is_string( $value ) ) {
+     *             continue;
+     *         }
+     *
+     * یعنی ‎?filter_brand[]=up3d‎ روی کوئری اصلی هیچ اثری ندارد. اگر ما
+     * اعمالش کنیم، گریدِ ویجت با شمارشی که ‎Archive_Head‎ از کوئری اصلی
+     * خوانده نمی‌خواند — و آن اختلاف می‌تواند یعنی سرور ‎404‎ بفرستد و
+     * گرید محصول نشان بدهد.
+     *
+     * پس همان‌جا که ووکامرس می‌اندازد، ما هم می‌اندازیم؛ و
+     * ‎unknown_filters()‎ همان مقدار را «ادعای بی‌صاحب» گزارش می‌کند، که
+     * دقیقاً هم هست.
+     */
+    private static function honorable($value): bool {
+        return is_string($value);
     }
 
     /** ‎'up3d,vhf'‎ ⇒ ‎['up3d','vhf']‎ */

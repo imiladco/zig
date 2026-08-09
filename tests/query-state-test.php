@@ -409,3 +409,117 @@ foreach ($cases as $name => [$params, $honored]) {
         );
     }
 }
+
+/* ==========================================================================
+ * صریح‌کردن اپراتور در آدرس
+ *
+ * ووکامرس وقتی query_type_* نباشد، and فرض می‌کند:
+ *
+ *     $chosen[$taxonomy]['query_type'] = $query_type
+ *         ? $query_type
+ *         : apply_filters('woocommerce_layered_nav_default_query_type', 'and');
+ *
+ * یعنی ?filter_color=red,blue بدون آن پارامتر برای ووکامرس «هم قرمز و هم
+ * آبی» است و برای طرحِ ما «قرمز یا آبی». روی آرشیو واقعی هر دو اجرا
+ * می‌شوند: شمارشِ ۴۰۴ از کوئری ووکامرس می‌آید و گرید از کوئری ما.
+ * ======================================================================= */
+
+Tests::group('وضعیت › صریح‌کردن اپراتور');
+
+$or_group = Query_State::create(['pa_color' => ['red', 'blue']]);
+
+Tests::same(
+    'گروه OR با دو ترم، پارامتر می‌خواهد',
+    $or_group->query_type_fixes(['filter_color' => 'red,blue'], ['pa_color' => 'or']),
+    ['set' => ['query_type_color' => 'or'], 'remove' => []]
+);
+
+Tests::same(
+    'و وقتی هست، کاری لازم نیست',
+    $or_group->query_type_fixes(
+        ['filter_color' => 'red,blue', 'query_type_color' => 'or'],
+        ['pa_color' => 'or']
+    ),
+    ['set' => [], 'remove' => []]
+);
+
+/*
+ * and همان پیش‌فرض ووکامرس است؛ نوشتنش فقط یک آدرس دوم برای همان محتوا
+ * می‌سازد.
+ */
+Tests::same(
+    'گروه AND چیزی نمی‌خواهد',
+    $or_group->query_type_fixes(['filter_color' => 'red,blue'], ['pa_color' => 'and']),
+    ['set' => [], 'remove' => []]
+);
+
+Tests::same(
+    'و پارامتر مخالفِ طرح برداشته می‌شود',
+    $or_group->query_type_fixes(
+        ['filter_color' => 'red,blue', 'query_type_color' => 'or'],
+        ['pa_color' => 'and']
+    ),
+    ['set' => [], 'remove' => ['query_type_color']]
+);
+
+/*
+ * با یک ترم، and و or دقیقاً یک چیزند: پارامتر بی‌اثر است و فقط آدرس
+ * تکراری می‌سازد.
+ */
+Tests::same(
+    'یک ترم، پارامتر بی‌اثر است',
+    Query_State::create(['pa_color' => ['red']])->query_type_fixes(
+        ['filter_color' => 'red', 'query_type_color' => 'or'],
+        ['pa_color' => 'or']
+    ),
+    ['set' => [], 'remove' => ['query_type_color']]
+);
+
+Tests::same(
+    'پارامتر یتیم هم برداشته می‌شود',
+    Query_State::create()->query_type_fixes(['query_type_ghost' => 'or'], []),
+    ['set' => [], 'remove' => ['query_type_ghost']]
+);
+
+/*
+ * حلقه نمی‌سازد: مقصدِ ریدایرکت خودش دیگر چیزی برای اصلاح ندارد.
+ */
+$fixed = ['filter_color' => 'red,blue', 'query_type_color' => 'or'];
+
+Tests::same(
+    'اصلاحِ اصلاح‌شده، خالی است',
+    Query_State::from_request($fixed, ['pa_color'])->query_type_fixes($fixed, ['pa_color' => 'or']),
+    ['set' => [], 'remove' => []]
+);
+
+/* ==========================================================================
+ * مقدار غیررشته‌ای
+ *
+ * ووکامرس صریحاً می‌اندازدش:
+ *
+ *     if ( 0 === strpos( $key, 'filter_' ) ) {
+ *         if ( ! is_string( $value ) ) { continue; }
+ *
+ * اگر ما اعمالش کنیم، گرید با شمارشی که Archive_Head از کوئری اصلی
+ * خوانده نمی‌خواند.
+ * ======================================================================= */
+
+Tests::group('وضعیت › مقدار غیررشته‌ای');
+
+Tests::same(
+    'آرایه اعمال نمی‌شود، مثل ووکامرس',
+    Query_State::from_request(['filter_brand' => ['up3d']], ['pa_brand'])->filters(),
+    []
+);
+
+Tests::same(
+    'و ادعای بی‌صاحب گزارش می‌شود',
+    Query_State::unknown_filters(['filter_brand' => ['up3d']], ['pa_brand']),
+    ['filter_brand']
+);
+
+Tests::same(
+    'رشته همچنان اعمال می‌شود',
+    Query_State::from_request(['filter_brand' => 'up3d'], ['pa_brand'])->selected('pa_brand'),
+    ['up3d']
+);

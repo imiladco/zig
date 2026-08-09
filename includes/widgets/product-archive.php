@@ -1082,10 +1082,19 @@ final class Product_Archive extends Widget_Base {
         $sort     = Sorting::resolve($sorts, $state->sort(), isset($base['s']));
         $per_page = Archive_Query::per_page((int) ($settings['per_page'] ?? 9));
 
+        /*
+         * اپراتور هر گروه از یک جا می‌آید و از همان‌جا هم به کوئری، هم به
+         * لینک‌ها، هم به شمارش‌ها می‌رود. اگر لینک‌ها آن را نگیرند — که
+         * تا همین امروز نمی‌گرفتند — لینکِ «مرتب‌سازی» روی گروهی که مدیر
+         * ‎AND‎ گذاشته، ‎query_type=or‎ می‌نویسد و معنای فیلتر را وسط
+         * کلیک عوض می‌کند.
+         */
+        $operators = Archive_Query::honored($facets);
+
         $query = Archive_Query::run(
             $base,
             $state,
-            Filter_Schema::operators($facets),
+            $operators,
             $sort,
             $per_page
         );
@@ -1120,14 +1129,14 @@ final class Product_Archive extends Widget_Base {
         echo '<div ' . $this->get_render_attribute_string('root') . '>';
 
         if ('yes' === ($settings['filters_on'] ?? '') && $facets) {
-            $this->render_sidebar($settings, $facets, $state, $base, $context);
+            $this->render_sidebar($settings, $facets, $state, $base, $context, $operators);
         }
 
         echo '<div class="zig-archive__main">';
 
-        $this->render_toolbar($settings, $sorts, $state, (int) $query->found_posts);
-        $this->render_grid($settings, $query, $state);
-        $this->render_pagination($settings, $state, (int) $query->max_num_pages);
+        $this->render_toolbar($settings, $sorts, $state, (int) $query->found_posts, $operators);
+        $this->render_grid($settings, $query, $state, $operators);
+        $this->render_pagination($settings, $state, (int) $query->max_num_pages, $operators);
         $this->render_error($settings);
 
         echo '</div></div>';
@@ -1240,9 +1249,8 @@ final class Product_Archive extends Widget_Base {
 
     /* ---------------------------------------------------------------- */
 
-    private function render_sidebar(array $settings, array $facets, Query_State $state, array $base, string $context): void {
-        $operators = Filter_Schema::operators($facets);
-        $url       = $this->base_url();
+    private function render_sidebar(array $settings, array $facets, Query_State $state, array $base, string $context, array $operators = []): void {
+        $url = $this->base_url();
 
         echo '<aside class="zig-archive__filters" aria-label="' . esc_attr($settings['filters_title'] ?? '') . '">';
 
@@ -1349,7 +1357,7 @@ final class Product_Archive extends Widget_Base {
 
     /* ---------------------------------------------------------------- */
 
-    private function render_toolbar(array $settings, array $sorts, Query_State $state, int $found): void {
+    private function render_toolbar(array $settings, array $sorts, Query_State $state, int $found, array $operators = []): void {
         if ('yes' !== ($settings['sorting_on'] ?? '') && 'yes' !== ($settings['count_on'] ?? '')) {
             return;
         }
@@ -1372,13 +1380,13 @@ final class Product_Archive extends Widget_Base {
         }
 
         if ('yes' === ($settings['sorting_on'] ?? '') && $sorts) {
-            $this->render_sorts($sorts, $state);
+            $this->render_sorts($sorts, $state, $operators);
         }
 
         echo '</div>';
     }
 
-    private function render_sorts(array $sorts, Query_State $state): void {
+    private function render_sorts(array $sorts, Query_State $state, array $operators = []): void {
         $url     = $this->base_url();
         $current = Sorting::resolve($sorts, $state->sort());
 
@@ -1390,7 +1398,7 @@ final class Product_Archive extends Widget_Base {
             printf(
                 '<li class="zig-sorts__item"><a class="zig-sorts__pill%1$s" href="%2$s"%3$s>%4$s</a></li>',
                 $active ? ' is-active' : '',
-                esc_url(Seo::url($url, $state->with_sort($option['key']))),
+                esc_url(Seo::url($url, $state->with_sort($option['key']), $operators)),
                 $active ? ' aria-current="true"' : '',
                 esc_html($option['label'])
             );
@@ -1401,9 +1409,9 @@ final class Product_Archive extends Widget_Base {
 
     /* ---------------------------------------------------------------- */
 
-    private function render_grid(array $settings, \WP_Query $query, Query_State $state): void {
+    private function render_grid(array $settings, \WP_Query $query, Query_State $state, array $operators = []): void {
         if (!$query->have_posts()) {
-            $this->render_empty($settings, $state, (int) $query->found_posts);
+            $this->render_empty($settings, $state, (int) $query->found_posts, $operators);
 
             return;
         }
@@ -1608,14 +1616,14 @@ final class Product_Archive extends Widget_Base {
      * نمی‌دهد. پس اینجا صریح می‌گوییم و یک پیوند به صفحهٔ اولِ *همین*
      * فیلترها می‌گذاریم.
      */
-    private function render_empty(array $settings, Query_State $state, int $found): void {
+    private function render_empty(array $settings, Query_State $state, int $found, array $operators = []): void {
         echo '<div class="zig-archive__empty">';
 
         if ($found > 0 && $state->page() > 1) {
             printf(
                 '<p class="zig-archive__empty-title">%s</p><a class="zig-archive__empty-link" href="%s">%s</a>',
                 esc_html__('این صفحه از نتایجِ فعلی وجود ندارد.', 'zig3d-widgets'),
-                esc_url(Seo::url($this->base_url(), $state->with_page(1))),
+                esc_url(Seo::url($this->base_url(), $state->with_page(1), $operators)),
                 esc_html__('رفتن به صفحهٔ اول همین فیلترها', 'zig3d-widgets')
             );
 
@@ -1641,7 +1649,7 @@ final class Product_Archive extends Widget_Base {
      * بدون JS راهی به صفحهٔ دوم نماند و خزنده هم چیزی برای دنبال‌کردن
      * نداشته باشد.
      */
-    private function render_pagination(array $settings, Query_State $state, int $pages): void {
+    private function render_pagination(array $settings, Query_State $state, int $pages, array $operators = []): void {
         if ($pages < 2) {
             return;
         }
@@ -1654,7 +1662,7 @@ final class Product_Archive extends Widget_Base {
         if ($page > 1) {
             printf(
                 '<a class="zig-page zig-page--prev" href="%s" rel="prev">%s</a>',
-                esc_url(Seo::url($url, $state->with_page($page - 1))),
+                esc_url(Seo::url($url, $state->with_page($page - 1), $operators)),
                 esc_html($settings['label_prev'] ?? '')
             );
         }
@@ -1671,7 +1679,7 @@ final class Product_Archive extends Widget_Base {
 
             printf(
                 '<a class="zig-page" href="%s">%s</a>',
-                esc_url(Seo::url($url, $state->with_page($number))),
+                esc_url(Seo::url($url, $state->with_page($number), $operators)),
                 esc_html(Price::persian((string) $number))
             );
         }
@@ -1679,7 +1687,7 @@ final class Product_Archive extends Widget_Base {
         if ($page < $pages) {
             printf(
                 '<a class="zig-page zig-page--next" href="%s" rel="next">%s</a>',
-                esc_url(Seo::url($url, $state->with_page($page + 1))),
+                esc_url(Seo::url($url, $state->with_page($page + 1), $operators)),
                 esc_html($settings['label_next'] ?? '')
             );
         }
