@@ -47,6 +47,11 @@ namespace {
                     'min'        => '',
                     'max'        => '',
                     // موجودی
+                    'name'      => '',
+                    'meta'      => [],
+                    'terms'     => [],
+                    'attrs'     => [],
+                    'thumb'     => '',
                     'status'    => 'instock',
                     'in_stock'  => null,   // null = از status حساب شود
                     'managing'  => false,
@@ -71,6 +76,11 @@ namespace {
             public function is_purchasable() { return (bool) $this->props['purchasable']; }
             public function variation_is_visible() { return (bool) $this->props['visible']; }
             public function get_price_suffix() { return $this->props['suffix']; }
+            public function get_name() { return $this->props['name']; }
+            public function get_attributes() { return $this->props['attrs']; }
+            public function zig_meta() { return $this->props['meta']; }
+            public function zig_terms() { return $this->props['terms']; }
+            public function zig_thumb() { return $this->props['thumb']; }
 
             public function get_variation_price($which = 'min', $display = false) {
                 return $this->props['max' === $which ? 'max' : 'min'];
@@ -155,6 +165,71 @@ namespace {
     }
     if (!function_exists('get_the_ID')) {
         function get_the_ID() { return $GLOBALS['__zig_post'] ?? 0; }
+    }
+
+    /**
+     * ویژگی آزمایشی.
+     *
+     * فقط همان متدهایی را دارد که ‎Product_Card‎ صدا می‌زند؛ اگر روزی متد
+     * تازه‌ای لازم شود، تست با خطا می‌شکند نه اینکه بی‌صدا سبز بماند.
+     */
+    if (!class_exists('Zig_Test_Attribute')) {
+        class Zig_Test_Attribute {
+            private array $props;
+
+            public function __construct(array $props = []) {
+                $this->props = $props + ['name' => '', 'visible' => true, 'taxonomy' => false, 'options' => []];
+            }
+
+            public function get_name() { return $this->props['name']; }
+            public function get_visible() { return (bool) $this->props['visible']; }
+            public function is_taxonomy() { return (bool) $this->props['taxonomy']; }
+            public function get_options() { return $this->props['options']; }
+        }
+    }
+
+    if (!function_exists('get_post_meta')) {
+        function get_post_meta($id, $key = '', $single = false) {
+            $product = \WC_Product::$registry[(int) $id] ?? null;
+            $meta    = $product ? $product->zig_meta() : [];
+
+            return $meta[$key] ?? '';
+        }
+    }
+
+    if (!function_exists('get_the_terms')) {
+        function get_the_terms($id, $taxonomy) {
+            $product = \WC_Product::$registry[(int) $id] ?? null;
+            $terms   = $product ? $product->zig_terms() : [];
+
+            return $terms[$taxonomy] ?? false;
+        }
+    }
+
+    if (!function_exists('get_permalink')) {
+        function get_permalink($id = 0) { return 'https://zig3d.test/?p=' . (int) $id; }
+    }
+
+    if (!function_exists('get_the_post_thumbnail')) {
+        function get_the_post_thumbnail($id = null, $size = 'post-thumbnail', $attr = '') {
+            $product = \WC_Product::$registry[(int) $id] ?? null;
+
+            return $product ? $product->zig_thumb() : '';
+        }
+    }
+
+    if (!class_exists('WP_Term')) {
+        class WP_Term {
+            public $name;
+            public $slug;
+            public $term_id;
+
+            public function __construct(string $name = '', string $slug = '', int $term_id = 0) {
+                $this->name    = $name;
+                $this->slug    = $slug;
+                $this->term_id = $term_id;
+            }
+        }
     }
 
     if (!function_exists('wc_get_product_visibility_term_ids')) {
