@@ -85,7 +85,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'card', 'product-card'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 

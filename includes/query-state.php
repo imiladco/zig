@@ -128,6 +128,64 @@ final class Query_State {
         return self::create($filters, $sort, $page);
     }
 
+    /**
+     * پارامترهای ‎filter_*‎ که در آدرس بودند و پذیرفته نشدند.
+     *
+     * ‎from_request()‎ این‌ها را بی‌صدا می‌اندازد، که برای کار کردن صفحه
+     * درست است ولی برای *معنای* آدرس نه: ‎?filter_ghost=x‎ آدرسی است که
+     * چیزی را ادعا می‌کند که وجود ندارد. بی‌صدا انداختنش یعنی آن آدرس ‎200‎
+     * بگیرد و نسخهٔ بدون فیلتر را نشان بدهد — همان «ترکیب بی‌معنا»یی که
+     * گوگل صریحاً در فهرست ‎404‎ آورده.
+     *
+     * عمداً بیرون از خودِ شیء است: این یک تشخیصِ *پارس* است، نه بخشی از
+     * وضعیت. اگر داخل شیء می‌ماند، ‎toggle()‎ و ‎with()‎ هم آن را با خودشان
+     * می‌بردند و یک تشخیصِ کهنه به وضعیتِ تازه می‌چسبید.
+     *
+     * @param array    $params     همان ‎$_GET‎.
+     * @param string[] $taxonomies تاکسونومی‌های مجاز.
+     * @return string[] نام پارامترهای ناشناخته
+     */
+    public static function unknown_filters(array $params, array $taxonomies): array {
+        $allowed = [];
+
+        foreach ($taxonomies as $taxonomy) {
+            $allowed[self::param_for(self::key((string) $taxonomy))] = true;
+        }
+
+        $unknown = [];
+
+        foreach (array_keys($params) as $key) {
+            $key = (string) $key;
+
+            if (0 !== strpos($key, self::FILTER_PREFIX) || isset($allowed[$key])) {
+                continue;
+            }
+
+            /*
+             * پارامتر خالی («‎?filter_brand=‎») ادعایی نمی‌کند و معمولاً از
+             * یک فرمِ ارسال‌شده می‌آید، نه از دست‌کاری. ‎404‎ دادن به آن،
+             * رفتار عادیِ مرورگر را می‌شکند.
+             *
+             * ‎?filter_ghost[]=x‎ هم آدرس معتبری است و آرایه می‌دهد؛ همان‌جا
+             * که ‎scalar()‎ لازم می‌شود، وگرنه اینجا هم اخطارِ تبدیل آرایه به
+             * رشته می‌گرفتیم.
+             */
+            $value = $params[$key] ?? '';
+
+            if (is_array($value)) {
+                $value = implode('', array_map(static fn($item): string => is_scalar($item) ? (string) $item : '', $value));
+            } else {
+                $value = self::scalar($value);
+            }
+
+            if ('' !== trim($value)) {
+                $unknown[] = $key;
+            }
+        }
+
+        return $unknown;
+    }
+
     /* =====================================================================
      * خواندن
      * =================================================================== */

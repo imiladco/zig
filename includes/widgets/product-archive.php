@@ -1099,6 +1099,17 @@ final class Product_Archive extends Widget_Base {
         $this->add_render_attribute('root', [
             'class'                => 'zig-archive zig-archive--filters-' . ($settings['filters_position'] ?? 'start'),
             'data-zig-archive'     => '1',
+
+            /*
+             * وضعیت صفحه، همان‌جا که جاوااسکریپت هم آن را می‌گذارد.
+             *
+             * بعد از یک درخواست آژاکس، ‎state‎ از بدنهٔ پاسخ می‌آید و روی
+             * همین صفت می‌نشیند. اگر رندر سرور آن را ننویسد، بارِ اول با
+             * هر بارِ بعدی فرق می‌کند: CSSای که به ‎[data-zig-state]‎ وصل
+             * است تا اولین کلیک کار نمی‌کند و هیچ‌کس هم متوجه نمی‌شود، چون
+             * کلیک اول همیشه سریع می‌آید.
+             */
+            'data-zig-state'       => $this->page_state($settings, $query, $state),
             'data-zig-debounce'    => (string) (int) ($settings['filters_debounce'] ?? 250),
             'data-zig-scroll-max'  => (string) (int) ($settings['scroll_pages'] ?? 0),
             'data-zig-restore'     => 'yes' === ($settings['restore_state'] ?? '') ? '1' : '0',
@@ -1160,6 +1171,32 @@ final class Product_Archive extends Widget_Base {
             (int) $term->term_id,
             Attributes::discover($base, Archive_Query::context_key($base))
         )['facets'];
+    }
+
+    /**
+     * وضعیت صفحه — همان چیزی که کد HTTP از آن آمده.
+     *
+     * روی آرشیو واقعی از ‎Archive_Head‎ خوانده می‌شود، نه دوباره حساب.
+     * دلیلش دقت نیست، *یکی‌بودن* است: ‎Archive_Head‎ روی ‎template_redirect‎
+     * تصمیم گرفته و شاید ‎404‎ فرستاده باشد؛ اگر ویجت مستقل حساب کند، کافی
+     * است یکی از ورودی‌ها کمی فرق کند تا هدر بگوید «وجود ندارد» و DOM
+     * بگوید ‎ok‎.
+     *
+     * ولی وقتی منبع دستی است، آن تصمیم اصلاً به این ویجت ربطی ندارد:
+     * ‎Archive_Head‎ کوئری *اصلی* صفحه را شمرده و این ویجت دسته‌های دیگری
+     * را نشان می‌دهد. آنجا وضعیت از کوئری خودمان می‌آید — و ‎invalid‎ هم
+     * نمی‌گیرد، چون ادعای آدرس مالِ صفحه است نه مالِ ویجتی که رویش نشسته.
+     */
+    private function page_state(array $settings, \WP_Query $query, Query_State $state): string {
+        if ('custom' !== ($settings['source'] ?? 'archive')) {
+            $shared = Archive_Head::page_state();
+
+            if (null !== $shared) {
+                return $shared;
+            }
+        }
+
+        return Seo::state($state, (int) $query->found_posts, (int) $query->max_num_pages);
     }
 
     private function state(array $facets, array $sorts): Query_State {

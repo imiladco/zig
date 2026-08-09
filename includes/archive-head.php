@@ -28,6 +28,18 @@ final class Archive_Head {
         add_action('template_redirect', [self::class, 'decide'], 1);
     }
 
+    /**
+     * وضعیتی که همین درخواست گرفت، یا ‎null‎ اگر اینجا کاری نداشتیم.
+     *
+     * ویجت از همین می‌خواند تا ‎data-zig-state‎ روی ‎<div>‎ ریشه دقیقاً همان
+     * چیزی باشد که کد HTTP را تعیین کرده. اگر ویجت خودش دوباره حساب می‌کرد،
+     * دو محاسبهٔ مستقل داشتیم روی یک سؤال — و روزی می‌رسید که سرور ‎404‎
+     * بفرستد و DOM با خوش‌رویی ‎ok‎ بگوید.
+     */
+    public static function page_state(): ?string {
+        return self::$decision['state'] ?? null;
+    }
+
     /* =====================================================================
      * تصمیم
      * =================================================================== */
@@ -41,9 +53,9 @@ final class Archive_Head {
             return;
         }
 
-        $state = self::state();
+        $params = self::params();
 
-        if (null === $state) {
+        if (null === $params) {
             return;
         }
 
@@ -51,11 +63,12 @@ final class Archive_Head {
 
         $decision = Seo::head(
             self::base_url(),
-            $state,
+            Query_State::from_request($params, Attributes::all()),
             self::operators(),
             self::policy(),
             isset($wp_query) ? (int) $wp_query->found_posts : null,
-            isset($wp_query) ? (int) $wp_query->max_num_pages : 0
+            isset($wp_query) ? (int) $wp_query->max_num_pages : 0,
+            [] !== self::unknown($params)
         );
 
         self::$decision = $decision;
@@ -104,24 +117,60 @@ final class Archive_Head {
      * ادعا می‌کند» است. اگر کسی ‎?filter_x=y‎ بگذارد که در طرح نیست،
      * ووکامرس آن را اعمال می‌کند و ما هم باید همان را ببینیم.
      */
-    private static function state(): ?Query_State {
+    private static function params(): ?array {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $params = wp_unslash($_GET);
 
-        if (!is_array($params)) {
-            return null;
-        }
-
-        $state = Query_State::from_request($params, Attributes::all());
-
         /*
-         * حالت کاملاً تمیز هم برمی‌گردد، نه ‎null‎.
+         * آرایهٔ خالی هم برمی‌گردد، نه ‎null‎.
          *
          * قبلاً فقط وقتی چیزی تصمیم‌گرفتنی بود که پارامتری در آدرس باشد.
          * ولی دستهٔ خالیِ بدونِ هیچ پارامتری هم یک تصمیم دارد: ‎noindex‎.
          * برگرداندن ‎null‎ یعنی آن حالت هیچ‌وقت دیده نشود.
          */
-        return $state;
+        return is_array($params) ? $params : null;
+    }
+
+    /**
+     * پارامترهای ‎filter_*‎ که هیچ‌کس ادعایشان را ندارد.
+     *
+     * وجودشان یعنی آدرس چیزی را می‌گوید که در این فروشگاه معنا ندارد —
+     * همان «ترکیب بی‌معنا»یی که گوگل در فهرست ‎404‎ آورده. ولی سه چیز را
+     * باید از هم جدا نگه داشت:
+     *
+     *   • ویژگی‌های فروشگاه: از ‎Attributes::all()‎، نه از طرح فیلترِ دسته.
+     *     سؤال «آدرس چه چیزی را ادعا می‌کند» است، نه «سایدبار چه چیزی نشان
+     *     می‌دهد»؛ ویژگی‌ای که در سایدبارِ این دسته نیست ولی وجود دارد، هنوز
+     *     یک ادعای معتبر است و ووکامرس هم اعمالش می‌کند.
+     *
+     *   • پارامترهای خودِ ووکامرس: بلاک «وضعیت موجودی» آدرسِ
+     *     ‎?filter_stock_status=instock‎ می‌سازد. اگر آن را نشناسیم، به
+     *     آدرسی که خودِ ووکامرس ساخته ‎404‎ می‌دهیم.
+     *
+     *   • هر چیز دیگری که افزونه‌ای اضافه کرده: فیلتر دارد، چون فهرستِ بستهٔ
+     *     ما نمی‌تواند از افزونه‌های نصب‌نشده خبر داشته باشد و هزینهٔ اشتباه
+     *     اینجا ‎404‎ روی صفحه‌ای سالم است.
+     *
+     * @return string[]
+     */
+    private static function unknown(array $params): array {
+        $taxonomies = Attributes::all();
+
+        /**
+         * تاکسونومی‌هایی که ‎filter_*‎ آن‌ها معتبر شمرده می‌شود.
+         *
+         * @param string[] $taxonomies
+         */
+        $taxonomies = (array) apply_filters('zig3d_known_filter_taxonomies', $taxonomies);
+
+        /*
+         * ‎stock_status‎ تاکسونومی نیست، ولی ‎unknown_filters()‎ فقط نام
+         * پارامتر را می‌سنجد و ‎param_for()‎ پیشوند ‎pa_‎ را می‌اندازد؛ پس
+         * دادنش به همین فهرست، دقیقاً ‎filter_stock_status‎ را مجاز می‌کند.
+         */
+        $taxonomies[] = 'stock_status';
+
+        return Query_State::unknown_filters($params, $taxonomies);
     }
 
     /* =====================================================================

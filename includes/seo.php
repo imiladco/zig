@@ -75,6 +75,23 @@ final class Seo {
     /** نتیجه هست، ولی این صفحه از آن وجود ندارد */
     public const STATE_PAGE_MISSING = 'page_missing';
 
+    /**
+     * آدرس چیزی را ادعا می‌کند که وجود ندارد.
+     *
+     * ‎?filter_ghost=x‎ — ویژگی‌ای که تعریف نشده یا حذف شده. گوگل این را
+     * در همان سند ناوبری وجهی، کنار «فیلتر تکراری» و «ترکیب بی‌معنا»، جزو
+     * آدرس‌هایی آورده که باید ‎404‎ بدهند.
+     *
+     * جدا از ‎filtered_empty‎ است و باید بماند: آن یکی می‌گوید «فیلتر
+     * درست است، نتیجه ندارد» و این یکی «چنین فیلتری اصلاً وجود ندارد».
+     * از نظر کاربر هم دو پیام متفاوت‌اند.
+     *
+     * ولی اسلاگ ناشناخته را اینجا نمی‌سنجیم: ‎?filter_brand=nothing‎ خودش
+     * به صفر نتیجه می‌رسد و از راه ‎filtered_empty‎ همان ‎404‎ را می‌گیرد،
+     * بدون اینکه به ازای هر درخواستِ فیلترشده یک کوئری ترم اضافه کنیم.
+     */
+    public const STATE_INVALID = 'invalid';
+
     /* =====================================================================
      * ایندکس
      * =================================================================== */
@@ -171,8 +188,8 @@ final class Seo {
      * @param int $found     تعداد کل نتیجه‌های همین حالت.
      * @param int $max_pages تعداد صفحه‌های موجود؛ صفر یعنی نامعلوم.
      */
-    public static function is_not_found(Query_State $state, int $found, int $max_pages = 0): bool {
-        return 404 === self::status(self::state($state, $found, $max_pages));
+    public static function is_not_found(Query_State $state, int $found, int $max_pages = 0, bool $invalid = false): bool {
+        return 404 === self::status(self::state($state, $found, $max_pages, $invalid));
     }
 
     /* =====================================================================
@@ -185,7 +202,12 @@ final class Seo {
      * ‎$found === null‎ یعنی هنوز نمی‌دانیم؛ آن‌وقت خوش‌بینانه ‎ok‎ فرض
      * می‌شود، چون ادعای ‎404‎ بدون شمارش، بدترین حدسِ ممکن است.
      */
-    public static function state(Query_State $query, ?int $found, int $max_pages = 0): string {
+    public static function state(Query_State $query, ?int $found, int $max_pages = 0, bool $invalid = false): string {
+        // آدرسِ بی‌معنا بر همه‌چیز مقدم است — حتی اگر اتفاقاً نتیجه‌ای بدهد
+        if ($invalid) {
+            return self::STATE_INVALID;
+        }
+
         if (null === $found) {
             return self::STATE_OK;
         }
@@ -205,7 +227,11 @@ final class Seo {
      * می‌کند.
      */
     public static function status(string $state): int {
-        return in_array($state, [self::STATE_FILTERED_EMPTY, self::STATE_PAGE_MISSING], true) ? 404 : 200;
+        return in_array(
+            $state,
+            [self::STATE_FILTERED_EMPTY, self::STATE_PAGE_MISSING, self::STATE_INVALID],
+            true
+        ) ? 404 : 200;
     }
 
     /**
@@ -270,9 +296,10 @@ final class Seo {
         array $operators = [],
         string $policy = self::INDEX_CLEAN,
         ?int $found = null,
-        int $max_pages = 0
+        int $max_pages = 0,
+        bool $invalid = false
     ): array {
-        $page      = self::state($state, $found, $max_pages);
+        $page      = self::state($state, $found, $max_pages, $invalid);
         $status    = self::status($page);
         $not_found = 404 === $status;
 

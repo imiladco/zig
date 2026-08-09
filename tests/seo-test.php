@@ -192,7 +192,7 @@ $matrix = [
 ];
 
 foreach ($matrix as $name => [$query, $found, $pages, $state, $status, $robots, $has_canonical, $list]) {
-    $head = Seo::head($base, $query, [], Seo::INDEX_CLEAN, $found, $pages);
+    $head = Seo::head($base, $query, [], Seo::INDEX_CLEAN, $found, $pages, false);
 
     Tests::same($name . ' › حالت', $head['state'], $state);
     Tests::same($name . ' › کد', $head['status'], $status);
@@ -242,6 +242,46 @@ Tests::same(
 Tests::ok(
     'و ادعای ۴۰۴ نمی‌شود',
     !Seo::head($base, $two_groups)['not_found']
+);
+
+/* --------------------------------------------------------------------------
+ * آدرسِ بی‌معنا
+ *
+ * ‎?filter_ghost=x‎ فرق دارد با «این فیلتر نتیجه ندارد»: آن یکی می‌گوید
+ * فیلتر درست است و خالی است، این یکی می‌گوید چنین فیلتری اصلاً وجود ندارد.
+ * ------------------------------------------------------------------------ */
+
+$invalid = Seo::head($base, $clean, [], Seo::INDEX_CLEAN, 12, 2, true);
+
+Tests::same('آدرسِ بی‌معنا › حالت', $invalid['state'], Seo::STATE_INVALID);
+Tests::same('آدرسِ بی‌معنا › کد', $invalid['status'], 404);
+Tests::same('آدرسِ بی‌معنا › robots', $invalid['robots'], 'noindex, follow');
+Tests::same('آدرسِ بی‌معنا › کانونیکال ندارد', $invalid['canonical'], '');
+Tests::ok('آدرسِ بی‌معنا › ItemList ندارد', !$invalid['item_list']);
+Tests::ok('آدرسِ بی‌معنا › not_found', $invalid['not_found']);
+
+/*
+ * و بر همه‌چیز مقدم است. ‎?filter_ghost=x‎ روی یک دستهٔ پر، هنوز محصول
+ * برمی‌گرداند — چون ووکامرس پارامتری را که نمی‌شناسد اعمال نمی‌کند. اگر
+ * شمارش تصمیم می‌گرفت، همان آدرس ۲۰۰ می‌گرفت و نسخهٔ بدون فیلتر را نشان
+ * می‌داد؛ یعنی بی‌نهایت آدرسِ تکراری با محتوای یکسان.
+ */
+Tests::same(
+    'حتی وقتی نتیجه دارد',
+    Seo::state($clean, 40, 4, true),
+    Seo::STATE_INVALID
+);
+
+/*
+ * ‎follow‎ اینجا هم می‌ماند. صفحه ۴۰۴ است ولی محتوایش رندر می‌شود و
+ * لینک‌های محصول واقعی‌اند؛ ‎nofollow‎ یعنی گراف داخلی سایت را از وسط
+ * قطع کنیم برای آدرسی که فقط پارامتر اضافه داشت.
+ */
+Tests::keeps('و follow را نمی‌شکند', $invalid['robots'], 'follow');
+
+Tests::ok(
+    'نبودنش چیزی را عوض نمی‌کند',
+    Seo::state($clean, 12, 2, false) === Seo::STATE_OK
 );
 
 /* ==========================================================================
