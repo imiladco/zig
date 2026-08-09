@@ -115,7 +115,7 @@ final class Query_State {
             $filters[$taxonomy] = self::split($params[$param]);
         }
 
-        $sort = isset($params[self::SORT_PARAM]) ? self::clean_sort((string) $params[self::SORT_PARAM]) : '';
+        $sort = self::clean_sort(self::scalar($params[self::SORT_PARAM] ?? ''));
 
         // ترتیبی که در ویجت تعریف نشده یعنی ترتیبِ پیش‌فرض، نه خطا: آدرسِ
         // قدیمیِ بوکمارک‌شده نباید صفحه را بشکند.
@@ -123,7 +123,7 @@ final class Query_State {
             $sort = '';
         }
 
-        $page = isset($params[self::PAGE_PARAM]) ? (int) $params[self::PAGE_PARAM] : 1;
+        $page = (int) self::scalar($params[self::PAGE_PARAM] ?? 1);
 
         return self::create($filters, $sort, $page);
     }
@@ -381,6 +381,19 @@ final class Query_State {
         ksort($clean, SORT_STRING);
 
         return $clean;
+    }
+
+    /**
+     * مقدار تک‌مقداریِ یک پارامتر آدرس.
+     *
+     * ‎?orderby[]=x‎ و ‎?paged[]=2‎ آدرس‌های کاملاً معتبری هستند و هرکسی
+     * می‌تواند بسازدشان. تبدیل مستقیمشان به رشته در PHP 8 اخطار
+     * «Array to string conversion» می‌دهد و مقدارِ ‎'Array'‎ می‌سازد — که
+     * بعد از پاک‌سازی می‌شود ‎'array'‎ و ممکن است حتی به یک کلید واقعی
+     * بخورد.
+     */
+    private static function scalar($value): string {
+        return is_scalar($value) ? (string) $value : '';
     }
 
     /** ‎'up3d,vhf'‎ ⇒ ‎['up3d','vhf']‎ */

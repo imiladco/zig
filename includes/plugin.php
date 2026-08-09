@@ -81,7 +81,7 @@ final class Plugin {
             return;
         }
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'sorting', 'attributes', 'archive-query', 'seo'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 

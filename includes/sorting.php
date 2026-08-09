@@ -219,7 +219,7 @@ final class Sorting {
      * ‎ORDER BY‎ داخل زیرکوئریِ شمارش فست. پس ‎Archive_Query::run()‎ تنها
      * راه درستِ اجراست و خودش جفت‌شدن را تضمین می‌کند.
      */
-    public static function query_args(array $option): array {
+    public static function query_args(array $option, $target = null): array {
         if ('meta' === ($option['type'] ?? '')) {
             return [
                 'orderby'  => 'num' === ($option['meta_type'] ?? 'num') ? 'meta_value_num' : 'meta_value',
@@ -230,9 +230,10 @@ final class Sorting {
 
         $orderby = self::TYPES[$option['type']]['orderby'] ?? 'menu_order';
         $order   = $option['order'] ?? 'ASC';
+        $target  = $target ?? self::target();
 
-        if (function_exists('WC') && isset(WC()->query) && method_exists(WC()->query, 'get_catalog_ordering_args')) {
-            return WC()->query->get_catalog_ordering_args($orderby, $order);
+        if (null !== $target && method_exists($target, 'get_catalog_ordering_args')) {
+            return (array) $target->get_catalog_ordering_args($orderby, $order);
         }
 
         return self::fallback_args($orderby, $order);
@@ -272,16 +273,10 @@ final class Sorting {
             return [];
         }
 
-        $snapshot = [];
+        $snapshot = self::attached($target);
 
-        foreach (self::CLAUSE_CALLBACKS as $method) {
-            $priority = has_filter('posts_clauses', [$target, $method]);
-
-            if (false !== $priority) {
-                $snapshot[$method] = (int) $priority;
-            }
-
-            remove_filter('posts_clauses', [$target, $method], false === $priority ? 10 : (int) $priority);
+        foreach ($snapshot as $method => $priority) {
+            remove_filter('posts_clauses', [$target, $method], $priority);
         }
 
         return $snapshot;
@@ -302,12 +297,8 @@ final class Sorting {
             return;
         }
 
-        foreach (self::CLAUSE_CALLBACKS as $method) {
-            $priority = has_filter('posts_clauses', [$target, $method]);
-
-            if (false !== $priority) {
-                remove_filter('posts_clauses', [$target, $method], (int) $priority);
-            }
+        foreach (self::attached($target) as $method => $priority) {
+            remove_filter('posts_clauses', [$target, $method], $priority);
         }
 
         foreach ($snapshot as $method => $priority) {
@@ -315,6 +306,116 @@ final class Sorting {
                 add_filter('posts_clauses', [$target, $method], $priority);
             }
         }
+    }
+
+    /* =====================================================================
+     * محدودکردن به یک کوئری
+     * =================================================================== */
+
+    /**
+     * ثبت مرتب‌سازی، ولی فقط برای یک ‎WP_Query‎ مشخص.
+     *
+     * چرا این و نه فقط برداشتن‌وبرگرداندن: مالکیت حل شده بود، دامنه نه.
+     * فیلترِ ووکامرس در تمام مدتی که کوئری ما اجرا می‌شود سراسری می‌ماند، و
+     * آن بازه خالی نیست — هر افزونه‌ای که به ‎pre_get_posts‎ یا
+     * ‎posts_results‎ وصل باشد می‌تواند وسطش کوئری خودش را اجرا کند. آن
+     * کوئری‌ها یک ‎JOIN‎ روی ‎wc_product_meta_lookup‎ و یک ‎ORDER BY‎ قیمت
+     * می‌گرفتند که هیچ‌کس نخواسته بود.
+     *
+     * با یک سایت ده‌نفره شاید هیچ‌وقت پیش نیاید. با بیست افزونهٔ فعال و
+     * چند نفر که هم‌زمان روی صفحه کار می‌کنند، دقیقاً همان باگی است که
+     * هیچ‌کس نمی‌تواند بازتولیدش کند.
+     *
+     * پس به‌جای اینکه فیلترِ ووکامرس سراسری بماند، همان متد را داخل یک پل
+     * می‌گذاریم که آرگومان دومِ ‎posts_clauses‎ (خودِ کوئری) را می‌گیرد و
+     * فقط وقتی کوئریِ ماست کاری می‌کند.
+     *
+     * نکتهٔ ظریف: فقط چیزی برداشته می‌شود که *خودمان* اضافه کرده‌ایم. اگر
+     * قبلاً کسی همان متد را بسته بود، دست نمی‌خورد — نه پاکش می‌کنیم و نه
+     * ادعای مالکیتش را داریم.
+     *
+     * ‎$query‎ عمداً ‎object‎ تایپ شده نه ‎WP_Query‎: تنها کاری که با آن
+     * می‌شود مقایسهٔ هویت است، و این‌طور بدون بالاآوردن کل وردپرس هم قابل
+     * سنجش می‌ماند — که برای منطقی با این حساسیت، ارزشش را دارد.
+     *
+     * @param array|null $option گزینهٔ ترتیب، یا ‎null‎.
+     * @param object     $query  کوئری‌ای که هنوز اجرا نشده (‎\WP_Query‎).
+     * @return array{args:array,bridges:array}
+     */
+    public static function scope(?array $option, object $query, $target = null): array {
+        if (null === $option) {
+            return ['args' => [], 'bridges' => []];
+        }
+
+        $target = $target ?? self::target();
+
+        if (null === $target) {
+            return ['args' => self::query_args($option), 'bridges' => []];
+        }
+
+        $before = self::attached($target);
+        $args   = self::query_args($option, $target);
+        $after  = self::attached($target);
+
+        $bridges = [];
+
+        foreach ($after as $method => $priority) {
+            /*
+             * مقایسهٔ *اولویت*، نه فقط وجود.
+             *
+             * یک کال‌بک می‌تواند هم‌زمان روی چند اولویت بسته باشد؛ وردپرس
+             * هرکدام را ورودی جدا حساب می‌کند. اگر کسی همان متد را روی ۱۲
+             * بسته باشد و ووکامرس روی ۱۰ ثبتش کند، «از قبل بود» درست است
+             * ولی ثبتِ تازه مالِ ماست — و اگر ردش کنیم، همان چیزی سراسری
+             * می‌ماند که آمده بودیم محدودش کنیم.
+             */
+            if (($before[$method] ?? null) === $priority) {
+                continue;
+            }
+
+            remove_filter('posts_clauses', [$target, $method], $priority);
+
+            $bridge = static function (array $clauses, $running) use ($target, $method, $query): array {
+                return $running === $query ? (array) $target->$method($clauses) : $clauses;
+            };
+
+            add_filter('posts_clauses', $bridge, $priority, 2);
+
+            $bridges[] = [$bridge, $priority];
+        }
+
+        return ['args' => $args, 'bridges' => $bridges];
+    }
+
+    /**
+     * برداشتن پل‌ها.
+     *
+     * فقط چیزی که ‎scope()‎ ساخته برداشته می‌شود؛ هیچ فیلتر دیگری لمس
+     * نمی‌شود.
+     */
+    public static function unscope(array $handle): void {
+        foreach ($handle['bridges'] ?? [] as [$bridge, $priority]) {
+            remove_filter('posts_clauses', $bridge, $priority);
+        }
+    }
+
+    /**
+     * کدام متدِ مرتب‌سازی الان بسته است، با چه اولویتی.
+     *
+     * @return array<string,int>
+     */
+    private static function attached($target): array {
+        $found = [];
+
+        foreach (self::CLAUSE_CALLBACKS as $method) {
+            $priority = has_filter('posts_clauses', [$target, $method]);
+
+            if (false !== $priority) {
+                $found[$method] = (int) $priority;
+            }
+        }
+
+        return $found;
     }
 
     /** شیئی که فیلترها روی آن بسته شده‌اند، یا ‎null‎ بدون ووکامرس */

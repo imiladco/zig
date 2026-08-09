@@ -103,27 +103,40 @@ if (!function_exists('set_transient')) {
  * پاک نکن» تصمیم گرفته شد، و بدون یک ثبت‌کنندهٔ واقعی نمی‌شد سنجیدش.
  * ----------------------------------------------------------------------- */
 
+/*
+ * یک کال‌بک می‌تواند هم‌زمان روی چند اولویت بسته باشد — وردپرس هرکدام را
+ * ورودی جدا حساب می‌کند. مدل‌نکردن این، تستِ «مالِ چه کسی است» را بی‌اثر
+ * می‌کرد: دقیقاً همان‌جایی که ووکامرس روی ۱۰ ثبت می‌کند در حالی که کس
+ * دیگری همان متد را روی ۱۲ بسته.
+ */
 if (!function_exists('add_filter')) {
     function add_filter($hook, $callback, $priority = 10, $args = 1) {
-        $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)] = $priority;
+        $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)][(int) $priority] = true;
 
         return true;
     }
 }
 if (!function_exists('remove_filter')) {
     function remove_filter($hook, $callback, $priority = 10) {
-        unset($GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)]);
+        unset($GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)][(int) $priority]);
+
+        if (empty($GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)])) {
+            unset($GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)]);
+        }
 
         return true;
     }
 }
 if (!function_exists('has_filter')) {
+    /** مثل وردپرس: کمترین اولویتِ ثبت‌شده را برمی‌گرداند */
     function has_filter($hook, $callback = false) {
         if (false === $callback) {
             return !empty($GLOBALS['__zig_filters'][$hook]);
         }
 
-        return $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)] ?? false;
+        $found = $GLOBALS['__zig_filters'][$hook][zig_filter_id($callback)] ?? [];
+
+        return $found ? min(array_keys($found)) : false;
     }
 }
 if (!function_exists('zig_filter_id')) {

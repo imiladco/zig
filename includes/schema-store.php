@@ -41,6 +41,9 @@ final class Schema_Store {
     /** نتیجهٔ پاک‌سازی‌شده، تا در یک درخواست چند بار ساخته نشود */
     private static ?array $cache = null;
 
+    /** نگاشت «طرح ⇒ دسته‌ها»، با همان منطق */
+    private static ?array $usage = null;
+
     /**
      * طرح‌های مشترک.
      *
@@ -125,10 +128,8 @@ final class Schema_Store {
      * @return array<string,\WP_Term[]>
      */
     public static function usage(): array {
-        static $usage = null;
-
-        if (null !== $usage) {
-            return $usage;
+        if (null !== self::$usage) {
+            return self::$usage;
         }
 
         $usage = [];
@@ -139,7 +140,7 @@ final class Schema_Store {
         ]);
 
         if (!is_array($terms)) {
-            return $usage;
+            return self::$usage = $usage;
         }
 
         foreach ($terms as $term) {
@@ -154,11 +155,18 @@ final class Schema_Store {
             }
         }
 
-        return $usage;
+        return self::$usage = $usage;
     }
 
     public static function save_binding(int $term_id, array $binding): bool {
         $binding = self::sanitize_binding($binding);
+
+        /*
+         * نگاشتِ حافظه‌ای دیگر معتبر نیست. با ذخیره‌ای که بلافاصله بعدش
+         * چیزی رندر می‌شود، شمارندهٔ «چند دسته از این طرح استفاده می‌کنند»
+         * عددِ قبل از ذخیره را نشان می‌داد.
+         */
+        self::$usage = null;
 
         /*
          * اتصالِ کاملاً پیش‌فرض ذخیره نمی‌شود، پاک می‌شود. وگرنه هر دسته‌ای
