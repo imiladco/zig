@@ -342,6 +342,20 @@ final class Attributes {
             return '';
         }
 
+        /*
+         * پاک‌کردن دفاعیِ فیلترهای مرتب‌سازیِ ووکامرس، قبل از ساختن SQL.
+         *
+         * ‎orderby => 'ID'‎ پایین کافی نیست: فیلتر ‎posts_clauses‎ ووکامرس
+         * روی *خروجی* SQL می‌نشیند، نه روی آرگومان‌ها. اگر جایی
+         * ‎get_catalog_ordering_args()‎ صدا زده و پاک نکرده باشد، این
+         * زیرکوئری یک ‎JOIN‎ روی ‎wc_product_meta_lookup‎ و یک ‎ORDER BY‎
+         * می‌گیرد — که بعد داخل یک ‎IN (...)‎ می‌نشیند.
+         *
+         * خودمان با ‎Archive_Query::run()‎ این را جفت می‌کنیم، ولی افزونهٔ
+         * دیگری هم می‌تواند مقصر باشد و آن‌وقت عیب اینجا ظاهر می‌شود.
+         */
+        Sorting::release();
+
         $args = array_merge($args, [
             'fields'                 => 'ids',
             'posts_per_page'         => -1,

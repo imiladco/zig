@@ -40,48 +40,70 @@ final class Sorting {
             'orderby'     => 'menu_order',
             'order'       => 'ASC',
             'directional' => false,
+            'search_only' => false,
         ],
         'popularity' => [
+            'search_only' => false,
             'label'       => 'پرفروش‌ترین',
             'orderby'     => 'popularity',
             'order'       => 'DESC',
             'directional' => false,
         ],
         'rating' => [
+            'search_only' => false,
             'label'       => 'بیشترین امتیاز',
             'orderby'     => 'rating',
             'order'       => 'DESC',
             'directional' => false,
         ],
         'date' => [
+            'search_only' => false,
             'label'       => 'جدیدترین',
             'orderby'     => 'date',
             'order'       => 'DESC',
             'directional' => true,
         ],
         'price' => [
+            'search_only' => false,
             'label'       => 'ارزان‌ترین',
             'orderby'     => 'price',
             'order'       => 'ASC',
             'directional' => false,
         ],
         'price-desc' => [
+            'search_only' => false,
             'label'       => 'گران‌ترین',
             'orderby'     => 'price-desc',
             'order'       => 'DESC',
             'directional' => false,
         ],
         'title' => [
+            'search_only' => false,
             'label'       => 'بر اساس نام',
             'orderby'     => 'title',
             'order'       => 'ASC',
             'directional' => true,
         ],
         'meta' => [
+            'search_only' => false,
             'label'       => 'فیلد دلخواه',
             'orderby'     => '',
             'order'       => 'DESC',
             'directional' => true,
+        ],
+
+        /*
+         * «مرتبط‌ترین» فقط با جست‌وجو معنا دارد و فقط با جست‌وجو *کار*
+         * می‌کند: ‎ORDER BY relevance‎ در وردپرس از عبارت‌های جست‌وجو ساخته
+         * می‌شود و بدون آن‌ها SQL نامعتبر می‌دهد. ووکامرس خودش هم برای همین
+         * یک نگهبان دارد که جست‌وجوهای فقط‌منفی («‎-چیزی‎») را رد می‌کند.
+         */
+        'relevance' => [
+            'search_only' => true,
+            'label'       => 'مرتبط‌ترین',
+            'orderby'     => 'relevance',
+            'order'       => 'DESC',
+            'directional' => false,
         ],
     ];
 
@@ -152,7 +174,9 @@ final class Sorting {
      *
      * @param array<int,array> $options
      */
-    public static function resolve(array $options, string $key): ?array {
+    public static function resolve(array $options, string $key, bool $has_search = true): ?array {
+        $options = self::available($options, $has_search);
+
         foreach ($options as $option) {
             if ($option['key'] === $key) {
                 return $option;
@@ -172,8 +196,27 @@ final class Sorting {
      * برای انواع استاندارد، ترجمه به خودِ ووکامرس سپرده می‌شود. این فقط
      * «تمیزتر» نیست: ‎get_catalog_ordering_args()‎ در همان فراخوانی،
      * فیلترهای ‎posts_clauses‎ لازم برای مرتب‌سازی قیمت را هم ثبت می‌کند.
-     * بازنویسی دستیِ خروجی‌اش، آن اثر جانبی را از دست می‌داد و مرتب‌سازی
-     * قیمت بی‌صدا از کار می‌افتاد.
+     * بازنویسی دستیِ خروجی‌اش، آن اثر جانبی را از دست می‌داد — و بدتر،
+     * مرتب‌سازی قیمتِ ما با ‎_price‎ برای محصول متغیر غلط می‌شد، چون
+     * ووکامرس برای صعودی ‎min_price‎ و برای نزولی ‎max_price‎ می‌گذارد.
+     *
+     * ⚠ این تابع اثر جانبیِ سراسری دارد و باید حتماً با ‎release()‎ جفت شود.
+     *
+     * نگاه کنید به خودِ ووکامرس:
+     *
+     *     public function order_by_price_asc_post_clauses( $args ) {
+     *         $args['join']    = $this->append_product_sorting_table_join(…);
+     *         $args['orderby'] = ' wc_product_meta_lookup.min_price ASC, … ';
+     *
+     * پارامتر دومی به نام ‎$query‎ در کار نیست — یعنی این فیلتر اصلاً
+     * *نمی‌تواند* بفهمد روی کدام کوئری نشسته و به هر ‎WP_Query‎ بعدی در
+     * همان درخواست می‌چسبد. خودِ ووکامرس آن را روی ‎the_posts‎ برمی‌دارد
+     * (‎remove_product_query_filters()‎)، ولی آن هوک فقط برای کوئری اصلی
+     * بسته شده. کوئری‌های ما آنجا نیستند.
+     *
+     * برای ما این یعنی: یک JOIN ناخواسته روی ‎wc_product_meta_lookup‎ و یک
+     * ‎ORDER BY‎ داخل زیرکوئریِ شمارش فست. پس ‎Archive_Query::run()‎ تنها
+     * راه درستِ اجراست و خودش جفت‌شدن را تضمین می‌کند.
      */
     public static function query_args(array $option): array {
         if ('meta' === ($option['type'] ?? '')) {
@@ -192,6 +235,47 @@ final class Sorting {
         }
 
         return self::fallback_args($orderby, $order);
+    }
+
+    /**
+     * برداشتن فیلترهای مرتب‌سازیِ ووکامرس.
+     *
+     * چیزی خراب نمی‌شود اگر وقتی چیزی ثبت نشده هم صدا زده شود؛
+     * ‎remove_filter()‎ روی فیلتر نبوده بی‌اثر است. پس می‌شود دفاعی هم
+     * صدایش زد — و باید، چون افزونهٔ دیگری هم ممکن است
+     * ‎get_catalog_ordering_args()‎ را بدون پاک‌سازی صدا زده باشد.
+     */
+    public static function release(): void {
+        if (function_exists('WC') && isset(WC()->query) && method_exists(WC()->query, 'remove_ordering_args')) {
+            WC()->query->remove_ordering_args();
+        }
+    }
+
+    /**
+     * آیا این نوع، فیلتر سراسری ثبت می‌کند؟
+     *
+     * فقط برای خوانایی و تست است؛ ‎release()‎ به‌هرحال بی‌خطر است.
+     */
+    public static function has_side_effects(array $option): bool {
+        return in_array(self::TYPES[$option['type'] ?? '']['orderby'] ?? '', ['price', 'price-desc', 'popularity', 'rating'], true);
+    }
+
+    /**
+     * گزینه‌هایی که در این زمینه معنا دارند.
+     *
+     * «مرتبط‌ترین» بدون جست‌وجو نه‌تنها بی‌معناست، ‎ORDER BY‎ نامعتبر
+     * می‌سازد. پس به‌جای اینکه در فهرست بماند و موقع کلیک صفحه را بشکند،
+     * اصلاً رندر نمی‌شود.
+     */
+    public static function available(array $options, bool $has_search): array {
+        if ($has_search) {
+            return $options;
+        }
+
+        return array_values(array_filter(
+            $options,
+            static fn(array $option): bool => empty(self::TYPES[$option['type']]['search_only'])
+        ));
     }
 
     /**
