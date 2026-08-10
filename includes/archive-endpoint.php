@@ -208,6 +208,10 @@ final class Archive_Endpoint {
             $fragments['count'] = $widget->fragment('count', $context);
         }
 
+        if ('yes' === ($settings['sorting_on'] ?? '') && $context['sorts']) {
+            $fragments['sorts'] = $widget->fragment('sorts', $context);
+        }
+
         wp_reset_postdata();
 
         wp_send_json_success(Archive_Response::envelope(

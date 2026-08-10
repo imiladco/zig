@@ -111,7 +111,7 @@ final class Archive_Response {
      *
      * @param string               $state     یکی از ‎Seo::STATE_*‎
      * @param array{page:int,pages:int,found:int,url:string} $meta
-     * @param array<string,string> $fragments قطعه‌های HTML: ‎grid‎، ‎facets‎، ‎pagination‎، ‎count‎
+     * @param array<string,string> $fragments قطعه‌های HTML: ‎grid‎، ‎facets‎، ‎pagination‎، ‎count‎، ‎sorts‎
      */
     public static function envelope(string $state, array $meta, array $fragments = []): array {
         $payload = [
@@ -132,7 +132,7 @@ final class Archive_Response {
             'found'    => max(0, (int) ($meta['found'] ?? 0)),
         ];
 
-        foreach (['grid', 'facets', 'pagination', 'count'] as $key) {
+        foreach (['grid', 'facets', 'pagination', 'count', 'sorts'] as $key) {
             if (isset($fragments[$key])) {
                 $payload[$key] = (string) $fragments[$key];
             }

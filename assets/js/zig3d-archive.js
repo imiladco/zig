@@ -402,6 +402,7 @@
 		this.swap('pagination', data.pagination);
 		this.swap('facets', data.facets);
 		this.swap('count', data.count);
+		this.swap('sorts', data.sorts);
 
 		this.page = data.page || 1;
 		this.pages = data.pages || 0;

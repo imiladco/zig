@@ -58,8 +58,8 @@ check("variable counted once", count(five) == 16, f"ویجت={count(five)} دی�
 print("── صفحه‌بندی")
 s1, p1 = get(B)
 s2, p2 = get(B + "?paged=2")
-check("page 1 has 9 cards", cards(p1) == 9, str(cards(p1)))
-check("page 2 differs", cards(p2) == 9 and p1 != p2, str(cards(p2)))
+check("page 1 is full", cards(p1) == 16, str(cards(p1)))
+check("page 2 differs", cards(p2) == 15 and p1 != p2, str(cards(p2)))
 check("page 2 is 200", s2 == 200, str(s2))
 
 print("── نتیجهٔ خالی، نه خطا")

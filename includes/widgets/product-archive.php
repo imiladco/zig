@@ -1208,7 +1208,7 @@ final class Product_Archive extends Widget_Base {
         $facets   = $this->facets();
         $state    = $this->state($facets, $sorts, $params);
         $sort     = Sorting::resolve($sorts, $state->sort(), isset($base['s']));
-        $per_page = Archive_Query::per_page((int) ($settings['per_page'] ?? 9));
+        $per_page = $this->per_page($settings, $params);
 
         /*
          * اپراتور هر گروه از یک جا می‌آید و از همان‌جا هم به کوئری، هم به
@@ -1269,6 +1269,10 @@ final class Product_Archive extends Widget_Base {
             case 'count':
                 $this->render_count($settings, (int) $ctx['query']->found_posts);
                 break;
+
+            case 'sorts':
+                $this->render_sorts($ctx['sorts'], $ctx['state'], $ctx['operators']);
+                break;
         }
 
         return (string) ob_get_clean();
@@ -1309,6 +1313,70 @@ final class Product_Archive extends Widget_Base {
      * روی قالبِ آرشیو — که جای اصلی این ویجت است — پستِ جاری یکی از
      * محصولات حلقه است و سند جای دیگری است.
      */
+    /**
+     * تعداد در هر صفحه — و روی آرشیو واقعی، مالِ ووکامرس.
+     *
+     * این را مرورگر یاد داد و از جنس همان واگرایی همیشگی است. ویجت با
+     * ۹ تا در صفحه، صفحه‌بندیِ چهارصفحه‌ای می‌ساخت؛ ولی *سند* را کوئری
+     * اصلی صفحه‌بندی می‌کند و آن ۱۰ تایی بود، یعنی سه صفحه. لینکِ «صفحهٔ
+     * ۴»ی که خودِ ویجت رندر کرده بود، به آدرسی می‌رفت که وردپرس ۴۰۴
+     * می‌داد — بدون جاوااسکریپت مستقیم، و با جاوااسکریپت سرِ اولین رفرش.
+     *
+     * دو راه بود: یا کوئری اصلی را با ویجت هماهنگ کنیم، یا برعکس. دومی
+     * انتخاب شد چون «اندازهٔ صفحهٔ آرشیو» ذاتاً خاصیت *آرشیو* است نه یک
+     * ویجت روی آن، و ووکامرس همان را با ‎loop_shop_per_page‎ در اختیار
+     * مدیر گذاشته. اولی هم شدنی بود ولی باید پیش از ‎pre_get_posts‎
+     * می‌دانستیم ویجت چه تنظیمی دارد — یعنی رزولوشنِ زودهنگامِ قالب
+     * المنتور، که هزینه و شکنندگی‌اش از خودِ مسئله بیشتر است.
+     *
+     * تنظیم ویجت روی منبع دستی سر جایش می‌ماند؛ آنجا آرشیوی در کار نیست
+     * که با آن بجنگد. مسیر آژاکس هم همان عدد سند را می‌گیرد، وگرنه صفحهٔ
+     * دوم دو معنای متفاوت پیدا می‌کرد.
+     */
+    private function per_page(array $settings, ?array $params = null): int {
+        $setting = Archive_Query::per_page((int) ($settings['per_page'] ?? 9));
+
+        if ('custom' === ($settings['source'] ?? 'archive')) {
+            return $setting;
+        }
+
+        /*
+         * از خودِ کوئری اصلی، نه از ‎loop_shop_per_page‎.
+         *
+         * آن فیلتر را ووکامرس فقط *در جریان* حلقهٔ محصولات می‌بندد؛ صدا
+         * زدنش بیرون از آن زمینه، مقدار خام گزینهٔ وردپرس را می‌دهد که
+         * چیز دیگری است. تنها عددی که قطعاً درست است، همانی است که سند
+         * واقعاً با آن صفحه‌بندی شده.
+         */
+        if (function_exists('is_product_taxonomy') && (is_shop() || is_product_taxonomy())) {
+            global $wp_query;
+
+            $archive = isset($wp_query) ? (int) $wp_query->get('posts_per_page') : 0;
+
+            if ($archive > 0) {
+                return Archive_Query::per_page($archive);
+            }
+        }
+
+        /*
+         * روی آژاکس، کوئری اصلی وجود ندارد. پس همان فرمولی بازسازی می‌شود
+         * که ووکامرس خودش برای پیش‌فرض به کار می‌برد، از داخل همان فیلتر —
+         * تا قالبی که عدد را عوض کرده، اینجا هم دیده شود.
+         */
+        if (null !== $params && function_exists('wc_get_default_products_per_row')) {
+            $archive = (int) apply_filters(
+                'loop_shop_per_page',
+                wc_get_default_products_per_row() * wc_get_default_product_rows_per_page()
+            );
+
+            if ($archive > 0) {
+                return Archive_Query::per_page($archive);
+            }
+        }
+
+        return $setting;
+    }
+
     private function document_id(): int {
         if (class_exists('\Elementor\Plugin')) {
             $document = \Elementor\Plugin::$instance->documents->get_current();
@@ -1578,7 +1646,15 @@ final class Product_Archive extends Widget_Base {
         }
 
         if ('yes' === ($settings['sorting_on'] ?? '') && $sorts) {
+            /*
+             * نوار ترتیب هم یک قطعه است، و این را مرورگر یاد داد: بدون
+             * آن، کاربر روی «ارزان‌ترین» کلیک می‌کرد، گرید درست مرتب
+             * می‌شد، ولی پیلِ فعال و ‎aria-current‎ روی گزینهٔ قبلی
+             * می‌ماندند — یعنی صفحه می‌گفت هنوز «جدیدترین» فعال است.
+             */
+            echo '<div data-zig-part="sorts">';
             $this->render_sorts($sorts, $state, $operators);
+            echo '</div>';
         }
 
         echo '</div>';
