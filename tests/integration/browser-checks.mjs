@@ -229,10 +229,12 @@ const run = async () => {
 		await page.goto(BASE + '?filter_brand=up3d&filter_axis=3-axis', { waitUntil: 'domcontentloaded' });
 
 		const disabled = page.locator('.zig-facet__item.is-disabled');
-		check('گزینهٔ صفر در DOM می‌ماند', (await disabled.count()) === 1, `${await page.locator($.item).count()} گزینه`);
+		const zeros = await disabled.count();
+
+		check('گزینهٔ صفر در DOM می‌ماند', zeros >= 1, `${await page.locator($.item).count()} گزینه، ${zeros} صفر`);
 		check('ولی لینک نیست', (await disabled.locator('a').count()) === 0);
-		check('و aria-disabled دارد', (await disabled.locator('[aria-disabled="true"]').count()) === 1);
-		check('شمارشش صفر است', (await disabled.textContent()).includes('۰'));
+		check('و aria-disabled دارد', (await disabled.locator('[aria-disabled="true"]').count()) === zeros);
+		check('شمارشش صفر است', (await disabled.first().textContent()).includes('۰'));
 
 		/* شمارش خودحذف‌کن: گروهِ انتخاب‌شده، گزینه‌های دیگرش صفر نمی‌شوند */
 		const axis = await page.locator('.zig-facet__item:has([data-zig-toggle="filter_axis|5-axis"])').textContent();

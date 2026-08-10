@@ -51,7 +51,87 @@ final class Archive_Head {
          */
         add_filter('request', [self::class, 'guard'], 1);
 
+        /*
+         * اولویت ۲۰، یعنی *بعد* از ‎WC_Query::pre_get_posts()‎ که روی
+         * پیش‌فرض می‌نشیند. آنجا ووکامرس ‎tax_query‎ خودش را ساخته و ما
+         * رویش اضافه می‌کنیم، نه به‌جایش.
+         */
+        add_action('pre_get_posts', [self::class, 'filter_main_query'], 20);
+
         add_action('template_redirect', [self::class, 'decide'], 1);
+    }
+
+    /**
+     * قیدهایی که ووکامرس نمی‌شناسد، روی کوئری *اصلی*.
+     *
+     * ویژگی‌ها (‎pa_*‎) را خودِ ووکامرس از ‎$_GET‎ می‌خواند و اعمال می‌کند.
+     * ولی برند تاکسونومی دیگری است و ووکامرس هیچ ناوبری لایه‌ای برایش
+     * ندارد — یعنی اگر فقط ویجت اعمالش کند، سند و ویجت دو چیز متفاوت
+     * می‌شوند: گرید یازده محصول نشان می‌دهد و شمارشی که ‎Archive_Head‎
+     * تصمیم ‎404‎ و ‎canonical‎ را از آن می‌گیرد، سی‌ویک.
+     *
+     * همان درسِ صفحه‌بندی، این بار روی فیلتر: هر قیدی که کاربر می‌بیند
+     * باید روی هر دو کوئری بنشیند.
+     *
+     * @param \WP_Query $query
+     */
+    public static function filter_main_query($query): void {
+        if (!$query instanceof \WP_Query || !$query->is_main_query() || is_admin()) {
+            return;
+        }
+
+        if (!function_exists('is_shop') || !(is_shop() || is_product_taxonomy())) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $params = is_array($_GET) ? wp_unslash($_GET) : [];
+
+        $extra = [];
+
+        foreach (Archive_Query::honored(self::facets()) as $taxonomy => $operator) {
+            /*
+             * ویژگی‌ها رد می‌شوند: ووکامرس همین حالا اعمالشان کرده و
+             * افزودن دوبارهٔ همان قید، فقط یک ‎JOIN‎ تکراری است.
+             */
+            if (0 === strpos($taxonomy, Query_State::ATTRIBUTE_PREFIX)) {
+                continue;
+            }
+
+            $param = Query_State::param_for($taxonomy);
+
+            if (!isset($params[$param]) || !is_string($params[$param])) {
+                continue;
+            }
+
+            $terms = array_values(array_filter(array_map('sanitize_title', explode(',', $params[$param]))));
+
+            if (!$terms || !taxonomy_exists($taxonomy)) {
+                continue;
+            }
+
+            $extra[] = [
+                'taxonomy' => $taxonomy,
+                'field'    => 'slug',
+                'terms'    => array_slice(array_unique($terms), 0, Query_State::MAX_TERMS),
+                'operator' => Facets::OP_AND === $operator ? 'AND' : 'IN',
+            ];
+        }
+
+        if (!$extra) {
+            return;
+        }
+
+        $existing = (array) $query->get('tax_query');
+
+        /*
+         * گروه‌بندی، نه ادغام تخت: اگر بندهای ووکامرس ‎relation‎ خودشان را
+         * داشته باشند، تخت‌کردن آن ‎relation‎ را روی قیدهای ما هم اعمال
+         * می‌کرد — یعنی یک ‎OR‎ داخلی می‌توانست قید برند را اختیاری کند.
+         */
+        $query->set('tax_query', $existing
+            ? ['relation' => 'AND', $existing, array_merge(['relation' => 'AND'], $extra)]
+            : array_merge(['relation' => 'AND'], $extra));
     }
 
     /* =====================================================================

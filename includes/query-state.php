@@ -679,7 +679,25 @@ final class Query_State {
      * نگاشت تاکسونومی ⇄ پارامتر
      * =================================================================== */
 
-    /** ‎pa_axis_count‎ ⇒ ‎filter_axis_count‎ */
+    /**
+     * ‎pa_axis_count‎ ⇒ ‎filter_axis_count‎، و ‎product_brand‎ ⇒ ‎filter_product_brand‎
+     *
+     * دو قاعده، و تفاوتشان عمدی است.
+     *
+     * ویژگی‌ها پیشوند ‎pa_‎ را از دست می‌دهند، چون قرارداد آدرسِ ووکامرس
+     * همین است و کل ارزش پذیرفتنش به این است که مو به مو رعایت شود.
+     *
+     * تاکسونومی‌های دیگر — مثل ‎product_brand‎ که ووکامرس از نسخهٔ ۹٫۴
+     * خودش می‌سازد — نام کاملشان را نگه می‌دارند. وسوسه‌کننده بود که
+     * ‎product_‎ را هم بیندازیم و ‎filter_brand‎ بسازیم (کوتاه‌تر و
+     * خوش‌ریخت‌تر)، ولی آن‌وقت با ویژگی‌ای به نام ‎pa_brand‎ دقیقاً یک
+     * پارامتر می‌ساخت. فروشگاهی که هر دو را دارد — و چنین فروشگاهی کم
+     * نیست، چون خیلی‌ها قبل از نسخهٔ ۹٫۴ برند را به‌صورت ویژگی ساخته
+     * بودند — یک آدرس داشت با دو معنا.
+     *
+     * ووکامرس هم برای برند هیچ پارامتر ناوبری لایه‌ای تعریف نکرده، پس
+     * قرارداد رقیبی در کار نیست که با آن بجنگیم.
+     */
     public static function param_for(string $taxonomy): string {
         $taxonomy = self::key($taxonomy);
 
@@ -701,7 +719,7 @@ final class Query_State {
      * برمی‌گرداند رشتهٔ خالی اگر پارامتر اصلاً فیلتر نباشد، تا صدازننده
      * مجبور نشود خودش پیشوند را چک کند.
      */
-    public static function taxonomy_for(string $param): string {
+    public static function taxonomy_for(string $param, array $known = []): string {
         $param = self::key($param);
 
         if (0 !== strpos($param, self::FILTER_PREFIX)) {
@@ -710,7 +728,25 @@ final class Query_State {
 
         $name = substr($param, strlen(self::FILTER_PREFIX));
 
-        return '' === $name ? '' : self::ATTRIBUTE_PREFIX . $name;
+        if ('' === $name) {
+            return '';
+        }
+
+        /*
+         * نگاشت وارونهٔ ‎param_for()‎ باید *دقیقاً* وارون باشد.
+         *
+         * تاکسونومی‌ای که نام کاملش در پارامتر مانده (‎product_brand‎)
+         * همان‌طور برمی‌گردد؛ بقیه پیشوند ویژگی می‌گیرند. بدون این،
+         * ‎filter_product_brand‎ به ‎pa_product_brand‎ ترجمه می‌شد — چیزی
+         * که وجود ندارد.
+         */
+        foreach ($known as $taxonomy) {
+            if (self::param_for((string) $taxonomy) === $param) {
+                return self::key((string) $taxonomy);
+            }
+        }
+
+        return self::ATTRIBUTE_PREFIX . $name;
     }
 
     /* =====================================================================

@@ -335,6 +335,20 @@ final class Attributes {
 
     /** برچسب گروه، همان که مدیر در ووکامرس گذاشته */
     public static function label(string $taxonomy): string {
+        /*
+         * ‎wc_attribute_label()‎ فقط ویژگی‌ها را می‌شناسد و برای هر چیز
+         * دیگری همان نام خام را برمی‌گرداند — یعنی گروه برند در سایدبار
+         * «product_brand» نوشته می‌شد. پس تاکسونومی‌های غیرویژگی اول از
+         * برچسبِ خودشان پرسیده می‌شوند.
+         */
+        if (0 !== strpos($taxonomy, Query_State::ATTRIBUTE_PREFIX) && function_exists('get_taxonomy')) {
+            $object = get_taxonomy($taxonomy);
+
+            if ($object) {
+                return (string) ($object->labels->singular_name ?: $object->label);
+            }
+        }
+
         if (function_exists('wc_attribute_label')) {
             return (string) wc_attribute_label($taxonomy);
         }
@@ -485,12 +499,41 @@ final class Attributes {
         return self::known_taxonomies();
     }
 
-    /** تاکسونومی‌های ویژگی که ووکامرس می‌شناسد، به ترتیب خودش */
+    /**
+     * تاکسونومی‌هایی که می‌شود روی آن‌ها فیلتر ساخت.
+     *
+     * ویژگی‌های ووکامرس، به‌علاوهٔ تاکسونومی برند.
+     *
+     * برند از نسخهٔ ۹٫۴ خودِ ووکامرس است (‎product_brand‎) و پنل مدیریت
+     * جدا دارد؛ فروشگاه‌ها برندشان را آنجا نگه می‌دارند، نه به‌صورت
+     * ویژگی. ولی ووکامرس آن را در ‎wc_get_attribute_taxonomy_names()‎
+     * نمی‌آورد چون ویژگی نیست — پس بدون این، گروه «برند» هیچ‌وقت در
+     * سایدبار نمی‌آمد، حتی وقتی آدرسش کار می‌کرد.
+     */
     private static function known_taxonomies(): array {
-        if (function_exists('wc_get_attribute_taxonomy_names')) {
-            return array_values((array) wc_get_attribute_taxonomy_names());
+        $known = [];
+
+        if (class_exists(__NAMESPACE__ . '\\Archive_Query') && function_exists('taxonomy_exists')) {
+            foreach (Archive_Query::BRAND_TAXONOMIES as $taxonomy) {
+                if (taxonomy_exists($taxonomy)) {
+                    $known[] = $taxonomy;
+                }
+            }
         }
 
-        return [];
+        if (function_exists('wc_get_attribute_taxonomy_names')) {
+            $known = array_merge($known, array_values((array) wc_get_attribute_taxonomy_names()));
+        }
+
+        if (!function_exists('apply_filters')) {
+            return array_values(array_unique($known));
+        }
+
+        /**
+         * تاکسونومی‌های دیگری که این فروشگاه می‌خواهد فیلترشدنی باشند.
+         *
+         * @param string[] $known
+         */
+        return array_values(array_unique((array) apply_filters('zig3d_filterable_taxonomies', $known)));
     }
 }
