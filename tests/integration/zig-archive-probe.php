@@ -107,7 +107,9 @@ final class Zig3d_Archive_Probe {
         self::check(
             '۳۵ اسلاگ بریده‌شده به ووکامرس نرسیده',
             [] === $leaked,
-            $dropped ? count($dropped) . ' اسلاگ بریده شد؛ نشتی: ' . (count($leaked) ?: 'ندارد') : 'چیزی بریده نشد'
+            self::was_capped()
+                ? count($dropped) . ' اسلاگ بریده شد؛ نشتی: ' . (count($leaked) ?: 'ندارد')
+                : 'چیزی بریده نشد'
         );
 
         /* ---------------------------------------------------------------
@@ -152,7 +154,7 @@ final class Zig3d_Archive_Probe {
         if (null === $state) {
             self::skip('۳۷ تا ۴۰ سئو', 'این آدرس آرشیو محصول نیست، یا Archive_Head اینجا کاری ندارد');
         } else {
-            $oversized = [] !== $dropped || self::page_was_capped();
+            $oversized = self::was_capped();
 
             if ($oversized) {
                 self::check('۳۷ کد HTTP', 404 === $status, (string) $status);
@@ -225,13 +227,22 @@ final class Zig3d_Archive_Probe {
         return array_values(array_unique($slugs));
     }
 
-    private static function page_was_capped(): bool {
+    /**
+     * آیا نگهبان *چیزی* برید؟
+     *
+     * مقایسهٔ اسلاگ‌ها کافی نیست و این را همین probe یاد داد: بیست گروه
+     * که همه مقدارشان ‎x‎ است، هشت‌تایشان می‌افتند ولی اسلاگِ ‎x‎ هنوز در
+     * بازمانده‌ها هست — پس ‎array_diff‎ خالی می‌شود و probe فکر می‌کند
+     * آدرس بی‌گناه است و انتظار ‎200‎ دارد.
+     *
+     * مقایسهٔ خودِ آرایه‌ها، همان چیزی را می‌سنجد که نگهبان می‌سنجد.
+     */
+    private static function was_capped(): bool {
         $raw = [];
 
         parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $raw);
 
-        return isset($raw['paged'])
-            && (int) $raw['paged'] > \Zig3d_Widgets\Query_State::MAX_PAGE;
+        return is_array($raw) && \Zig3d_Widgets\Query_State::cap_params($raw) !== $raw;
     }
 
     /**

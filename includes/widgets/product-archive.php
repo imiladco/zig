@@ -4,11 +4,12 @@ namespace Zig3d_Widgets\Widgets;
 use Elementor\Controls_Manager;
 use Elementor\Repeater;
 use Elementor\Widget_Base;
+use Zig3d_Widgets\Archive_Endpoint;
+use Zig3d_Widgets\Archive_Head;
 use Zig3d_Widgets\Archive_Query;
 use Zig3d_Widgets\Attributes;
 use Zig3d_Widgets\Card;
 use Zig3d_Widgets\Facets;
-use Zig3d_Widgets\Filter_Schema;
 use Zig3d_Widgets\Plugin;
 use Zig3d_Widgets\Price;
 use Zig3d_Widgets\Product_Card;
@@ -1126,7 +1127,16 @@ final class Product_Archive extends Widget_Base {
             'data-zig-pages'       => (string) max(1, (int) $query->max_num_pages),
             'data-zig-endpoint'    => Archive_Endpoint::url(),
             'data-zig-nonce'       => Archive_Endpoint::nonce(),
-            'data-zig-post'        => (string) get_the_ID(),
+            /*
+             * شناسهٔ *سند* المنتور، نه پستِ داخل حلقه.
+             *
+             * این را نصب واقعی نشان داد: روی آرشیو دسته، ‎get_the_ID()‎
+             * شناسهٔ اولین محصولِ حلقه را می‌دهد. نقطهٔ آژاکس با آن دنبال
+             * ‎_elementor_data‎ می‌گردد، پیدا نمی‌کند و ‎400‎ می‌دهد — یعنی
+             * هر کلیک فیلتر آلرت «تلاش مجدد» می‌گیرد، روی صفحه‌ای که در
+             * نگاه اول کاملاً سالم رندر شده.
+             */
+            'data-zig-post'        => (string) $this->document_id(),
             'data-zig-term'        => (string) ($this->queried_term()->term_id ?? 0),
             'data-zig-widget'      => (string) $this->get_id(),
         ]);
@@ -1226,6 +1236,7 @@ final class Product_Archive extends Widget_Base {
             'state'      => $state,
             'operators'  => $operators,
             'query'      => $query,
+            'base_url'   => $this->base_url(),
             'page_state' => $this->page_state($settings, $query, $state, $params),
         ];
     }
@@ -1291,6 +1302,25 @@ final class Product_Archive extends Widget_Base {
      */
     private ?\WP_Term $term = null;
 
+    /**
+     * سندی که این ویجت در آن ذخیره شده.
+     *
+     * ‎get_the_ID()‎ فقط وقتی درست است که ویجت روی یک برگهٔ معمولی باشد.
+     * روی قالبِ آرشیو — که جای اصلی این ویجت است — پستِ جاری یکی از
+     * محصولات حلقه است و سند جای دیگری است.
+     */
+    private function document_id(): int {
+        if (class_exists('\Elementor\Plugin')) {
+            $document = \Elementor\Plugin::$instance->documents->get_current();
+
+            if ($document) {
+                return (int) $document->get_main_id();
+            }
+        }
+
+        return (int) get_the_ID();
+    }
+
     private function queried_term(): ?\WP_Term {
         if ($this->term instanceof \WP_Term) {
             return $this->term;
@@ -1322,12 +1352,7 @@ final class Product_Archive extends Widget_Base {
             return [];
         }
 
-        $base = Archive_Query::base_args(['categories' => [(int) $term->term_id]]);
-
-        return Schema_Store::resolve(
-            (int) $term->term_id,
-            Attributes::discover($base, Archive_Query::context_key($base))
-        )['facets'];
+        return Schema_Store::for_term((int) $term->term_id);
     }
 
     /**

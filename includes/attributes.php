@@ -255,7 +255,9 @@ final class Attributes {
         $terms = get_terms([
             'taxonomy'   => $taxonomy,
             'hide_empty' => false,
-        ] + self::term_order($taxonomy));
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ]);
 
         if (!is_array($terms)) {
             return [];
@@ -263,7 +265,7 @@ final class Attributes {
 
         $out = [];
 
-        foreach ($terms as $term) {
+        foreach (self::order($terms, $taxonomy) as $term) {
             if (!$term instanceof \WP_Term) {
                 continue;
             }
@@ -279,29 +281,56 @@ final class Attributes {
     }
 
     /**
-     * ترتیب گزینه‌ها، همان که مدیر برای این ویژگی انتخاب کرده.
+     * مرتب‌سازی در PHP، نه در SQL.
      *
-     * ووکامرس برای هر ویژگی یک ترتیب جدا نگه می‌دارد و «۵ محور، ۳ محور،
-     * ۸ محور» فقط با ترتیب دستی درست می‌شود؛ الفبایی یا عددی، فهرست را
-     * به‌هم می‌ریزد. نادیده‌گرفتنش یعنی چیدمانی که مدیر ساخته، در سایدبار
-     * دیده نمی‌شود.
+     * این را یک فروشگاه واقعی یاد داد. ووکامرس برای هر ویژگی یک «ترتیب»
+     * دارد و پیش‌فرضِ ویژگیِ تازه ‎menu_order‎ است. ترجمهٔ مستقیمش به
+     * ‎get_terms()‎ می‌شود:
+     *
+     *     'orderby' => 'meta_value_num', 'meta_key' => 'order_pa_brand'
+     *
+     * و آن یک ‎INNER JOIN‎ روی ‎termmeta‎ می‌سازد. ترمی که هیچ‌وقت در صفحهٔ
+     * «ترتیب ترم‌ها» جابه‌جا نشده، اصلاً ردیف متایی ندارد — پس می‌افتد.
+     * وقتی هیچ‌کدام جابه‌جا نشده باشند، *همه* می‌افتند و کل گروه فیلتر از
+     * سایدبار غیب می‌شود. بدون خطا، بدون لاگ.
+     *
+     * خودِ ووکامرس هم همین کار را می‌کند (‎_wc_get_product_terms_menu_order()‎):
+     * ترم‌ها را ساده می‌گیرد و بعد در PHP با پیش‌فرض صفر مرتب می‌کند.
+     *
+     * ‎name_num‎ هم همین‌طور: ‎get_terms()‎ اصلاً نمی‌شناسدش و بی‌صدا به
+     * ‎name‎ برمی‌گردد — یعنی «۱۰ محور» قبل از «۹ محور» می‌نشیند.
+     *
+     * @param \WP_Term[] $terms
+     * @return \WP_Term[]
      */
-    private static function term_order(string $taxonomy): array {
+    private static function order(array $terms, string $taxonomy): array {
         $order = function_exists('wc_attribute_orderby') ? wc_attribute_orderby($taxonomy) : 'name';
 
-        switch ($order) {
-            case 'menu_order':
-                return ['orderby' => 'meta_value_num', 'meta_key' => 'order_' . $taxonomy, 'order' => 'ASC'];
+        if ('menu_order' === $order) {
+            $key = 'order_' . $taxonomy;
 
-            case 'name_num':
-                return ['orderby' => 'name_num', 'order' => 'ASC'];
+            usort($terms, static function ($a, $b) use ($key): int {
+                $first  = (int) get_term_meta($a->term_id, $key, true);
+                $second = (int) get_term_meta($b->term_id, $key, true);
 
-            case 'id':
-                return ['orderby' => 'id', 'order' => 'ASC'];
+                // ترتیب برابر یعنی الفبایی، وگرنه ترتیب به شانسِ خواندن بند است
+                return $first === $second ? strcmp($a->name, $b->name) : $first <=> $second;
+            });
 
-            default:
-                return ['orderby' => 'name', 'order' => 'ASC'];
+            return $terms;
         }
+
+        if ('name_num' === $order) {
+            usort($terms, static fn($a, $b): int => ((float) $a->name) <=> ((float) $b->name));
+
+            return $terms;
+        }
+
+        if ('id' === $order) {
+            usort($terms, static fn($a, $b): int => ((int) $a->term_id) <=> ((int) $b->term_id));
+        }
+
+        return $terms;
     }
 
     /** برچسب گروه، همان که مدیر در ووکامرس گذاشته */

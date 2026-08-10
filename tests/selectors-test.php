@@ -232,3 +232,45 @@ Tests::ok(
         && false !== strpos($price_rules['unit_offset'][0], '.zig-price__unit ⇒ transform'),
     $price_rules['unit_offset'][0] ?? 'ثبت نشده'
 );
+
+/* ==========================================================================
+ * ایمپورت‌ها
+ *
+ * این را یک خطای مرگ‌بار روی نصب واقعی یاد داد: ‎Archive_Head::page_state()‎
+ * به ویجت اضافه شده بود بدون ‎use‎ متناظرش. ویجت در فضای‌نام
+ * ‎Zig3d_Widgets\Widgets‎ است، پس PHP دنبال
+ * ‎Zig3d_Widgets\Widgets\Archive_Head‎ می‌گشت و پیدا نمی‌کرد.
+ *
+ * هیچ تستی نمی‌گرفتش چون رندر ویجت به المنتور و ووکامرس نیاز دارد و در
+ * تست واحد اجرا نمی‌شود. ولی *خودِ فایل* را می‌شود خواند — و همین کافی
+ * است.
+ * ======================================================================= */
+
+Tests::group('ایمپورت‌ها');
+
+foreach (glob(dirname(__DIR__) . '/includes/widgets/*.php') as $file) {
+    $source = (string) file_get_contents($file);
+    $name   = basename($file);
+
+    if (!preg_match('/^namespace\s+([^;]+);/m', $source, $ns) || 'Zig3d_Widgets\\Widgets' !== trim($ns[1])) {
+        continue;
+    }
+
+    preg_match_all('/^use\s+Zig3d_Widgets\\\\([A-Za-z_]+);/m', $source, $imports);
+
+    $known = array_flip($imports[1]);
+
+    // کلاس‌های فضای‌نام ریشه، از روی فایل‌های واقعی
+    foreach (glob(dirname(__DIR__) . '/includes/*.php') as $sibling) {
+        $class = str_replace(' ', '_', ucwords(str_replace('-', ' ', basename($sibling, '.php'))));
+
+        if (!preg_match('/\b' . preg_quote($class, '/') . '::/', $source)) {
+            continue;
+        }
+
+        Tests::ok(
+            $name . ' › ' . $class . ' ایمپورت شده',
+            isset($known[$class])
+        );
+    }
+}

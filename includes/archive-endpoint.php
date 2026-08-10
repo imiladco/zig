@@ -26,6 +26,20 @@ if (!defined('ABSPATH')) {
  */
 final class Archive_Endpoint {
 
+    /*
+     * یک چیز عمداً از درخواست خوانده *نمی‌شود* و آن آدرس پایه است.
+     *
+     * اول از ‎wp_get_referer()‎ می‌آمد و روی نصب واقعی معلوم شد چقدر
+     * شکننده است: ‎wp_validate_redirect()‎ ارجاع‌دهنده‌ای را که میزبانش با
+     * سایت یکی نباشد رد می‌کند، و مرورگرهایی با ‎Referrer-Policy‎ سخت‌گیر
+     * اصلاً ارجاع‌دهنده نمی‌فرستند. نتیجه‌اش این بود که آدرسِ ‎history‎ به
+     * صفحهٔ اصلی می‌افتاد — یعنی کاربر روی یک فیلتر کلیک می‌کرد و نوار
+     * آدرس می‌رفت به خانه.
+     *
+     * حالا از خودِ ویجت می‌آید، همان‌جا که رندر سرور هم آدرس لینک‌ها را از
+     * آن می‌سازد. یک منبع، و بی‌نیاز از هر چیزی که مرورگر بفرستد یا نفرستد.
+     */
+
     public const ACTION = 'zig3d_archive';
 
     /** نام اکشن نانس؛ عمداً همان اکشن است تا جایی برای اشتباه تایپی نماند */
@@ -202,36 +216,10 @@ final class Archive_Endpoint {
                 'page'  => $context['state']->page(),
                 'pages' => (int) $query->max_num_pages,
                 'found' => (int) $query->found_posts,
-                'url'   => Seo::url(self::base_url(), $context['state'], $context['operators']),
+                'url'   => Seo::url((string) $context['base_url'], $context['state'], $context['operators']),
             ],
             $fragments
         ));
-    }
-
-    /**
-     * آدرس پایه‌ای که ‎history‎ رویش ساخته می‌شود.
-     *
-     * از ارجاع‌دهنده می‌آید و نه از تنظیمات: کاربر ممکن است روی هر صفحه‌ای
-     * باشد که این ویجت رویش نشسته. ‎wp_validate_redirect‎ نگهبانش است تا
-     * یک ارجاع‌دهندهٔ جعلی، آدرسِ سایتِ دیگری را در نوار آدرس کاربر ننشاند.
-     */
-    private static function base_url(): string {
-        $referer = wp_get_referer();
-
-        if (!is_string($referer) || '' === $referer) {
-            return home_url('/');
-        }
-
-        $referer = wp_validate_redirect($referer, home_url('/'));
-
-        $parts = wp_parse_url($referer);
-
-        /*
-         * فقط طرح و میزبان و مسیر. رشتهٔ پرس‌وجوی ارجاع‌دهنده عمداً دور
-         * ریخته می‌شود: آن وضعیتِ *قبلی* است و اگر بماند، آدرسِ history
-         * دو نسخه از هر پارامتر می‌گیرد.
-         */
-        return ($parts['scheme'] ?? 'https') . '://' . ($parts['host'] ?? '') . ($parts['path'] ?? '/');
     }
 
     /* =====================================================================

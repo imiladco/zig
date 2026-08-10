@@ -133,9 +133,20 @@ final class Archive_Head {
             return;
         }
 
-        $state = Query_State::from_request($params, Archive_Query::honored_taxonomies(self::facets()));
+        $state   = Query_State::from_request($params, Archive_Query::honored_taxonomies(self::facets()));
+        $invalid = [] !== self::invalid($params);
 
-        if (self::normalize($params, $state)) {
+        /*
+         * ترتیب مهم است و این را نصب واقعی نشان داد.
+         *
+         * قبلاً ریدایرکتِ صریح‌کردن اپراتور اول اجرا می‌شد. روی آدرسی با
+         * هفتاد ترم، نتیجه‌اش این بود که همان هفتاد ترم دوباره در مقصد
+         * ریدایرکت بنشینند — یعنی یک رفت‌وبرگشت اضافه، برای رسیدن به
+         * آدرسی که بعدش ‎404‎ می‌گرفت.
+         *
+         * آدرسی که قرار است «وجود ندارد» اعلام شود، کانونیکال‌کردن ندارد.
+         */
+        if (!$invalid && self::normalize($params, $state)) {
             return;
         }
 
@@ -148,7 +159,7 @@ final class Archive_Head {
             self::policy(),
             isset($wp_query) ? (int) $wp_query->found_posts : null,
             isset($wp_query) ? (int) $wp_query->max_num_pages : 0,
-            [] !== self::invalid($params)
+            $invalid
         );
 
         self::$decision = $decision;
@@ -334,7 +345,7 @@ final class Archive_Head {
             return [];
         }
 
-        return Schema_Store::resolve((int) $term->term_id, [])['facets'];
+        return Schema_Store::for_term((int) $term->term_id);
     }
 
     /* =====================================================================
