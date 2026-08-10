@@ -1327,21 +1327,6 @@ final class Product_Archive extends Widget_Base {
             'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-outer-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
-        $this->add_control('filters_tint', [
-            'label'       => __('رنگ محوشدگی زیر نوار', 'zig3d-widgets'),
-            'type'        => Controls_Manager::COLOR,
-            'description' => __('از بالای کارت شروع می‌شود و به پس‌زمینهٔ پنل می‌رسد.', 'zig3d-widgets'),
-            'selectors'   => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-tint: {{VALUE}};'],
-        ]);
-
-        $this->add_responsive_control('filters_tint_height', [
-            'label'      => __('ارتفاع محوشدگی', 'zig3d-widgets'),
-            'type'       => Controls_Manager::SLIDER,
-            'size_units' => ['px'],
-            'range'      => ['px' => ['min' => 0, 'max' => 300]],
-            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-tint-height: {{SIZE}}{{UNIT}};'],
-        ]);
-
         /*
          * سقف ارتفاع پنل، با واحدهای وابسته به نمایشگر.
          *
@@ -1361,10 +1346,25 @@ final class Product_Archive extends Widget_Base {
             'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-max: {{SIZE}}{{UNIT}};'],
         ]);
 
+        /*
+         * سربرگ شیشه است: رنگش باید *نیمه‌شفاف* بماند، وگرنه بنفشِ پشتش
+         * را می‌پوشاند و بلور دیگر چیزی برای نشان‌دادن ندارد. توضیحِ کنترل
+         * همین را می‌گوید تا کسی رنگ توپر نگذارد و بعد دنبال دلیلِ
+         * ازبین‌رفتن افکت بگردد.
+         */
         $this->add_control('filters_head_bg', [
-            'label'     => __('پس‌زمینهٔ سربرگ', 'zig3d-widgets'),
-            'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-head-bg: {{VALUE}};'],
+            'label'       => __('پس‌زمینهٔ سربرگ', 'zig3d-widgets'),
+            'type'        => Controls_Manager::COLOR,
+            'description' => __('نیمه‌شفاف بگذارید تا رنگِ پشتِ سربرگ از آن بتراود.', 'zig3d-widgets'),
+            'selectors'   => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-head-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('filters_head_blur', [
+            'label'      => __('شدت بلورِ سربرگ', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-head-blur: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('filters_head_color', [

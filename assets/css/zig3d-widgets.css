@@ -849,54 +849,65 @@ a.zig-list__label:focus-visible {
 	align-self: start;
 	min-width: 0;
 	/*
-	 * نوار رنگیِ بالای پنل، بدون هیچ عنصر اضافه.
-	 *
-	 * کارت از هر طرف تو رفته و نوار بنفش تمام‌عرضِ ظرف بیرونی است، پس از
-	 * بالا و از دو طرفِ گوشه‌های بالایی پیداست. اعداد از خودِ فیگما
-	 * آمده‌اند: ‎24‎ بالا و پایین، ‎16‎ دو طرف.
-	 *
-	 * نوار با یک گرادیانِ ایستِ سخت کشیده می‌شود، نه با ‎background-color‎.
-	 * تفاوتش این است که رنگ فقط تا همان ارتفاع می‌آید و پایین‌ترش شفاف
-	 * می‌ماند — وگرنه کنارهٔ کارت و زیرِ آن هم بنفش می‌شد، در حالی که در
-	 * دیزاین زمینهٔ صفحه از آنجا پیداست.
-	 *
-	 * صفر گذاشتنِ ارتفاع، نوار را کامل برمی‌دارد — بدون اینکه قاعده‌ای
-	 * لغو شود.
+	 * کارت از هر طرف تو رفته و تکهٔ بنفش پشتش می‌نشیند. اعداد از خودِ
+	 * فیگما: ‎24‎ بالا و پایین، ‎16‎ دو طرف.
 	 */
+	position: relative;
 	padding: var(--zig-filters-cap, 24px) var(--zig-filters-inset, 16px);
-	background-image: linear-gradient(
-		to bottom,
-		var(--zig-filters-cap-bg, var(--zig-brand)) 0 var(--zig-filters-cap-height, 40px),
-		transparent var(--zig-filters-cap-height, 40px)
-	);
 	border-radius: var(--zig-filters-outer-radius, 24px);
 }
 
 /*
- * کارت سفید، با یک محوشدگیِ رنگی در بالا.
+ * تکهٔ بنفشِ بالا — یک عنصرِ جدا، پشتِ همه‌چیز.
  *
- * در دیزاین، بالای کارت از نوارِ بنفش رنگ می‌گیرد و تا چند ده پیکسل
- * پایین‌تر به سفید می‌رسد — یعنی مرزِ نوار و کارت خطِ تیز نیست. با
- * ‎background-image‎ روی همان کارت انجام می‌شود، پس کنترلِ «پس‌زمینهٔ پنل»
- * هنوز رنگِ پایه را عوض می‌کند و محوشدگی رویش می‌نشیند.
+ * ‎::before‎ و نه ‎<div>‎: این هیچ محتوایی ندارد و نباید در DOM، در
+ * صفحه‌خوان، یا در قطعهٔ آژاکس دیده شود.
  *
- * ‎overflow: hidden auto‎ یعنی افقی بریده شود (تا گوشه‌های گِرد سربرگ
- * حفظ شوند) و عمودی در صورت نیاز اسکرول بگیرد.
+ * ارتفاعش از سربرگ *بیشتر* نیست و همین نکته‌اش است: بخش بالایی سربرگ
+ * روی بنفش می‌افتد و بقیه‌اش روی زمینهٔ صفحه. چون سربرگ شیشه است، بلورِ
+ * همین مرز است که آن محوشدگیِ لوندری را می‌سازد — نه یک گرادیان.
+ *
+ * فقط گوشه‌های بالا گِردند: پایینش زیر شیشه است و اگر گِرد بود، قوسش از
+ * پشتِ سربرگ دیده می‌شد.
+ */
+.zig-archive__filters::before {
+	content: "";
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline: 0;
+	block-size: var(--zig-filters-cap-height, 40px);
+	background-color: var(--zig-filters-cap-bg, var(--zig-brand));
+	border-start-start-radius: var(--zig-filters-outer-radius, 24px);
+	border-start-end-radius: var(--zig-filters-outer-radius, 24px);
+}
+
+/*
+ * کارت خودش پس‌زمینه ندارد.
+ *
+ * اگر داشت، جلوی بنفش را می‌گرفت و شیشهٔ سربرگ چیزی برای بلورکردن
+ * نداشت. پس سفیدی را بخش‌های *زیرِ* سربرگ می‌آورند و خودِ کارت فقط
+ * گوشه، سایه و اسکرول را نگه می‌دارد.
+ *
+ * ‎position: relative‎ تا روی ‎::before‎ بنشیند — هر دو عنصرِ موقعیت‌دارند
+ * و به ترتیبِ درخت نقاشی می‌شوند، پس ‎z-index‎ لازم نیست.
+ *
+ * ‎overflow: hidden auto‎ یعنی افقی بریده شود (تا گوشه‌های گِرد حفظ شوند)
+ * و عمودی در صورت نیاز اسکرول بگیرد.
  */
 .zig-filters__card {
+	position: relative;
 	overflow: hidden auto;
 	max-block-size: var(--zig-filters-max, calc(100vh - 96px));
 	overscroll-behavior: contain;
 	scrollbar-width: thin;
 	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
-	background-color: var(--zig-filters-bg, var(--zig-surface));
-	background-image: linear-gradient(
-		to bottom,
-		var(--zig-filters-tint, rgba(109, 40, 217, 0.14)),
-		transparent var(--zig-filters-tint-height, 90px)
-	);
 	border-radius: var(--zig-filters-radius, 16px);
 	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
+}
+
+.zig-filters__active,
+.zig-filters__groups {
+	background-color: var(--zig-filters-bg, var(--zig-surface));
 }
 
 /*
@@ -917,15 +928,39 @@ a.zig-list__label:focus-visible {
 	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
 }
 
-/* سربرگ */
+/*
+ * سربرگ — یک لایهٔ شیشه‌ای روی تکهٔ بنفش.
+ *
+ * ‎backdrop-filter‎ آنچه را *پشتِ* عنصر نقاشی شده بلور می‌کند، نه خودش را.
+ * پس بنفشِ بالا از پشتش می‌تراود و به سمت پایین محو می‌شود؛ همان چیزی که
+ * در فیگما شبیه گرادیان به نظر می‌رسید.
+ *
+ * پس‌زمینهٔ نیمه‌شفاف *لازم* است، نه تزئین: با ‎transparent‎ کامل، بعضی
+ * موتورها اصلاً بک‌دراپ را کامپوزیت نمی‌کنند و شیشه بی‌اثر می‌ماند.
+ */
 .zig-filters__head {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	padding: var(--zig-filters-head-padding, 16px 18px);
-	background-color: var(--zig-filters-head-bg, transparent);
+	background-color: var(--zig-filters-head-bg, rgba(255, 255, 255, 0.55));
+	-webkit-backdrop-filter: blur(var(--zig-filters-head-blur, 22px));
+	backdrop-filter: blur(var(--zig-filters-head-blur, 22px));
 	color: var(--zig-filters-head-color, inherit);
 	border-block-end: 1px solid var(--zig-archive-rule, var(--zig-line));
+}
+
+/*
+ * جایی که شیشه نیست، سربرگ باید خوانا بماند.
+ *
+ * بدون این، در موتوری که ‎backdrop-filter‎ ندارد، سفیدِ ۵۵٪ روی بنفشِ
+ * توپر می‌نشست و متن تیره روی زمینهٔ نیمه‌بنفش کنتراست را از دست می‌داد.
+ * این قاعده همان رنگِ *نتیجهٔ* بلور را به‌صورت تخت می‌گذارد.
+ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.zig-filters__head {
+		background-color: var(--zig-filters-head-fallback, #ece7f9);
+	}
 }
 
 .zig-filters__title {

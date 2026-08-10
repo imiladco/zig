@@ -635,6 +635,56 @@ const run = async () => {
 
 
 	});
+	await section('۲۳ شیشهٔ سربرگ روی تکهٔ بنفش', async () => {
+
+		/*
+		 * این افکت از سه چیز ساخته می‌شود و *هر سه* لازم‌اند:
+		 *
+		 *   • تکهٔ بنفش پشتِ سربرگ باشد،
+		 *   • کارت پس‌زمینه نداشته باشد تا جلویش را نگیرد،
+		 *   • سربرگ نیمه‌شفاف باشد تا بک‌دراپ کامپوزیت شود.
+		 *
+		 * اگر هرکدام برود، خروجی باز هم *سالم* به نظر می‌رسد — فقط یک
+		 * سربرگ سفیدِ ساده — و هیچ خطایی هم نمی‌دهد. تنها راه گرفتنش،
+		 * پرسیدن از خودِ مرورگر است.
+		 */
+		await visit(page, BASE);
+
+		const glass = await page.evaluate(() => {
+			const outer = document.querySelector('.zig-archive__filters');
+			const card = document.querySelector('.zig-filters__card');
+			const head = document.querySelector('.zig-filters__head');
+			const cap = getComputedStyle(outer, '::before');
+			const o = outer.getBoundingClientRect();
+			const c = card.getBoundingClientRect();
+			const h = head.getBoundingClientRect();
+			const hs = getComputedStyle(head);
+
+			return {
+				capH: parseFloat(cap.height) || 0,
+				capPos: cap.position,
+				cardBg: getComputedStyle(card).backgroundColor,
+				blur: hs.backdropFilter || hs.webkitBackdropFilter,
+				headAlpha: parseFloat((hs.backgroundColor.match(/[\d.]+\)$/) || ['1)'])[0]),
+				insetStart: Math.round(c.left - o.left),
+				insetEnd: Math.round(o.right - c.right),
+				insetTop: Math.round(c.top - o.top),
+				overlap: Math.round(o.top + (parseFloat(cap.height) || 0) - h.top),
+			};
+		});
+
+		check('تکهٔ بنفش هست و مطلق است', glass.capH > 0 && glass.capPos === 'absolute', `${glass.capH}px ${glass.capPos}`);
+		check('کارت پس‌زمینه ندارد تا جلوی بنفش را نگیرد', /rgba\(0, 0, 0, 0\)|transparent/.test(glass.cardBg), glass.cardBg);
+		check('سربرگ واقعاً بلور دارد', /blur\(\s*[1-9]/.test(glass.blur), glass.blur || 'none');
+		check('و نیمه‌شفاف است، وگرنه بلور دیده نمی‌شود', glass.headAlpha < 1, String(glass.headAlpha));
+		check('بنفش پشتِ سربرگ می‌افتد', glass.overlap > 0, `${glass.overlap}px همپوشانی`);
+
+		// اعداد از خودِ فیگما: ۱۶ دو طرف، ۲۴ از بالا
+		check('تورفتگی دو طرف قرینه است', glass.insetStart === glass.insetEnd, `${glass.insetStart} / ${glass.insetEnd}`);
+		check('و کارت از بالا پایین آمده', glass.insetTop > 0, `${glass.insetTop}px`);
+
+
+	});
 	check('در کل هیچ خطای جاوااسکریپتی رخ نداد', errors.length === 0, errors.slice(0, 3).join(' | '));
 
 	await browser.close();
