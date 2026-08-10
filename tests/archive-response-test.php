@@ -34,6 +34,13 @@ $envelope = Archive_Response::envelope(Seo::STATE_OK, $meta, [
 ]);
 
 Tests::same('وضعیت حمل می‌شود', $envelope['state'], Seo::STATE_OK);
+
+/*
+ * نسخهٔ قرارداد در هر پاکت می‌رود. بدون آن، اسکریپت قدیمیِ کش‌شده در بازهٔ
+ * استقرار، کلید ناشناخته را نادیده می‌گیرد و کاربر یک رابط نیمه‌کاره
+ * می‌بیند بدون هیچ خطایی.
+ */
+Tests::same('نسخهٔ قرارداد همراه است', $envelope['contract'], Archive_Response::CONTRACT);
 Tests::same('صفحه', $envelope['page'], 3);
 Tests::same('تعداد صفحه‌ها', $envelope['pages'], 7);
 Tests::same('شمارش', $envelope['found'], 42);

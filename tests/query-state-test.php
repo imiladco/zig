@@ -523,3 +523,112 @@ Tests::same(
     Query_State::from_request(['filter_brand' => 'up3d'], ['pa_brand'])->selected('pa_brand'),
     ['up3d']
 );
+
+/* ==========================================================================
+ * سقف پیچیدگی
+ *
+ * اینجا و نه در نقطهٔ آژاکس، چون همان حمله از راه GET هم می‌آید و کوئری
+ * اصلی ووکامرس را هم اجرا می‌کند. هر گروه فیلتر یک JOIN اضافه می‌کند و
+ * هزینه خطی نیست.
+ * ======================================================================= */
+
+Tests::group('وضعیت › سقف');
+
+$many_terms = [];
+
+for ($i = 0; $i < Query_State::MAX_TERMS + 20; $i++) {
+    $many_terms[] = 'term-' . $i;
+}
+
+Tests::same(
+    'ترم‌های یک گروه بریده می‌شوند',
+    count(Query_State::create(['pa_brand' => $many_terms])->selected('pa_brand')),
+    Query_State::MAX_TERMS
+);
+
+$many_groups = [];
+
+for ($i = 0; $i < Query_State::MAX_GROUPS + 8; $i++) {
+    $many_groups['pa_g' . sprintf('%02d', $i)] = ['x'];
+}
+
+Tests::same(
+    'گروه‌ها هم بریده می‌شوند',
+    count(Query_State::create($many_groups)->filters()),
+    Query_State::MAX_GROUPS
+);
+
+/*
+ * بریدن بعد از مرتب‌سازی انجام می‌شود. اگر قبلش بود، ترتیب کلیک کاربر
+ * تعیین می‌کرد کدام گروه بیفتد — یعنی دو آدرس یکسان، دو نتیجهٔ متفاوت و
+ * دو کلید کش.
+ */
+Tests::same(
+    'و انتخابشان قطعی است، نه وابسته به ترتیب ورودی',
+    array_keys(Query_State::create($many_groups)->filters()),
+    array_keys(Query_State::create(array_reverse($many_groups, true))->filters())
+);
+
+/*
+ * ?paged=99999999 به وردپرس یک OFFSET نجومی می‌دهد. نتیجه خالی است ولی
+ * دیتابیس برای رسیدن به آن خلأ کل مجموعه را می‌چیند.
+ */
+Tests::same(
+    'شمارهٔ صفحه سقف دارد',
+    Query_State::create([], '', 99999999)->page(),
+    Query_State::MAX_PAGE
+);
+
+Tests::same('و صفحهٔ عادی دست‌نخورده می‌ماند', Query_State::create([], '', 3)->page(), 3);
+
+/* --------------------------------------------------------------------------
+ * و بریدن به‌تنهایی کافی نیست
+ *
+ * آدرسی با سی گروه، بعد از بریدن همان چیزی را نشان می‌دهد که نسخهٔ
+ * دوازده‌گروهی‌اش — یعنی یک آدرس تکراریِ ۲۰۰. برخلاف اسلاگ ناشناخته،
+ * اینجا نتیجه خالی هم نمی‌شود که filtered_empty بگیردش.
+ * ------------------------------------------------------------------------ */
+
+$honored = array_keys($many_groups);
+
+$over_params = [];
+
+foreach ($honored as $taxonomy) {
+    $over_params[Query_State::param_for($taxonomy)] = 'x';
+}
+
+Tests::ok(
+    'گروه‌های بیش از سقف گزارش می‌شوند',
+    [] !== Query_State::oversized_filters($over_params, $honored)
+);
+
+Tests::same(
+    'ولی تعداد مجاز نه',
+    Query_State::oversized_filters(['filter_brand' => 'a,b,c'], ['pa_brand']),
+    []
+);
+
+Tests::same(
+    'ترم‌های بیش از سقف هم گزارش می‌شوند',
+    Query_State::oversized_filters(['filter_brand' => implode(',', $many_terms)], ['pa_brand']),
+    ['filter_brand']
+);
+
+/*
+ * تکراری‌ها قبل از شمردن یکی می‌شوند، وگرنه ?filter_brand=a,a,a,… با پنجاه
+ * تکرار «از سقف رد شده» حساب می‌شد در حالی که فقط یک ترم است.
+ */
+Tests::same(
+    'تکرار، سقف را نمی‌شکند',
+    Query_State::oversized_filters(
+        ['filter_brand' => implode(',', array_fill(0, Query_State::MAX_TERMS + 10, 'a'))],
+        ['pa_brand']
+    ),
+    []
+);
+
+Tests::same(
+    'پارامتر ناشناخته کار این تابع نیست',
+    Query_State::oversized_filters(['filter_ghost' => 'x'], ['pa_brand']),
+    []
+);

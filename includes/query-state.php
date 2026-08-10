@@ -52,6 +52,37 @@ final class Query_State {
     /** پارامتر صفحه — همان چیزی که وردپرس می‌خواند */
     public const PAGE_PARAM = 'paged';
 
+    /* ---------------------------------------------------------------------
+     * سقف‌ها
+     *
+     * اینجا و نه در نقطهٔ آژاکس، چون حمله به آژاکس محدود نیست: همان
+     * ‎?filter_a=…&filter_b=…‎ را می‌شود در نوار آدرس هم زد و کوئری اصلی
+     * ووکامرس هم اجرا می‌شود. سقفی که فقط جلوی ‎POST‎ را بگیرد، فقط
+     * آسان‌ترین راه را بسته.
+     *
+     * هزینه‌اش هم خطی نیست: هر گروه فیلتر یک ‎JOIN‎ روی
+     * ‎term_relationships‎ اضافه می‌کند. دوازده گروه یعنی دوازده ‎JOIN‎، و
+     * بهینه‌ساز MySQL از یک جایی به بعد نقشهٔ اجرا را رها می‌کند.
+     *
+     * عددها سخاوتمندند تا هیچ فروشگاه واقعی‌ای به آن‌ها نخورد: فروشگاهی با
+     * دوازده گروه فیلترِ هم‌زمانِ فعال وجود ندارد، و پنجاه ترمِ انتخاب‌شده
+     * در یک گروه یعنی کاربر عملاً «همه» را زده.
+     * ------------------------------------------------------------------ */
+
+    /** بیشترین گروه فیلترِ هم‌زمان */
+    public const MAX_GROUPS = 12;
+
+    /** بیشترین ترم در هر گروه */
+    public const MAX_TERMS = 50;
+
+    /**
+     * بیشترین شمارهٔ صفحه.
+     *
+     * ‎?paged=99999999‎ به وردپرس یک ‎OFFSET‎ نجومی می‌دهد. نتیجه‌اش خالی
+     * است ولی دیتابیس برای رسیدن به آن خلأ، کل مجموعه را می‌چیند.
+     */
+    public const MAX_PAGE = 5000;
+
     /** @var array<string,string[]> تاکسونومی ⇒ اسلاگ ترم‌های انتخاب‌شده */
     private array $filters;
 
@@ -75,7 +106,7 @@ final class Query_State {
      * @param int                           $page    صفحه، از ۱
      */
     public static function create(array $filters = [], string $sort = '', int $page = 1): self {
-        return new self(self::normalize($filters), self::clean_sort($sort), max(1, $page));
+        return new self(self::normalize($filters), self::clean_sort($sort), min(self::MAX_PAGE, max(1, $page)));
     }
 
     /**
@@ -194,6 +225,54 @@ final class Query_State {
         }
 
         return $unknown;
+    }
+
+    /**
+     * پارامترهایی که از سقف رد شده‌اند.
+     *
+     * بریدن به‌تنهایی کافی نیست: آدرسی با سی گروه فیلتر، بعد از بریدن
+     * همان چیزی را نشان می‌دهد که نسخهٔ دوازده‌گروهی‌اش — یعنی یک آدرسِ
+     * تکراریِ ‎200‎، از همان جنسی که قرار بود ‎404‎ بگیرد. و برخلاف اسلاگ
+     * ناشناخته، اینجا نتیجه خالی هم نمی‌شود که ‎filtered_empty‎ بگیردش.
+     *
+     * پس بریدن از خرابی سرور جلو می‌گیرد و این یکی از تکثیر آدرس.
+     *
+     * @param array    $params     همان ‎$_GET‎.
+     * @param string[] $taxonomies تاکسونومی‌های مجاز.
+     * @return string[]
+     */
+    public static function oversized_filters(array $params, array $taxonomies): array {
+        $oversized = [];
+        $groups    = 0;
+
+        foreach ($taxonomies as $taxonomy) {
+            $param = self::param_for(self::key((string) $taxonomy));
+
+            if (!isset($params[$param]) || !self::honorable($params[$param])) {
+                continue;
+            }
+
+            $terms = array_filter(
+                array_map([self::class, 'slug'], self::split(self::scalar($params[$param]))),
+                static fn(string $t): bool => '' !== $t
+            );
+
+            if (!$terms) {
+                continue;
+            }
+
+            ++$groups;
+
+            if (count(array_unique($terms)) > self::MAX_TERMS) {
+                $oversized[] = $param;
+            }
+        }
+
+        if ($groups > self::MAX_GROUPS) {
+            $oversized[] = self::FILTER_PREFIX . '*';
+        }
+
+        return array_values(array_unique($oversized));
     }
 
     /**
@@ -601,6 +680,11 @@ final class Query_State {
                 continue;
             }
 
+            // بریدن، نه رد کردن: وضعیت باید همیشه ساخته شود، حتی از یک
+            // آدرس دست‌کاری‌شده. اینکه آن آدرس ۴۰۴ بگیرد، تصمیم جای دیگری
+            // است — ‎oversized_filters()‎ گزارشش می‌کند.
+            $terms = array_slice($terms, 0, self::MAX_TERMS);
+
             // دو کلید متفاوت می‌توانند بعد از پاک‌سازی یکی شوند؛ آن‌وقت دومی
             // نباید اولی را دور بریزد.
             $existing = $clean[$taxonomy] ?? [];
@@ -613,7 +697,12 @@ final class Query_State {
 
         ksort($clean, SORT_STRING);
 
-        return $clean;
+        /*
+         * بعد از ‎ksort‎ بریده می‌شود تا کدام گروه‌ها می‌مانند قطعی باشد.
+         * اگر قبلش بود، ترتیب کلیک کاربر تعیین می‌کرد کدام گروه بیفتد —
+         * یعنی دو آدرسِ یکسان، دو نتیجهٔ متفاوت و دو کلید کش.
+         */
+        return array_slice($clean, 0, self::MAX_GROUPS, true);
     }
 
     /**

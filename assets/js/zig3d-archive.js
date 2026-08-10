@@ -24,6 +24,27 @@
 
 	var STORE = 'zig-archive:';
 
+	/**
+	 * نسخهٔ قرارداد پاسخ.
+	 *
+	 * فایل JS با شمارهٔ نسخهٔ افزونه کش می‌شود، پس «اسکریپت قدیمی با سرور
+	 * جدید» فقط در بازهٔ کوتاهِ استقرار پیش می‌آید — کافی برای اینکه یک
+	 * کاربر نتیجهٔ عجیب ببیند و هیچ‌کس نفهمد چرا. با این عدد، همان حالت به
+	 * مسیر «خطای فنی» می‌رود: گرید سر جایش می‌ماند و دکمهٔ تلاش مجدد بالا
+	 * می‌آید، که بعد از رفرش خودش درست می‌شود.
+	 */
+	var CONTRACT = 1;
+
+	/*
+	 * مالکِ تاریخچه: اولین ویجت آرشیوِ صفحه.
+	 *
+	 * آدرس نوار یکی است و نمی‌تواند هم‌زمان وضعیت دو ویجت را بگوید. اگر هر
+	 * دو pushState کنند، تاریخچه‌ای می‌سازند که هیچ‌کدام صاحبش نیستند و back
+	 * کاربر را به حالتی می‌برد که هیچ‌وقت وجود نداشته. بقیه آژاکسشان کامل
+	 * کار می‌کند، فقط آدرس را دست نمی‌زنند.
+	 */
+	var owned = false;
+
 	function boot(root) {
 		if (root.zigArchive) {
 			return;
@@ -54,6 +75,24 @@
 
 		this.page = parseInt(root.getAttribute('data-zig-page'), 10) || 1;
 		this.pages = parseInt(root.getAttribute('data-zig-pages'), 10) || 1;
+
+		/*
+		 * وضعیتِ کاری، جدا از href لینک‌ها.
+		 *
+		 * href هر لینک عکسِ لحظه‌ای رندری است که آن را ساخته. اگر کاربر دو
+		 * فیلتر را سریع پشت سر هم بزند، href دومی هنوز اولی را نمی‌شناسد —
+		 * و رفتن به آن یعنی فیلتر اول بی‌صدا برداشته شود. کاربر دو تیک
+		 * می‌زند و یکی می‌گیرد، بدون هیچ خطایی.
+		 *
+		 * پس هر کلیک دلتای خودش را (data-zig-toggle / -sort / -goto) روی
+		 * همین شیء اعمال می‌کند، و بعد از هر پاسخ، همین شیء با آدرسی که
+		 * سرور برگردانده دوباره همگام می‌شود. یعنی کلاینت فقط بین دو پاسخ
+		 * حدس می‌زند و حقیقت همیشه مالِ سرور می‌ماند.
+		 */
+		this.params = new window.URLSearchParams(window.location.search);
+
+		this.owner = !owned;
+		owned = true;
 
 		/* شمارندهٔ درخواست: پاسخ کهنه نباید پاسخ تازه را پس بزند */
 		this.ticket = 0;
@@ -101,20 +140,30 @@
 			}
 
 			event.preventDefault();
-			self.go(link.href, kind, link);
+			self.go(self.applyDelta(link, kind), kind, link);
 		});
 
 		if (this.retry) {
 			this.retry.addEventListener('click', function () {
 				if (self.lastFailed) {
-					self.go(self.lastFailed.url, self.lastFailed.kind, null, true);
+					self.go(self.lastFailed.query, self.lastFailed.kind, null, true);
 				}
 			});
 		}
 
-		window.addEventListener('popstate', function () {
-			self.go(window.location.href, 'history', null, true);
-		});
+		/*
+		 * فقط مالکِ تاریخچه به back گوش می‌دهد.
+		 *
+		 * با دو ویجت روی یک صفحه، هر دو popstate می‌گیرند و هر دو
+		 * pushState می‌کنند؛ نتیجه‌اش یک تاریخچه است که هیچ‌کدام صاحبش
+		 * نیستند و back کاربر را به حالتی می‌برد که هیچ‌وقت وجود نداشته.
+		 */
+		if (this.owner) {
+			window.addEventListener('popstate', function () {
+				self.params = new window.URLSearchParams(window.location.search);
+				self.go(self.params.toString(), 'history', null, true);
+			});
+		}
 
 		if (this.restore) {
 			window.addEventListener('pagehide', function () {
@@ -133,26 +182,100 @@
 	 * نباید گرفته شود.
 	 */
 	Archive.prototype.kindOf = function (link) {
-		if (link.closest('.zig-facet__item') || link.classList.contains('zig-filters__clear')) {
+		if (link.hasAttribute('data-zig-toggle') || link.hasAttribute('data-zig-clear')) {
 			return 'filter';
 		}
 
-		if (link.classList.contains('zig-sorts__pill')) {
+		if (link.hasAttribute('data-zig-sort')) {
 			return 'sort';
 		}
 
-		if (link.classList.contains('zig-page')) {
+		if (link.hasAttribute('data-zig-goto')) {
 			return 'page';
 		}
 
 		return '';
 	};
 
+	/**
+	 * اعمال دلتای یک کلیک روی وضعیت کاری، و برگرداندن رشتهٔ پرس‌وجوی حاصل.
+	 *
+	 * قرارداد آدرس اینجا بازنویسی نمی‌شود — فقط سه عمل ساده انجام می‌شود:
+	 * افزودن/برداشتن یک اسلاگ از یک فهرست کاماجدا، گذاشتن orderby، و
+	 * گذاشتن paged. هرچه ظریف‌تر است (query_type_*، حذف پارامتر پیش‌فرض،
+	 * ترتیب کلیدها) مالِ سرور می‌ماند و با آدرسی که در پاسخ برمی‌گردد به
+	 * همین‌جا برمی‌گردد.
+	 */
+	Archive.prototype.applyDelta = function (link, kind) {
+		if (link.hasAttribute('data-zig-clear')) {
+			this.clearFilters();
+		} else if ('filter' === kind) {
+			var delta = (link.getAttribute('data-zig-toggle') || '').split('|');
+
+			if (2 === delta.length && delta[0]) {
+				this.toggle(delta[0], delta[1]);
+			}
+		} else if ('sort' === kind) {
+			var sort = link.getAttribute('data-zig-sort') || '';
+
+			if (sort) {
+				this.params.set('orderby', sort);
+			} else {
+				this.params.delete('orderby');
+			}
+		}
+
+		/*
+		 * هر تغییر فیلتر یا ترتیب، صفحه‌بندی را از اول شروع می‌کند — همان
+		 * قاعده‌ای که Query_State::toggle() هم دارد. ماندن روی صفحهٔ ۷ بعد
+		 * از باریک‌کردن نتیجه به دو صفحه، یعنی صفحهٔ خالی.
+		 */
+		if ('page' === kind) {
+			this.params.set('paged', link.getAttribute('data-zig-goto') || '1');
+		} else {
+			this.params.delete('paged');
+		}
+
+		return this.params.toString();
+	};
+
+	Archive.prototype.toggle = function (param, slug) {
+		var terms = (this.params.get(param) || '').split(',').filter(Boolean);
+		var at = terms.indexOf(slug);
+
+		if (at < 0) {
+			terms.push(slug);
+		} else {
+			terms.splice(at, 1);
+		}
+
+		if (terms.length) {
+			this.params.set(param, terms.join(','));
+		} else {
+			this.params.delete(param);
+			this.params.delete(param.replace(/^filter_/, 'query_type_'));
+		}
+	};
+
+	Archive.prototype.clearFilters = function () {
+		var doomed = [];
+
+		this.params.forEach(function (value, key) {
+			if (0 === key.indexOf('filter_') || 0 === key.indexOf('query_type_')) {
+				doomed.push(key);
+			}
+		});
+
+		for (var i = 0; i < doomed.length; i++) {
+			this.params.delete(doomed[i]);
+		}
+	};
+
 	/* ======================================================================
 	 * رفتن به یک حالت
 	 * =================================================================== */
 
-	Archive.prototype.go = function (url, kind, link, immediate) {
+	Archive.prototype.go = function (query, kind, link, immediate) {
 		var self = this;
 
 		/*
@@ -170,13 +293,13 @@
 			window.clearTimeout(this.timer);
 
 			this.timer = window.setTimeout(function () {
-				self.fetch(url, kind);
+				self.fetch(query, kind);
 			}, this.debounce);
 
 			return;
 		}
 
-		this.fetch(url, kind);
+		this.fetch(query, kind);
 	};
 
 	/**
@@ -196,7 +319,7 @@
 		}
 	};
 
-	Archive.prototype.fetch = function (url, kind) {
+	Archive.prototype.fetch = function (query, kind) {
 		var self = this;
 		var ticket = ++this.ticket;
 
@@ -209,7 +332,8 @@
 		body.append('post_id', this.postId);
 		body.append('widget_id', this.widgetId);
 		body.append('term_id', this.termId);
-		body.append('query', self.queryOf(url));
+		body.append('query', query);
+		body.append('contract', String(CONTRACT));
 
 		window.fetch(this.endpoint, {
 			method: 'POST',
@@ -235,32 +359,42 @@
 				return;
 			}
 
-			if (!payload || !payload.success || !payload.data) {
+			/*
+			 * ‎response.ok‎ فقط می‌گوید چیزی رسید. اینکه آن چیز *پاکتِ ما*
+			 * باشد، سنجش جداگانه‌ای است: پاسخ ۲۰۰ از یک کش، یک صفحهٔ
+			 * لاگین، یا سروری که وسط استقرار است، همه ‎ok‎ هستند.
+			 *
+			 * هر کدام که نخواند، خطای فنی است — یعنی گرید دست‌نخورده
+			 * می‌ماند و تلاش مجدد بالا می‌آید، نه اینکه بی‌صدا هیچ اتفاقی
+			 * نیفتد.
+			 */
+			if (!payload || true !== payload.success || !payload.data) {
 				throw new Error('shape');
 			}
 
-			self.apply(payload.data, url, kind);
+			if (CONTRACT !== payload.data.contract) {
+				throw new Error('contract');
+			}
+
+			if ('string' !== typeof payload.data.state) {
+				throw new Error('state');
+			}
+
+			self.apply(payload.data, kind);
 		}).catch(function () {
 			if (ticket !== self.ticket) {
 				return;
 			}
 
-			self.fail(url, kind);
+			self.fail(query, kind);
 		});
-	};
-
-	/** فقط رشتهٔ پرس‌وجو می‌رود؛ آدرس پایه را سرور خودش می‌داند */
-	Archive.prototype.queryOf = function (url) {
-		var mark = url.indexOf('?');
-
-		return mark < 0 ? '' : url.slice(mark + 1);
 	};
 
 	/* ======================================================================
 	 * نشاندن پاسخ
 	 * =================================================================== */
 
-	Archive.prototype.apply = function (data, url, kind) {
+	Archive.prototype.apply = function (data, kind) {
 		this.hideError();
 		this.busy(false);
 
@@ -283,8 +417,23 @@
 		 * صفحه را می‌دهد — با query_type صریح و بدون پارامتر بی‌اثر. ساختن
 		 * آن در کلاینت یعنی قرارداد آدرس دو جا تعریف شود.
 		 */
-		if (data.url && 'history' !== kind) {
-			window.history.pushState({ zig: true }, '', data.url);
+		if (data.url) {
+			/*
+			 * همگام‌سازی وضعیت کاری با حقیقت.
+			 *
+			 * حدس‌های کلاینت بین دو پاسخ اینجا پاک می‌شوند: query_type_*
+			 * صریح، پارامتر بی‌اثرِ برداشته‌شده، ترتیب قطعی کلیدها. یعنی
+			 * قرارداد آدرس یک تعریف بیشتر ندارد و آن هم در PHP است.
+			 */
+			try {
+				this.params = new window.URLSearchParams(new window.URL(data.url, window.location.href).search);
+			} catch (error) {
+				/* آدرس بدشکل: وضعیت کاری دست‌نخورده می‌ماند */
+			}
+
+			if (this.owner && 'history' !== kind) {
+				window.history.pushState({ zig: true }, '', data.url);
+			}
 		}
 
 		this.focusAfter(kind);
@@ -303,8 +452,43 @@
 
 		var slot = this.root.querySelector('[data-zig-part="' + name + '"]');
 
-		if (slot) {
-			slot.innerHTML = html;
+		if (!slot) {
+			return;
+		}
+
+		slot.innerHTML = html;
+
+		this.reinit(slot);
+	};
+
+	/**
+	 * بیدارکردن دوبارهٔ ویجت‌های المنتور داخل قطعهٔ تازه.
+	 *
+	 * کارت می‌تواند یک قالب المنتور یا آیتم جت‌انجین باشد (منبع کارت =
+	 * «قالب»)، و حالت «چیزی پیدا نشد» هم می‌تواند قالب باشد. آن قالب‌ها
+	 * ویجت‌هایی دارند که هندلر جاوااسکریپت لازم دارند — اسلایدر، آکاردئون،
+	 * شمارنده.
+	 *
+	 * ‎innerHTML‎ فقط مارک‌آپ را می‌گذارد؛ هندلرهای المنتور هیچ‌وقت روی آن
+	 * اجرا نمی‌شوند. نتیجه‌اش این است که کارت‌ها *بار اول* درست کار می‌کنند
+	 * و بعد از اولین فیلتر، مرده به نظر می‌رسند — و چون هیچ خطایی نمی‌دهد،
+	 * معمولاً به «قالب خراب است» تعبیر می‌شود.
+	 */
+	Archive.prototype.reinit = function (scope) {
+		var frontend = window.elementorFrontend;
+
+		if (!frontend || !frontend.elementsHandler || !window.jQuery) {
+			return;
+		}
+
+		var elements = scope.querySelectorAll('.elementor-element');
+
+		for (var i = 0; i < elements.length; i++) {
+			try {
+				frontend.elementsHandler.runReadyTrigger(window.jQuery(elements[i]));
+			} catch (error) {
+				/* هندلر یک ویجت نباید بقیهٔ گرید را با خودش ببرد */
+			}
 		}
 	};
 
@@ -370,9 +554,9 @@
 	 * خطای فنی
 	 * =================================================================== */
 
-	Archive.prototype.fail = function (url, kind) {
+	Archive.prototype.fail = function (query, kind) {
 		this.busy(false);
-		this.lastFailed = { url: url, kind: kind };
+		this.lastFailed = { query: query, kind: kind };
 
 		if (this.error) {
 			this.error.hidden = false;
@@ -443,7 +627,7 @@
 		}
 
 		this.autoLoaded++;
-		this.go(next.href, 'page', null, true);
+		this.go(this.applyDelta(next, 'page'), 'page', null, true);
 	};
 
 	/* ======================================================================

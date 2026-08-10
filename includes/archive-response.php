@@ -51,6 +51,23 @@ final class Archive_Response {
     public const FAIL_SERVER = 'server';
 
     /**
+     * نسخهٔ قرارداد.
+     *
+     * در هر پاکت می‌رود و کلاینت می‌سنجدش. مسئله‌ای که حل می‌کند کوتاه ولی
+     * واقعی است: بین بارگذاری فایل JS و به‌روزرسانی افزونه، مرورگر ممکن
+     * است اسکریپت قدیمی را داشته باشد و سرور پاکت جدید بدهد. بدون این
+     * عدد، کلاینت قدیمی کلید ناشناخته را نادیده می‌گیرد و کاربر یک رابط
+     * نیمه‌کاره می‌بیند بدون هیچ خطایی.
+     *
+     * با این عدد، همان حالت به مسیر «خطای فنی» می‌رود: گرید قبلی سر جایش،
+     * دکمهٔ تلاش مجدد بالا — و رفرش صفحه خودش درستش می‌کند.
+     *
+     * فقط وقتی زیاد شود که *شکل* پاکت بشکند. افزودن یک کلید تازه شکستن
+     * نیست؛ حذف یا تغییر معنای یکی هست.
+     */
+    public const CONTRACT = 1;
+
+    /**
      * کد HTTP هر خطا.
      *
      * صریح نوشته می‌شوند چون پیش‌فرضِ ‎wp_send_json_error()‎ هم ‎200‎ است، و
@@ -98,7 +115,8 @@ final class Archive_Response {
      */
     public static function envelope(string $state, array $meta, array $fragments = []): array {
         $payload = [
-            'state' => self::state($state),
+            'contract' => self::CONTRACT,
+            'state'    => self::state($state),
 
             /*
              * آدرسی که باید در ‎history‎ بنشیند، از خودِ سرور.
@@ -108,10 +126,10 @@ final class Archive_Response {
              * می‌رود. آدرسِ ‎history‎ باید دقیقاً همان آدرسی باشد که اگر
              * کاربر رفرش کند، همین صفحه را بدهد.
              */
-            'url'   => (string) ($meta['url'] ?? ''),
-            'page'  => max(1, (int) ($meta['page'] ?? 1)),
-            'pages' => max(0, (int) ($meta['pages'] ?? 0)),
-            'found' => max(0, (int) ($meta['found'] ?? 0)),
+            'url'      => (string) ($meta['url'] ?? ''),
+            'page'     => max(1, (int) ($meta['page'] ?? 1)),
+            'pages'    => max(0, (int) ($meta['pages'] ?? 0)),
+            'found'    => max(0, (int) ($meta['found'] ?? 0)),
         ];
 
         foreach (['grid', 'facets', 'pagination', 'count'] as $key) {

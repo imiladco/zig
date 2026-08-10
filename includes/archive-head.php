@@ -156,7 +156,8 @@ final class Archive_Head {
 
         return array_merge(
             Query_State::unknown_filters($params, $taxonomies),
-            Query_State::duplicate_filters($params, self::query_string())
+            Query_State::duplicate_filters($params, self::query_string()),
+            Query_State::oversized_filters($params, $taxonomies)
         );
     }
 

@@ -31,6 +31,19 @@ final class Archive_Endpoint {
     /** نام اکشن نانس؛ عمداً همان اکشن است تا جایی برای اشتباه تایپی نماند */
     public const NONCE = 'zig3d_archive';
 
+    /**
+     * بیشترین طول رشتهٔ پرس‌وجو.
+     *
+     * سقف‌های واقعی در ‎Query_State‎ هستند، چون همان حمله از راه ‎GET‎ هم
+     * می‌آید. این یکی فقط جلوی هدررفتِ کارِ پارس را می‌گیرد: رشتهٔ
+     * دویست‌کیلوبایتی قبل از اینکه به ‎parse_str()‎ برسد رد می‌شود.
+     *
+     * نانس اینجا نه مجوز است و نه سپرِ بار: برای بازدیدکنندهٔ ناشناس
+     * عملاً یک ثابتِ عمومی است که هرکسی از منبع صفحه برمی‌دارد. چیزی که
+     * واقعاً محافظت می‌کند همین سقف‌هاست.
+     */
+    public const MAX_QUERY = 2048;
+
     public static function boot(): void {
         add_action('wp_ajax_' . self::ACTION, [self::class, 'handle']);
         add_action('wp_ajax_nopriv_' . self::ACTION, [self::class, 'handle']);
@@ -66,17 +79,30 @@ final class Archive_Endpoint {
             self::fail(Archive_Response::FAIL_NONCE);
         }
 
+        /*
+         * کلاینتِ قدیمی، پاکتِ جدید.
+         *
+         * سنجش دوطرفه است: کلاینت هم نسخهٔ پاسخ را می‌سنجد. این طرف برای
+         * جایی است که *درخواست* شکلش عوض شده باشد — آن‌وقت رندرکردن با
+         * فرض غلط، بدتر از یک خطای صریح است.
+         */
+        if ((int) ($post['contract'] ?? 0) !== Archive_Response::CONTRACT) {
+            self::fail(Archive_Response::FAIL_REQUEST);
+        }
+
+        $query = (string) ($post['query'] ?? '');
+
+        if (strlen($query) > self::MAX_QUERY) {
+            self::fail(Archive_Response::FAIL_REQUEST);
+        }
+
         $widget = self::widget((int) ($post['post_id'] ?? 0), (string) ($post['widget_id'] ?? ''));
 
         if (null === $widget) {
             self::fail(Archive_Response::FAIL_REQUEST);
         }
 
-        self::respond(
-            $widget,
-            self::params((string) ($post['query'] ?? '')),
-            (int) ($post['term_id'] ?? 0)
-        );
+        self::respond($widget, self::params($query), (int) ($post['term_id'] ?? 0));
     }
 
     /**

@@ -1173,7 +1173,18 @@ final class Product_Archive extends Widget_Base {
      * @param array|null $params جایگزین ‎$_GET‎، برای درخواست آژاکس
      */
     public function context(array $settings, ?array $params = null, int $term_id = 0): array {
-        if ($term_id > 0) {
+        /*
+         * دستهٔ فرستاده‌شده یک *راهنمایی* است، نه دستور.
+         *
+         * تاکسونومی از ثابت می‌آید نه از درخواست، و ‎get_term()‎ با
+         * تاکسونومیِ صریح، ترمی را که مالِ آن تاکسونومی نیست ‎WP_Error‎
+         * می‌کند — پس هم وجود و هم عضویت سنجیده می‌شوند.
+         *
+         * و وقتی منبع دستی است، اصلاً پذیرفته نمی‌شود: آنجا دامنه را
+         * تنظیمات تعیین می‌کند و قبول‌کردن دستهٔ کلاینت یعنی سایدبار و
+         * آدرس پایه به دسته‌ای اشاره کنند که گرید نشانش نمی‌دهد.
+         */
+        if ($term_id > 0 && 'custom' !== ($settings['source'] ?? 'archive')) {
             $term = get_term($term_id, Schema_Store::TAXONOMY);
 
             // ترمی که وجود ندارد یعنی «کل فروشگاه»، نه خطا: آدرس کهنه
@@ -1348,9 +1359,12 @@ final class Product_Archive extends Widget_Base {
             }
         }
 
+        $honored = Archive_Query::honored_taxonomies($this->facets());
+
         $invalid = null !== $params && [] !== array_merge(
-            Query_State::unknown_filters($params, Archive_Query::honored_taxonomies($this->facets())),
-            Query_State::duplicate_filters($params)
+            Query_State::unknown_filters($params, $honored),
+            Query_State::duplicate_filters($params),
+            Query_State::oversized_filters($params, $honored)
         );
 
         return Seo::state($state, (int) $query->found_posts, (int) $query->max_num_pages, $invalid);
@@ -1414,7 +1428,7 @@ final class Product_Archive extends Widget_Base {
 
         if ($state->is_filtered()) {
             printf(
-                '<a class="zig-filters__clear" href="%s">%s</a>',
+                '<a class="zig-filters__clear" href="%s" data-zig-clear="1">%s</a>',
                 esc_url(Seo::url($url, $state->cleared(), $operators)),
                 esc_html($settings['filters_clear'] ?? '')
             );
@@ -1499,13 +1513,27 @@ final class Product_Archive extends Widget_Base {
             )
         );
 
+        /*
+         * ‎data-zig-toggle‎ کنار ‎href‎، و این تکرار نیست.
+         *
+         * ‎href‎ عکسِ لحظه‌ای از وضعیت *همین رندر* است. اگر کاربر دو فیلتر
+         * را سریع پشت سر هم بزند، لینک دوم هنوز اولی را نمی‌شناسد — چون
+         * وقتی رندر شد، اولی هنوز کلیک نشده بود. پیمایش واقعی این مشکل را
+         * ندارد (هر کلیک یک رفت‌وبرگشت کامل است) ولی آژاکس دارد.
+         *
+         * پس جاوااسکریپت به‌جای دنبال‌کردن ‎href‎، همین دلتا را روی وضعیتی
+         * که خودش نگه داشته اعمال می‌کند. بدون JS، ‎href‎ همان کار همیشگی
+         * را می‌کند.
+         */
         printf(
-            '<li class="zig-facet__item%1$s"><a href="%2$s" rel="nofollow">'
+            '<li class="zig-facet__item%1$s"><a href="%2$s" rel="nofollow" data-zig-toggle="%5$s|%6$s">'
                 . '<span class="zig-facet__box" aria-hidden="true"></span>%3$s%4$s</a></li>',
             $option['selected'] ? ' is-selected' : '',
             esc_url(Seo::url($url, $state->toggle($taxonomy, $option['slug']), $operators)),
             $label,
-            $action
+            $action,
+            esc_attr(Query_State::param_for($taxonomy)),
+            esc_attr($option['slug'])
         );
     }
 
@@ -1561,11 +1589,12 @@ final class Product_Archive extends Widget_Base {
             $active = $current && $option['key'] === $current['key'];
 
             printf(
-                '<li class="zig-sorts__item"><a class="zig-sorts__pill%1$s" href="%2$s"%3$s>%4$s</a></li>',
+                '<li class="zig-sorts__item"><a class="zig-sorts__pill%1$s" href="%2$s"%3$s data-zig-sort="%5$s">%4$s</a></li>',
                 $active ? ' is-active' : '',
                 esc_url(Seo::url($url, $state->with_sort($option['key']), $operators)),
                 $active ? ' aria-current="true"' : '',
-                esc_html($option['label'])
+                esc_html($option['label']),
+                esc_attr($option['key'])
             );
         }
 
@@ -1826,8 +1855,9 @@ final class Product_Archive extends Widget_Base {
 
         if ($page > 1) {
             printf(
-                '<a class="zig-page zig-page--prev" href="%s" rel="prev">%s</a>',
+                '<a class="zig-page zig-page--prev" href="%s" rel="prev" data-zig-goto="%s">%s</a>',
                 esc_url(Seo::url($url, $state->with_page($page - 1), $operators)),
+                (string) ($page - 1),
                 esc_html($settings['label_prev'] ?? '')
             );
         }
@@ -1843,16 +1873,18 @@ final class Product_Archive extends Widget_Base {
             }
 
             printf(
-                '<a class="zig-page" href="%s">%s</a>',
+                '<a class="zig-page" href="%s" data-zig-goto="%s">%s</a>',
                 esc_url(Seo::url($url, $state->with_page($number), $operators)),
+                (string) $number,
                 esc_html(Price::persian((string) $number))
             );
         }
 
         if ($page < $pages) {
             printf(
-                '<a class="zig-page zig-page--next" href="%s" rel="next">%s</a>',
+                '<a class="zig-page zig-page--next" href="%s" rel="next" data-zig-goto="%s">%s</a>',
                 esc_url(Seo::url($url, $state->with_page($page + 1), $operators)),
+                (string) ($page + 1),
                 esc_html($settings['label_next'] ?? '')
             );
         }
