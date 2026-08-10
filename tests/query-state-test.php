@@ -708,3 +708,110 @@ Tests::same('و آرایهٔ خالی هم', Query_State::cap_params([]), []);
 $mixed = ['filter_a' => ['x'], 'filter_b' => 'y'];
 
 Tests::same('مقدار آرایه‌ای سهمیه نمی‌گیرد', Query_State::cap_params($mixed), $mixed);
+
+/* --------------------------------------------------------------------------
+ * چیزی که ووکامرس *می‌بیند*
+ *
+ * شمردن JOIN اثبات نیست: یک JOIN با IN(۵۰۰تایی) هم یک JOIN است. تنها
+ * اثباتِ واقعی این است که ورودی را دقیقاً همان‌طور بخوانیم که
+ * WC_Query::get_layered_nav_chosen_attributes() می‌خواند، و ببینیم چه
+ * چیزی به دستش می‌رسد:
+ *
+ *     foreach ( $_GET as $key => $value ) {
+ *         if ( 0 === strpos( $key, 'filter_' ) ) {
+ *             if ( ! is_string( $value ) ) { continue; }
+ *             $filter_terms = array_filter( array_map( 'sanitize_title', explode( ',', $value ) ) );
+ *
+ * پس همان را بازسازی می‌کنیم و روی ورودی‌های خصمانه می‌سنجیم.
+ * ------------------------------------------------------------------------ */
+
+Tests::group('وضعیت › آنچه ووکامرس می‌بیند');
+
+/** خواندن ورودی دقیقاً به روش ووکامرس */
+$woo_sees = static function (array $params): array {
+    $seen = [];
+
+    foreach ($params as $key => $value) {
+        if (0 !== strpos((string) $key, 'filter_') || !is_string($value)) {
+            continue;
+        }
+
+        $terms = array_filter(array_map('trim', explode(',', $value)));
+
+        if ($terms) {
+            $seen[(string) $key] = array_values($terms);
+        }
+    }
+
+    return $seen;
+};
+
+$fifty_one = [];
+
+for ($i = 0; $i < Query_State::MAX_TERMS + 1; $i++) {
+    $fifty_one[] = 'slug-' . $i;
+}
+
+$attacks = [
+    'گروه‌های زیاد'        => $raw,
+    'ترم‌های زیاد'         => ['filter_brand' => implode(',', $many_terms)],
+    'هر دو با هم'          => array_merge($raw, ['filter_brand' => implode(',', $many_terms)]),
+    'گروه زیاد + صفحهٔ دور' => array_merge($raw, ['paged' => '99999999']),
+    'ترم مرزی'             => ['filter_brand' => implode(',', $fifty_one)],
+];
+
+foreach ($attacks as $name => $attack) {
+    $seen = $woo_sees(Query_State::cap_params($attack));
+
+    Tests::ok(
+        $name . ' › ووکامرس بیش از سقف گروه نمی‌بیند',
+        count($seen) <= Query_State::MAX_GROUPS
+    );
+
+    $worst = 0;
+
+    foreach ($seen as $terms) {
+        $worst = max($worst, count($terms));
+    }
+
+    Tests::ok(
+        $name . ' › و در هیچ گروهی بیش از سقف ترم',
+        $worst <= Query_State::MAX_TERMS
+    );
+}
+
+/*
+ * سقف ترم *در هر گروه* است، نه روی مجموع — و این عمدی است: یک فست با
+ * پنجاه انتخاب کاملاً مشروع است («همهٔ برندها»). یعنی بدترین حالتِ مجاز
+ * دوازده گروه × پنجاه ترم است. عدد را صریح می‌نویسیم تا بودجه‌ای باشد که
+ * انتخاب شده، نه چیزی که از قلم افتاده.
+ */
+$worst_case = Query_State::MAX_GROUPS * Query_State::MAX_TERMS;
+
+Tests::ok('بدترین حالتِ مجاز، کران‌دار و آگاهانه است', $worst_case <= 600);
+
+/*
+ * و ترمی که افتاده باید *واقعاً* رفته باشد. اگر جایی در ورودی باقی بماند،
+ * در SQL هم باقی می‌ماند.
+ */
+$dropped = Query_State::cap_params(['filter_brand' => implode(',', $fifty_one)]);
+
+Tests::ok(
+    'ترم بریده‌شده در ورودی نمی‌ماند',
+    false === strpos($dropped['filter_brand'], 'slug-' . Query_State::MAX_TERMS)
+);
+
+Tests::ok(
+    'ولی ترم‌های مجاز می‌مانند',
+    false !== strpos($dropped['filter_brand'], 'slug-0')
+);
+
+/*
+ * صفحه هم همان‌طور: چیزی که وردپرس به OFFSET تبدیل می‌کند.
+ */
+foreach (['99999999', '5001', (string) Query_State::MAX_PAGE] as $paged) {
+    Tests::ok(
+        'صفحهٔ «' . $paged . '» از سقف رد نمی‌شود',
+        (int) Query_State::cap_params(['paged' => $paged])['paged'] <= Query_State::MAX_PAGE
+    );
+}
