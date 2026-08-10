@@ -24,8 +24,82 @@ final class Archive_Head {
     /** وضعیت محاسبه‌شدهٔ همین درخواست، یا ‎null‎ اگر اینجا کاری نداریم */
     private static ?array $decision = null;
 
+    /**
+     * آیا نگهبان چیزی را برید؟
+     *
+     * لازم است چون نگهبان ‎$_GET‎ را *عوض* می‌کند: بعد از آن،
+     * ‎oversized_filters()‎ روی ورودیِ بریده‌شده چیزی پیدا نمی‌کند و آدرسی
+     * که باید ‎404‎ می‌گرفت، ‎200‎ می‌گرفت. یعنی خودِ محافظت، تشخیص را
+     * پاک می‌کرد.
+     */
+    private static bool $capped = false;
+
     public static function boot(): void {
+        /*
+         * نگهبان روی ‎request‎ می‌نشیند و نه ‎template_redirect‎، و این
+         * تفاوت کل نکته است.
+         *
+         * ‎WC_Query::pre_get_posts()‎ روی ‎pre_get_posts‎ (اولویت پیش‌فرض)
+         * اجرا می‌شود و همان‌جا ‎tax_query‎ ناوبری لایه‌ای را می‌سازد.
+         * ‎template_redirect‎ *بعد* از اجرای کوئری اصلی است؛ یعنی هر
+         * تصمیمی آنجا، بعد از پرداختِ هزینه گرفته می‌شود.
+         *
+         * ‎request‎ داخل ‎WP::parse_request()‎ صدا زده می‌شود — پیش از
+         * ‎WP::query_posts()‎ و پیش از اولین باری که ووکامرس ‎$_GET‎ را
+         * می‌خواند (نتیجه‌اش را هم در یک ثابت ایستا کش می‌کند، پس بعدش
+         * دیگر دیر است).
+         */
+        add_filter('request', [self::class, 'guard'], 1);
+
         add_action('template_redirect', [self::class, 'decide'], 1);
+    }
+
+    /* =====================================================================
+     * نگهبان
+     * =================================================================== */
+
+    /**
+     * بریدن ورودی، پیش از آنکه به کوئری تبدیل شود.
+     *
+     * ‎$_GET‎ عوض می‌شود و این تنها راه است: ‎WC_Query‎ مستقیم از ‎$_GET‎
+     * می‌خواند و هیچ فیلتری روی ویژگی‌های انتخاب‌شده‌اش ندارد که بشود از
+     * بیرون محدودش کرد. تنها گزینهٔ دیگر این بود که بگذاریم کوئری سنگین
+     * اجرا شود و بعد ‎404‎ بدهیم — که یعنی سقف، سرور را محافظت نکرده.
+     *
+     * ‎paged‎ از دو راه می‌آید: ‎?paged=…‎ که در ‎$_GET‎ است، و
+     * ‎/page/…/‎ که از بازنویسی می‌آید و فقط در متغیرهای کوئری. هر دو
+     * بریده می‌شوند، وگرنه یکی از دو راه باز می‌ماند.
+     *
+     * @param array $vars متغیرهای کوئری وردپرس
+     */
+    public static function guard($vars) {
+        if (is_admin() || wp_doing_ajax()) {
+            return $vars;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $params = $_GET;
+
+        if (is_array($params)) {
+            $capped = Query_State::cap_params($params);
+
+            if ($capped !== $params) {
+                self::$capped = true;
+
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.VIP.SuperGlobalInputUsage
+                $_GET = $capped;
+            }
+        }
+
+        if (is_array($vars) && isset($vars[Query_State::PAGE_PARAM])
+            && (int) $vars[Query_State::PAGE_PARAM] > Query_State::MAX_PAGE
+        ) {
+            self::$capped = true;
+
+            $vars[Query_State::PAGE_PARAM] = Query_State::MAX_PAGE;
+        }
+
+        return $vars;
     }
 
     /**
@@ -154,11 +228,27 @@ final class Archive_Head {
     private static function invalid(array $params): array {
         $taxonomies = Archive_Query::honored_taxonomies(self::facets());
 
-        return array_merge(
+        $invalid = array_merge(
             Query_State::unknown_filters($params, $taxonomies),
             Query_State::duplicate_filters($params, self::query_string()),
             Query_State::oversized_filters($params, $taxonomies)
         );
+
+        /*
+         * چیزی که نگهبان بریده، دیگر در ‎$params‎ نیست — پس
+         * ‎oversized_filters()‎ نمی‌بیندش. بدون این خط، محافظت از سرور
+         * تشخیصِ ‎404‎ را پاک می‌کرد: آدرسِ سی‌گروهی سبک اجرا می‌شد و بعد
+         * ‎200‎ می‌گرفت، یعنی همان آدرسِ تکراری که قرار بود نماند.
+         *
+         * ‎query_string()‎ رشتهٔ خام را از ‎$_SERVER‎ می‌خواند و دست‌نخورده
+         * مانده، ولی به آن تکیه نمی‌کنیم: روی محیط‌هایی که در دسترس نیست،
+         * تشخیص بی‌صدا از بین می‌رفت.
+         */
+        if (self::$capped) {
+            $invalid[] = Query_State::FILTER_PREFIX . '*';
+        }
+
+        return $invalid;
     }
 
     /**

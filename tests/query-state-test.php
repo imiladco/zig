@@ -632,3 +632,79 @@ Tests::same(
     Query_State::oversized_filters(['filter_ghost' => 'x'], ['pa_brand']),
     []
 );
+
+/* --------------------------------------------------------------------------
+ * بریدن ورودی خام، پیش از ساختن کوئری
+ *
+ * سقف‌های normalize() فقط کوئری *ما* را می‌بندند. روی یک درخواست مستقیم
+ * مرورگر، کوئری اصلی را ووکامرس می‌سازد و مستقیم از $_GET می‌خواند — و
+ * هیچ فیلتری روی نتیجه‌اش ندارد. پس ورودی باید قبل از رسیدن به آن بریده
+ * شود، وگرنه سرور اول یک JOIN سی‌تایی می‌سازد و بعد ما ۴۰۴ می‌دهیم.
+ * ------------------------------------------------------------------------ */
+
+Tests::group('وضعیت › بریدن ورودی خام');
+
+$raw = [];
+
+for ($i = 0; $i < Query_State::MAX_GROUPS + 8; $i++) {
+    $raw['filter_g' . sprintf('%02d', $i)] = 'x';
+}
+
+$capped = Query_State::cap_params($raw);
+
+Tests::same(
+    'گروه‌های خام تا سقف بریده می‌شوند',
+    count(array_filter(array_keys($capped), static fn(string $k): bool => 0 === strpos($k, 'filter_'))),
+    Query_State::MAX_GROUPS
+);
+
+/*
+ * query_type گروهی که افتاده هم باید برود، وگرنه یک پارامتر یتیم می‌ماند
+ * که خودش یک آدرس تکراری می‌سازد.
+ */
+$with_types = $raw;
+
+foreach (array_keys($raw) as $key) {
+    $with_types[str_replace('filter_', 'query_type_', $key)] = 'or';
+}
+
+$capped_types = Query_State::cap_params($with_types);
+
+Tests::same(
+    'query_type گروه افتاده هم می‌رود',
+    count(array_filter(array_keys($capped_types), static fn(string $k): bool => 0 === strpos($k, 'query_type_'))),
+    Query_State::MAX_GROUPS
+);
+
+Tests::same(
+    'ترم‌های خام هم بریده می‌شوند',
+    count(explode(',', Query_State::cap_params(
+        ['filter_brand' => implode(',', $many_terms)]
+    )['filter_brand'])),
+    Query_State::MAX_TERMS
+);
+
+Tests::same(
+    'صفحهٔ نجومی بریده می‌شود',
+    Query_State::cap_params(['paged' => '99999999'])['paged'],
+    (string) Query_State::MAX_PAGE
+);
+
+/*
+ * ورودی سالم باید *عیناً* برگردد. تساوی سخت است که نگهبان به آن تکیه
+ * می‌کند تا بفهمد چیزی بریده شده یا نه؛ اگر این تابع ورودی بی‌گناه را هم
+ * دست بزند، هر درخواستی «بریده‌شده» علامت می‌خورد و همه ۴۰۴ می‌گیرند.
+ */
+$innocent = ['filter_brand' => 'up3d,vhf', 'query_type_brand' => 'or', 'orderby' => 'price', 'paged' => '3', 'utm_source' => 'x'];
+
+Tests::same('ورودی سالم دست‌نخورده برمی‌گردد', Query_State::cap_params($innocent), $innocent);
+
+Tests::same('و آرایهٔ خالی هم', Query_State::cap_params([]), []);
+
+/*
+ * مقدار غیررشته‌ای را ووکامرس هم نمی‌خواند، پس گروه حساب نمی‌شود و سهمیهٔ
+ * گروه‌های واقعی را نمی‌خورد.
+ */
+$mixed = ['filter_a' => ['x'], 'filter_b' => 'y'];
+
+Tests::same('مقدار آرایه‌ای سهمیه نمی‌گیرد', Query_State::cap_params($mixed), $mixed);

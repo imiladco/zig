@@ -228,6 +228,69 @@ final class Query_State {
     }
 
     /**
+     * بریدن پارامترهای خام تا سقف — *قبل* از اینکه کسی کوئری بسازد.
+     *
+     * سقف‌های ‎normalize()‎ فقط کوئری *ما* را می‌بندند. روی یک درخواست
+     * مستقیم مرورگر، کوئری اصلی را ووکامرس می‌سازد و مستقیم از ‎$_GET‎
+     * می‌خواند:
+     *
+     *     if ( ! empty( $_GET ) ) {
+     *         foreach ( $_GET as $key => $value ) {
+     *             if ( 0 === strpos( $key, 'filter_' ) ) {
+     *
+     * و هیچ فیلتری هم روی نتیجه‌اش ندارد که بشود از بیرون محدودش کرد. پس
+     * تنها راه، بریدنِ خودِ ورودی است پیش از آنکه به آن برسد — وگرنه سرور
+     * اول یک ‎JOIN‎ سی‌تایی می‌سازد و *بعد* ما ‎404‎ می‌دهیم؛ یعنی سقف،
+     * گرید را محافظت کرده و سرور را نه.
+     *
+     * همان ثابت‌های بالا، بدون منطق دوم. تفاوتش با ‎normalize()‎ فقط شکل
+     * ورودی است: آنجا نگاشتِ تاکسونومی ⇒ ترم، اینجا پارامترهای خامِ آدرس
+     * که باید همان‌طور دست‌نخورده به ووکامرس برسند تا پاک‌سازی خودش را
+     * رویشان بکند.
+     *
+     * *کدام* گروه‌ها می‌مانند قراردادی نیست: آدرسِ از سقف ردشده در هر حال
+     * ‎404‎ می‌گیرد. کاری که این تابع تضمین می‌کند فقط این است که هزینهٔ
+     * رسیدن به آن ‎404‎ کران‌دار بماند.
+     */
+    public static function cap_params(array $params): array {
+        $groups = [];
+
+        foreach (array_keys($params) as $key) {
+            $key = (string) $key;
+
+            // مقدار غیررشته‌ای را ووکامرس هم نمی‌خواند، پس گروه حساب نمی‌شود
+            if (0 === strpos($key, self::FILTER_PREFIX) && self::honorable($params[$key] ?? null)) {
+                $groups[] = $key;
+            }
+        }
+
+        sort($groups, SORT_STRING);
+
+        foreach (array_slice($groups, self::MAX_GROUPS) as $key) {
+            unset(
+                $params[$key],
+                $params[self::QUERY_TYPE_PREFIX . substr($key, strlen(self::FILTER_PREFIX))]
+            );
+        }
+
+        foreach (array_slice($groups, 0, self::MAX_GROUPS) as $key) {
+            $terms = self::split(self::scalar($params[$key]));
+
+            if (count($terms) > self::MAX_TERMS) {
+                $params[$key] = implode(',', array_slice($terms, 0, self::MAX_TERMS));
+            }
+        }
+
+        if (isset($params[self::PAGE_PARAM])
+            && (int) self::scalar($params[self::PAGE_PARAM]) > self::MAX_PAGE
+        ) {
+            $params[self::PAGE_PARAM] = (string) self::MAX_PAGE;
+        }
+
+        return $params;
+    }
+
+    /**
      * پارامترهایی که از سقف رد شده‌اند.
      *
      * بریدن به‌تنهایی کافی نیست: آدرسی با سی گروه فیلتر، بعد از بریدن
