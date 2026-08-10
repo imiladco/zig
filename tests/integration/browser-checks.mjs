@@ -608,15 +608,17 @@ const run = async () => {
 
 		const box = await page.evaluate(() => {
 			const card = document.querySelector('.zig-filters__card');
+			const groups = document.querySelector('.zig-filters__groups');
 			const list = document.querySelector('.zig-facet .zig-facet__list');
 			const cs = getComputedStyle(card);
+			const gs = getComputedStyle(groups);
 			const ls = getComputedStyle(list);
 
 			return {
 				cardMax: parseFloat(cs.maxHeight),
-				cardY: cs.overflowY,
 				cardX: cs.overflowX,
-				cardChain: cs.overscrollBehavior,
+				groupsY: gs.overflowY,
+				groupsChain: gs.overscrollBehavior,
 				listMax: parseFloat(ls.maxHeight),
 				listY: ls.overflowY,
 				listChain: ls.overscrollBehavior,
@@ -625,9 +627,9 @@ const run = async () => {
 		});
 
 		check('پنل سقف ارتفاع دارد', box.cardMax > 0 && box.cardMax <= box.viewport, `${box.cardMax} از ${box.viewport}`);
-		check('و در صورت نیاز عمودی اسکرول می‌گیرد', box.cardY === 'auto');
-		check('ولی افقی هیچ‌وقت', box.cardX === 'hidden');
-		check('اسکرولش به صفحه سرایت نمی‌کند', box.cardChain === 'contain');
+		check('ناحیهٔ اسکرول خودِ گروه‌هاست', box.groupsY === 'auto', box.groupsY);
+		check('و کارت افقی هیچ‌وقت اسکرول نمی‌گیرد', box.cardX === 'hidden');
+		check('اسکرولش به صفحه سرایت نمی‌کند', box.groupsChain === 'contain');
 
 		check('فهرست هر گروه هم سقف دارد', box.listMax > 0, String(box.listMax));
 		check('و اسکرول خودش را', box.listY === 'auto');
@@ -642,7 +644,7 @@ const run = async () => {
 		 * نمی‌شود؛ تنها راه سنجیدنش پرسیدن از CSSOM است.
 		 */
 		const bar = await page.evaluate(() => {
-			const card = getComputedStyle(document.querySelector('.zig-filters__card'));
+			const card = getComputedStyle(document.querySelector('.zig-filters__groups'));
 			const list = getComputedStyle(document.querySelector('.zig-facet__list'));
 			const rules = [...document.styleSheets]
 				.flatMap((s) => { try { return [...s.cssRules]; } catch { return []; } })
@@ -713,27 +715,73 @@ const run = async () => {
 		check('و کارت از بالا پایین آمده', glass.insetTop > 0, `${glass.insetTop}px`);
 
 		/*
-		 * سربرگ باید *واقعاً* سر جایش بماند، نه فقط ‎position: sticky‎
-		 * داشته باشد: اگر جدِ اسکرول‌دار عوض شود یا ‎overflow‎ برود،
-		 * خاصیت می‌ماند و اثرش نه. پس پنل را اسکرول می‌کنیم و می‌بینیم
-		 * سربرگ کجای کارت ایستاده.
+		 * سربرگ و ردیفِ فیلترهای اعمال‌شده باید *واقعاً* سر جایشان بمانند.
+		 *
+		 * سنجیدنِ ‎position‎ کافی نیست: چیزی که اهمیت دارد این است که آن‌ها
+		 * بیرونِ ناحیهٔ اسکرول باشند. پس گروه‌ها را اسکرول می‌کنیم و
+		 * می‌بینیم سربرگ اصلاً تکان می‌خورد یا نه.
 		 */
 		const stuck = await page.evaluate(() => {
-			const card = document.querySelector('.zig-filters__card');
+			const groups = document.querySelector('.zig-filters__groups');
+			const head = document.querySelector('.zig-filters__head');
 			document.querySelectorAll('.zig-facet').forEach((d) => d.setAttribute('open', ''));
-			card.scrollTop = 240;
+
+			const was = head.getBoundingClientRect().top;
+			groups.scrollTop = 240;
 
 			return {
-				scrolled: card.scrollTop,
-				offset: Math.round(
-					document.querySelector('.zig-filters__head').getBoundingClientRect().top
-						- card.getBoundingClientRect().top
-				),
+				scrolled: groups.scrollTop,
+				moved: Math.round(head.getBoundingClientRect().top - was),
 			};
 		});
 
-		check('پنل واقعاً اسکرول خورد', stuck.scrolled > 0, `${stuck.scrolled}px`);
-		check('ولی سربرگ بالای کارت ماند', stuck.offset === 0, `${stuck.offset}px از بالای کارت`);
+		check('گروه‌ها واقعاً اسکرول خوردند', stuck.scrolled > 0, `${stuck.scrolled}px`);
+		check('ولی سربرگ اصلاً تکان نخورد', stuck.moved === 0, `${stuck.moved}px جابه‌جایی`);
+
+
+	});
+	await section('۲۴ شکستِ درخواست، وضعیت را دروغ نکند', async () => {
+
+		/*
+		 * باگی که کاربر گزارشش کرد و روی محیط سالم بازتولید نمی‌شد، چون
+		 * فقط وقتی پیدا می‌شود که یک درخواست *شکست بخورد*:
+		 *
+		 *   کاربر روی فیلترِ فعال می‌زند تا برش دارد ← ‎params‎ همان‌جا
+		 *   حذفش می‌کند و تیک برداشته می‌شود ← درخواست شکست می‌خورد ←
+		 *   گرید و آدرس هنوز *با* فیلترند ولی کلاینت فکر می‌کند بدون
+		 *   فیلتر ← کلیک بعدی روی همان گزینه دوباره اضافه‌اش می‌کند.
+		 *
+		 * از دید کاربر: «فیلتر برمی‌گردد و لغو نمی‌شود.»
+		 */
+		await visit(page, BASE + '?filter_brand=up3d');
+
+		const before = await countOf(page);
+		check('با فیلتر شروع می‌شود', (await page.locator($.selected).count()) === 1, `${before} محصول`);
+
+		// فقط یک درخواست را می‌شکنیم، بعد راه را باز می‌کنیم
+		let broken = 0;
+		await ctx.route('**/admin-ajax.php', (route) => {
+			if (broken === 0) { broken = 1; return route.abort('failed'); }
+
+			return route.continue();
+		});
+
+		await (await option(page, 'filter_brand|up3d')).click();
+		await page.waitForFunction(() => !document.querySelector('[data-zig-archive]').hasAttribute('aria-busy'), null, { timeout: 15000 });
+		await page.waitForTimeout(300);
+
+		check('جعبهٔ خطا بالا آمد', !(await page.locator($.error).isHidden()));
+		check('گرید دست‌نخورده ماند', (await countOf(page)) === before, String(await countOf(page)));
+		check('و تیکِ پیش‌نمایش پس گرفته شد', (await page.locator($.selected).count()) === 1);
+
+		// حالا همان کلیک را دوباره بزن؛ این بار باید واقعاً برش دارد
+		await (await option(page, 'filter_brand|up3d')).click();
+		await settle(page);
+
+		check('کلیک دوباره فیلتر را برمی‌دارد، نه اینکه برش گرداند', !new URL(page.url()).searchParams.has('filter_brand'), page.url().split('?')[1] || '(تمیز)');
+		check('و شمارش به حالت بی‌فیلتر رفت', (await countOf(page)) > before, String(await countOf(page)));
+
+		await ctx.unroute('**/admin-ajax.php');
 
 
 	});

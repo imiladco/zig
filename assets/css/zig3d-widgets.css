@@ -896,11 +896,10 @@ a.zig-list__label:focus-visible {
  */
 .zig-filters__card {
 	position: relative;
-	overflow: hidden auto;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 	max-block-size: var(--zig-filters-max, calc(100vh - 96px));
-	overscroll-behavior: contain;
-	scrollbar-width: thin;
-	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
 	border-radius: var(--zig-filters-radius, 16px);
 	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
 }
@@ -908,6 +907,35 @@ a.zig-list__label:focus-visible {
 .zig-filters__active,
 .zig-filters__groups {
 	background-color: var(--zig-filters-bg, var(--zig-surface));
+}
+
+/*
+ * فقط گروه‌ها اسکرول می‌خورند، نه کل کارت.
+ *
+ * سربرگ و ردیفِ فیلترهای اعمال‌شده سرِ جایشان می‌مانند — «چند فیلتر فعال»
+ * و دکمهٔ حذف دقیقاً وقتی لازم‌اند که کاربر ته فهرست برندهاست.
+ *
+ * قبلاً این کار با ‎position: sticky‎ روی سربرگ انجام می‌شد. جواب می‌داد
+ * ولی حقهٔ بصری بود روی ناحیه‌ای که *واقعاً* اسکرول داشت؛ حالا ناحیهٔ
+ * اسکرول همان چیزی است که باید اسکرول شود. یک لایه کمتر، و ‎sticky‎ی که
+ * می‌توانست با ‎backdrop-filter‎ در بعضی موتورها بجنگد هم رفت.
+ *
+ * ‎min-block-size: 0‎ لازم است: آیتمِ فلکس به‌طور پیش‌فرض کوچک‌تر از
+ * محتوایش نمی‌شود، پس بدون آن سقفِ ارتفاع نادیده گرفته می‌شد و به‌جای
+ * اسکرول، کل پنل بلند می‌ماند.
+ */
+.zig-filters__groups {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
+}
+
+.zig-filters__head,
+.zig-filters__active {
+	flex: none;
 }
 
 /*
@@ -934,17 +962,17 @@ a.zig-list__label:focus-visible {
  * می‌شد و بی‌صدا کار اشتباه می‌کرد. ضمناً همهٔ پیاده‌سازی‌ها ‎width‎ را
  * می‌شناسند و این یکی جای ریسک‌کردن نیست.
  */
-.zig-filters__card::-webkit-scrollbar,
+.zig-filters__groups::-webkit-scrollbar,
 .zig-facet__list::-webkit-scrollbar {
 	width: var(--zig-scroll-size, 10px);
 }
 
-.zig-filters__card::-webkit-scrollbar-track,
+.zig-filters__groups::-webkit-scrollbar-track,
 .zig-facet__list::-webkit-scrollbar-track {
 	background-color: transparent;
 }
 
-.zig-filters__card::-webkit-scrollbar-thumb,
+.zig-filters__groups::-webkit-scrollbar-thumb,
 .zig-facet__list::-webkit-scrollbar-thumb {
 	border: var(--zig-scroll-pad, 3px) solid transparent;
 	background-clip: padding-box;
@@ -952,7 +980,7 @@ a.zig-list__label:focus-visible {
 	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
 }
 
-.zig-filters__card::-webkit-scrollbar-thumb:hover,
+.zig-filters__groups::-webkit-scrollbar-thumb:hover,
 .zig-facet__list::-webkit-scrollbar-thumb:hover {
 	background-color: var(--zig-scroll-thumb-hover, rgba(17, 12, 46, 0.32));
 }
@@ -968,20 +996,10 @@ a.zig-list__label:focus-visible {
  * موتورها اصلاً بک‌دراپ را کامپوزیت نمی‌کنند و شیشه بی‌اثر می‌ماند.
  */
 /*
- * و سربرگ اسکرول نمی‌خورد.
- *
- * ‎sticky‎ نسبت به همان کارتی که اسکرول دارد، پس نوار اسکرول عملاً از
- * *زیرِ* سربرگ شروع می‌شود. دلیلش فقط تقلید از مرجع نیست: «چند فیلتر
- * فعال» و دکمهٔ حذف بالای پنل‌اند، و کسی که تا ته فهرست برندها رفته
- * دقیقاً همان‌جا لازمشان دارد — نه بعد از اسکرول برگشتن به بالا.
- *
- * و چون سربرگ شیشه است، محتوایی که از پشتش رد می‌شود بلور می‌خورد؛
- * همان چیزی که مرزِ ثابت و متحرک را نرم می‌کند.
+ * سربرگ جایی نمی‌رود، ولی دیگر ‎sticky‎ لازم ندارد: ناحیهٔ اسکرول خودِ
+ * گروه‌هاست و سربرگ اصلاً داخلش نیست.
  */
 .zig-filters__head {
-	position: sticky;
-	inset-block-start: 0;
-	z-index: 1;
 	display: flex;
 	align-items: center;
 	gap: 10px;
