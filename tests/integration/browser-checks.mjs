@@ -433,8 +433,21 @@ const run = async () => {
 		});
 
 		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
-		await page.waitForTimeout(400);
-		check('aria-busy روی ریشه', (await page.locator($.root).getAttribute('aria-busy')) === 'true');
+
+		/*
+		 * انتظارِ *شرطی*، نه یک عدد ثابت.
+		 *
+		 * کلیک فیلتر ۲۵۰ میلی‌ثانیه دیبونس دارد؛ یک ‎waitForTimeout(400)‎
+		 * فقط ۱۵۰ میلی‌ثانیه حاشیه می‌گذارد و روی ماشینِ شلوغ همان را هم
+		 * از دست می‌دهد. آن‌وقت تست قرمز می‌شود بدون اینکه چیزی خراب باشد —
+		 * که بدترین نوع تست است.
+		 */
+		const busy = await page
+			.waitForFunction(() => document.querySelector('[data-zig-archive]').getAttribute('aria-busy') === 'true', null, { timeout: 8000 })
+			.then(() => true)
+			.catch(() => false);
+
+		check('aria-busy روی ریشه', busy);
 		await settle(page);
 		check('و بعد برداشته می‌شود', (await page.locator($.root).getAttribute('aria-busy')) === null);
 		await ctx.unroute('**/admin-ajax.php');
