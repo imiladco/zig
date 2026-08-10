@@ -1163,17 +1163,74 @@ a.zig-list__label:focus-visible {
  * نام کلاس یکی است ولی معنایش فرق دارد: آن یکی یک ردیف افقیِ آیکون و متن
  * است. محدودکردن به داخل گرید، هر دو را بدون تغییر نام کلاس نگه می‌دارد —
  * و تغییر نام یعنی شکستن هر سایتی که روی این کلاس CSS نوشته.
+ *
+ * شش ناحیه، و هر کدام سه چیز جدا دارد که مدیر می‌تواند عوض کند: فاصلهٔ
+ * درونی، فاصلهٔ بین فرزندانش، و ترتیبش. همه از راه متغیر، پس یک کنترل
+ * المنتور کافی است و این فایل هیچ‌وقت با پنل نمی‌جنگد.
+ *
+ * ‎order‎ روی هر سه ناحیهٔ سطح‌اول هست: کسی که می‌خواهد تصویر زیر متن
+ * بنشیند، لازم نیست قالب را عوض کند — و ترتیب DOM دست‌نخورده می‌ماند، پس
+ * صفحه‌خوان و خزنده همان ترتیب منطقی را می‌بینند.
  */
 .zig-archive__grid .zig-card {
 	flex-direction: column;
 	align-items: stretch;
-	gap: 0;
+	gap: var(--zig-card-gap, 0);
 	inline-size: 100%;
 }
 
+.zig-card__media {
+	order: var(--zig-media-order, 1);
+}
+
 .zig-archive__grid .zig-card__body {
+	order: var(--zig-body-order, 2);
 	flex: 1 1 auto;
-	gap: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-body-gap, 12px);
+	padding: var(--zig-body-padding, 0);
+	min-width: 0;
+}
+
+/* ۳ — برند و موجودی، دو سرِ یک ردیف */
+.zig-card__meta {
+	order: var(--zig-meta-order, 1);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--zig-meta-gap, 8px);
+	padding: var(--zig-meta-padding, 0);
+}
+
+/* ۴ — دسته، عنوان، توضیح */
+.zig-card__text {
+	order: var(--zig-text-order, 2);
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-text-gap, 6px);
+	padding: var(--zig-text-padding, 0);
+	min-width: 0;
+}
+
+.zig-card__category {
+	margin: 0;
+	font-size: var(--zig-category-size, 0.78rem);
+	line-height: 1.8;
+	color: var(--zig-category-color, inherit);
+	opacity: var(--zig-category-opacity, 0.7);
+}
+
+/* ۶ — قیمت و دکمه، با خط جداکننده روی خودش */
+.zig-card__foot {
+	order: var(--zig-foot-order, 3);
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-foot-gap, 14px);
+	padding: var(--zig-foot-padding, 16px 0 0);
+	margin-block-start: var(--zig-foot-margin, 16px);
+	border-block-start: var(--zig-divider-width, 1px) solid var(--zig-divider-color, rgba(17, 12, 46, 0.08));
 }
 
 .zig-card__media {
@@ -1182,6 +1239,7 @@ a.zig-list__label:focus-visible {
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
+	border-radius: var(--zig-media-radius, 14px);
 }
 
 .zig-card__image {
@@ -1192,29 +1250,43 @@ a.zig-list__label:focus-visible {
 }
 
 /*
- * نشان و وضعیت موجودی روی تصویر می‌نشینند.
+ * ریبون روی تصویر می‌ماند، لیبل موجودی نه.
  *
- * inset-inline به‌جای left/right: در RTL خودشان جابه‌جا می‌شوند و لازم
- * نیست قاعدهٔ دومی برای جهت نوشته شود.
+ * inset-inline به‌جای left/right: در RTL خودش جابه‌جا می‌شود و لازم نیست
+ * قاعدهٔ دومی برای جهت نوشته شود.
  */
+.zig-card__ribbon {
+	position: absolute;
+	inset-block-start: var(--zig-ribbon-offset, 12px);
+	inset-inline-start: var(--zig-ribbon-offset, 12px);
+	z-index: 1;
+}
+
 .zig-card__ribbon,
 .zig-card__stock {
-	position: absolute;
-	inset-block-start: 10px;
-	z-index: 1;
-	padding: 3px 10px;
-	font-size: 0.75rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: var(--zig-badge-padding, 5px 12px);
+	font-size: var(--zig-badge-size, 0.75rem);
 	line-height: 1.8;
-	border-radius: 999px;
+	border-radius: var(--zig-badge-radius, 999px);
 	white-space: nowrap;
 }
 
-.zig-card__ribbon {
-	inset-inline-start: 10px;
-}
-
-.zig-card__stock {
-	inset-inline-end: 10px;
+/*
+ * نقطهٔ کوچکِ کنار متن.
+ *
+ * ‎currentColor‎ یعنی رنگش را از خودِ لیبل می‌گیرد، پس کنترلِ رنگِ هر حالت
+ * موجودی خودبه‌خود نقطه‌اش را هم درست می‌کند — و یک کنترل جداگانه برای
+ * چیزی که همیشه باید هم‌رنگ باشد، فقط راهی است برای ناهماهنگ‌شدن.
+ */
+.zig-card__dot {
+	flex: none;
+	inline-size: 6px;
+	block-size: 6px;
+	border-radius: 50%;
+	background-color: currentColor;
 }
 
 .zig-card__brand {
@@ -1250,28 +1322,63 @@ a.zig-list__label:focus-visible {
 	text-decoration: none;
 }
 
+/* ۵ — یک نوار، نه چند چیپ */
 .zig-card__features {
+	order: var(--zig-features-order, 3);
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	align-items: center;
+	justify-content: center;
+	gap: var(--zig-features-gap, 8px);
 	margin: 0;
-	padding: 0;
+	padding: var(--zig-features-padding, 8px 12px);
 	list-style: none;
+	border-radius: var(--zig-features-radius, 10px);
+	background-color: var(--zig-features-bg, rgba(109, 40, 217, 0.06));
 }
 
 .zig-card__feature {
-	padding: 2px 8px;
-	border-radius: 6px;
-	font-size: 0.75rem;
+	font-size: var(--zig-feature-size, 0.75rem);
 	line-height: 1.8;
 }
 
+/* جداکنندهٔ نقطه‌ای بین ویژگی‌ها */
+.zig-card__sep {
+	inline-size: 4px;
+	block-size: 4px;
+	border-radius: 50%;
+	background-color: currentColor;
+	opacity: 0.45;
+}
+
+/*
+ * ردیف قیمت: برچسب یک سر، مقدار سرِ دیگر.
+ *
+ * ‎space-between‎ و نه فاصلهٔ ثابت: با مبلغ‌های ده‌رقمی، هر فاصلهٔ ثابتی
+ * روی کارتِ باریک می‌شکند.
+ */
 .zig-card__price {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
+	justify-content: space-between;
 	gap: 6px;
 	font-variant-numeric: tabular-nums;
+}
+
+.zig-price__value {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+/* «استعلام قیمت» عمل است نه مقدار، پس تمام‌عرض و وسط می‌نشیند */
+.zig-price__inquiry {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	inline-size: 100%;
 }
 
 /*
@@ -1280,9 +1387,19 @@ a.zig-list__label:focus-visible {
  * بدون این، کارتی که توضیح کوتاه‌تری دارد دکمه‌اش وسط می‌ماند و ردیفِ
  * دکمه‌ها در گرید پله‌پله می‌شود.
  */
+/*
+ * دکمهٔ تمام‌عرض.
+ *
+ * ‎margin-block-start: auto‎ دیگر لازم نیست — کشیده‌شدنِ ‎__body‎ کار
+ * چسباندن پا به کف را انجام می‌دهد، و آن یکی روی ظرفِ فلکسِ ستونی با
+ * ‎gap‎ می‌جنگید.
+ */
 .zig-card__cta {
-	margin-block-start: auto;
-	align-self: flex-start;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	inline-size: 100%;
 }
 
 /* --------------------------------------------------------------------------

@@ -448,6 +448,51 @@ const run = async () => {
 
 
 	});
+	await section('۱۶ب ساختار کارت', async () => {
+		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+
+		const card = page.locator('.zig-card').first();
+
+		for (const part of ['__media', '__body', '__meta', '__text', '__foot']) {
+			check(`ناحیهٔ ${part} هست`, (await card.locator('.zig-card' + part).count()) >= 1);
+		}
+
+		check('بدنه داخل کارت است', (await card.locator('.zig-card__body .zig-card__text').count()) === 1);
+		check('برند و موجودی در یک ردیف‌اند', (await card.locator('.zig-card__body > .zig-card__meta').count()) === 1);
+		/*
+		 * ‎:scope‎ لازم است: ‎card.locator('.zig-card > …')‎ داخل زیردرختِ
+		 * خودِ کارت دنبال یک ‎.zig-card‎ دیگر می‌گردد، نه خودش.
+		 */
+		check('پا بیرون از بدنه است', (await card.locator(':scope > .zig-card__foot').count()) === 1);
+
+		/* خط جداکننده، border-top خودِ پاست نه یک <hr> */
+		const border = await card.locator('.zig-card__foot').evaluate((el) => getComputedStyle(el).borderTopWidth);
+		check('خط جداکننده روی پا نشسته', parseFloat(border) > 0, border);
+		check('و <hr> جدایی در کار نیست', (await card.locator('hr').count()) === 0);
+
+		/* پا به کف می‌چسبد: بدنه کشیده می‌شود */
+		const grow = await card.locator('.zig-card__body').evaluate((el) => getComputedStyle(el).flexGrow);
+		check('بدنه کشیده می‌شود تا پا به کف بچسبد', parseFloat(grow) > 0, grow);
+
+		const cta = await card.locator('.zig-card__cta').evaluate((el) => el.getBoundingClientRect().width);
+		const foot = await card.locator('.zig-card__foot').evaluate((el) => el.getBoundingClientRect().width);
+		check('دکمه تمام‌عرض است', Math.abs(cta - foot) < 2, `${Math.round(cta)} / ${Math.round(foot)}`);
+
+		/* ویژگی‌ها یک نوارند با جداکنندهٔ پنهان از صفحه‌خوان */
+		const feats = page.locator('.zig-card__features').first();
+
+		if (await feats.count()) {
+			const seps = await feats.locator('.zig-card__sep').count();
+			const items = await feats.locator('.zig-card__feature').count();
+			check('بین هر دو ویژگی یک جداکننده', seps === Math.max(0, items - 1), `${items} ویژگی، ${seps} جداکننده`);
+			check('جداکننده از صفحه‌خوان پنهان است', (await feats.locator('.zig-card__sep[aria-hidden="true"]').count()) === seps);
+		}
+
+		/* ترتیب دیداری از متغیر می‌آید، پس DOM دست‌نخورده می‌ماند */
+		const order = await card.locator('.zig-card__media').evaluate((el) => getComputedStyle(el).order);
+		check('ترتیب تصویر از متغیر می‌آید', order !== '' && order !== 'auto', order);
+	});
+
 	await section('۱۷ دسترس‌پذیری', async () => {
 
 		await page.goto(BASE, { waitUntil: 'domcontentloaded' });

@@ -44,6 +44,7 @@ final class Product_Card {
         'image'       => 0,
         'suggested'   => false,
         'brand'       => '',
+        'category'    => '',
         'description' => '',
         'features'    => [],
         'stock'       => [],
@@ -97,6 +98,7 @@ final class Product_Card {
             'image'       => (int) get_post_thumbnail_id($id),
             'suggested'   => self::flag($id, (string) $fields['suggested_meta']),
             'brand'       => self::brand($id, (string) $fields['brand_taxonomy']),
+            'category'    => self::category($id),
             'description' => self::text($id, (string) $fields['description_meta']),
             'features'    => self::features($product, $fields),
             'stock'       => Stock::state($product),
@@ -148,6 +150,42 @@ final class Product_Card {
      * یکی را دارد؛ چاپ‌کردن همه، چیدمان را می‌شکند و چاپ‌نکردن هیچ‌کدام
      * اطلاعات را دور می‌ریزد.
      */
+    /**
+     * دستهٔ محصول، برای خطِ بالای عنوان.
+     *
+     * عمیق‌ترین دسته انتخاب می‌شود، نه اولی که ووکامرس برمی‌گرداند: محصولی
+     * که هم در «فرز CNC» است و هم در زیرشاخهٔ «۵ محور»، باید مشخص‌ترش را
+     * نشان بدهد. اولی معمولاً کلی‌ترین است و هیچ چیزی به کاربر نمی‌گوید.
+     *
+     * ‎product_visibility‎ و ترم‌های داخلی خودبه‌خود کنار می‌مانند چون فقط
+     * از ‎product_cat‎ می‌پرسیم.
+     */
+    private static function category(int $id): string {
+        $terms = get_the_terms($id, Schema_Store::TAXONOMY);
+
+        if (!is_array($terms)) {
+            return '';
+        }
+
+        $best  = null;
+        $depth = -1;
+
+        foreach ($terms as $term) {
+            if (!$term instanceof \WP_Term) {
+                continue;
+            }
+
+            $level = count(get_ancestors($term->term_id, Schema_Store::TAXONOMY, 'taxonomy'));
+
+            if ($level > $depth) {
+                $depth = $level;
+                $best  = $term;
+            }
+        }
+
+        return $best ? (string) $best->name : '';
+    }
+
     private static function brand(int $id, string $taxonomy): string {
         if ('' === $taxonomy) {
             return '';

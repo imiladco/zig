@@ -411,6 +411,13 @@ final class Product_Archive extends Widget_Base {
             'label' => __('کارت محصول', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('show_category', [
+            'label'     => __('نمایش دستهٔ محصول', 'zig3d-widgets'),
+            'type'      => Controls_Manager::SWITCHER,
+            'default'   => 'yes',
+            'description' => __('عمیق‌ترین دسته‌ای که محصول در آن است.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('label_suggested', [
             'label'   => __('متن ریبون پیشنهاد', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
@@ -883,6 +890,115 @@ final class Product_Archive extends Widget_Base {
      * بتواند خودش تنظیمش کند، نه اینکه در CSS دفن شده باشد.
      */
     private function section_style_stock(): void {
+        /* ---------------------------------------------------------------
+         * ساختار کارت: شش ناحیه، هرکدام فاصله و ترتیب خودش
+         *
+         * ‎order‎ فقط جای *دیداری* را عوض می‌کند و ترتیب DOM دست‌نخورده
+         * می‌ماند — پس صفحه‌خوان و خزنده همان ترتیب منطقی را می‌بینند،
+         * حتی وقتی مدیر تصویر را زیر متن برده.
+         * ------------------------------------------------------------ */
+
+        $this->start_controls_section('sty_layout', [
+            'label' => __('ساختار کارت', 'zig3d-widgets'),
+            'tab'   => Controls_Manager::TAB_STYLE,
+        ]);
+
+        foreach ($this->card_areas() as $key => $area) {
+            $this->add_control($key . '_heading', [
+                'label'     => $area['label'],
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]);
+
+            $this->add_responsive_control($key . '_padding', [
+                'label'      => __('فاصلهٔ درونی', 'zig3d-widgets'),
+                'type'       => Controls_Manager::DIMENSIONS,
+                'size_units' => ['px', 'rem', '%'],
+                'selectors'  => [
+                    '{{WRAPPER}} .zig-card' => '--zig-' . $area['var'] . '-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+                ],
+            ]);
+
+            if (!empty($area['gap'])) {
+                $this->add_responsive_control($key . '_gap', [
+                    'label'      => __('فاصلهٔ داخلی اجزا', 'zig3d-widgets'),
+                    'type'       => Controls_Manager::SLIDER,
+                    'size_units' => ['px', 'rem'],
+                    'range'      => ['px' => ['min' => 0, 'max' => 60]],
+                    'selectors'  => [
+                        '{{WRAPPER}} .zig-card' => '--zig-' . $area['var'] . '-gap: {{SIZE}}{{UNIT}};',
+                    ],
+                ]);
+            }
+
+            $this->add_control($key . '_order', [
+                'label'     => __('ترتیب نمایش', 'zig3d-widgets'),
+                'type'      => Controls_Manager::NUMBER,
+                'min'       => 1,
+                'max'       => 9,
+                'selectors' => [
+                    '{{WRAPPER}} .zig-card' => '--zig-' . $area['var'] . '-order: {{VALUE}};',
+                ],
+            ]);
+        }
+
+        $this->add_control('divider_heading', [
+            'label'     => __('خط جداکنندهٔ بالای پا', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('divider_color', [
+            'label'     => __('رنگ خط', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-divider-color: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('divider_width', [
+            'label'      => __('ضخامت خط', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 8]],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-divider-width: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('foot_margin', [
+            'label'      => __('فاصله تا بالای خط', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-foot-margin: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('category_heading', [
+            'label'     => __('دستهٔ محصول', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('category_color', [
+            'label'     => __('رنگ دسته', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-category-color: {{VALUE}}; --zig-category-opacity: 1;'],
+        ]);
+
+        $this->add_control('features_bg', [
+            'label'     => __('پس‌زمینهٔ نوار ویژگی‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-features-bg: {{VALUE}};'],
+            'separator' => 'before',
+        ]);
+
+        $this->add_responsive_control('features_radius', [
+            'label'      => __('گِردی گوشهٔ نوار ویژگی‌ها', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 30]],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-features-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->end_controls_section();
+
         $this->start_controls_section('sty_stock', [
             'label' => __('لیبل موجودی', 'zig3d-widgets'),
             'tab'   => Controls_Manager::TAB_STYLE,
@@ -1969,20 +2085,49 @@ final class Product_Archive extends Widget_Base {
     }
 
     /**
-     * کارت داخلی.
+     * کارت محصول — شش ناحیه، هرکدام یک ظرفِ نام‌دار.
      *
      * ‎<article>‎ و ‎<h3>‎ واقعی، نه ‎<div>‎ با فونت بزرگ: خزنده‌ها — و
      * اسکرین‌ریدرها — ساختار را از تگ می‌خوانند نه از استایل.
+     *
+     * ساختار عمداً تودرتوست و هر لایه دلیل دارد:
+     *
+     *   ‎zig-card‎              ستون اصلی
+     *     ‎__media‎             تصویر و ریبون          (۱)
+     *     ‎__body‎              هرچه بین تصویر و پاست  (۲)
+     *       ‎__meta‎            برند و لیبل موجودی     (۳)
+     *       ‎__text‎            دسته، عنوان، توضیح     (۴)
+     *       ‎__features‎        ویژگی‌ها               (۵)
+     *     ‎__foot‎              قیمت و دکمه            (۶)
+     *
+     * چرا ظرف‌های جدا و نه یک ستون تخت: چون هرکدام باید فاصله، ترتیب و
+     * چینشِ خودش را داشته باشد. با ساختار تخت، «گپ بین برند و عنوان» و
+     * «گپ بین عنوان و ویژگی‌ها» یک عدد می‌شدند و تغییر یکی، آن یکی را هم
+     * می‌برد.
+     *
+     * ‎__body‎ کشیده می‌شود تا ‎__foot‎ به کف بچسبد. بدون آن، کارتی که
+     * توضیح کوتاه‌تری دارد دکمه‌اش وسط می‌ماند و ردیف دکمه‌ها در گرید
+     * پله‌پله می‌شود.
+     *
+     * خط جداکننده، ‎border-top‎ خودِ ‎__foot‎ است نه یک ‎<hr>‎: یک عنصر
+     * کمتر، و وقتی مدیر پا را خاموش کند خطش هم با خودش می‌رود.
      */
     private function render_card(array $card, array $settings): void {
         echo '<article class="zig-card">';
 
+        /* ۱ */
         $this->render_card_media($card, $settings);
 
         echo '<div class="zig-card__body">';
 
-        if ('' !== $card['brand']) {
-            printf('<p class="zig-card__brand">%s</p>', esc_html($card['brand']));
+        /* ۳ */
+        $this->render_card_meta($card, $settings);
+
+        /* ۴ */
+        echo '<div class="zig-card__text">';
+
+        if ('yes' === ($settings['show_category'] ?? '') && '' !== $card['category']) {
+            printf('<p class="zig-card__category">%s</p>', esc_html($card['category']));
         }
 
         printf(
@@ -1995,15 +2140,15 @@ final class Product_Archive extends Widget_Base {
             printf('<p class="zig-card__desc">%s</p>', esc_html($card['description']));
         }
 
-        if ($card['features']) {
-            echo '<ul class="zig-card__features">';
+        echo '</div>';
 
-            foreach ($card['features'] as $feature) {
-                printf('<li class="zig-card__feature">%s</li>', esc_html($feature));
-            }
+        /* ۵ */
+        $this->render_card_features($card);
 
-            echo '</ul>';
-        }
+        echo '</div>';
+
+        /* ۶ */
+        echo '<div class="zig-card__foot">';
 
         $this->render_card_price($card, $settings);
         $this->render_card_cta($card, $settings);
@@ -2011,21 +2156,76 @@ final class Product_Archive extends Widget_Base {
         echo '</div></article>';
     }
 
+    /**
+     * ردیف برند و موجودی.
+     *
+     * لیبل موجودی از روی تصویر آمده پایین و کنار برند نشسته. روی تصویر،
+     * روی هر عکسِ روشنی که مدیر آپلود کند خوانا نبود — و یک کنترل رنگ
+     * نمی‌توانست هم‌زمان جوابِ عکس روشن و تیره را بدهد.
+     */
+    private function render_card_meta(array $card, array $settings): void {
+        $state = (string) ($card['stock']['state'] ?? '');
+        $label = (string) ($settings['label_stock_' . $state] ?? '');
+        $brand = (string) $card['brand'];
+
+        if ('' === $brand && '' === $label) {
+            return;
+        }
+
+        echo '<div class="zig-card__meta">';
+
+        if ('' !== $brand) {
+            printf('<p class="zig-card__brand">%s</p>', esc_html($brand));
+        }
+
+        if ('' !== $label) {
+            printf(
+                '<span class="zig-card__stock zig-card__stock--%s">'
+                    . '<span class="zig-card__dot" aria-hidden="true"></span>%s</span>',
+                esc_attr($state),
+                esc_html($label)
+            );
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * ویژگی‌ها — یک نوار، با نقطه بین‌شان.
+     *
+     * قبلاً هر ویژگی چیپ جدا بود و سه چیپِ کنار هم، سه بلوکِ رنگی می‌ساخت
+     * که چشم را از عنوان می‌دزدید. یک نوارِ واحد همان اطلاعات را می‌دهد و
+     * یک عنصر بصری است نه سه‌تا.
+     *
+     * جداکننده ‎aria-hidden‎ است: صفحه‌خوان نباید «نقطه» بخواند. ولی
+     * ‎<li>‎ها سر جایشان می‌مانند، چون این واقعاً یک فهرست است.
+     */
+    private function render_card_features(array $card): void {
+        if (!$card['features']) {
+            return;
+        }
+
+        echo '<ul class="zig-card__features">';
+
+        foreach (array_values($card['features']) as $index => $feature) {
+            printf(
+                '%s<li class="zig-card__feature">%s</li>',
+                $index > 0 ? '<li class="zig-card__sep" aria-hidden="true"></li>' : '',
+                esc_html($feature)
+            );
+        }
+
+        echo '</ul>';
+    }
+
     private function render_card_media(array $card, array $settings): void {
         echo '<div class="zig-card__media">';
 
         if ($card['suggested'] && '' !== ($settings['label_suggested'] ?? '')) {
-            printf('<span class="zig-card__ribbon">%s</span>', esc_html($settings['label_suggested']));
-        }
-
-        $state = (string) ($card['stock']['state'] ?? '');
-        $label = (string) ($settings['label_stock_' . $state] ?? '');
-
-        if ('' !== $label) {
             printf(
-                '<span class="zig-card__stock zig-card__stock--%s">%s</span>',
-                esc_attr($state),
-                esc_html($label)
+                '<span class="zig-card__ribbon">'
+                    . '<span class="zig-card__dot" aria-hidden="true"></span>%s</span>',
+                esc_html($settings['label_suggested'])
             );
         }
 
@@ -2049,8 +2249,14 @@ final class Product_Archive extends Widget_Base {
         echo '<div class="zig-card__price zig-price">';
 
         if (Card::PRICE_INQUIRY === $card['price_mode']) {
+            /*
+             * «استعلام قیمت» یک عمل است نه یک قیمت، پس آیکون تلفن می‌گیرد
+             * و در ردیف خودش وسط می‌نشیند — تا با «۶٬۵۰۰٬۰۰۰٬۰۰۰ تومان»
+             * که یک *مقدار* است اشتباه گرفته نشود.
+             */
             printf(
-                '<span class="zig-price__inquiry">%s</span>',
+                '<span class="zig-price__inquiry">%s%s</span>',
+                Markup::svg_icon('phone', 'zig-price__icon'),
                 esc_html($settings['label_price_inquiry'] ?? '')
             );
 
@@ -2068,7 +2274,7 @@ final class Product_Archive extends Widget_Base {
         }
 
         printf(
-            '<span class="zig-price__amount">%s</span>',
+            '<span class="zig-price__value"><span class="zig-price__amount">%s</span>',
             esc_html(Price::persian(Price::format((string) $card['price']['current'])))
         );
 
@@ -2076,7 +2282,7 @@ final class Product_Archive extends Widget_Base {
             printf('<span class="zig-price__unit">%s</span>', esc_html($settings['currency']));
         }
 
-        echo '</div>';
+        echo '</span></div>';
     }
 
     private function render_card_cta(array $card, array $settings): void {
@@ -2095,9 +2301,10 @@ final class Product_Archive extends Widget_Base {
         $href   = ('' !== $custom && Card::CTA_DETAILS !== $card['cta']) ? $custom : $card['url'];
 
         printf(
-            '<a class="zig-card__cta zig-btn" href="%s">%s</a>',
+            '<a class="zig-card__cta zig-btn" href="%s"><span class="zig-card__cta-text">%s</span>%s</a>',
             esc_url($href),
-            esc_html($label)
+            esc_html($label),
+            Markup::svg_icon('arrow', 'zig-card__cta-icon')
         );
     }
 
@@ -2233,6 +2440,29 @@ final class Product_Archive extends Widget_Base {
     /* =====================================================================
      * گزینه‌های کنترل
      * =================================================================== */
+
+    /**
+     * شش ناحیهٔ کارت، برای ساختن کنترل‌ها.
+     *
+     * یک فهرست و یک حلقه، نه شش بار کپی‌ودیسِ سه کنترل. اضافه‌کردن ناحیهٔ
+     * هفتم یک سطر است، و مهم‌تر: هیچ‌وقت نمی‌شود ناحیه‌ای داشت که سهواً
+     * یکی از سه کنترلش جا افتاده باشد.
+     *
+     * ‎gap‎ برای ناحیه‌هایی که بیش از یک فرزند دارند؛ تصویر یکی بیشتر
+     * ندارد و یک کنترلِ بی‌اثر، فقط چیزی است که مدیر امتحان می‌کند و فکر
+     * می‌کند خراب است.
+     */
+    private function card_areas(): array {
+        return [
+            'area_card'     => ['label' => __('۱ کل کارت', 'zig3d-widgets'), 'var' => 'card', 'gap' => true],
+            'area_media'    => ['label' => __('۲ تصویر', 'zig3d-widgets'), 'var' => 'media', 'gap' => false],
+            'area_body'     => ['label' => __('۳ بدنه', 'zig3d-widgets'), 'var' => 'body', 'gap' => true],
+            'area_meta'     => ['label' => __('۴ برند و موجودی', 'zig3d-widgets'), 'var' => 'meta', 'gap' => true],
+            'area_text'     => ['label' => __('۵ عنوان و توضیح', 'zig3d-widgets'), 'var' => 'text', 'gap' => true],
+            'area_features' => ['label' => __('۶ ویژگی‌ها', 'zig3d-widgets'), 'var' => 'features', 'gap' => true],
+            'area_foot'     => ['label' => __('۷ قیمت و دکمه', 'zig3d-widgets'), 'var' => 'foot', 'gap' => true],
+        ];
+    }
 
     private function category_options(): array {
         $terms = get_terms(['taxonomy' => Schema_Store::TAXONOMY, 'hide_empty' => false]);
