@@ -860,11 +860,49 @@ a.zig-list__label:focus-visible {
 	border-radius: var(--zig-filters-radius, 18px);
 }
 
+/*
+ * کارت سفید، با یک محوشدگیِ رنگی در بالا.
+ *
+ * در دیزاین، بالای کارت از نوارِ بنفش رنگ می‌گیرد و تا چند ده پیکسل
+ * پایین‌تر به سفید می‌رسد — یعنی مرزِ نوار و کارت خطِ تیز نیست. با
+ * ‎background-image‎ روی همان کارت انجام می‌شود، پس کنترلِ «پس‌زمینهٔ پنل»
+ * هنوز رنگِ پایه را عوض می‌کند و محوشدگی رویش می‌نشیند.
+ *
+ * ‎overflow: hidden auto‎ یعنی افقی بریده شود (تا گوشه‌های گِرد سربرگ
+ * حفظ شوند) و عمودی در صورت نیاز اسکرول بگیرد.
+ */
 .zig-filters__card {
-	overflow: hidden;
+	overflow: hidden auto;
+	max-block-size: var(--zig-filters-max, calc(100vh - 96px));
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
 	background-color: var(--zig-filters-bg, var(--zig-surface));
+	background-image: linear-gradient(
+		to bottom,
+		var(--zig-filters-tint, rgba(109, 40, 217, 0.14)),
+		transparent var(--zig-filters-tint-height, 90px)
+	);
 	border-radius: var(--zig-filters-radius, 18px);
 	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
+}
+
+/*
+ * نوار اسکرول باریک برای وبکیت.
+ *
+ * ‎scrollbar-width‎ استاندارد است ولی سافاری و کرومِ قدیمی نمی‌شناسندش؛
+ * بدون این، پنل روی مک یک نوارِ پهنِ خاکستری می‌گرفت که ۱۵ پیکسل از عرض
+ * گزینه‌ها می‌خورد.
+ */
+.zig-filters__card::-webkit-scrollbar,
+.zig-facet__list::-webkit-scrollbar {
+	inline-size: 6px;
+}
+
+.zig-filters__card::-webkit-scrollbar-thumb,
+.zig-facet__list::-webkit-scrollbar-thumb {
+	border-radius: 999px;
+	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
 }
 
 /* سربرگ */
@@ -1037,6 +1075,17 @@ a.zig-list__label:focus-visible {
  * کدام عنوان‌اند» گم می‌شود. تشک، گروه را یک بلوک می‌کند و خطِ جداکنندهٔ
  * بین گروه‌ها دیگر تنها نشانه نیست.
  */
+/*
+ * و خودش هم سقف ارتفاع دارد.
+ *
+ * یک گروهِ «برند» با شصت برند، بقیهٔ گروه‌ها را از صفحه بیرون می‌اندازد و
+ * کاربر اصلاً نمی‌فهمد زیرش چیز دیگری هم هست.
+ *
+ * ‎overscroll-behavior: contain‎ همان چیزی است که اسکرولِ تودرتو را قابل
+ * تحمل می‌کند: وقتی این فهرست به ته رسید، چرخِ ماوس *به پنل و صفحه سرایت
+ * نمی‌کند*. بدون آن، کاربر داخل فهرست اسکرول می‌کرد و ناگهان کل صفحه
+ * می‌پرید.
+ */
 .zig-facet__list {
 	margin: 0 0 12px;
 	padding: var(--zig-facet-list-padding, 10px);
@@ -1044,6 +1093,11 @@ a.zig-list__label:focus-visible {
 	display: flex;
 	flex-direction: column;
 	gap: var(--zig-facet-list-gap, 8px);
+	max-block-size: var(--zig-facet-list-max, 280px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
 	border-radius: var(--zig-facet-list-radius, 14px);
 	background-color: var(--zig-facet-list-bg, #f6f4fa);
 }
@@ -1102,24 +1156,18 @@ a.zig-list__label:focus-visible {
 }
 
 /*
- * تیک، با رنگِ پس‌زمینهٔ ظرف تا روی مربعِ پرشده دیده شود.
+ * مربعِ تیک‌خورده تیک ندارد — یک مربعِ پرِ توپر است، همان‌طور که در دیزاین
+ * آمده.
  *
- * اینجا عمداً ‎right/bottom‎ فیزیکی است و نه ‎inline-end/block-end‎ — تنها
- * جای این فایل که چنین می‌کند. تیک یک *شکل* است نه متن؛ در RTL آینه
- * نمی‌شود. با خاصیت منطقی، در فارسی برعکس می‌شد و به‌جای «✓» چیزی شبیه
- * یک فلشِ کوچک درمی‌آمد. جای افقی‌اش هنوز منطقی است، فقط خودِ شکل نه.
+ * این «رنگ‌تنها» نیست و با ۱٫۴٫۱ هم نمی‌جنگد: تفاوت پر و خالی، تفاوتِ
+ * *شکل* است نه فقط رنگ، و علاوه بر آن خودِ ردیف کادر و پس‌زمینه‌اش را عوض
+ * می‌کند و همان ترم بالای پنل هم به‌صورت چیپ می‌آید. برای صفحه‌خوان هم
+ * متن پنهانِ «— حذف این فیلتر» تکلیف را روشن می‌کند، و مربع
+ * ‎aria-hidden‎ است.
+ *
+ * جای تیک با ‎--zig-archive-tick‎ خالی نمانده: هرکس آن را بخواهد یک
+ * قاعدهٔ ‎::after‎ کافی است، ولی پیش‌فرض دیزاین است.
  */
-.zig-facet__item.is-selected .zig-facet__box::after {
-	content: "";
-	position: absolute;
-	inset-block-start: 2px;
-	inset-inline-start: 5px;
-	inline-size: 4px;
-	block-size: 9px;
-	border-right: 2px solid var(--zig-archive-tick, #fff);
-	border-bottom: 2px solid var(--zig-archive-tick, #fff);
-	transform: rotate(45deg);
-}
 
 .zig-facet__count {
 	margin-inline-start: auto;
@@ -1203,9 +1251,16 @@ a.zig-list__label:focus-visible {
 	transition: background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
 }
 
+/*
+ * هاورِ پیل هم بنفش است، نه خاکستری.
+ *
+ * در دیزاین، پیلِ فعال و پیلی که مکان‌نما رویش است هر دو زمینهٔ بنفشِ روشن
+ * دارند و فقط شدتشان فرق می‌کند — نشانه‌ای که می‌گوید «این‌ها یک خانواده‌اند
+ * و انتخابِ بعدی از میان همین‌هاست». خاکستری آن پیوند را می‌بُرد.
+ */
 .zig-sorts__pill:hover {
-	color: var(--zig-ink);
-	background-color: var(--zig-archive-hover, rgba(17, 12, 46, 0.04));
+	color: var(--zig-sort-hover-color, var(--zig-brand));
+	background-color: var(--zig-sort-hover-bg, rgba(109, 40, 217, 0.07));
 }
 
 .zig-sorts__pill.is-active {

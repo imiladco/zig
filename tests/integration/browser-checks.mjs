@@ -101,6 +101,22 @@ async function settle(p, { started = true } = {}) {
 	await p.waitForTimeout(200);
 }
 
+/**
+ * رفتن به یک آدرس، و صبر تا وقتی جاوااسکریپت واقعاً سوار شده باشد.
+ *
+ * ‎domcontentloaded‎ تنها کافی نیست و این را یک قرمزیِ گذرا یاد داد: روی
+ * درخواستِ کندِ اول، تست روی لینکِ صفحه‌بندی کلیک می‌کرد در حالی که هندلر
+ * هنوز وصل نشده بود. آن‌وقت مرورگر کارِ *درست* را می‌کرد — لینک واقعی است
+ * و پیمایش می‌کند — ولی سنجهٔ «بدون پیمایش کامل» قرمز می‌شد.
+ *
+ * یعنی تست، ارتقای تدریجی را به‌عنوان باگ گزارش می‌کرد. صبر تا سوارشدن،
+ * همان چیزی است که کاربر واقعی هم دارد.
+ */
+async function visit(p, url) {
+	await p.goto(url, { waitUntil: 'domcontentloaded' });
+	await p.waitForFunction((s) => !!document.querySelector(s)?.zigArchive, $.root, { timeout: 15000 });
+}
+
 const run = async () => {
 	const browser = await chromium.launch({ executablePath: EXEC, args: ['--no-sandbox'] });
 	const ctx = await browser.newContext();
@@ -133,7 +149,7 @@ const run = async () => {
 	/* ================================================================== */
 	await section('۱ پایه', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		check('ویجت رندر می‌شود', (await page.locator($.root).count()) === 1);
 		check('جاوااسکریپت سوار می‌شود', await page.evaluate((s) => !!document.querySelector(s).zigArchive, $.root));
 		check('کارت‌ها به تعداد صفحهٔ آرشیو', (await page.locator($.cell).count()) === 16, String(await page.locator($.cell).count()));
@@ -167,7 +183,7 @@ const run = async () => {
 	});
 	await section('۳ دو کلیک سریع — مسابقهٔ href کهنه', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await (await option(page, 'filter_brand|up3d')).click();
 		await (await option(page, 'filter_brand|vhf')).click();
 		await settle(page);
@@ -182,7 +198,7 @@ const run = async () => {
 	});
 	await section('۴ ترتیب', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await page.locator('[data-zig-sort="price"]').click();
 		await settle(page);
 
@@ -197,7 +213,7 @@ const run = async () => {
 	});
 	await section('۵ صفحه‌بندی و تاریخچه', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		const firstTitle = await page.locator('.zig-card__title').first().textContent();
 
 		loads.length = 0;
@@ -219,7 +235,7 @@ const run = async () => {
 	});
 	await section('۶ فیلتر، صفحه را از اول شروع می‌کند', async () => {
 
-		await page.goto(BASE + '?paged=2', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?paged=2');
 		await (await option(page, 'filter_brand|up3d')).click();
 		await settle(page);
 
@@ -234,7 +250,7 @@ const run = async () => {
 		 * گزینه‌ای که به صفر می‌رساند، غیرفعال رندر می‌شود. خودِ آن هم
 		 * پایین سنجیده می‌شود.
 		 */
-		await page.goto(BASE + '?filter_brand=up3d&filter_axis=3-axis&filter_material=pmma', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?filter_brand=up3d&filter_axis=3-axis&filter_material=pmma');
 
 		check('حالت filtered_empty', (await state(page)) === 'filtered_empty', await state(page));
 		check('بلوک «چیزی پیدا نشد» داخل گرید', (await page.locator($.empty).count()) === 1);
@@ -247,7 +263,7 @@ const run = async () => {
 	});
 
 	await section('۷ب گزینه‌ای که به بن‌بست می‌رسد، غیرفعال است', async () => {
-		await page.goto(BASE + '?filter_brand=up3d&filter_axis=3-axis', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?filter_brand=up3d&filter_axis=3-axis');
 
 		const disabled = page.locator('.zig-facet__item.is-disabled');
 		const zeros = await disabled.count();
@@ -263,7 +279,7 @@ const run = async () => {
 	});
 
 	await section('۷پ چیپ‌های فیلترهای اعمال‌شده', async () => {
-		await page.goto(BASE + '?filter_product_brand=up3d&filter_axis=5-axis', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?filter_product_brand=up3d&filter_axis=5-axis');
 
 		const chips = page.locator('.zig-filters__chip');
 		check('برای هر فیلتر فعال یک چیپ', (await chips.count()) === 2, String(await chips.count()));
@@ -294,7 +310,7 @@ const run = async () => {
 
 	await section('۸ خطای فنی — تنها مسیر آلرت', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await ctx.route('**/admin-ajax.php', (route) => route.abort('failed'));
 
 		await (await option(page, 'filter_brand|up3d')).click();
@@ -315,7 +331,7 @@ const run = async () => {
 	});
 	await section('۹ پاسخ بدشکل', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await ctx.route('**/admin-ajax.php', (route) =>
 			route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true,"data":{"state":"ok"' })
 		);
@@ -332,7 +348,7 @@ const run = async () => {
 	});
 	await section('۱۰ نسخهٔ قرارداد', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await ctx.route('**/admin-ajax.php', async (route) => {
 			const res = await route.fetch();
 			const body = await res.json();
@@ -352,7 +368,7 @@ const run = async () => {
 	});
 	await section('۱۱ پاسخ کهنه', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 
 		let n = 0;
 		await ctx.route('**/admin-ajax.php', async (route) => {
@@ -377,7 +393,7 @@ const run = async () => {
 	});
 	await section('۱۲ فوکوس', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await (await option(page, 'filter_brand|up3d')).focus();
 		await page.keyboard.press('Enter');
 		await settle(page);
@@ -421,7 +437,7 @@ const run = async () => {
 	});
 	await section('۱۵ ذخیره و بازگردانی موقعیت', async () => {
 
-		await page.goto(BASE + '?paged=2', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?paged=2');
 		await page.evaluate(() => window.scrollTo(0, 800));
 		await page.waitForTimeout(200);
 		const link = await page.locator('.zig-card__title a').first().getAttribute('href');
@@ -436,7 +452,7 @@ const run = async () => {
 	});
 	await section('۱۶ دو ویجت روی یک صفحه', async () => {
 
-		await page.goto('http://localhost:8080/zig-double/', { waitUntil: 'domcontentloaded' });
+		await visit(page, 'http://localhost:8080/zig-double/');
 		const roots = await page.locator($.root).count();
 
 		if (roots >= 2) {
@@ -449,7 +465,7 @@ const run = async () => {
 
 	});
 	await section('۱۶ب ساختار کارت', async () => {
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 
 		const card = page.locator('.zig-card').first();
 
@@ -495,7 +511,7 @@ const run = async () => {
 
 	await section('۱۷ دسترس‌پذیری', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		const roleAttrs = await page.evaluate(() =>
 			Array.from(document.querySelectorAll('.zig-facet__item a')).map((a) => ({
 				role: a.getAttribute('role'),
@@ -514,7 +530,7 @@ const run = async () => {
 	await section('۱۸ چیدمان', async () => {
 
 		await page.setViewportSize({ width: 1280, height: 900 });
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 
 		const cols = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).gridTemplateColumns.split(' ').length, '.zig-archive__grid');
 		check('گرید سه‌ستونی روی دسکتاپ', cols === 3, String(cols));
@@ -529,7 +545,7 @@ const run = async () => {
 	});
 	await section('۱۹ حالت بارگذاری', async () => {
 
-		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE);
 		await ctx.route('**/admin-ajax.php', async (route) => {
 			await new Promise((r) => setTimeout(r, 900));
 			route.continue();
@@ -559,7 +575,7 @@ const run = async () => {
 	});
 	await section('۲۰ برداشتن فیلتر', async () => {
 
-		await page.goto(BASE + '?filter_brand=up3d', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?filter_brand=up3d');
 		check('با یک فیلتر شروع می‌شود', (await countOf(page)) === 11);
 		await (await option(page, 'filter_brand|up3d')).click();
 		await settle(page);
@@ -570,11 +586,52 @@ const run = async () => {
 	});
 	await section('۲۱ گزینهٔ صفر', async () => {
 
-		await page.goto(BASE + '?filter_brand=up3d', { waitUntil: 'domcontentloaded' });
+		await visit(page, BASE + '?filter_brand=up3d');
 		const disabled = await page.locator('.zig-facet__item.is-disabled').count();
 		const total = await page.locator($.item).count();
 		check('گزینه‌ها حذف نمی‌شوند', total >= 7, `${total} گزینه، ${disabled} غیرفعال`);
 		check('انتخاب‌شده هیچ‌وقت غیرفعال نیست', (await page.locator('.zig-facet__item.is-selected.is-disabled').count()) === 0);
+
+
+	});
+	await section('۲۲ سقف ارتفاع و اسکرول پنل', async () => {
+
+		/*
+		 * دو ناحیهٔ اسکرولِ تودرتو، و آنچه قابلِ تحملشان می‌کند.
+		 *
+		 * بدون ‎overscroll-behavior: contain‎، کاربری که داخل فهرست برندها
+		 * اسکرول می‌کند و به ته می‌رسد، ناگهان کل صفحه را زیر دستش
+		 * می‌بیند. این چیزی نیست که در اسکرین‌شات دیده شود یا در تست واحد
+		 * معنا داشته باشد — فقط مرورگر می‌داند.
+		 */
+		await visit(page, BASE);
+
+		const box = await page.evaluate(() => {
+			const card = document.querySelector('.zig-filters__card');
+			const list = document.querySelector('.zig-facet .zig-facet__list');
+			const cs = getComputedStyle(card);
+			const ls = getComputedStyle(list);
+
+			return {
+				cardMax: parseFloat(cs.maxHeight),
+				cardY: cs.overflowY,
+				cardX: cs.overflowX,
+				cardChain: cs.overscrollBehavior,
+				listMax: parseFloat(ls.maxHeight),
+				listY: ls.overflowY,
+				listChain: ls.overscrollBehavior,
+				viewport: window.innerHeight,
+			};
+		});
+
+		check('پنل سقف ارتفاع دارد', box.cardMax > 0 && box.cardMax <= box.viewport, `${box.cardMax} از ${box.viewport}`);
+		check('و در صورت نیاز عمودی اسکرول می‌گیرد', box.cardY === 'auto');
+		check('ولی افقی هیچ‌وقت', box.cardX === 'hidden');
+		check('اسکرولش به صفحه سرایت نمی‌کند', box.cardChain === 'contain');
+
+		check('فهرست هر گروه هم سقف دارد', box.listMax > 0, String(box.listMax));
+		check('و اسکرول خودش را', box.listY === 'auto');
+		check('بدون سرایت به پنل', box.listChain === 'contain');
 
 
 	});

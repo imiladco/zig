@@ -292,6 +292,28 @@ final class Product_Archive extends Widget_Base {
             'condition'   => ['filters_on' => 'yes'],
         ]);
 
+        /*
+         * گزینه‌ای که هیچ نتیجه‌ای ندارد: بماند یا برود؟
+         *
+         * پیش‌فرض «بماند»، چون حذف‌شدنش دو هزینه دارد: ارتفاع پنل با هر
+         * درخواست می‌پرد و کاربر جای گزینه‌ای را که یک لحظه پیش دیده بود گم
+         * می‌کند، و مهم‌تر، «۵ محور نداریم» خودش یک اطلاعات است — با
+         * نبودنش، کاربر فکر می‌کند فروشگاه اصلاً چنین چیزی ندارد.
+         *
+         * ولی روی فروشگاهی با صدها ترم، همان گزینه‌های صفر بیشتر فهرست را
+         * می‌گیرند. پس تصمیمش با مدیر است.
+         *
+         * گزینهٔ *انتخاب‌شده* هیچ‌وقت حذف نمی‌شود، حتی وقتی صفر است — وگرنه
+         * کاربر قیدی می‌داشت که می‌بیندش ولی نمی‌تواند برش دارد.
+         */
+        $this->add_control('show_empty_options', [
+            'label'        => __('نمایش گزینه‌های بدون نتیجه', 'zig3d-widgets'),
+            'type'         => Controls_Manager::SWITCHER,
+            'default'      => 'yes',
+            'description'  => __('گزینه‌هایی که با فیلترهای فعلی هیچ محصولی ندارند، خاکستری و غیرفعال نشان داده می‌شوند.', 'zig3d-widgets'),
+            'condition'    => ['filters_on' => 'yes'],
+        ]);
+
         $this->add_control('filters_clear', [
             'label'     => __('متن «حذف همه»', 'zig3d-widgets'),
             'type'      => Controls_Manager::TEXT,
@@ -411,11 +433,19 @@ final class Product_Archive extends Widget_Base {
             'label' => __('کارت محصول', 'zig3d-widgets'),
         ]);
 
+        /*
+         * خطِ دسته پیش‌فرض خاموش است.
+         *
+         * در دیزاین نیست و کارت هم بدون آن کامل است: چیزی که بالای عنوان
+         * دیده می‌شود برند است، نه دسته. ولی جایگاهش می‌ماند، چون در
+         * آرشیوی که چند دستهٔ خواهر را کنار هم می‌آورد واقعاً به کار
+         * می‌آید.
+         */
         $this->add_control('show_category', [
-            'label'     => __('نمایش دستهٔ محصول', 'zig3d-widgets'),
-            'type'      => Controls_Manager::SWITCHER,
-            'default'   => 'yes',
-            'description' => __('عمیق‌ترین دسته‌ای که محصول در آن است.', 'zig3d-widgets'),
+            'label'       => __('نمایش دستهٔ محصول', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SWITCHER,
+            'default'     => '',
+            'description' => __('عمیق‌ترین دسته‌ای که محصول در آن است. بالای عنوان می‌نشیند.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('label_suggested', [
@@ -1263,6 +1293,40 @@ final class Product_Archive extends Widget_Base {
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-cap-bg: {{VALUE}};'],
         ]);
 
+        $this->add_control('filters_tint', [
+            'label'       => __('رنگ محوشدگی زیر نوار', 'zig3d-widgets'),
+            'type'        => Controls_Manager::COLOR,
+            'description' => __('از بالای کارت شروع می‌شود و به پس‌زمینهٔ پنل می‌رسد.', 'zig3d-widgets'),
+            'selectors'   => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-tint: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('filters_tint_height', [
+            'label'      => __('ارتفاع محوشدگی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 300]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-tint-height: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        /*
+         * سقف ارتفاع پنل، با واحدهای وابسته به نمایشگر.
+         *
+         * پیش‌فرض ‎calc(100vh - 96px)‎ در CSS نشسته و اینجا فقط اگر مدیر
+         * چیزی بگذارد جایش را می‌گیرد. ‎vh‎ در فهرست واحدهاست چون پنلِ
+         * چسبنده باید نسبت به *پنجره* سقف بگیرد نه نسبت به محتوا — با ‎px‎
+         * ثابت، روی نمایشگر کوتاه باز هم از کادر می‌زند بیرون.
+         */
+        $this->add_responsive_control('filters_max', [
+            'label'      => __('حداکثر ارتفاع پنل (اسکرول)', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'vh'],
+            'range'      => [
+                'px' => ['min' => 200, 'max' => 1600],
+                'vh' => ['min' => 30, 'max' => 100],
+            ],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-max: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->add_control('filters_head_bg', [
             'label'     => __('پس‌زمینهٔ سربرگ', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
@@ -1309,6 +1373,30 @@ final class Product_Archive extends Widget_Base {
             'label'     => __('پس‌زمینهٔ گزینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-item-bg: {{VALUE}};'],
+        ]);
+
+        /*
+         * سقفِ ارتفاعِ فهرستِ *هر گروه*، جدا از سقفِ کل پنل.
+         *
+         * دو سقف لازم است چون دو مشکل جدا را حل می‌کنند: این یکی نمی‌گذارد
+         * یک گروهِ شصت‌تایی بقیهٔ گروه‌ها را از دید بیندازد، و آن یکی
+         * نمی‌گذارد کل پنل از بلندی پنجره بگذرد.
+         */
+        $this->add_responsive_control('facet_list_max', [
+            'label'      => __('حداکثر ارتفاع فهرست هر گروه (اسکرول)', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'vh'],
+            'range'      => [
+                'px' => ['min' => 80, 'max' => 900],
+                'vh' => ['min' => 10, 'max' => 80],
+            ],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-list-max: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('scroll_thumb', [
+            'label'     => __('رنگ نوار اسکرول', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-scroll-thumb: {{VALUE}};'],
         ]);
 
         $this->add_control('facet_selected_bg', [
@@ -1403,6 +1491,18 @@ final class Product_Archive extends Widget_Base {
             'label'     => __('رنگ پیل ترتیب', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-sort-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sort_hover_color', [
+            'label'     => __('رنگ پیل در هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-sort-hover-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sort_hover_background', [
+            'label'     => __('پس‌زمینهٔ پیل در هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-sort-hover-bg: {{VALUE}};'],
         ]);
 
         $this->add_control('sort_active_background', [
@@ -1944,7 +2044,7 @@ final class Product_Archive extends Widget_Base {
         echo '<div class="zig-filters__groups">';
 
         foreach ($facets as $facet) {
-            $this->render_facet($facet, $state, $base, $context, $operators, $url);
+            $this->render_facet($facet, $state, $base, $context, $operators, $url, $settings);
         }
 
         echo '</div></div>';
@@ -2028,7 +2128,7 @@ final class Product_Archive extends Widget_Base {
         echo '</ul></div>';
     }
 
-    private function render_facet(array $facet, Query_State $state, array $base, string $context, array $operators, string $url): void {
+    private function render_facet(array $facet, Query_State $state, array $base, string $context, array $operators, string $url, array $settings = []): void {
         $taxonomy = $facet['taxonomy'];
 
         $options = Facets::options(
@@ -2037,7 +2137,24 @@ final class Product_Archive extends Widget_Base {
             $state->selected($taxonomy)
         );
 
+        /*
+         * ترتیب این دو مهم است و برعکسش باگ می‌سازد.
+         *
+         * دیدپذیریِ *گروه* از روی فهرست کامل تصمیم گرفته می‌شود، نه از روی
+         * فهرستِ فیلترشده. اگر اول گزینه‌های صفر را می‌انداختیم، هر گروهی که
+         * همه‌اش صفر بود فهرستِ خالی می‌داد و ‎group_is_visible()‎ حتی
+         * پینِ مدیر («حتی اگر خالی بود نشان بده») را هم نمی‌دید.
+         */
         if (!Facets::group_is_visible($options, $facet['show_empty'])) {
+            return;
+        }
+
+        $options = Facets::visible_options(
+            $options,
+            'yes' === ($settings['show_empty_options'] ?? 'yes')
+        );
+
+        if (!$options) {
             return;
         }
 
