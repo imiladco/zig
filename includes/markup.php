@@ -95,6 +95,7 @@ final class Markup {
             'trash'    => '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
             'chevron'  => '<path d="M6 9l6 6 6-6"/>',
             'arrow'    => '<path d="M19 12H5M11 18l-6-6 6-6"/>',
+            'sort'     => '<path d="M4 6h16M7 12h10M10 18h4"/>',
             'phone'    => '<path d="M6 3h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 014 5a2 2 0 012-2z"/>',
         ];
 

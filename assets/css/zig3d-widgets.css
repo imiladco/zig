@@ -66,6 +66,15 @@
  * می‌شود.
  */
 @media (prefers-reduced-motion: reduce) {
+	.zig-card__cta-icon,
+	.zig-archive__grid .zig-card {
+		transition: none;
+	}
+
+	.zig-card__cta:hover .zig-card__cta-icon {
+		transform: none;
+	}
+
 	.zig-card,
 	.zig-list__item,
 	.zig-btn,
@@ -537,6 +546,10 @@ a.zig-list__label:focus-visible {
 	line-height: 1;
 }
 
+.zig-card__title {
+	color: var(--zig-title-color, var(--zig-ink));
+}
+
 .zig-price__prefix,
 .zig-price__sep,
 .zig-price__suffix {
@@ -751,7 +764,22 @@ a.zig-list__label:focus-visible {
  * کوچک‌تر نمی‌شود، پس یک عنوان بلندِ بدون فاصله یا یک تصویر پهن، ستون را
  * از ظرفش بیرون می‌زند و کل صفحه اسکرول افقی می‌گیرد.
  */
+/*
+ * توکن‌های دیزاین، یک جا.
+ *
+ * هر رنگی که در این بخش تکرار می‌شود اینجا تعریف شده و بقیهٔ قواعد فقط
+ * ارجاعش می‌دهند. سه سود دارد: تغییر رنگ برند یک خط است، کنترل‌های
+ * المنتور روی همین‌ها می‌نشینند (پس یک کنترل، همهٔ مصرف‌ها را می‌گیرد)، و
+ * هیچ رنگی دو بار با دو مقدار کمی متفاوت نوشته نمی‌شود.
+ */
 .zig-archive {
+	--zig-brand: #6d28d9;
+	--zig-brand-soft: #ede9fe;
+	--zig-ink: #1c1330;
+	--zig-muted: #6b6480;
+	--zig-line: #ece9f4;
+	--zig-surface: #fff;
+
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
 	gap: 32px;
@@ -820,20 +848,34 @@ a.zig-list__label:focus-visible {
 	inset-block-start: var(--zig-archive-sticky, 16px);
 	align-self: start;
 	min-width: 0;
+	/*
+	 * نوار رنگیِ بالای پنل، بدون هیچ عنصر اضافه.
+	 *
+	 * ظرف بیرونی رنگ برند می‌گیرد و فقط همین اندازه از بالایش پیداست،
+	 * چون کارت سفید بقیه‌اش را می‌پوشاند. صفر گذاشتنِ متغیر، نوار را
+	 * کامل برمی‌دارد — بدون اینکه لازم باشد قاعده‌ای لغو شود.
+	 */
+	padding-block-start: var(--zig-filters-cap, 42px);
+	background-color: var(--zig-filters-cap-bg, var(--zig-brand));
+	border-radius: var(--zig-filters-radius, 18px);
+}
+
+.zig-filters__card {
 	overflow: hidden;
-	background-color: var(--zig-filters-bg, #fff);
+	background-color: var(--zig-filters-bg, var(--zig-surface));
 	border-radius: var(--zig-filters-radius, 18px);
 	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
 }
 
-/* سربرگ رنگی */
+/* سربرگ */
 .zig-filters__head {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	padding: var(--zig-filters-head-padding, 16px 18px);
-	background-color: var(--zig-filters-head-bg, #fff);
+	background-color: var(--zig-filters-head-bg, transparent);
 	color: var(--zig-filters-head-color, inherit);
+	border-block-end: 1px solid var(--zig-archive-rule, var(--zig-line));
 }
 
 .zig-filters__title {
@@ -866,8 +908,8 @@ a.zig-list__label:focus-visible {
 	font-size: var(--zig-filters-badge-size, 0.78rem);
 	line-height: 1.8;
 	white-space: nowrap;
-	background-color: var(--zig-filters-badge-bg, rgba(109, 40, 217, 0.1));
-	color: var(--zig-filters-badge-color, #6d28d9);
+	background-color: var(--zig-filters-badge-bg, var(--zig-brand-soft));
+	color: var(--zig-filters-badge-color, var(--zig-brand));
 }
 
 /* --------------------------------------------------------------------------
@@ -925,8 +967,8 @@ a.zig-list__label:focus-visible {
 	font-size: var(--zig-filters-chip-size, 0.82rem);
 	line-height: 1.8;
 	text-decoration: none;
-	background-color: var(--zig-filters-chip-bg, rgba(109, 40, 217, 0.1));
-	color: var(--zig-filters-chip-color, #6d28d9);
+	background-color: var(--zig-filters-chip-bg, var(--zig-brand-soft));
+	color: var(--zig-filters-chip-color, var(--zig-brand));
 	transition: background-color var(--zig-transition, 200ms ease);
 }
 
@@ -988,13 +1030,22 @@ a.zig-list__label:focus-visible {
 	transform: rotate(180deg);
 }
 
+/*
+ * فهرست گزینه‌ها داخل یک تشکِ رنگی می‌نشیند، نه روی زمینهٔ پنل.
+ *
+ * دلیلش دیداری نیست: با چند گروهِ باز پشت سر هم، مرزِ «این گزینه‌ها مال
+ * کدام عنوان‌اند» گم می‌شود. تشک، گروه را یک بلوک می‌کند و خطِ جداکنندهٔ
+ * بین گروه‌ها دیگر تنها نشانه نیست.
+ */
 .zig-facet__list {
-	margin: 10px 0 0;
-	padding: 0;
+	margin: 0 0 12px;
+	padding: var(--zig-facet-list-padding, 10px);
 	list-style: none;
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: var(--zig-facet-list-gap, 8px);
+	border-radius: var(--zig-facet-list-radius, 14px);
+	background-color: var(--zig-facet-list-bg, #f6f4fa);
 }
 
 /*
@@ -1009,14 +1060,13 @@ a.zig-list__label:focus-visible {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: var(--zig-facet-item-padding, 11px 12px);
-	margin-block-end: 6px;
+	padding: var(--zig-facet-item-padding, 12px 14px);
 	color: inherit;
 	text-decoration: none;
 	line-height: 1.8;
 	border: 1px solid transparent;
-	border-radius: var(--zig-facet-item-radius, 10px);
-	background-color: var(--zig-facet-item-bg, rgba(17, 12, 46, 0.02));
+	border-radius: var(--zig-facet-item-radius, 12px);
+	background-color: var(--zig-facet-item-bg, var(--zig-surface));
 	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
 }
 
@@ -1025,7 +1075,7 @@ a.zig-list__label:focus-visible {
 }
 
 .zig-facet__item.is-selected > a {
-	background-color: var(--zig-facet-selected-bg, rgba(109, 40, 217, 0.07));
+	background-color: var(--zig-facet-selected-bg, var(--zig-brand-soft));
 	border-color: var(--zig-facet-selected-border, rgba(109, 40, 217, 0.35));
 }
 
@@ -1047,11 +1097,18 @@ a.zig-list__label:focus-visible {
 }
 
 .zig-facet__item.is-selected .zig-facet__box {
-	background-color: var(--zig-facet-box-checked, #6d28d9);
-	border-color: var(--zig-facet-box-checked, #6d28d9);
+	background-color: var(--zig-facet-box-checked, var(--zig-brand));
+	border-color: var(--zig-facet-box-checked, var(--zig-brand));
 }
 
-/* تیک، با رنگِ پس‌زمینهٔ ظرف تا روی مربعِ پرشده دیده شود */
+/*
+ * تیک، با رنگِ پس‌زمینهٔ ظرف تا روی مربعِ پرشده دیده شود.
+ *
+ * اینجا عمداً ‎right/bottom‎ فیزیکی است و نه ‎inline-end/block-end‎ — تنها
+ * جای این فایل که چنین می‌کند. تیک یک *شکل* است نه متن؛ در RTL آینه
+ * نمی‌شود. با خاصیت منطقی، در فارسی برعکس می‌شد و به‌جای «✓» چیزی شبیه
+ * یک فلشِ کوچک درمی‌آمد. جای افقی‌اش هنوز منطقی است، فقط خودِ شکل نه.
+ */
 .zig-facet__item.is-selected .zig-facet__box::after {
 	content: "";
 	position: absolute;
@@ -1059,8 +1116,8 @@ a.zig-list__label:focus-visible {
 	inset-inline-start: 5px;
 	inline-size: 4px;
 	block-size: 9px;
-	border-inline-end: 2px solid var(--zig-archive-tick, #fff);
-	border-block-end: 2px solid var(--zig-archive-tick, #fff);
+	border-right: 2px solid var(--zig-archive-tick, #fff);
+	border-bottom: 2px solid var(--zig-archive-tick, #fff);
 	transform: rotate(45deg);
 }
 
@@ -1086,24 +1143,50 @@ a.zig-list__label:focus-visible {
    نوار بالا: شمارش و ترتیب
    ----------------------------------------------------------------------- */
 
+/*
+ * نوار بالا یک کارت است، نه یک ردیفِ شناور.
+ *
+ * شمارش در یک سر و ترتیب در سرِ دیگر؛ روی عرض کم، ‎flex-wrap‎ آن‌ها را
+ * زیر هم می‌برد بدون اینکه چیزی از کادر بزند بیرون.
+ */
 .zig-archive__toolbar {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px 20px;
+	padding: var(--zig-toolbar-padding, 12px 18px);
+	background-color: var(--zig-toolbar-bg, var(--zig-surface));
+	border: 1px solid var(--zig-toolbar-border, var(--zig-line));
+	border-radius: var(--zig-toolbar-radius, 14px);
 }
 
 .zig-archive__count {
 	margin: 0;
-	font-size: 0.9rem;
+	font-size: var(--zig-count-size, 0.9rem);
 	font-variant-numeric: tabular-nums;
+	color: var(--zig-count-color, var(--zig-ink));
+}
+
+.zig-sorts__wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.zig-sorts__label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.85rem;
+	color: var(--zig-muted);
 }
 
 .zig-sorts {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: 6px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -1111,17 +1194,24 @@ a.zig-list__label:focus-visible {
 
 .zig-sorts__pill {
 	display: inline-block;
-	padding: 6px 14px;
-	border-radius: 999px;
-	font-size: 0.85rem;
+	padding: var(--zig-sort-padding, 6px 14px);
+	border-radius: var(--zig-sort-radius, 999px);
+	font-size: var(--zig-sort-size, 0.85rem);
 	line-height: 1.8;
 	text-decoration: none;
-	color: inherit;
-	transition: background-color var(--zig-transition, 200ms ease);
+	color: var(--zig-sort-color, var(--zig-muted));
+	transition: background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
 }
 
 .zig-sorts__pill:hover {
-	background-color: var(--zig-archive-hover, rgba(0, 0, 0, 0.04));
+	color: var(--zig-ink);
+	background-color: var(--zig-archive-hover, rgba(17, 12, 46, 0.04));
+}
+
+.zig-sorts__pill.is-active {
+	font-weight: 600;
+	color: var(--zig-sort-active-color, var(--zig-brand));
+	background-color: var(--zig-sort-active-bg, var(--zig-brand-soft));
 }
 
 /* --------------------------------------------------------------------------
@@ -1233,20 +1323,61 @@ a.zig-list__label:focus-visible {
 	border-block-start: var(--zig-divider-width, 1px) solid var(--zig-divider-color, rgba(17, 12, 46, 0.08));
 }
 
+.zig-archive__grid .zig-card {
+	background-color: var(--zig-card-bg, var(--zig-surface));
+	border: 1px solid var(--zig-card-border, var(--zig-line));
+	border-radius: var(--zig-card-radius, 16px);
+	padding: var(--zig-card-padding, 16px);
+	transition: border-color var(--zig-transition, 200ms ease), box-shadow var(--zig-transition, 200ms ease);
+}
+
+/*
+ * سه حالتِ کارت، همان‌طور که در دیزاین آمده.
+ *
+ * هاورِ کارت فقط سایه و رنگ کادر را عوض می‌کند، نه اندازه یا جای چیزی:
+ * جابه‌جایی زیر مکان‌نما باعث می‌شود کاربر هدفی را که داشت به آن می‌رسید
+ * از دست بدهد.
+ *
+ * ‎:focus-within‎ کنار ‎:hover‎ است تا کاربر کیبورد هم همان نشانه را
+ * بگیرد — وگرنه حالتِ «این کارت الان فعال است» فقط با ماوس دیده می‌شود.
+ */
+.zig-archive__grid .zig-card:hover,
+.zig-archive__grid .zig-card:focus-within {
+	border-color: var(--zig-card-hover-border, rgba(109, 40, 217, 0.28));
+	box-shadow: var(--zig-card-hover-shadow, 0 10px 30px rgba(28, 19, 48, 0.08));
+}
+
+/*
+ * ظرف تصویر ارتفاع ثابت دارد، نه ارتفاعِ تصویر.
+ *
+ * محصول‌های یک فروشگاه هیچ‌وقت عکس‌های هم‌اندازه ندارند؛ اگر ارتفاع را
+ * تصویر تعیین کند، ردیفِ کارت‌ها پله‌پله می‌شود و خطِ عنوان‌ها به‌هم
+ * می‌ریزد. ‎object-fit: contain‎ هم یعنی هیچ عکسی بریده نمی‌شود.
+ *
+ * پیش‌فرض‌ها همان اعداد دیزاین‌اند و اینجا — در CSS — نشسته‌اند نه فقط
+ * در پیش‌فرضِ کنترل: کنترل‌ها CSS خودشان را در فایلِ سندِ المنتور
+ * می‌نویسند، و هر جایی که آن فایل نیاید (قالب‌ساز شخص ثالث، پیش‌نمایش،
+ * رندر بیرون از سند) کارت باید همچنان درست دربیاید.
+ */
 .zig-card__media {
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	gap: var(--zig-media-gap, 2px);
 	overflow: hidden;
-	border-radius: var(--zig-media-radius, 14px);
+	block-size: var(--zig-media-height, 210px);
+	padding: var(--zig-media-padding, 32px 16px 16px);
+	border-radius: var(--zig-media-radius, 12px);
+	background-color: var(--zig-media-bg, #f7f7fa);
 }
 
 .zig-card__image {
 	display: block;
+	inline-size: var(--zig-image-width, 162px);
 	max-inline-size: 100%;
 	block-size: 100%;
-	object-fit: contain;
+	object-fit: var(--zig-image-fit, contain);
 }
 
 /*
@@ -1260,6 +1391,34 @@ a.zig-list__label:focus-visible {
 	inset-block-start: var(--zig-ribbon-offset, 12px);
 	inset-inline-start: var(--zig-ribbon-offset, 12px);
 	z-index: 1;
+}
+
+.zig-card__ribbon {
+	background-color: var(--zig-ribbon-bg, var(--zig-brand));
+	color: var(--zig-ribbon-color, #fff);
+}
+
+/*
+ * هر حالت موجودی رنگ خودش را دارد و پیش‌فرض‌ها معنایی‌اند نه تزئینی:
+ * سبز «هست»، نارنجی «هنوز نه»، خاکستری «نیست». کنترل المنتور هرکدام را
+ * جدا می‌گیرد، ولی پیش‌فرضی که معنا را می‌رساند بهتر از خاکستریِ یکنواخت
+ * است — چون تا وقتی کسی رنگ‌ها را تنظیم نکرده، صفحه هنوز خوانا بماند.
+ */
+.zig-card__stock--instock,
+.zig-card__stock--available {
+	background-color: var(--zig-stock-in-bg, #e7f6ee);
+	color: var(--zig-stock-in-color, #0f7b55);
+}
+
+.zig-card__stock--lowstock,
+.zig-card__stock--onbackorder {
+	background-color: var(--zig-stock-pre-bg, #fdf1e3);
+	color: var(--zig-stock-pre-color, #b45309);
+}
+
+.zig-card__stock--outofstock {
+	background-color: var(--zig-stock-out-bg, #f3f2f6);
+	color: var(--zig-stock-out-color, #6b6480);
 }
 
 .zig-card__ribbon,
@@ -1289,11 +1448,19 @@ a.zig-list__label:focus-visible {
 	background-color: currentColor;
 }
 
+/*
+ * نام برند تیره است، نه رنگِ برندِ سایت.
+ *
+ * وسوسه‌اش هست — اسمش «برند» است — ولی در کارت، بنفشِ توپر یعنی «این را
+ * ببین»، و آن جایگاه مال ریبون و دکمه است. برند یک برچسبِ اطلاعاتی است و
+ * باید کنار لیبل موجودی هم‌وزن دیده شود.
+ */
 .zig-card__brand {
 	margin: 0;
-	font-size: 0.8rem;
+	font-size: var(--zig-brand-size, 0.8rem);
+	font-weight: 600;
 	line-height: 1.8;
-	opacity: 0.8;
+	color: var(--zig-card-brand-color, var(--zig-ink));
 }
 
 /*
@@ -1305,8 +1472,9 @@ a.zig-list__label:focus-visible {
  */
 .zig-card__desc {
 	margin: 0;
-	font-size: 0.85rem;
+	font-size: var(--zig-desc-size, 0.85rem);
 	line-height: 1.9;
+	color: var(--zig-desc-color, var(--zig-muted));
 	overflow-wrap: anywhere;
 }
 
@@ -1315,6 +1483,10 @@ a.zig-list__label:focus-visible {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
+}
+
+.zig-archive__grid .zig-card__title {
+	color: var(--zig-title-color, var(--zig-ink));
 }
 
 .zig-archive__grid .zig-card__title a {
@@ -1334,7 +1506,8 @@ a.zig-list__label:focus-visible {
 	padding: var(--zig-features-padding, 8px 12px);
 	list-style: none;
 	border-radius: var(--zig-features-radius, 10px);
-	background-color: var(--zig-features-bg, rgba(109, 40, 217, 0.06));
+	background-color: var(--zig-features-bg, #f6f4fa);
+	color: var(--zig-features-color, var(--zig-muted));
 }
 
 .zig-card__feature {
@@ -1366,10 +1539,35 @@ a.zig-list__label:focus-visible {
 	font-variant-numeric: tabular-nums;
 }
 
+.zig-price__prefix {
+	font-size: var(--zig-price-prefix-size, 0.8rem);
+	color: var(--zig-price-prefix-color, var(--zig-muted));
+}
+
+/*
+ * مبلغ همیشه سرِ دیگرِ ردیف می‌نشیند، پیشوند باشد یا نباشد.
+ *
+ * با ‎space-between‎ تنها، کارتی که پیشوند ندارد مبلغش می‌پرید به ابتدای
+ * ردیف و ستون قیمت‌ها در گرید ناهم‌تراز می‌شد — دقیقاً همان چیزی که
+ * ‎tabular-nums‎ برای جلوگیری‌اش هست.
+ */
 .zig-price__value {
 	display: inline-flex;
 	align-items: baseline;
 	gap: 6px;
+	margin-inline-start: auto;
+	color: var(--zig-price-color, var(--zig-ink));
+}
+
+.zig-price__amount {
+	font-size: var(--zig-price-size, 1.05rem);
+	font-weight: 700;
+}
+
+.zig-price__unit {
+	font-size: var(--zig-price-unit-size, 0.8rem);
+	font-weight: 400;
+	color: var(--zig-price-unit-color, var(--zig-muted));
 }
 
 /* «استعلام قیمت» عمل است نه مقدار، پس تمام‌عرض و وسط می‌نشیند */
@@ -1379,6 +1577,7 @@ a.zig-list__label:focus-visible {
 	justify-content: center;
 	gap: 8px;
 	inline-size: 100%;
+	color: var(--zig-price-inquiry-color, var(--zig-muted));
 }
 
 /*
@@ -1394,12 +1593,58 @@ a.zig-list__label:focus-visible {
  * چسباندن پا به کف را انجام می‌دهد، و آن یکی روی ظرفِ فلکسِ ستونی با
  * ‎gap‎ می‌جنگید.
  */
+/*
+ * دکمهٔ تمام‌عرض، با کادر نازک و متن رنگِ برند.
+ *
+ * ‎margin-block-start: auto‎ دیگر لازم نیست — کشیده‌شدنِ ‎__body‎ کار
+ * چسباندن پا به کف را انجام می‌دهد، و آن یکی روی ظرفِ فلکسِ ستونی با
+ * ‎gap‎ می‌جنگید.
+ */
 .zig-card__cta {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
 	inline-size: 100%;
+	padding: var(--zig-cta-padding, 11px 16px);
+	border: 1px solid var(--zig-cta-border, var(--zig-line));
+	border-radius: var(--zig-cta-radius, 10px);
+	background-color: var(--zig-cta-bg, transparent);
+	color: var(--zig-cta-color, var(--zig-ink));
+	font-weight: 600;
+	text-decoration: none;
+	transition: border-color var(--zig-transition, 200ms ease), background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+}
+
+.zig-card__cta:hover,
+.zig-card__cta:focus-visible {
+	border-color: var(--zig-cta-hover-border, var(--zig-brand));
+	background-color: var(--zig-cta-hover-bg, var(--zig-brand-soft));
+	color: var(--zig-cta-hover-color, var(--zig-brand));
+}
+
+/*
+ * فلش رنگِ برند دارد حتی وقتی متن تیره است — همان تفاوتی که در دیزاین
+ * بین حالت عادی و هاور دیده می‌شود. در هاور، ‎currentColor‎ می‌گیرد تا با
+ * متن یکی شود.
+ */
+.zig-card__cta-icon {
+	color: var(--zig-cta-icon-color, var(--zig-brand));
+	transition: transform var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+}
+
+.zig-card__cta:hover .zig-card__cta-icon,
+.zig-card__cta:focus-visible .zig-card__cta-icon {
+	color: currentColor;
+}
+
+/* فلش کمی به سمت مقصد می‌رود — نشانهٔ «می‌بردت آنجا» */
+.zig-card__cta:hover .zig-card__cta-icon {
+	transform: translateX(-3px);
+}
+
+[dir="ltr"] .zig-card__cta:hover .zig-card__cta-icon {
+	transform: translateX(3px);
 }
 
 /* --------------------------------------------------------------------------
@@ -1437,19 +1682,30 @@ a.zig-list__label:focus-visible {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-inline-size: 36px;
-	min-block-size: 36px;
-	padding: 0 10px;
-	border-radius: 8px;
+	min-inline-size: var(--zig-page-size, 40px);
+	min-block-size: var(--zig-page-size, 40px);
+	padding: 0 12px;
+	border: 1px solid var(--zig-page-border, var(--zig-line));
+	border-radius: var(--zig-page-radius, 10px);
 	font-size: 0.9rem;
 	font-variant-numeric: tabular-nums;
 	text-decoration: none;
-	color: inherit;
-	transition: background-color var(--zig-transition, 200ms ease);
+	color: var(--zig-page-color, var(--zig-ink));
+	background-color: var(--zig-surface);
+	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
 }
 
 .zig-page:hover {
-	background-color: var(--zig-archive-hover, rgba(0, 0, 0, 0.04));
+	border-color: var(--zig-brand);
+	color: var(--zig-brand);
+}
+
+/* صفحهٔ جاری ‎<span>‎ است نه لینک: رفتن به جایی که هستی، ناوبری نیست */
+.zig-page.is-current {
+	font-weight: 600;
+	border-color: var(--zig-page-current-bg, var(--zig-brand));
+	background-color: var(--zig-page-current-bg, var(--zig-brand));
+	color: var(--zig-page-current-color, #fff);
 }
 
 /* --------------------------------------------------------------------------

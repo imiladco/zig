@@ -293,9 +293,9 @@ final class Product_Archive extends Widget_Base {
         ]);
 
         $this->add_control('filters_clear', [
-            'label'     => __('متن «پاک‌کردن همه»', 'zig3d-widgets'),
+            'label'     => __('متن «حذف همه»', 'zig3d-widgets'),
             'type'      => Controls_Manager::TEXT,
-            'default'   => __('پاک‌کردن همه', 'zig3d-widgets'),
+            'default'   => __('حذف همه', 'zig3d-widgets'),
             'condition' => ['filters_on' => 'yes'],
         ]);
 
@@ -486,10 +486,17 @@ final class Product_Archive extends Widget_Base {
             'default' => __('قیمت از', 'zig3d-widgets'),
         ]);
 
+        /*
+         * پیشوندِ قیمتِ دقیق پیش‌فرض ندارد، و این عمدی است: در دیزاین،
+         * قیمتِ قطعی تنها می‌آید و فقط قیمتِ «از» پیشوند می‌گیرد — چون
+         * پیشوند آنجا اطلاعات اضافه می‌کند («این کمترینش است»)، ولی روی
+         * قیمت قطعی فقط یک کلمهٔ تکراری کنار عدد است.
+         */
         $this->add_control('label_price_exact', [
-            'label'   => __('پیشوند «قیمت»', 'zig3d-widgets'),
-            'type'    => Controls_Manager::TEXT,
-            'default' => __('قیمت', 'zig3d-widgets'),
+            'label'       => __('پیشوند «قیمت»', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => '',
+            'placeholder' => __('بدون پیشوند', 'zig3d-widgets'),
         ]);
 
         $this->add_control('no_price', [
@@ -505,7 +512,7 @@ final class Product_Archive extends Widget_Base {
         $this->add_control('label_price_inquiry', [
             'label'     => __('متن استعلامی', 'zig3d-widgets'),
             'type'      => Controls_Manager::TEXT,
-            'default'   => __('استعلامی', 'zig3d-widgets'),
+            'default'   => __('استعلام قیمت', 'zig3d-widgets'),
             'condition' => ['no_price' => Card::PRICE_INQUIRY],
         ]);
 
@@ -717,10 +724,13 @@ final class Product_Archive extends Widget_Base {
      * ظرف تصویر.
      *
      * پیش‌فرض‌ها دقیقاً همان چیزی‌اند که در دیزاین آمده — ارتفاع ۲۱۰،
-     * پدینگ ۳۲/۱۶/۱۶، شعاع ۱۲، پس‌زمینهٔ ‎#F7F7FA‎ و عرض تصویر ۱۶۲ با نسبت
-     * ۱:۱. گذاشتنشان به‌عنوان *پیش‌فرضِ کنترل* و نه مقدار ثابت در CSS، تنها
-     * راهی است که هم خروجی از روز اول درست باشد و هم بعداً بدون دست‌زدن به
-     * کد قابل تغییر بماند.
+     * پدینگ ۳۲/۱۶/۱۶، شعاع ۱۲، پس‌زمینهٔ ‎#F7F7FA‎ و عرض تصویر ۱۶۲.
+     *
+     * هر کنترل یک *متغیر* می‌نویسد، نه یک اعلانِ مستقیم. تفاوتش این است
+     * که همان پیش‌فرض‌ها در ‎var()‎های شیت هم هستند، پس اگر فایل CSS سندِ
+     * المنتور به صفحه نرسد — رندر بیرون از سند، قالب‌ساز دیگر، پیش‌نمایش
+     * خام — کارت باز هم شکل دیزاین را دارد. با اعلان مستقیم، آن حالت‌ها
+     * کارتِ بی‌ارتفاع و بی‌پدینگ می‌دادند.
      */
     private function section_style_media(): void {
         $this->start_controls_section('sty_media', [
@@ -734,7 +744,7 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px', 'vh'],
             'default'    => ['size' => 210, 'unit' => 'px'],
             'range'      => ['px' => ['min' => 100, 'max' => 480]],
-            'selectors'  => ['{{WRAPPER}} .zig-card__media' => 'height: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-media-height: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_responsive_control('media_padding', [
@@ -743,7 +753,7 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px', 'rem'],
             'default'    => ['top' => 32, 'right' => 16, 'bottom' => 16, 'left' => 16, 'unit' => 'px', 'isLinked' => false],
             'selectors'  => [
-                '{{WRAPPER}} .zig-card__media' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+                '{{WRAPPER}} .zig-card' => '--zig-media-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
         ]);
 
@@ -753,14 +763,14 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px', 'rem'],
             'default'    => ['size' => 12, 'unit' => 'px'],
             'range'      => ['px' => ['min' => 0, 'max' => 48]],
-            'selectors'  => ['{{WRAPPER}} .zig-card__media' => 'border-radius: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-media-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('media_background', [
             'label'     => __('پس‌زمینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'default'   => '#F7F7FA',
-            'selectors' => ['{{WRAPPER}} .zig-card__media' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-media-bg: {{VALUE}};'],
         ]);
 
         $this->add_responsive_control('media_gap', [
@@ -769,7 +779,7 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px'],
             'default'    => ['size' => 2, 'unit' => 'px'],
             'range'      => ['px' => ['min' => 0, 'max' => 32]],
-            'selectors'  => ['{{WRAPPER}} .zig-card__media' => 'gap: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-media-gap: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_responsive_control('image_width', [
@@ -778,7 +788,7 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px', '%'],
             'default'    => ['size' => 162, 'unit' => 'px'],
             'range'      => ['px' => ['min' => 60, 'max' => 400], '%' => ['min' => 20, 'max' => 100]],
-            'selectors'  => ['{{WRAPPER}} .zig-card__image' => 'width: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-image-width: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('image_fit', [
@@ -789,7 +799,7 @@ final class Product_Archive extends Widget_Base {
                 'contain' => __('کامل دیده شود', 'zig3d-widgets'),
                 'cover'   => __('کادر را پر کند', 'zig3d-widgets'),
             ],
-            'selectors' => ['{{WRAPPER}} .zig-card__image' => 'object-fit: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-image-fit: {{VALUE}};'],
         ]);
 
         $this->end_controls_section();
@@ -801,19 +811,22 @@ final class Product_Archive extends Widget_Base {
             'tab'   => Controls_Manager::TAB_STYLE,
         ]);
 
+        /*
+         * فاصله و ترتیب اینجا نیستند و نبودنشان عمدی است: بخش «ساختار
+         * کارت» صاحبِ آن‌هاست. دو کنترل برای یک خاصیت، یعنی هر بار یکی از
+         * دو مقدار بی‌صدا برنده می‌شود و مدیر نمی‌فهمد چرا اسلایدری که
+         * کشیده کاری نمی‌کند.
+         */
         $this->add_control('card_background', [
             'label'     => __('پس‌زمینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-card-bg: {{VALUE}};'],
         ]);
 
-        $this->add_responsive_control('card_padding', [
-            'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
-            'type'       => Controls_Manager::DIMENSIONS,
-            'size_units' => ['px', 'rem'],
-            'selectors'  => [
-                '{{WRAPPER}} .zig-card' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
-            ],
+        $this->add_control('card_border_color', [
+            'label'     => __('رنگ کادر', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-card-border: {{VALUE}};'],
         ]);
 
         $this->add_responsive_control('card_radius', [
@@ -822,61 +835,76 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px', 'rem'],
             'default'    => ['size' => 16, 'unit' => 'px'],
             'range'      => ['px' => ['min' => 0, 'max' => 48]],
-            'selectors'  => ['{{WRAPPER}} .zig-card' => 'border-radius: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-card-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
-        $this->add_responsive_control('card_gap', [
-            'label'      => __('فاصلهٔ بخش‌های کارت', 'zig3d-widgets'),
-            'type'       => Controls_Manager::SLIDER,
-            'size_units' => ['px', 'rem'],
-            'default'    => ['size' => 8, 'unit' => 'px'],
-            'range'      => ['px' => ['min' => 0, 'max' => 40]],
-            'selectors'  => ['{{WRAPPER}} .zig-card__body' => 'gap: {{SIZE}}{{UNIT}};'],
+        /*
+         * هاور، همان‌طور که در دیزاین سه کارتِ اول نشان داده شده: فقط رنگ
+         * کادر و سایه. هیچ جابه‌جایی‌ای در کار نیست — کارتی که زیر
+         * مکان‌نما بالا می‌پرد، هدفی را که کاربر داشت به آن می‌رسید از زیر
+         * دستش می‌کشد.
+         */
+        $this->add_control('card_hover_heading', [
+            'label'     => __('حالت هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('card_hover_border', [
+            'label'     => __('رنگ کادر در هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-card-hover-border: {{VALUE}};'],
         ]);
 
         $this->add_control('brand_color', [
             'label'     => __('رنگ برند', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'separator' => 'before',
-            'selectors' => ['{{WRAPPER}} .zig-card__brand' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-card-brand-color: {{VALUE}};'],
         ]);
 
         $this->add_control('title_color', [
             'label'     => __('رنگ عنوان', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__title, {{WRAPPER}} .zig-card__title a' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-title-color: {{VALUE}};'],
         ]);
 
         $this->add_control('desc_color', [
             'label'     => __('رنگ توضیح', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__desc' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-desc-color: {{VALUE}};'],
         ]);
 
+        /*
+         * ویژگی‌ها یک نوارند، نه چند حباب — پس رنگ هم روی خودِ نوار
+         * می‌نشیند. تا وقتی این کنترل ‎.zig-card__feature‎ (تکِ ‎<li>‎) را
+         * هدف می‌گرفت، مدیر رنگ را عوض می‌کرد و هیچ اتفاقی نمی‌افتاد:
+         * پس‌زمینه مال ظرف بود، نه بچه‌ها.
+         */
         $this->add_control('feature_background', [
-            'label'     => __('پس‌زمینهٔ حباب ویژگی', 'zig3d-widgets'),
+            'label'     => __('پس‌زمینهٔ نوار ویژگی‌ها', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'separator' => 'before',
-            'selectors' => ['{{WRAPPER}} .zig-card__feature' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-features-bg: {{VALUE}};'],
         ]);
 
         $this->add_control('feature_color', [
-            'label'     => __('رنگ متن حباب', 'zig3d-widgets'),
+            'label'     => __('رنگ متن ویژگی‌ها', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__feature' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-features-color: {{VALUE}};'],
         ]);
 
         $this->add_control('ribbon_background', [
             'label'     => __('پس‌زمینهٔ ریبون پیشنهاد', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'separator' => 'before',
-            'selectors' => ['{{WRAPPER}} .zig-card__ribbon' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-ribbon-bg: {{VALUE}};'],
         ]);
 
         $this->add_control('ribbon_color', [
             'label'     => __('رنگ متن ریبون', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__ribbon' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-ribbon-color: {{VALUE}};'],
         ]);
 
         $this->end_controls_section();
@@ -931,15 +959,17 @@ final class Product_Archive extends Widget_Base {
                 ]);
             }
 
-            $this->add_control($key . '_order', [
-                'label'     => __('ترتیب نمایش', 'zig3d-widgets'),
-                'type'      => Controls_Manager::NUMBER,
-                'min'       => 1,
-                'max'       => 9,
-                'selectors' => [
-                    '{{WRAPPER}} .zig-card' => '--zig-' . $area['var'] . '-order: {{VALUE}};',
-                ],
-            ]);
+            if (!empty($area['order'])) {
+                $this->add_control($key . '_order', [
+                    'label'     => __('ترتیب نمایش', 'zig3d-widgets'),
+                    'type'      => Controls_Manager::NUMBER,
+                    'min'       => 1,
+                    'max'       => 9,
+                    'selectors' => [
+                        '{{WRAPPER}} .zig-card' => '--zig-' . $area['var'] . '-order: {{VALUE}};',
+                    ],
+                ]);
+            }
         }
 
         $this->add_control('divider_heading', [
@@ -982,19 +1012,13 @@ final class Product_Archive extends Widget_Base {
             'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-category-color: {{VALUE}}; --zig-category-opacity: 1;'],
         ]);
 
-        $this->add_control('features_bg', [
-            'label'     => __('پس‌زمینهٔ نوار ویژگی‌ها', 'zig3d-widgets'),
-            'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-features-bg: {{VALUE}};'],
-            'separator' => 'before',
-        ]);
-
         $this->add_responsive_control('features_radius', [
             'label'      => __('گِردی گوشهٔ نوار ویژگی‌ها', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px', 'rem'],
             'range'      => ['px' => ['min' => 0, 'max' => 30]],
             'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-features-radius: {{SIZE}}{{UNIT}};'],
+            'separator'  => 'before',
         ]);
 
         $this->end_controls_section();
@@ -1061,19 +1085,31 @@ final class Product_Archive extends Widget_Base {
         $this->add_control('price_color', [
             'label'     => __('رنگ عدد', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-price__amount' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-price-color: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('price_size', [
+            'label'      => __('اندازهٔ عدد', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'default'    => ['size' => 1.05, 'unit' => 'rem'],
+            'range'      => [
+                'px'  => ['min' => 10, 'max' => 40],
+                'rem' => ['min' => 0.6, 'max' => 2.5, 'step' => 0.05],
+            ],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-price-size: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('price_prefix_color', [
             'label'     => __('رنگ پیشوند', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-price__prefix' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-price-prefix-color: {{VALUE}};'],
         ]);
 
         $this->add_control('price_unit_color', [
             'label'     => __('رنگ واحد پول', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-price__unit' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-price-unit-color: {{VALUE}};'],
         ]);
 
         /*
@@ -1084,7 +1120,7 @@ final class Product_Archive extends Widget_Base {
         $this->add_control('price_inquiry_color', [
             'label'     => __('رنگ متن استعلامی', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-price__inquiry' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-price-inquiry-color: {{VALUE}};'],
         ]);
 
         $this->add_control('cta_heading_style', [
@@ -1100,13 +1136,30 @@ final class Product_Archive extends Widget_Base {
         $this->add_control('cta_color', [
             'label'     => __('رنگ متن', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__cta' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-color: {{VALUE}};'],
+        ]);
+
+        /*
+         * فلش رنگ مستقل دارد چون در دیزاین هم مستقل است: متنِ دکمه در حالت
+         * عادی تیره است و فلش، رنگِ برند. یک کنترلِ مشترک یعنی یا فلش
+         * تیره می‌شود یا متن بنفش — هیچ‌کدام آن چیزی نیست که کشیده شده.
+         */
+        $this->add_control('cta_icon_color', [
+            'label'     => __('رنگ فلش', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-icon-color: {{VALUE}};'],
         ]);
 
         $this->add_control('cta_background', [
             'label'     => __('پس‌زمینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__cta' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('cta_border', [
+            'label'     => __('رنگ کادر', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-border: {{VALUE}};'],
         ]);
 
         $this->end_controls_tab();
@@ -1116,13 +1169,19 @@ final class Product_Archive extends Widget_Base {
         $this->add_control('cta_color_hover', [
             'label'     => __('رنگ متن', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__cta:hover, {{WRAPPER}} .zig-card__cta:focus-visible' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-hover-color: {{VALUE}};'],
         ]);
 
         $this->add_control('cta_background_hover', [
             'label'     => __('پس‌زمینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-card__cta:hover, {{WRAPPER}} .zig-card__cta:focus-visible' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-hover-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('cta_border_hover', [
+            'label'     => __('رنگ کادر', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-card' => '--zig-cta-hover-border: {{VALUE}};'],
         ]);
 
         $this->end_controls_tab();
@@ -1135,7 +1194,16 @@ final class Product_Archive extends Widget_Base {
             'default'    => ['size' => 12, 'unit' => 'px'],
             'range'      => ['px' => ['min' => 0, 'max' => 48]],
             'separator'  => 'before',
-            'selectors'  => ['{{WRAPPER}} .zig-card__cta' => 'border-radius: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-card' => '--zig-cta-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('cta_padding', [
+            'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-card' => '--zig-cta-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
         ]);
 
         $this->end_controls_section();
@@ -1175,6 +1243,26 @@ final class Product_Archive extends Widget_Base {
             'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
+        /*
+         * نوار رنگیِ بالای پنل.
+         *
+         * ارتفاعش کنترل دارد و صفرشدنش نوار را کامل برمی‌دارد — یعنی کسی
+         * که این جزء دیزاین را نمی‌خواهد لازم نیست CSS بنویسد.
+         */
+        $this->add_responsive_control('filters_cap', [
+            'label'      => __('ارتفاع نوار رنگی بالای پنل', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 120]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-cap: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('filters_cap_bg', [
+            'label'     => __('رنگ نوار بالای پنل', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-cap-bg: {{VALUE}};'],
+        ]);
+
         $this->add_control('filters_head_bg', [
             'label'     => __('پس‌زمینهٔ سربرگ', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
@@ -1209,6 +1297,18 @@ final class Product_Archive extends Widget_Base {
             'label'     => __('رنگ متن چیپ', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-chip-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_list_bg', [
+            'label'     => __('پس‌زمینهٔ فهرست گزینه‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-list-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_item_bg', [
+            'label'     => __('پس‌زمینهٔ گزینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-item-bg: {{VALUE}};'],
         ]);
 
         $this->add_control('facet_selected_bg', [
@@ -1261,36 +1361,101 @@ final class Product_Archive extends Widget_Base {
             'selectors' => ['{{WRAPPER}} .zig-facet__count' => 'color: {{VALUE}};'],
         ]);
 
+        /* --- نوار بالا --- */
+
+        $this->add_control('toolbar_background', [
+            'label'     => __('پس‌زمینهٔ نوار بالا', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'separator' => 'before',
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-toolbar-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('toolbar_border', [
+            'label'     => __('رنگ کادر نوار بالا', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-toolbar-border: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('toolbar_radius', [
+            'label'      => __('گِردی گوشهٔ نوار بالا', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive' => '--zig-toolbar-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('toolbar_padding', [
+            'label'      => __('فاصلهٔ داخلی نوار بالا', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-archive' => '--zig-toolbar-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_control('count_color', [
+            'label'     => __('رنگ متن شمارش', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-count-color: {{VALUE}};'],
+        ]);
+
         $this->add_control('sort_color', [
             'label'     => __('رنگ پیل ترتیب', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'separator' => 'before',
-            'selectors' => ['{{WRAPPER}} .zig-sorts__pill' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-sort-color: {{VALUE}};'],
         ]);
 
         $this->add_control('sort_active_background', [
             'label'     => __('پس‌زمینهٔ پیل فعال', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-sorts__pill.is-active' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-sort-active-bg: {{VALUE}};'],
         ]);
 
         $this->add_control('sort_active_color', [
             'label'     => __('رنگ متن پیل فعال', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-sorts__pill.is-active' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-sort-active-color: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('sort_radius', [
+            'label'      => __('گِردی گوشهٔ پیل', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 999]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive' => '--zig-sort-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('page_color', [
             'label'     => __('رنگ شمارهٔ صفحه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'separator' => 'before',
-            'selectors' => ['{{WRAPPER}} .zig-page' => 'color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-page-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('page_border', [
+            'label'     => __('رنگ کادر صفحه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-page-border: {{VALUE}};'],
         ]);
 
         $this->add_control('page_current_background', [
             'label'     => __('پس‌زمینهٔ صفحهٔ جاری', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-page.is-current' => 'background-color: {{VALUE}};'],
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-page-current-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('page_current_color', [
+            'label'     => __('رنگ متن صفحهٔ جاری', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive' => '--zig-page-current-color: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('page_radius', [
+            'label'      => __('گِردی گوشهٔ صفحه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive' => '--zig-page-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('error_background', [
@@ -1741,6 +1906,17 @@ final class Product_Archive extends Widget_Base {
         $active = $state->count();
 
         /*
+         * یک ظرفِ سفید داخلِ ظرفِ رنگی.
+         *
+         * در دیزاین، بالای پنل یک نوار رنگِ برند از زیرِ کارت بیرون زده.
+         * می‌شد آن را با ‎::before‎ کشید، ولی آن‌وقت ارتفاعش به یک عدد
+         * جادویی در CSS گره می‌خورد و کنترل المنتور نمی‌توانست تمیز
+         * عوضش کند. با دو ظرف، نوار همان ‎padding-block-start‎ ظرف بیرونی
+         * است — یک متغیر، بدون عنصر شبح.
+         */
+        echo '<div class="zig-filters__card">';
+
+        /*
          * سربرگ پنل.
          *
          * شمارندهٔ «چند فیلتر فعال» فقط تزئین نیست: وقتی گروه‌ها بسته
@@ -1771,7 +1947,7 @@ final class Product_Archive extends Widget_Base {
             $this->render_facet($facet, $state, $base, $context, $operators, $url);
         }
 
-        echo '</div>';
+        echo '</div></div>';
     }
 
     /**
@@ -1970,12 +2146,6 @@ final class Product_Archive extends Widget_Base {
 
         echo '<div class="zig-archive__toolbar">';
 
-        if ('yes' === ($settings['count_on'] ?? '')) {
-            echo '<div data-zig-part="count">';
-            $this->render_count($settings, $found);
-            echo '</div>';
-        }
-
         if ('yes' === ($settings['sorting_on'] ?? '') && $sorts) {
             /*
              * نوار ترتیب هم یک قطعه است، و این را مرورگر یاد داد: بدون
@@ -1985,6 +2155,22 @@ final class Product_Archive extends Widget_Base {
              */
             echo '<div data-zig-part="sorts">';
             $this->render_sorts($sorts, $state, $operators);
+            echo '</div>';
+        }
+
+        /*
+         * ترتیب اول، شمارش آخر — همان چیدمانی که در دیزاین آمده.
+         *
+         * ترتیب DOM هم همین را می‌خواهد و اتفاقی نیست: «چطور مرتب کنم» یک
+         * کنترل است و «چندتا شد» نتیجهٔ آن. کاربر صفحه‌خوان اول ابزار را
+         * می‌شنود و بعد خروجی‌اش را، نه برعکس.
+         *
+         * جای *دیداری*‌شان به ‎space-between‎ سپرده شده، پس در RTL و LTR
+         * هر کدام سرِ خودش می‌نشیند بدون قاعدهٔ جهت‌دار.
+         */
+        if ('yes' === ($settings['count_on'] ?? '')) {
+            echo '<div data-zig-part="count">';
+            $this->render_count($settings, $found);
             echo '</div>';
         }
 
@@ -2015,7 +2201,22 @@ final class Product_Archive extends Widget_Base {
         $url     = $this->base_url();
         $current = Sorting::resolve($sorts, $state->sort());
 
-        echo '<ul class="zig-sorts">';
+        echo '<div class="zig-sorts__wrap">';
+
+        /*
+         * برچسب «ترتیب :» یک ‎<span>‎ است نه ‎<label>‎.
+         *
+         * ‎<label>‎ باید به یک کنترل فرم اشاره کند و اینجا هیچ کنترلی نیست،
+         * چند لینک است. برچسبِ بی‌مقصد در بعضی صفحه‌خوان‌ها اصلاً خوانده
+         * نمی‌شود؛ نامِ دسترس‌پذیرِ خودِ فهرست کار را می‌کند.
+         */
+        printf(
+            '<span class="zig-sorts__label" aria-hidden="true">%s%s</span>',
+            Markup::svg_icon('sort', 'zig-sorts__icon'),
+            esc_html__('ترتیب :', 'zig3d-widgets')
+        );
+
+        printf('<ul class="zig-sorts" aria-label="%s">', esc_attr__('ترتیب نمایش', 'zig3d-widgets'));
 
         foreach (Sorting::available($sorts, false) as $option) {
             $active = $current && $option['key'] === $current['key'];
@@ -2030,7 +2231,7 @@ final class Product_Archive extends Widget_Base {
             );
         }
 
-        echo '</ul>';
+        echo '</ul></div>';
     }
 
     /* ---------------------------------------------------------------- */
@@ -2454,13 +2655,18 @@ final class Product_Archive extends Widget_Base {
      */
     private function card_areas(): array {
         return [
-            'area_card'     => ['label' => __('۱ کل کارت', 'zig3d-widgets'), 'var' => 'card', 'gap' => true],
-            'area_media'    => ['label' => __('۲ تصویر', 'zig3d-widgets'), 'var' => 'media', 'gap' => false],
-            'area_body'     => ['label' => __('۳ بدنه', 'zig3d-widgets'), 'var' => 'body', 'gap' => true],
-            'area_meta'     => ['label' => __('۴ برند و موجودی', 'zig3d-widgets'), 'var' => 'meta', 'gap' => true],
-            'area_text'     => ['label' => __('۵ عنوان و توضیح', 'zig3d-widgets'), 'var' => 'text', 'gap' => true],
-            'area_features' => ['label' => __('۶ ویژگی‌ها', 'zig3d-widgets'), 'var' => 'features', 'gap' => true],
-            'area_foot'     => ['label' => __('۷ قیمت و دکمه', 'zig3d-widgets'), 'var' => 'foot', 'gap' => true],
+            /*
+             * «کل کارت» ترتیب ندارد، و این حذفِ عمدی است: کارت تنها فرزندِ
+             * سلولِ گرید است و ‎order‎ روی یک عنصرِ تنها هیچ کاری نمی‌کند.
+             * کنترلی که وجود دارد ولی اثر ندارد، بدتر از نبودنش است.
+             */
+            'area_card'     => ['label' => __('۱ کل کارت', 'zig3d-widgets'), 'var' => 'card', 'gap' => true, 'order' => false],
+            'area_media'    => ['label' => __('۲ تصویر', 'zig3d-widgets'), 'var' => 'media', 'gap' => false, 'order' => true],
+            'area_body'     => ['label' => __('۳ بدنه', 'zig3d-widgets'), 'var' => 'body', 'gap' => true, 'order' => true],
+            'area_meta'     => ['label' => __('۴ برند و موجودی', 'zig3d-widgets'), 'var' => 'meta', 'gap' => true, 'order' => true],
+            'area_text'     => ['label' => __('۵ عنوان و توضیح', 'zig3d-widgets'), 'var' => 'text', 'gap' => true, 'order' => true],
+            'area_features' => ['label' => __('۶ ویژگی‌ها', 'zig3d-widgets'), 'var' => 'features', 'gap' => true, 'order' => true],
+            'area_foot'     => ['label' => __('۷ قیمت و دکمه', 'zig3d-widgets'), 'var' => 'foot', 'gap' => true, 'order' => true],
         ];
     }
 
