@@ -633,6 +633,35 @@ const run = async () => {
 		check('و اسکرول خودش را', box.listY === 'auto');
 		check('بدون سرایت به پنل', box.listChain === 'contain');
 
+		/*
+		 * ظاهرِ نوار اسکرول از دو مسیر می‌آید و هر دو باید سر جایشان باشند:
+		 * خاصیت‌های استاندارد (‎scrollbar-width/-color‎) که کروم و فایرفاکسِ
+		 * امروزی می‌خوانند، و شبه‌عنصرهای وبکیتی برای موتورهای قدیمی‌تر.
+		 *
+		 * این محیط نوار را به‌صورت روکشی می‌کشد، پس در اسکرین‌شات دیده
+		 * نمی‌شود؛ تنها راه سنجیدنش پرسیدن از CSSOM است.
+		 */
+		const bar = await page.evaluate(() => {
+			const card = getComputedStyle(document.querySelector('.zig-filters__card'));
+			const list = getComputedStyle(document.querySelector('.zig-facet__list'));
+			const rules = [...document.styleSheets]
+				.flatMap((s) => { try { return [...s.cssRules]; } catch { return []; } })
+				.filter((r) => r.selectorText && /webkit-scrollbar/.test(r.selectorText));
+
+			return {
+				cardWidth: card.scrollbarWidth,
+				listWidth: list.scrollbarWidth,
+				cardColor: card.scrollbarColor,
+				thumbRule: rules.some((r) => /scrollbar-thumb\b/.test(r.selectorText) && /border-radius/.test(r.style.cssText)),
+				clipRule: rules.some((r) => /padding-box/.test(r.style.cssText)),
+			};
+		});
+
+		check('نوار در هر دو ناحیه باریک است', bar.cardWidth === 'thin' && bar.listWidth === 'thin', `${bar.cardWidth} / ${bar.listWidth}`);
+		check('و رنگش تعیین شده', /rgba?\(/.test(bar.cardColor), bar.cardColor);
+		check('تیغه در مسیر وبکیتی گِرد است', bar.thumbRule);
+		check('و با کادرِ شفاف از لبه فاصله می‌گیرد', bar.clipRule);
+
 
 	});
 	await section('۲۳ شیشهٔ سربرگ روی تکهٔ بنفش', async () => {
@@ -682,6 +711,29 @@ const run = async () => {
 		// اعداد از خودِ فیگما: ۱۶ دو طرف، ۲۴ از بالا
 		check('تورفتگی دو طرف قرینه است', glass.insetStart === glass.insetEnd, `${glass.insetStart} / ${glass.insetEnd}`);
 		check('و کارت از بالا پایین آمده', glass.insetTop > 0, `${glass.insetTop}px`);
+
+		/*
+		 * سربرگ باید *واقعاً* سر جایش بماند، نه فقط ‎position: sticky‎
+		 * داشته باشد: اگر جدِ اسکرول‌دار عوض شود یا ‎overflow‎ برود،
+		 * خاصیت می‌ماند و اثرش نه. پس پنل را اسکرول می‌کنیم و می‌بینیم
+		 * سربرگ کجای کارت ایستاده.
+		 */
+		const stuck = await page.evaluate(() => {
+			const card = document.querySelector('.zig-filters__card');
+			document.querySelectorAll('.zig-facet').forEach((d) => d.setAttribute('open', ''));
+			card.scrollTop = 240;
+
+			return {
+				scrolled: card.scrollTop,
+				offset: Math.round(
+					document.querySelector('.zig-filters__head').getBoundingClientRect().top
+						- card.getBoundingClientRect().top
+				),
+			};
+		});
+
+		check('پنل واقعاً اسکرول خورد', stuck.scrolled > 0, `${stuck.scrolled}px`);
+		check('ولی سربرگ بالای کارت ماند', stuck.offset === 0, `${stuck.offset}px از بالای کارت`);
 
 
 	});

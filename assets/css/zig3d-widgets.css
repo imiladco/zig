@@ -911,21 +911,50 @@ a.zig-list__label:focus-visible {
 }
 
 /*
- * نوار اسکرول باریک برای وبکیت.
+ * نوار اسکرول: تیغهٔ باریکِ قرصی، با فاصله از لبه.
  *
  * ‎scrollbar-width‎ استاندارد است ولی سافاری و کرومِ قدیمی نمی‌شناسندش؛
- * بدون این، پنل روی مک یک نوارِ پهنِ خاکستری می‌گرفت که ۱۵ پیکسل از عرض
- * گزینه‌ها می‌خورد.
+ * بدون شبهٔ وبکیتی، پنل روی مک یک نوارِ پهنِ خاکستری می‌گرفت که ۱۵ پیکسل
+ * از عرض گزینه‌ها می‌خورد.
+ *
+ * فاصله از لبه با کادرِ *شفاف* ساخته می‌شود، نه با ‎margin‎ — روی
+ * ‎::-webkit-scrollbar-thumb‎ مارجین کار نمی‌کند. ‎background-clip:
+ * padding-box‎ رنگ را داخل کادر نگه می‌دارد، پس عرضِ دیده‌شدهٔ تیغه
+ * ‎size‎ منهای دو برابرِ ‎pad‎ است و خودِ ناحیهٔ گرفتنِ ماوس همان عرضِ
+ * کامل می‌ماند: باریک به چشم، ولی هنوز قابل گرفتن.
+ *
+ * جای نوار خودبه‌خود درست است — مرورگر آن را در انتهای محورِ نوشتار
+ * می‌گذارد، یعنی در فارسی سمت چپ.
+ */
+/*
+ * اینجا ‎width‎ فیزیکی است و نه ‎inline-size‎ — برخلاف بقیهٔ این فایل.
+ *
+ * ‎::-webkit-scrollbar‎ یک شبه‌عنصرِ استانداردنشده است و ضخامتِ *فیزیکیِ*
+ * نوار را می‌گیرد. با خاصیت منطقی، در حالت نوشتارِ عمودی به ارتفاع نگاشت
+ * می‌شد و بی‌صدا کار اشتباه می‌کرد. ضمناً همهٔ پیاده‌سازی‌ها ‎width‎ را
+ * می‌شناسند و این یکی جای ریسک‌کردن نیست.
  */
 .zig-filters__card::-webkit-scrollbar,
 .zig-facet__list::-webkit-scrollbar {
-	inline-size: 6px;
+	width: var(--zig-scroll-size, 10px);
+}
+
+.zig-filters__card::-webkit-scrollbar-track,
+.zig-facet__list::-webkit-scrollbar-track {
+	background-color: transparent;
 }
 
 .zig-filters__card::-webkit-scrollbar-thumb,
 .zig-facet__list::-webkit-scrollbar-thumb {
+	border: var(--zig-scroll-pad, 3px) solid transparent;
+	background-clip: padding-box;
 	border-radius: 999px;
 	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
+}
+
+.zig-filters__card::-webkit-scrollbar-thumb:hover,
+.zig-facet__list::-webkit-scrollbar-thumb:hover {
+	background-color: var(--zig-scroll-thumb-hover, rgba(17, 12, 46, 0.32));
 }
 
 /*
@@ -938,7 +967,21 @@ a.zig-list__label:focus-visible {
  * پس‌زمینهٔ نیمه‌شفاف *لازم* است، نه تزئین: با ‎transparent‎ کامل، بعضی
  * موتورها اصلاً بک‌دراپ را کامپوزیت نمی‌کنند و شیشه بی‌اثر می‌ماند.
  */
+/*
+ * و سربرگ اسکرول نمی‌خورد.
+ *
+ * ‎sticky‎ نسبت به همان کارتی که اسکرول دارد، پس نوار اسکرول عملاً از
+ * *زیرِ* سربرگ شروع می‌شود. دلیلش فقط تقلید از مرجع نیست: «چند فیلتر
+ * فعال» و دکمهٔ حذف بالای پنل‌اند، و کسی که تا ته فهرست برندها رفته
+ * دقیقاً همان‌جا لازمشان دارد — نه بعد از اسکرول برگشتن به بالا.
+ *
+ * و چون سربرگ شیشه است، محتوایی که از پشتش رد می‌شود بلور می‌خورد؛
+ * همان چیزی که مرزِ ثابت و متحرک را نرم می‌کند.
+ */
 .zig-filters__head {
+	position: sticky;
+	inset-block-start: 0;
+	z-index: 1;
 	display: flex;
 	align-items: center;
 	gap: 10px;

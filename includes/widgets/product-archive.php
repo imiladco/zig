@@ -1450,6 +1450,35 @@ final class Product_Archive extends Widget_Base {
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-scroll-thumb: {{VALUE}};'],
         ]);
 
+        $this->add_control('scroll_thumb_hover', [
+            'label'     => __('رنگ نوار اسکرول در هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-scroll-thumb-hover: {{VALUE}};'],
+        ]);
+
+        /*
+         * دو عدد جدا: کلِ عرضِ نوار، و فاصلهٔ تیغه از لبه‌اش.
+         *
+         * عرضِ *دیده‌شدهٔ* تیغه تفاضل این دوتاست، ولی ناحیهٔ گرفتنِ ماوس
+         * همان عرض کامل می‌ماند. یکی‌کردنشان یعنی یا تیغهٔ باریک با هدفِ
+         * کلیکِ باریک، یا هدفِ درشت با تیغهٔ درشت.
+         */
+        $this->add_responsive_control('scroll_size', [
+            'label'      => __('عرض نوار اسکرول', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 4, 'max' => 24]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-scroll-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('scroll_pad', [
+            'label'      => __('فاصلهٔ تیغه از لبهٔ نوار', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 8]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-scroll-pad: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->add_control('facet_selected_bg', [
             'label'     => __('پس‌زمینهٔ گزینهٔ انتخاب‌شده', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
