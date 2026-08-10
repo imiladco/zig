@@ -10,6 +10,7 @@ use Zig3d_Widgets\Archive_Query;
 use Zig3d_Widgets\Attributes;
 use Zig3d_Widgets\Card;
 use Zig3d_Widgets\Facets;
+use Zig3d_Widgets\Markup;
 use Zig3d_Widgets\Plugin;
 use Zig3d_Widgets\Price;
 use Zig3d_Widgets\Product_Card;
@@ -274,6 +275,21 @@ final class Product_Archive extends Widget_Base {
                 'end'   => __('انتهای ردیف', 'zig3d-widgets'),
             ],
             'condition' => ['filters_on' => 'yes'],
+        ]);
+
+        $this->add_control('filters_active_title', [
+            'label'     => __('عنوان «فیلترهای اعمال شده»', 'zig3d-widgets'),
+            'type'      => Controls_Manager::TEXT,
+            'default'   => __('فیلترهای اعمال شده', 'zig3d-widgets'),
+            'condition' => ['filters_on' => 'yes'],
+        ]);
+
+        $this->add_control('filters_active_text', [
+            'label'       => __('متن شمارندهٔ فیلتر فعال', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => __('{count} فیلتر فعال', 'zig3d-widgets'),
+            'description' => __('‌{count} با تعداد فیلترهای فعال جایگزین می‌شود.', 'zig3d-widgets'),
+            'condition'   => ['filters_on' => 'yes'],
         ]);
 
         $this->add_control('filters_clear', [
@@ -1015,6 +1031,96 @@ final class Product_Archive extends Widget_Base {
             'tab'   => Controls_Manager::TAB_STYLE,
         ]);
 
+        /* ---------------------------------------------------------------
+         * پنل فیلتر
+         *
+         * هر مقداری که در CSS پایه یک متغیر است، اینجا یک کنترل دارد.
+         * سلکتور روی ‎.zig-archive__filters‎ می‌نشیند و متغیر را عوض می‌کند،
+         * نه خودِ خاصیت را — یعنی یک کنترل رنگ، هم‌زمان همهٔ جاهایی را که
+         * آن رنگ به کار می‌رود می‌گیرد.
+         * ------------------------------------------------------------ */
+
+        $this->add_control('filters_panel_heading', [
+            'label' => __('پنل فیلتر', 'zig3d-widgets'),
+            'type'  => Controls_Manager::HEADING,
+        ]);
+
+        $this->add_control('filters_bg', [
+            'label'     => __('پس‌زمینهٔ پنل', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('filters_radius', [
+            'label'      => __('گِردی گوشهٔ پنل', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('filters_head_bg', [
+            'label'     => __('پس‌زمینهٔ سربرگ', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-head-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('filters_head_color', [
+            'label'     => __('رنگ متن سربرگ', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-head-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('filters_badge_bg', [
+            'label'     => __('پس‌زمینهٔ شمارندهٔ فیلتر فعال', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-badge-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('filters_badge_color', [
+            'label'     => __('رنگ شمارندهٔ فیلتر فعال', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-badge-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('filters_chip_bg', [
+            'label'     => __('پس‌زمینهٔ چیپ فیلتر', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-chip-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('filters_chip_color', [
+            'label'     => __('رنگ متن چیپ', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-chip-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_selected_bg', [
+            'label'     => __('پس‌زمینهٔ گزینهٔ انتخاب‌شده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-selected-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_selected_border', [
+            'label'     => __('کادر گزینهٔ انتخاب‌شده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-selected-border: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_box_checked', [
+            'label'     => __('رنگ چک‌باکس تیک‌خورده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-box-checked: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('facet_item_radius', [
+            'label'      => __('گِردی گوشهٔ گزینه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 24]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-item-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->add_control('facet_title_color', [
             'label'     => __('رنگ عنوان گروه فیلتر', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
@@ -1515,21 +1621,119 @@ final class Product_Archive extends Widget_Base {
      * وسط فیلترکردن می‌افتد.
      */
     private function render_facets(array $settings, array $facets, Query_State $state, array $base, string $context, array $operators = []): void {
-        $url = $this->base_url();
+        $url    = $this->base_url();
+        $active = $state->count();
 
-        printf('<h2 class="zig-filters__title">%s</h2>', esc_html($settings['filters_title'] ?? ''));
+        /*
+         * سربرگ پنل.
+         *
+         * شمارندهٔ «چند فیلتر فعال» فقط تزئین نیست: وقتی گروه‌ها بسته
+         * باشند، تنها نشانهٔ اینکه اصلاً فیلتری در کار است همین عدد است.
+         */
+        echo '<div class="zig-filters__head">';
 
-        if ($state->is_filtered()) {
+        printf(
+            '<h2 class="zig-filters__title">%s%s</h2>',
+            Markup::svg_icon('filter', 'zig-filters__icon'),
+            esc_html($settings['filters_title'] ?? '')
+        );
+
+        if ($active > 0) {
             printf(
-                '<a class="zig-filters__clear" href="%s" data-zig-clear="1">%s</a>',
-                esc_url(Seo::url($url, $state->cleared(), $operators)),
-                esc_html($settings['filters_clear'] ?? '')
+                '<span class="zig-filters__badge">%s</span>',
+                esc_html(str_replace('{count}', Price::persian((string) $active), (string) ($settings['filters_active_text'] ?? '')))
             );
         }
+
+        echo '</div>';
+
+        $this->render_active($settings, $facets, $state, $operators, $url);
+
+        echo '<div class="zig-filters__groups">';
 
         foreach ($facets as $facet) {
             $this->render_facet($facet, $state, $base, $context, $operators, $url);
         }
+
+        echo '</div>';
+    }
+
+    /**
+     * فیلترهای اعمال‌شده، به‌صورت چیپ.
+     *
+     * *همهٔ* فیلترهای فعال می‌آیند، نه فقط گروه‌های باز — و همین نکته‌اش
+     * است. کاربری که گروه «برند» را بسته و بعد پایین صفحه رفته، هیچ راهی
+     * ندارد بفهمد چرا نتیجه‌ها کم‌اند مگر اینکه هر گروه را باز کند. این
+     * ردیف، تمام قیدهای فعال را یک‌جا نشان می‌دهد و هرکدام را جدا
+     * برمی‌دارد.
+     *
+     * برچسب هر چیپ از ترم می‌آید نه از اسلاگ: «۵ محور»، نه «5-axis».
+     */
+    private function render_active(array $settings, array $facets, Query_State $state, array $operators, string $url): void {
+        if (!$state->is_filtered()) {
+            return;
+        }
+
+        $chips = [];
+
+        foreach ($facets as $facet) {
+            $taxonomy = (string) $facet['taxonomy'];
+            $selected = $state->selected($taxonomy);
+
+            if (!$selected) {
+                continue;
+            }
+
+            $labels = [];
+
+            foreach (Attributes::terms($taxonomy) as $term) {
+                $labels[(string) $term['slug']] = (string) $term['label'];
+            }
+
+            foreach ($selected as $slug) {
+                $chips[] = [
+                    'taxonomy' => $taxonomy,
+                    'slug'     => (string) $slug,
+                    // اسلاگِ بی‌ترم هم چیپ می‌گیرد، وگرنه قیدی می‌ماند که
+                    // کاربر می‌بیندش ولی نمی‌تواند برش دارد
+                    'label'    => $labels[(string) $slug] ?? (string) $slug,
+                ];
+            }
+        }
+
+        if (!$chips) {
+            return;
+        }
+
+        echo '<div class="zig-filters__active">';
+        echo '<div class="zig-filters__active-head">';
+
+        printf('<h3 class="zig-filters__active-title">%s</h3>', esc_html($settings['filters_active_title'] ?? ''));
+
+        printf(
+            '<a class="zig-filters__clear" href="%s" data-zig-clear="1">%s%s</a>',
+            esc_url(Seo::url($url, $state->cleared(), $operators)),
+            esc_html($settings['filters_clear'] ?? ''),
+            Markup::svg_icon('trash', 'zig-filters__clear-icon')
+        );
+
+        echo '</div><ul class="zig-filters__chips">';
+
+        foreach ($chips as $chip) {
+            printf(
+                '<li class="zig-filters__chip"><a href="%1$s" rel="nofollow" data-zig-toggle="%2$s|%3$s">'
+                    . '<span class="zig-filters__chip-text">%4$s</span>%5$s'
+                    . '<span class="zig-sr">%6$s</span></a></li>',
+                esc_url(Seo::url($url, $state->toggle($chip['taxonomy'], $chip['slug']), $operators)),
+                esc_attr(Query_State::param_for($chip['taxonomy'])),
+                esc_attr($chip['slug']),
+                esc_html($chip['label']),
+                Markup::svg_icon('trash', 'zig-filters__chip-icon'),
+                esc_html__('— حذف این فیلتر', 'zig3d-widgets')
+            );
+        }
+
+        echo '</ul></div>';
     }
 
     private function render_facet(array $facet, Query_State $state, array $base, string $context, array $operators, string $url): void {
@@ -1545,9 +1749,20 @@ final class Product_Archive extends Widget_Base {
             return;
         }
 
+        /*
+         * گروهی که انتخابی دارد باز می‌ماند، بقیه بسته.
+         *
+         * با پنج گروهِ همیشه‌باز، سایدبار چند برابر ارتفاع صفحه می‌شود و
+         * کاربر باید تا انتها اسکرول کند تا ببیند چه چیزهای دیگری هست.
+         * ولی گروهی که کاربر در آن انتخابی کرده باید باز بماند، وگرنه
+         * انتخابش را از دست‌رفته می‌بیند.
+         */
         printf(
-            '<details class="zig-facet" open><summary class="zig-facet__title">%s</summary><ul class="zig-facet__list">',
-            esc_html(Attributes::label($taxonomy))
+            '<details class="zig-facet"%s><summary class="zig-facet__title">'
+                . '<span class="zig-facet__name">%s</span>%s</summary><ul class="zig-facet__list">',
+            $state->selected($taxonomy) ? ' open' : '',
+            esc_html(Attributes::label($taxonomy)),
+            Markup::svg_icon('chevron', 'zig-facet__chevron')
         );
 
         foreach ($options as $option) {

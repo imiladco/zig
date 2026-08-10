@@ -76,6 +76,40 @@ final class Markup {
      * ‎'' !== $value‎ کافی نیست: کاربر خیلی وقت‌ها فیلد را با یک ‎<br>‎ یا چند
      * فاصله «خالی» می‌کند و آن‌وقت یک عنصر تهی با پدینگ و حاشیه رندر می‌شد.
      */
+    /**
+     * آیکون خطی، به‌صورت SVG درون‌خطی.
+     *
+     * چرا درون‌خطی و نه فونت آیکون یا فایل جدا: این‌ها سه شکل ثابت‌اند که
+     * هیچ‌وقت عوض نمی‌شوند و مجموعاً چند صد بایت‌اند. یک درخواست HTTP
+     * اضافه یا یک وابستگی به کتابخانهٔ آیکون، برای سه مسیرِ ‎path‎ توجیه
+     * ندارد — و آیکونی که دیر می‌رسد، دکمه‌ای می‌سازد که یک لحظه خالی است.
+     *
+     * ‎currentColor‎ یعنی رنگش از متنِ اطرافش می‌آید، پس کنترل رنگِ پنل در
+     * المنتور خودبه‌خود آیکون را هم می‌گیرد.
+     *
+     * ‎aria-hidden‎ چون هر سه تزئینی‌اند: کنارشان همیشه متن هست.
+     */
+    public static function svg_icon(string $name, string $class = ''): string {
+        $paths = [
+            'filter'   => '<path d="M3 5h18M6 12h12M10 19h4"/>',
+            'trash'    => '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+            'chevron'  => '<path d="M6 9l6 6 6-6"/>',
+            'arrow'    => '<path d="M19 12H5M11 18l-6-6 6-6"/>',
+            'phone'    => '<path d="M6 3h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 014 5a2 2 0 012-2z"/>',
+        ];
+
+        if (!isset($paths[$name])) {
+            return '';
+        }
+
+        return sprintf(
+            '<svg class="%s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
+                . ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">%s</svg>',
+            esc_attr(trim('zig-icon-line ' . $class)),
+            $paths[$name]
+        );
+    }
+
     public static function filled($value): bool {
         return '' !== trim(wp_strip_all_tags((string) $value));
     }

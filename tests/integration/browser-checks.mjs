@@ -60,6 +60,27 @@ const countOf = async (p) => parseInt(fa((await p.locator($.count).first().textC
 const state = (p) => p.locator($.root).getAttribute('data-zig-state');
 
 /**
+ * بازکردن گروهی که این گزینه در آن است، و برگرداندن لوکیتورِ خودِ گزینه.
+ *
+ * گروه‌ها بسته شروع می‌شوند — همان رفتاری که دیزاین می‌خواهد: فقط گروهی
+ * که انتخابی دارد باز است. پس تست هم باید مثل کاربر اول بازش کند، وگرنه
+ * روی عنصری کلیک می‌کند که دیده نمی‌شود.
+ *
+ * و ‎.zig-facet__item‎ در سلکتور لازم است: چیپ‌های «فیلترهای اعمال‌شده»
+ * همان ‎data-zig-toggle‎ را دارند، پس بدون دامنه، دو عنصر می‌خورد.
+ */
+async function option(p, toggle) {
+	const item = p.locator(`.zig-facet__item [data-zig-toggle="${toggle}"]`);
+	const group = p.locator('.zig-facet', { has: p.locator(`[data-zig-toggle="${toggle}"]`) }).first();
+
+	if (!(await group.evaluate((el) => el.hasAttribute('open')).catch(() => true))) {
+		await group.locator('summary').click();
+	}
+
+	return item;
+}
+
+/**
  * صبر تا وقتی درخواست *شروع* شود، تمام شود، و DOM بنشیند.
  *
  * صبرکردن فقط برای ناپدیدشدن ‎aria-busy‎ کافی نیست و این را همین تست یاد
@@ -133,7 +154,7 @@ const run = async () => {
 		 */
 		loads.length = 0;
 
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await settle(page);
 
 		check('آدرس عوض شد', page.url() !== before, page.url().split('?')[1] || '');
@@ -147,8 +168,8 @@ const run = async () => {
 	await section('۳ دو کلیک سریع — مسابقهٔ href کهنه', async () => {
 
 		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
-		await page.locator('[data-zig-toggle="filter_brand|vhf"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
+		await (await option(page, 'filter_brand|vhf')).click();
 		await settle(page);
 
 		const q = new URL(page.url()).searchParams.get('filter_brand') || '';
@@ -199,7 +220,7 @@ const run = async () => {
 	await section('۶ فیلتر، صفحه را از اول شروع می‌کند', async () => {
 
 		await page.goto(BASE + '?paged=2', { waitUntil: 'domcontentloaded' });
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await settle(page);
 
 		check('paged افتاد', !new URL(page.url()).searchParams.get('paged'), page.url().split('?')[1] || '');
@@ -237,8 +258,38 @@ const run = async () => {
 		check('شمارشش صفر است', (await disabled.first().textContent()).includes('۰'));
 
 		/* شمارش خودحذف‌کن: گروهِ انتخاب‌شده، گزینه‌های دیگرش صفر نمی‌شوند */
-		const axis = await page.locator('.zig-facet__item:has([data-zig-toggle="filter_axis|5-axis"])').textContent();
+		const axis = await page.locator('.zig-facet__item:has([data-zig-toggle="filter_axis|5-axis"])').first().textContent();
 		check('گروه انتخاب‌شده خودش را از قید حذف می‌کند', !axis.includes('۰'), axis.trim().slice(0, 20));
+	});
+
+	await section('۷پ چیپ‌های فیلترهای اعمال‌شده', async () => {
+		await page.goto(BASE + '?filter_product_brand=up3d&filter_axis=5-axis', { waitUntil: 'domcontentloaded' });
+
+		const chips = page.locator('.zig-filters__chip');
+		check('برای هر فیلتر فعال یک چیپ', (await chips.count()) === 2, String(await chips.count()));
+
+		const texts = await page.locator('.zig-filters__chip-text').allTextContents();
+		check('برچسب چیپ از ترم می‌آید نه اسلاگ', !texts.join(' ').includes('5-axis'), texts.join(' , '));
+
+		const badge = (await page.locator('.zig-filters__badge').textContent()).trim();
+		check('شمارنده با تعداد فیلترها می‌خواند', badge.includes('۲'), badge);
+
+		/*
+		 * چیپ‌ها *همهٔ* فیلترهای فعال را نشان می‌دهند، حتی وقتی گروهشان
+		 * بسته است — همان چیزی که کل این ردیف برایش هست.
+		 */
+		check('گروه بی‌انتخاب بسته می‌ماند', (await page.locator('.zig-facet:not([open])').count()) >= 1);
+		check('و گروه دارای انتخاب باز است', (await page.locator('.zig-facet[open]').count()) >= 1);
+
+		await chips.first().click();
+		await settle(page);
+
+		check('کلیک روی چیپ همان فیلتر را برمی‌دارد', (await page.locator('.zig-filters__chip').count()) === 1);
+		check('و یکی از دو پارامتر از آدرس رفت', new URL(page.url()).searchParams.size === 1, page.url().split('?')[1] || '');
+
+		await page.locator('.zig-filters__clear').click();
+		await settle(page);
+		check('حذف همه، همه را می‌برد', (await page.locator('.zig-filters__chip').count()) === 0);
 	});
 
 	await section('۸ خطای فنی — تنها مسیر آلرت', async () => {
@@ -246,7 +297,7 @@ const run = async () => {
 		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 		await ctx.route('**/admin-ajax.php', (route) => route.abort('failed'));
 
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await page.waitForSelector('.zig-archive__error:not([hidden])', { timeout: 10000 }).catch(() => {});
 
 		check('آلرت بالا آمد', await page.locator($.error).isVisible());
@@ -269,7 +320,7 @@ const run = async () => {
 			route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true,"data":{"state":"ok"' })
 		);
 
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await page.waitForSelector('.zig-archive__error:not([hidden])', { timeout: 10000 }).catch(() => {});
 
 		check('JSON بدشکل = خطای فنی', await page.locator($.error).isVisible());
@@ -289,7 +340,7 @@ const run = async () => {
 			route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 		});
 
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await page.waitForSelector('.zig-archive__error:not([hidden])', { timeout: 10000 }).catch(() => {});
 
 		check('قرارداد ناهمخوان = خطای فنی', await page.locator($.error).isVisible());
@@ -311,9 +362,9 @@ const run = async () => {
 			route.continue();
 		});
 
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await page.waitForTimeout(400);
-		await page.locator('[data-zig-toggle="filter_axis|5-axis"]').click();
+		await (await option(page, 'filter_axis|5-axis')).click();
 		await page.waitForTimeout(4000);
 
 		const finalQ = new URL(page.url()).searchParams;
@@ -327,7 +378,7 @@ const run = async () => {
 	await section('۱۲ فوکوس', async () => {
 
 		await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').focus();
+		await (await option(page, 'filter_brand|up3d')).focus();
 		await page.keyboard.press('Enter');
 		await settle(page);
 
@@ -343,9 +394,14 @@ const run = async () => {
 		await np.goto(BASE, { waitUntil: 'domcontentloaded' });
 
 		check('گرید بدون JS رندر می‌شود', (await np.locator($.cell).count()) === 16);
-		check('لینک فیلتر href واقعی دارد', (await np.locator('[data-zig-toggle="filter_brand|up3d"]').getAttribute('href')).includes('filter_brand=up3d'));
+		check('لینک فیلتر href واقعی دارد', (await np.locator('.zig-facet__item [data-zig-toggle="filter_brand|up3d"]').getAttribute('href')).includes('filter_brand=up3d'));
 
-		await np.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		/*
+		 * بدون جاوااسکریپت هم گروه باید باز شود — و می‌شود، چون
+		 * ‎<details>‎ رفتار خودِ مرورگر است نه چیزی که ما ساخته‌ایم. ولی
+		 * باید *همان* گروهی باز شود که این گزینه در آن است، نه اولی.
+		 */
+		await (await option(np, 'filter_brand|up3d')).click();
 		await np.waitForLoadState('domcontentloaded');
 
 		check('و کلیک واقعاً پیمایش می‌کند', np.url().includes('filter_brand=up3d'), np.url().split('?')[1] || '');
@@ -434,7 +490,7 @@ const run = async () => {
 			route.continue();
 		});
 
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 
 		/*
 		 * انتظارِ *شرطی*، نه یک عدد ثابت.
@@ -460,7 +516,7 @@ const run = async () => {
 
 		await page.goto(BASE + '?filter_brand=up3d', { waitUntil: 'domcontentloaded' });
 		check('با یک فیلتر شروع می‌شود', (await countOf(page)) === 11);
-		await page.locator('[data-zig-toggle="filter_brand|up3d"]').click();
+		await (await option(page, 'filter_brand|up3d')).click();
 		await settle(page);
 		check('کلیک دوباره برش می‌دارد', (await countOf(page)) === 31, String(await countOf(page)));
 		check('و آدرس تمیز شد', !new URL(page.url()).searchParams.has('filter_brand'), page.url().split('?')[1] || '');

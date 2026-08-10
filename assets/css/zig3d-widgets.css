@@ -809,30 +809,151 @@ a.zig-list__label:focus-visible {
  * فهرست برندهاست ناگهان دو ناحیهٔ اسکرول تودرتو دارد و چرخ ماوس در یکی
  * گیر می‌کند.
  */
+/*
+ * پنل فیلتر — یک کارت، نه یک ستون از عنصرهای جدا.
+ *
+ * تمام رنگ‌ها و اندازه‌ها متغیرند، پس تب استایل المنتور می‌تواند هرکدام را
+ * جدا عوض کند بدون اینکه این فایل چیزی از دست بدهد.
+ */
 .zig-archive__filters {
 	position: sticky;
 	inset-block-start: var(--zig-archive-sticky, 16px);
 	align-self: start;
 	min-width: 0;
+	overflow: hidden;
+	background-color: var(--zig-filters-bg, #fff);
+	border-radius: var(--zig-filters-radius, 18px);
+	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
+}
+
+/* سربرگ رنگی */
+.zig-filters__head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: var(--zig-filters-head-padding, 16px 18px);
+	background-color: var(--zig-filters-head-bg, #fff);
+	color: var(--zig-filters-head-color, inherit);
 }
 
 .zig-filters__title {
-	margin: 0 0 12px;
-	font-size: 1.05rem;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: var(--zig-filters-title-size, 1.05rem);
 	font-weight: 700;
 	line-height: 1.6;
+	color: inherit;
+}
+
+.zig-icon-line {
+	flex: none;
+	inline-size: 1.15em;
+	block-size: 1.15em;
+}
+
+/*
+ * شمارندهٔ فیلتر فعال.
+ *
+ * margin-inline-start: auto می‌بردش به انتهای سربرگ، بدون اینکه لازم باشد
+ * عرض عنوان را بدانیم.
+ */
+.zig-filters__badge {
+	margin-inline-start: auto;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: var(--zig-filters-badge-size, 0.78rem);
+	line-height: 1.8;
+	white-space: nowrap;
+	background-color: var(--zig-filters-badge-bg, rgba(109, 40, 217, 0.1));
+	color: var(--zig-filters-badge-color, #6d28d9);
+}
+
+/* --------------------------------------------------------------------------
+   فیلترهای اعمال‌شده
+   ----------------------------------------------------------------------- */
+
+.zig-filters__active {
+	padding: 14px 18px;
+	border-block-end: 1px solid var(--zig-archive-rule, rgba(17, 12, 46, 0.08));
+}
+
+.zig-filters__active-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-block-end: 10px;
+}
+
+.zig-filters__active-title {
+	margin: 0;
+	font-size: var(--zig-filters-active-size, 0.92rem);
+	font-weight: 600;
+	line-height: 1.7;
 }
 
 .zig-filters__clear {
-	display: inline-block;
-	margin-block-end: 16px;
-	font-size: 0.85rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.82rem;
+	text-decoration: none;
+	color: var(--zig-filters-clear-color, inherit);
+}
+
+.zig-filters__clear:hover {
 	text-decoration: underline;
 }
 
+.zig-filters__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-filters__chip > a {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 10px;
+	border-radius: var(--zig-filters-chip-radius, 10px);
+	font-size: var(--zig-filters-chip-size, 0.82rem);
+	line-height: 1.8;
+	text-decoration: none;
+	background-color: var(--zig-filters-chip-bg, rgba(109, 40, 217, 0.1));
+	color: var(--zig-filters-chip-color, #6d28d9);
+	transition: background-color var(--zig-transition, 200ms ease);
+}
+
+.zig-filters__chip > a:hover {
+	background-color: var(--zig-filters-chip-hover, rgba(109, 40, 217, 0.18));
+}
+
+.zig-filters__chip-icon,
+.zig-filters__clear-icon {
+	opacity: 0.75;
+}
+
+/* --------------------------------------------------------------------------
+   گروه‌ها
+   ----------------------------------------------------------------------- */
+
+.zig-filters__groups {
+	padding: 0 18px 8px;
+}
+
 .zig-facet {
-	border-block-end: 1px solid var(--zig-archive-rule, rgba(0, 0, 0, 0.08));
-	padding-block: 12px;
+	border-block-end: 1px solid var(--zig-archive-rule, rgba(17, 12, 46, 0.08));
+	padding-block: 4px;
+}
+
+.zig-facet:last-child {
+	border-block-end: 0;
 }
 
 .zig-facet__title {
@@ -840,7 +961,8 @@ a.zig-list__label:focus-visible {
 	align-items: center;
 	gap: 8px;
 	cursor: pointer;
-	font-size: 0.95rem;
+	padding-block: 14px;
+	font-size: var(--zig-facet-title-size, 0.95rem);
 	font-weight: 600;
 	line-height: 1.7;
 	/* نشانگر پیش‌فرض مرورگر جای خودش را به فلشِ خودمان می‌دهد */
@@ -851,25 +973,19 @@ a.zig-list__label:focus-visible {
 	display: none;
 }
 
-/*
- * فلش، با چرخش در حالت باز.
- *
- * margin-inline-start: auto آن را به انتهای ردیف می‌برد بدون اینکه لازم
- * باشد بدانیم متن چقدر است.
- */
-.zig-facet__title::after {
-	content: "";
-	margin-inline-start: auto;
-	inline-size: 8px;
-	block-size: 8px;
-	border-inline-end: 2px solid currentColor;
-	border-block-end: 2px solid currentColor;
-	transform: rotate(45deg);
+.zig-facet__name {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* فلش، با چرخش در حالت باز */
+.zig-facet__chevron {
+	flex: none;
 	transition: transform var(--zig-transition, 200ms ease);
 }
 
-.zig-facet[open] > .zig-facet__title::after {
-	transform: rotate(-135deg);
+.zig-facet[open] > .zig-facet__title .zig-facet__chevron {
+	transform: rotate(180deg);
 }
 
 .zig-facet__list {
@@ -881,20 +997,36 @@ a.zig-list__label:focus-visible {
 	gap: 2px;
 }
 
+/*
+ * هر گزینه یک ردیفِ کامل است، نه یک خط متن.
+ *
+ * سطح کلیک بزرگ‌تر از خودِ برچسب می‌شود — که هم روی موبایل لازم است و هم
+ * برای کسی که دست لرزان دارد. کادر دور ردیف هم همان چیزی است که «انتخاب
+ * شده» را از دور پیدا می‌کند.
+ */
 .zig-facet__item > a,
 .zig-facet__item > span {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 6px 4px;
+	padding: var(--zig-facet-item-padding, 11px 12px);
+	margin-block-end: 6px;
 	color: inherit;
 	text-decoration: none;
 	line-height: 1.8;
-	border-radius: 6px;
+	border: 1px solid transparent;
+	border-radius: var(--zig-facet-item-radius, 10px);
+	background-color: var(--zig-facet-item-bg, rgba(17, 12, 46, 0.02));
+	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
 }
 
 .zig-facet__item > a:hover {
-	background-color: var(--zig-archive-hover, rgba(0, 0, 0, 0.04));
+	background-color: var(--zig-facet-item-hover, rgba(17, 12, 46, 0.05));
+}
+
+.zig-facet__item.is-selected > a {
+	background-color: var(--zig-facet-selected-bg, rgba(109, 40, 217, 0.07));
+	border-color: var(--zig-facet-selected-border, rgba(109, 40, 217, 0.35));
 }
 
 /*
@@ -906,26 +1038,25 @@ a.zig-list__label:focus-visible {
  */
 .zig-facet__box {
 	flex: none;
-	inline-size: 18px;
-	block-size: 18px;
-	border: 2px solid currentColor;
-	border-radius: 4px;
-	opacity: 0.45;
+	inline-size: var(--zig-facet-box-size, 20px);
+	block-size: var(--zig-facet-box-size, 20px);
+	border: 2px solid var(--zig-facet-box-border, rgba(17, 12, 46, 0.22));
+	border-radius: var(--zig-facet-box-radius, 6px);
 	position: relative;
-	transition: opacity var(--zig-transition, 200ms ease);
+	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
 }
 
 .zig-facet__item.is-selected .zig-facet__box {
-	opacity: 1;
-	background-color: currentColor;
+	background-color: var(--zig-facet-box-checked, #6d28d9);
+	border-color: var(--zig-facet-box-checked, #6d28d9);
 }
 
 /* تیک، با رنگِ پس‌زمینهٔ ظرف تا روی مربعِ پرشده دیده شود */
 .zig-facet__item.is-selected .zig-facet__box::after {
 	content: "";
 	position: absolute;
-	inset-block-start: 1px;
-	inset-inline-start: 4px;
+	inset-block-start: 2px;
+	inset-inline-start: 5px;
 	inline-size: 4px;
 	block-size: 9px;
 	border-inline-end: 2px solid var(--zig-archive-tick, #fff);
@@ -937,7 +1068,7 @@ a.zig-list__label:focus-visible {
 	margin-inline-start: auto;
 	font-size: 0.8rem;
 	font-variant-numeric: tabular-nums;
-	opacity: 0.7;
+	opacity: 0.6;
 }
 
 /*
