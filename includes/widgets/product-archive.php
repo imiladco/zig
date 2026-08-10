@@ -727,8 +727,14 @@ final class Product_Archive extends Widget_Base {
             'label'      => __('عرض سایدبار', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px', '%'],
-            'default'    => ['size' => 280, 'unit' => 'px'],
-            'range'      => ['px' => ['min' => 180, 'max' => 480], '%' => ['min' => 15, 'max' => 40]],
+            /*
+             * ۳۱۲ و نه ۲۸۰: ظرف بیرونیِ پنل حالا ۱۶ پیکسل پدینگ در هر
+             * طرف دارد، پس اگر ستون همان ۲۸۰ می‌ماند، خودِ کارت ۳۲ پیکسل
+             * باریک‌تر از قبل می‌شد. این عدد عرضِ *ستون* است، و پدینگ
+             * تزئین است نه محتوا.
+             */
+            'default'    => ['size' => 312, 'unit' => 'px'],
+            'range'      => ['px' => ['min' => 200, 'max' => 520], '%' => ['min' => 15, 'max' => 40]],
             'selectors'  => [
                 '{{WRAPPER}} .zig-archive' => '--zig-archive-sidebar: {{SIZE}}{{UNIT}};',
             ],
@@ -1274,23 +1280,51 @@ final class Product_Archive extends Widget_Base {
         ]);
 
         /*
-         * نوار رنگیِ بالای پنل.
+         * نوار رنگیِ بالای پنل، سه کنترلِ جدا.
          *
-         * ارتفاعش کنترل دارد و صفرشدنش نوار را کامل برمی‌دارد — یعنی کسی
-         * که این جزء دیزاین را نمی‌خواهد لازم نیست CSS بنویسد.
+         * جداکردنشان لازم بود چون سه چیزِ مستقل‌اند و در دیزاین هم سه عدد
+         * جدا دارند: کارت چقدر از بالا پایین آمده (۲۴)، خودِ نوار چقدر
+         * بلند است (۴۰)، و کارت از دو طرف چقدر تو رفته (۱۶). با یک عدد،
+         * هر تغییری در یکی دو تای دیگر را هم می‌بُرد.
+         *
+         * صفرکردنِ ارتفاع، نوار را کامل برمی‌دارد.
          */
         $this->add_responsive_control('filters_cap', [
-            'label'      => __('ارتفاع نوار رنگی بالای پنل', 'zig3d-widgets'),
+            'label'      => __('فاصلهٔ کارت از بالای پنل', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px'],
             'range'      => ['px' => ['min' => 0, 'max' => 120]],
             'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-cap: {{SIZE}}{{UNIT}};'],
         ]);
 
+        $this->add_responsive_control('filters_cap_height', [
+            'label'      => __('ارتفاع نوار رنگی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 160]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-cap-height: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('filters_inset', [
+            'label'      => __('تورفتگی کارت از دو طرف', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 64]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-inset: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->add_control('filters_cap_bg', [
             'label'     => __('رنگ نوار بالای پنل', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-cap-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('filters_outer_radius', [
+            'label'      => __('گِردی گوشهٔ ظرف بیرونی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 48]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-outer-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('filters_tint', [
@@ -1361,6 +1395,23 @@ final class Product_Archive extends Widget_Base {
             'label'     => __('رنگ متن چیپ', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-chip-color: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('filters_active_padding', [
+            'label'      => __('فاصلهٔ داخلی بخش فیلترهای اعمال‌شده', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-archive__filters' => '--zig-filters-active-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('filters_active_gap', [
+            'label'      => __('فاصلهٔ عنوان تا چیپ‌ها', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 48]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-active-gap: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('facet_list_bg', [

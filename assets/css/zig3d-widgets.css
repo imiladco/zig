@@ -793,11 +793,11 @@ a.zig-list__label:focus-visible {
  */
 @media (min-width: 880px) {
 	.zig-archive--filters-start {
-		grid-template-columns: var(--zig-archive-sidebar, 280px) minmax(0, 1fr);
+		grid-template-columns: var(--zig-archive-sidebar, 312px) minmax(0, 1fr);
 	}
 
 	.zig-archive--filters-end {
-		grid-template-columns: minmax(0, 1fr) var(--zig-archive-sidebar, 280px);
+		grid-template-columns: minmax(0, 1fr) var(--zig-archive-sidebar, 312px);
 	}
 
 	/*
@@ -851,13 +851,25 @@ a.zig-list__label:focus-visible {
 	/*
 	 * نوار رنگیِ بالای پنل، بدون هیچ عنصر اضافه.
 	 *
-	 * ظرف بیرونی رنگ برند می‌گیرد و فقط همین اندازه از بالایش پیداست،
-	 * چون کارت سفید بقیه‌اش را می‌پوشاند. صفر گذاشتنِ متغیر، نوار را
-	 * کامل برمی‌دارد — بدون اینکه لازم باشد قاعده‌ای لغو شود.
+	 * کارت از هر طرف تو رفته و نوار بنفش تمام‌عرضِ ظرف بیرونی است، پس از
+	 * بالا و از دو طرفِ گوشه‌های بالایی پیداست. اعداد از خودِ فیگما
+	 * آمده‌اند: ‎24‎ بالا و پایین، ‎16‎ دو طرف.
+	 *
+	 * نوار با یک گرادیانِ ایستِ سخت کشیده می‌شود، نه با ‎background-color‎.
+	 * تفاوتش این است که رنگ فقط تا همان ارتفاع می‌آید و پایین‌ترش شفاف
+	 * می‌ماند — وگرنه کنارهٔ کارت و زیرِ آن هم بنفش می‌شد، در حالی که در
+	 * دیزاین زمینهٔ صفحه از آنجا پیداست.
+	 *
+	 * صفر گذاشتنِ ارتفاع، نوار را کامل برمی‌دارد — بدون اینکه قاعده‌ای
+	 * لغو شود.
 	 */
-	padding-block-start: var(--zig-filters-cap, 42px);
-	background-color: var(--zig-filters-cap-bg, var(--zig-brand));
-	border-radius: var(--zig-filters-radius, 18px);
+	padding: var(--zig-filters-cap, 24px) var(--zig-filters-inset, 16px);
+	background-image: linear-gradient(
+		to bottom,
+		var(--zig-filters-cap-bg, var(--zig-brand)) 0 var(--zig-filters-cap-height, 40px),
+		transparent var(--zig-filters-cap-height, 40px)
+	);
+	border-radius: var(--zig-filters-outer-radius, 24px);
 }
 
 /*
@@ -883,7 +895,7 @@ a.zig-list__label:focus-visible {
 		var(--zig-filters-tint, rgba(109, 40, 217, 0.14)),
 		transparent var(--zig-filters-tint-height, 90px)
 	);
-	border-radius: var(--zig-filters-radius, 18px);
+	border-radius: var(--zig-filters-radius, 16px);
 	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
 }
 
@@ -955,7 +967,7 @@ a.zig-list__label:focus-visible {
    ----------------------------------------------------------------------- */
 
 .zig-filters__active {
-	padding: 14px 18px;
+	padding: var(--zig-filters-active-padding, 14px 18px);
 	border-block-end: 1px solid var(--zig-archive-rule, rgba(17, 12, 46, 0.08));
 }
 
@@ -964,7 +976,7 @@ a.zig-list__label:focus-visible {
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	margin-block-end: 10px;
+	margin-block-end: var(--zig-filters-active-gap, 12px);
 }
 
 .zig-filters__active-title {
