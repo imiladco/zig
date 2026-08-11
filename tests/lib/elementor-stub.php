@@ -212,9 +212,49 @@ namespace {
             return ['thumbnail', 'medium', 'large'];
         }
     }
+    /**
+     * تصویر پیوست.
+     *
+     * قبلاً رشتهٔ خالی برمی‌گرداند، و این برای ویجت‌هایی که تصویر جزء
+     * تزئیناتشان بود کافی بود. برای گالری نیست: آنجا کلِ خروجی همین
+     * تصویرهاست و با رشتهٔ خالی، تستِ ترتیبِ اسلایدها روی یک صفحهٔ بی‌عکس
+     * اجرا می‌شد و همیشه سبز می‌ماند.
+     *
+     * شناسه و اندازه در خروجی می‌آیند تا بشود سنجید *کدام* پیوست با
+     * *کدام* اندازه درخواست شده — وگرنه هر ‎<img>‎ی شبیه هر ‎<img>‎ دیگری
+     * است و جابه‌جا شدنِ اندازهٔ صحنه و بندانگشتی دیده نمی‌شود.
+     */
     if (!function_exists('wp_get_attachment_image')) {
-        function wp_get_attachment_image($id, $size = 'thumbnail', $icon = false, $attr = []) { return ''; }
+        function wp_get_attachment_image($id, $size = 'thumbnail', $icon = false, $attr = []) {
+            $out = '<img src="https://zig3d.test/img/' . (int) $id . '.jpg"'
+                . ' data-size="' . htmlspecialchars((string) $size, ENT_QUOTES) . '"';
+
+            foreach ((array) $attr as $key => $value) {
+                $out .= ' ' . $key . '="' . htmlspecialchars((string) $value, ENT_QUOTES) . '"';
+            }
+
+            return $out . ' />';
+        }
     }
+    /**
+     * رندر یک ویجت بیرون از المنتور.
+     *
+     * اینجا و نه در فایل تست: دو فایل تست به آن نیاز داشتند و هر کدام
+     * نسخهٔ خودش را تعریف کرده بود، تا روزی که هر دو در یک اجرا لود شدند
+     * و PHP با «تعریف دوباره» مرد. یک تعریف، جایی که بقیهٔ استاب‌ها هستند.
+     */
+    if (!function_exists('zig_widget')) {
+        function zig_widget(string $class) {
+            return (new \ReflectionClass($class))->newInstanceWithoutConstructor();
+        }
+    }
+
+    if (!function_exists('zig_render')) {
+        function zig_render(string $class, array $settings): string {
+            return zig_widget($class)->zig_render($settings);
+        }
+    }
+
     if (!function_exists('get_post_mime_type')) {
         function get_post_mime_type($id) { return $GLOBALS['__zig_mime'][$id] ?? false; }
     }

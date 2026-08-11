@@ -34,6 +34,7 @@ final class Plugin {
         'product-price' => Widgets\Product_Price::class,
         'product-stock' => Widgets\Product_Stock::class,
         'product-archive' => Widgets\Product_Archive::class,
+        'product-gallery' => Widgets\Product_Gallery::class,
     ];
 
     public static function instance(): self {
@@ -188,6 +189,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/selector.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/gallery.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
@@ -243,6 +245,19 @@ final class Plugin {
         wp_register_script(
             'zig3d-archive',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-archive.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * گالری فایل جدا دارد و نه بخشی از آرشیو، چون هیچ صفحه‌ای هر دو را
+         * لازم ندارد: آرشیو در فهرست است و گالری در صفحهٔ محصول. یک فایلِ
+         * مشترک یعنی صفحهٔ محصول کل منطق فیلتر و صفحه‌بندی را هم می‌گیرد.
+         */
+        wp_register_script(
+            'zig3d-gallery',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-gallery.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

@@ -58,6 +58,9 @@ namespace {
                     'qty'       => null,
                     'backorder' => false,
                     'low'       => '',
+                    // گالری
+                    'image'     => 0,
+                    'gallery'   => [],
                 ];
 
                 if ($this->props['id']) {
@@ -78,6 +81,8 @@ namespace {
             public function get_price_suffix() { return $this->props['suffix']; }
             public function get_name() { return $this->props['name']; }
             public function get_attributes() { return $this->props['attrs']; }
+            public function get_image_id() { return (int) $this->props['image']; }
+            public function get_gallery_image_ids() { return $this->props['gallery']; }
             public function zig_meta() { return $this->props['meta']; }
             public function zig_terms() { return $this->props['terms']; }
             public function zig_thumb() { return $this->props['thumb']; }

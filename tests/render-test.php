@@ -35,15 +35,6 @@ use Zig3d_Widgets\Widgets\Product_Price;
 use Zig3d_Widgets\Widgets\Product_Stock;
 use Zig3d_Widgets\Stock;
 
-/** یک نمونهٔ تازه از ویجت، بدون سازندهٔ المنتور */
-function zig_widget(string $class) {
-    return (new ReflectionClass($class))->newInstanceWithoutConstructor();
-}
-
-function zig_render(string $class, array $settings): string {
-    return zig_widget($class)->zig_render($settings);
-}
-
 /* ==========================================================================
  * کارت ویژگی
  * ======================================================================= */
