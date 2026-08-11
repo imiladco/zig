@@ -236,6 +236,16 @@ namespace {
             return $out . ' />';
         }
     }
+    /** آدرسِ یک پیوست؛ شناسه و اندازه در خودِ رشته می‌آیند تا قابل سنجش باشند */
+    if (!function_exists('wp_get_attachment_image_url')) {
+        function wp_get_attachment_image_url($id, $size = 'thumbnail') {
+            if ((int) $id <= 0) {
+                return false;
+            }
+
+            return 'https://zig3d.test/full/' . (int) $id . '-' . (string) $size . '.jpg';
+        }
+    }
     /**
      * رندر یک ویجت بیرون از المنتور.
      *

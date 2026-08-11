@@ -32,7 +32,15 @@ require_once $root . '/includes/widgets/product-gallery.php';
 
 use Zig3d_Widgets\Widgets\Product_Gallery;
 
-/** رندر گالری برای یک محصولِ ساختگی */
+/**
+ * رندر گالری برای یک محصولِ ساختگی.
+ *
+ * ‎show_zoom‎ عمداً خاموش است: این کمکی مالِ سنجه‌های خودِ گالریِ اصلی
+ * است (از قبلِ لایت‌باکس نوشته شده)، و لایت‌باکس هرچه گالری دارد را
+ * دوباره تولید می‌کند — اگر روشن می‌ماند، شمارش‌های «چهار فریم» و
+ * «چهار بندانگشتی» همه‌جا دوبرابر می‌شدند و این فایل باید کورکورانه
+ * تکشان می‌کرد. سنجه‌های خودِ زوم/لایت‌باکس جدا و صریح‌اند.
+ */
 function zig_gallery(array $product, array $settings = []): string {
     new WC_Product($product + ['id' => 7, 'name' => 'دستگاه نمونه']);
 
@@ -45,6 +53,7 @@ function zig_gallery(array $product, array $settings = []): string {
         'show_counter'  => 'yes',
         'show_thumbs'   => 'yes',
         'loop'          => 'yes',
+        'show_zoom'     => '',
     ]);
 }
 
@@ -255,3 +264,124 @@ Tests::keeps('ظرف اسکرول با صفحه‌کلید قابل رسیدن �
  */
 Tests::keeps('بندانگشتی برچسب متنی دارد', $html, 'aria-label="تصویر ۱"');
 Tests::keeps('و تصویرش alt خالی دارد', $html, 'class="zig-gallery__thumb-image" loading="lazy" decoding="async" alt=""');
+
+/* ==========================================================================
+ * دکمهٔ بزرگ‌نمایی و لایت‌باکس
+ * ======================================================================= */
+
+Tests::group('گالری › بزرگ‌نمایی');
+
+$zoomed = zig_gallery(
+    ['id' => 20, 'image' => 91, 'gallery' => [92, 93]],
+    ['show_zoom' => 'yes', 'lightbox_size' => 'large']
+);
+
+Tests::keeps('دکمهٔ بزرگ‌نمایی رندر می‌شود', $zoomed, 'class="zig-gallery__zoom"');
+Tests::keeps('لینکِ واقعی به تصویرِ اصلیِ اسلاید اول', $zoomed, 'href="https://zig3d.test/full/91-large.jpg"');
+Tests::keeps('نشانهٔ باز کردنِ دیالوگ', $zoomed, 'aria-haspopup="dialog"');
+Tests::keeps('دیالوگِ لایت‌باکس رندر می‌شود', $zoomed, '<dialog class="zig-gallery__lightbox zig-gallery--fill"');
+Tests::keeps('و قلاب جاوااسکریپت رویش هست', $zoomed, 'data-zig-lightbox');
+Tests::keeps('دکمهٔ بستن رندر می‌شود', $zoomed, 'data-zig-lightbox-close');
+
+/*
+ * ‎Gallery‎ی داخلِ لایت‌باکس چرخشی‌بودن را از خودِ دیالوگ می‌خواند، نه از
+ * ‎<figure>‎. اگر این مقدار روی دیالوگ نمی‌نشست، فلشِ قبلی روی اسلایدِ
+ * اول همیشه غیرفعال می‌ماند — حتی وقتی مدیر چرخشی را روشن کرده.
+ * ‎(?=...)‎ چون هر دو ‎<figure>‎ و ‎<dialog>‎ همین صفت را دارند و ترتیبشان
+ * در رشته مهم نیست.
+ */
+Tests::same(
+    'دیالوگ هم مقدارِ چرخشی را می‌گیرد',
+    substr_count($zoomed, 'data-zig-loop="1"'),
+    2 // یکی روی <figure>، یکی روی <dialog>
+);
+
+$noloop_zoomed = zig_gallery(
+    ['id' => 23, 'image' => 98, 'gallery' => [99]],
+    ['show_zoom' => 'yes', 'loop' => '']
+);
+
+Tests::same(
+    'و وقتی خاموش است، هر دو صفر می‌گیرند',
+    substr_count($noloop_zoomed, 'data-zig-loop="0"'),
+    2
+);
+
+preg_match('/id="([^"]+)"[^>]*data-zig-lightbox/', $zoomed, $dialog_id);
+preg_match('/data-zig-zoom aria-haspopup="dialog" aria-controls="([^"]+)"/', $zoomed, $controls);
+
+Tests::ok(
+    'دیالوگ شناسه دارد',
+    !empty($dialog_id[1]),
+    'یافت نشد'
+);
+
+Tests::same(
+    '‎aria-controls‎ دکمه دقیقاً همان شناسهٔ دیالوگ است',
+    $controls[1] ?? null,
+    $dialog_id[1] ?? null
+);
+
+/*
+ * فریم‌های داخلِ لایت‌باکس دوبارهٔ همان اسلایدهایند، پس اگر شناسه‌شان با
+ * فریم‌های صحنهٔ اصلی یکی می‌ماند، دو عنصر در صفحه یک ‎id‎ داشتند — و
+ * لنگرِ بندانگشتیِ لایت‌باکس به فریمِ صحنهٔ اصلی می‌پرید، نه فریمِ خودش.
+ */
+preg_match_all('/id="(zig-gal-testid[^"]*)"/', $zoomed, $all_ids);
+
+Tests::ok(
+    'همهٔ شناسه‌های صفحه یکتا هستند',
+    count($all_ids[1]) === count(array_unique($all_ids[1])),
+    implode('، ', array_diff_assoc($all_ids[1], array_unique($all_ids[1])))
+);
+
+Tests::same(
+    'به همان تعداد اسلاید، فریم در لایت‌باکس هم هست',
+    substr_count($zoomed, 'data-zig-index="0"'),
+    2 // یکی در صحنهٔ اصلی، یکی در لایت‌باکس
+);
+
+/*
+ * اسلایدِ اولِ لایت‌باکس نباید ‎eager‎/‎fetchpriority‎ بگیرد — تا باز نشدنِ
+ * دیالوگ اصلاً دیده نمی‌شود، پس این اولویت آنجا فقط رقیبِ دانلودِ همان
+ * تصویرِ واقعاً روی صفحه است.
+ */
+Tests::same(
+    'فقط یک تصویر در کل صفحه اولویتِ بالا دارد',
+    substr_count($zoomed, 'fetchpriority="high"'),
+    1
+);
+
+Tests::same(
+    'اندازهٔ لایت‌باکس جدا از اندازهٔ صحنه است',
+    substr_count($zoomed, 'data-size="large"'),
+    3 // سه اسلاید، هرکدام یک تصویر در لایت‌باکس
+);
+
+/* --------------------------------------------------------------------------
+ * خاموش‌کردن
+ * -------------------------------------------------------------------------- */
+
+$nozoom = zig_gallery(
+    ['id' => 21, 'image' => 95, 'gallery' => [96]],
+    ['show_zoom' => '']
+);
+
+Tests::blocks('بدونِ این تنظیم، دکمه رندر نمی‌شود', $nozoom, 'zig-gallery__zoom');
+Tests::blocks('و دیالوگ هم اصلاً چاپ نمی‌شود', $nozoom, '<dialog');
+
+/* --------------------------------------------------------------------------
+ * محصولِ تک‌عکس: بزرگ‌نمایی همچنان معنا دارد
+ * -------------------------------------------------------------------------- */
+
+/*
+ * برخلافِ فلش/شمارنده/بندانگشتی که برای یک عکس بی‌معنی‌اند، دیدنِ
+ * بزرگ‌ترِ همان یک عکس هنوز فایده دارد — پس این سه‌تا با تک‌عکس حذف
+ * می‌شوند ولی بزرگ‌نمایی نه.
+ */
+$single_zoom = zig_gallery(['id' => 22, 'image' => 97, 'gallery' => []], ['show_zoom' => 'yes']);
+
+Tests::keeps('با تک‌عکس هم دکمه هست', $single_zoom, 'class="zig-gallery__zoom"');
+Tests::keeps('دیالوگ هم هست', $single_zoom, '<dialog class="zig-gallery__lightbox');
+Tests::blocks('ولی داخلش فلشی نیست', $single_zoom, 'zig-gallery__nav');
+Tests::blocks('و نوار بندانگشتی هم نه', $single_zoom, 'zig-gallery__thumbs');

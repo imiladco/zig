@@ -91,7 +91,9 @@ final class Product_Gallery extends Widget_Base {
         $this->section_style_stage();
         $this->section_style_nav();
         $this->section_style_counter();
+        $this->section_style_zoom();
         $this->section_style_thumbs();
+        $this->section_style_lightbox();
     }
 
     /* =====================================================================
@@ -137,6 +139,15 @@ final class Product_Gallery extends Widget_Base {
             'type'    => Controls_Manager::SELECT,
             'default' => 'woocommerce_thumbnail',
             'options' => $this->size_options(),
+        ]);
+
+        $this->add_control('lightbox_size', [
+            'label'       => __('اندازهٔ تصویر در بزرگ‌نمایی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SELECT,
+            'default'     => 'full',
+            'options'     => $this->size_options(),
+            'description' => __('«اصلی» پیش‌فرض است چون بزرگ‌نمایی دقیقاً برای دیدنِ جزئیات است؛ اندازهٔ کوچک‌تر همان مشکلی را دارد که قرار بود حل کند.', 'zig3d-widgets'),
+            'condition'   => ['show_zoom' => 'yes'],
         ]);
 
         $this->end_controls_section();
@@ -185,6 +196,14 @@ final class Product_Gallery extends Widget_Base {
             'type'         => Controls_Manager::SWITCHER,
             'default'      => 'yes',
             'return_value' => 'yes',
+        ]);
+
+        $this->add_control('show_zoom', [
+            'label'        => __('دکمهٔ بزرگ‌نمایی', 'zig3d-widgets'),
+            'type'         => Controls_Manager::SWITCHER,
+            'default'      => 'yes',
+            'return_value' => 'yes',
+            'description'  => __('برخلافِ فلش و شمارنده، این دکمه از اول یک لینکِ واقعی به تصویرِ اصلی است — بدون جاوااسکریپت هم چیزی را باز می‌کند، فقط تمام‌صفحه به‌جای داخل صفحه. اسکریپت آن را به یک پنجرهٔ بزرگ‌نماییِ درون‌صفحه‌ای ارتقا می‌دهد.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('single_note', [
@@ -417,6 +436,11 @@ final class Product_Gallery extends Widget_Base {
 
     /* =====================================================================
      * استایل: شمارنده
+     *
+     * فاصلهٔ از کفِ کادر اینجا نیست — در بخشِ «دکمهٔ بزرگ‌نمایی» است، چون
+     * از وقتی آن دکمه اضافه شد، این دو کنارِ هم در یک ردیف می‌نشینند و
+     * فاصله مالِ ردیف است نه فقط شمارنده. اگر اینجا هم می‌ماند، دو کنترل
+     * روی یک متغیر می‌نوشتند.
      * =================================================================== */
 
     private function section_style_counter(): void {
@@ -473,15 +497,104 @@ final class Product_Gallery extends Widget_Base {
             'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-counter-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
-        $this->add_responsive_control('counter_offset', [
+        $this->end_controls_section();
+    }
+
+    /* =====================================================================
+     * استایل: دکمهٔ بزرگ‌نمایی
+     *
+     * فاصله و چیدمانِ ردیف اینجاست، نه در «شمارنده»: این دکمه و شمارنده
+     * کنار هم در یک ردیفِ واحد می‌نشینند (‎.zig-gallery__tools‎)، پس
+     * «فاصله از کفِ کادر» و «فاصلهٔ بینشان» به هر دو تعلق دارد، نه فقط
+     * به یکی.
+     * =================================================================== */
+
+    private function section_style_zoom(): void {
+        $this->start_controls_section('sty_zoom', [
+            'label'     => __('دکمهٔ بزرگ‌نمایی', 'zig3d-widgets'),
+            'tab'       => Controls_Manager::TAB_STYLE,
+            'condition' => ['show_zoom' => 'yes'],
+        ]);
+
+        $this->add_control('tools_heading', [
+            'label' => __('ردیفِ شمارنده و بزرگ‌نمایی', 'zig3d-widgets'),
+            'type'  => Controls_Manager::HEADING,
+        ]);
+
+        $this->add_responsive_control('tools_offset', [
             'label'      => __('فاصله از کف کادر', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px', 'rem'],
             'range'      => ['px' => ['min' => 0, 'max' => 80]],
-            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-counter-offset: {{SIZE}}{{UNIT}};'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-tools-offset: {{SIZE}}{{UNIT}};'],
         ]);
 
+        $this->add_responsive_control('tools_gap', [
+            'label'      => __('فاصلهٔ شمارنده تا دکمه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'condition'  => ['show_counter' => 'yes'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-tools-gap: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('zoom_heading', [
+            'label'     => __('خودِ دکمه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_group_control(Group_Control_Typography::get_type(), [
+            'name'     => 'zoom_typography',
+            'selector' => '{{WRAPPER}} .zig-gallery__zoom',
+        ]);
+
+        $this->add_responsive_control('zoom_padding', [
+            'label'      => __('فاصلهٔ درونی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-zoom-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('zoom_radius', [
+            'label'      => __('گِردی گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-zoom-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->start_controls_tabs('zoom_tabs');
+
+        $this->start_controls_tab('zoom_normal', ['label' => __('عادی', 'zig3d-widgets')]);
+        $this->add_zoom_colors('');
+        $this->end_controls_tab();
+
+        $this->start_controls_tab('zoom_hover', ['label' => __('هاور', 'zig3d-widgets')]);
+        $this->add_zoom_colors('hover');
+        $this->end_controls_tab();
+
+        $this->end_controls_tabs();
+
         $this->end_controls_section();
+    }
+
+    /** رنگ‌های یک حالتِ دکمهٔ بزرگ‌نمایی؛ ‎$state‎ خالی یعنی حالت عادی */
+    private function add_zoom_colors(string $state): void {
+        $name = '' === $state ? '' : $state . '_';
+        $var  = '' === $state ? '' : $state . '-';
+
+        $this->add_control('zoom_' . $name . 'bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-zoom-' . $var . 'bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('zoom_' . $name . 'color', [
+            'label'     => __('رنگ متن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-zoom-' . $var . 'color: {{VALUE}};'],
+        ]);
     }
 
     /* =====================================================================
@@ -592,6 +705,134 @@ final class Product_Gallery extends Widget_Base {
     }
 
     /* =====================================================================
+     * استایل: لایت‌باکس
+     *
+     * فلش، شمارنده و بندانگشتیِ داخلِ لایت‌باکس رنگ‌هایشان را از همان
+     * متغیرهایی می‌گیرند که بخش‌های «دکمه‌های حرکت»، «شمارنده» و
+     * «بندانگشتی‌ها» می‌نویسند — عمداً کنترلِ جداگانه ندارند. آن سه بخش
+     * همان عناصر را می‌سازند، فقط این‌بار داخلِ یک دیالوگِ تمام‌صفحه؛ اگر
+     * اینجا هم رنگِ فلش را می‌پرسیدیم، مدیر باید هر رنگی را دو جا تنظیم
+     * می‌کرد و یک روز یکی از آن دو یادش می‌رفت. آنچه واقعاً مختصِ همین‌جاست
+     * — پس‌زمینهٔ پرده، پنل، و دکمهٔ بستن — کنترلِ خودش را دارد.
+     */
+
+    private function section_style_lightbox(): void {
+        $this->start_controls_section('sty_lightbox', [
+            'label'     => __('لایت‌باکس', 'zig3d-widgets'),
+            'tab'       => Controls_Manager::TAB_STYLE,
+            'condition' => ['show_zoom' => 'yes'],
+        ]);
+
+        $this->add_control('lightbox_backdrop', [
+            'label'     => __('پس‌زمینهٔ پرده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-backdrop: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('lightbox_backdrop_blur', [
+            'label'      => __('تاریِ پرده', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 30]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-backdrop-blur: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('lightbox_heading', [
+            'label'     => __('پنل', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('lightbox_bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('lightbox_padding', [
+            'label'      => __('فاصلهٔ درونی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('lightbox_radius', [
+            'label'      => __('گِردی گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('lightbox_max_width', [
+            'label'      => __('حداکثر عرضِ پنل', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 480, 'max' => 1800]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-max-width: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('lightbox_image_radius', [
+            'label'      => __('گِردی گوشهٔ تصویر', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-image-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_group_control(Group_Control_Box_Shadow::get_type(), [
+            'name'     => 'lightbox_shadow',
+            'selector' => '{{WRAPPER}} .zig-gallery__lightbox-panel',
+        ]);
+
+        $this->add_control('lightbox_close_heading', [
+            'label'     => __('دکمهٔ بستن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_responsive_control('lightbox_close_size', [
+            'label'      => __('قطر', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 24, 'max' => 60]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-close-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->start_controls_tabs('lightbox_close_tabs');
+
+        $this->start_controls_tab('lightbox_close_normal', ['label' => __('عادی', 'zig3d-widgets')]);
+        $this->add_lightbox_close_colors('');
+        $this->end_controls_tab();
+
+        $this->start_controls_tab('lightbox_close_hover', ['label' => __('هاور', 'zig3d-widgets')]);
+        $this->add_lightbox_close_colors('hover');
+        $this->end_controls_tab();
+
+        $this->end_controls_tabs();
+
+        $this->end_controls_section();
+    }
+
+    /** رنگ‌های یک حالتِ دکمهٔ بستنِ لایت‌باکس؛ ‎$state‎ خالی یعنی حالت عادی */
+    private function add_lightbox_close_colors(string $state): void {
+        $name = '' === $state ? '' : $state . '_';
+        $var  = '' === $state ? '' : $state . '-';
+
+        $this->add_control('lightbox_close_' . $name . 'bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-close-' . $var . 'bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('lightbox_close_' . $name . 'color', [
+            'label'     => __('رنگ آیکون', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-close-' . $var . 'color: {{VALUE}};'],
+        ]);
+    }
+
+    /* =====================================================================
      * رندر
      * =================================================================== */
 
@@ -631,17 +872,20 @@ final class Product_Gallery extends Widget_Base {
         $total  = count($slides);
 
         /*
-         * تکِ تصویر یعنی چیزی برای حرکت‌کردن نیست. سه بخشِ حرکتی حذف
-         * می‌شوند — نه با CSS، که همچنان در DOM و در دسترسِ صفحه‌خوان
-         * می‌ماندند، بلکه اصلاً چاپ نمی‌شوند.
+         * تکِ تصویر یعنی چیزی برای حرکت‌کردن نیست. فلش، شمارنده و
+         * بندانگشتی حذف می‌شوند — نه با CSS، که همچنان در DOM و در
+         * دسترسِ صفحه‌خوان می‌ماندند، بلکه اصلاً چاپ نمی‌شوند. بزرگ‌نمایی
+         * جزوِ این سه نیست: دیدنِ بزرگ‌ترِ همان یک عکس هم معنا دارد.
          */
         $many = $total > 1;
+        $zoom = 'yes' === ($settings['show_zoom'] ?? 'yes');
+        $fill = 'yes' === ($settings['thumbs_fill'] ?? 'yes');
 
         $base = 'zig-gal-' . $this->get_id();
 
         $classes = ['zig-gallery'];
 
-        if ('yes' === ($settings['thumbs_fill'] ?? 'yes')) {
+        if ($fill) {
             $classes[] = 'zig-gallery--fill';
         }
 
@@ -651,32 +895,72 @@ final class Product_Gallery extends Widget_Base {
             esc_attr($many && 'yes' === ($settings['loop'] ?? 'yes') ? '1' : '0')
         );
 
-        $this->render_stage($data, $settings, $base, $many);
+        $this->render_stage($data, $settings, $base, $many, $zoom);
 
         if ($many && 'yes' === ($settings['show_thumbs'] ?? 'yes')) {
             $this->render_thumbs($data, $settings, $base);
+        }
+
+        /*
+         * داخلِ ‎<figure>‎، نه بعدش: ‎<dialog>‎ با ‎showModal()‎ در لایهٔ
+         * بالای صفحه ترسیم می‌شود — مستقل از جای واقعی‌اش در DOM — ولی
+         * متغیرهای ‎--zig-gal-*‎ی که کنترل‌ها روی ‎.zig-gallery‎ می‌نویسند
+         * فقط به *فرزندان* آن به ارث می‌رسند. اگر بیرونِ ‎<figure>‎ بود،
+         * لایت‌باکس هیچ‌کدام از رنگ‌ها و اندازه‌های تنظیم‌شده را نمی‌گرفت.
+         */
+        if ($zoom) {
+            $this->render_lightbox($data, $settings, $base, $many, $fill);
         }
 
         echo '</figure>';
     }
 
     /**
-     * صحنه: ظرفِ اسکرولِ فریم‌ها، به‌علاوهٔ فلش‌ها و شمارنده.
+     * صحنه: ظرفِ اسکرولِ فریم‌ها، به‌علاوهٔ فلش‌ها و ردیفِ ابزار.
      *
      * ‎tabindex="0"‎ روی ظرف عمدی است: یک ناحیهٔ اسکرول‌شونده باید با
      * صفحه‌کلید هم قابل پیمایش باشد، وگرنه کاربری که ماوس ندارد و JS هم
      * برایش بالا نیامده هیچ راهی به تصویر دوم ندارد.
      */
-    private function render_stage(array $data, array $settings, string $base, bool $many): void {
+    private function render_stage(array $data, array $settings, string $base, bool $many, bool $zoom): void {
         echo '<div class="zig-gallery__stage">';
 
+        $size = (string) ($settings['image_size'] ?? 'woocommerce_single');
+
+        $this->render_frames($data, $base, $size, true);
+
+        if ($many && 'yes' === ($settings['show_nav'] ?? 'yes')) {
+            $this->render_nav();
+        }
+
+        $show_counter = $many && 'yes' === ($settings['show_counter'] ?? 'yes');
+
+        if ($show_counter || $zoom) {
+            $this->render_tools($data, $settings, $base, $show_counter, $zoom);
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * فریم‌ها: ظرفِ اسکرولِ افقی، با یک ‎<img>‎ در هر فریم.
+     *
+     * جدا از ‎render_stage()‎ چون لایت‌باکس هم دقیقاً همین را می‌خواهد —
+     * همان فهرستِ اسلایدها، فقط اندازهٔ تصویر و اولویتِ بارگذاری فرق
+     * می‌کند.
+     *
+     * @param bool $prioritize_first فقط برای صحنهٔ اصلی معنا دارد: اسلاید
+     *   اول ‎eager‎ و ‎fetchpriority=high‎ می‌گیرد چون معمولاً بزرگ‌ترین
+     *   عنصرِ صفحه است. تصاویرِ لایت‌باکس تا بازنشدنِ آن هرگز دیده
+     *   نمی‌شوند، پس این اولویت آنجا بی‌معناست — و حتی می‌تواند رقیبِ
+     *   دانلودِ همان تصویرِ واقعاً روی صفحه شود.
+     */
+    private function render_frames(array $data, string $base, string $size, bool $prioritize_first): void {
         printf(
             '<div class="zig-gallery__frames" id="%s-frames" tabindex="0" role="group" aria-label="%s">',
             esc_attr($base),
             esc_attr__('تصاویر محصول', 'zig3d-widgets')
         );
-
-        $size = (string) ($settings['image_size'] ?? 'woocommerce_single');
 
         foreach (array_values($data['slides']) as $index => $id) {
             printf(
@@ -685,22 +969,16 @@ final class Product_Gallery extends Widget_Base {
                 $index
             );
 
+            $eager = $prioritize_first && 0 === $index;
+
             $attr = [
                 'class'    => 'zig-gallery__image',
-                /*
-                 * فقط اسلاید اول ‎eager‎ است. بقیه ‎lazy‎ می‌مانند چون در
-                 * همان ابتدا بیرون از دیدند — ولی اولی اگر ‎lazy‎ باشد،
-                 * بزرگ‌ترین عنصرِ صفحه دیرتر می‌آید و LCP را می‌سوزاند.
-                 * ‎fetchpriority‎ همان تصمیم را یک قدم جلوتر می‌برد: به
-                 * مرورگر می‌گوید حتی در صفِ دانلود هم این یکی را زودتر
-                 * بگیرد، نه فقط دیرتر ‎lazy‎نکردنش.
-                 */
-                'loading'  => 0 === $index ? 'eager' : 'lazy',
+                'loading'  => $eager ? 'eager' : 'lazy',
                 'decoding' => 'async',
                 'alt'      => $data['title'],
             ];
 
-            if (0 === $index) {
+            if ($eager) {
                 $attr['fetchpriority'] = 'high';
             }
 
@@ -710,16 +988,47 @@ final class Product_Gallery extends Widget_Base {
         }
 
         echo '</div>';
+    }
 
-        if ($many && 'yes' === ($settings['show_nav'] ?? 'yes')) {
-            $this->render_nav();
-        }
+    /**
+     * ردیفِ ابزار روی صحنه: شمارنده و دکمهٔ بزرگ‌نمایی، کنارِ هم.
+     *
+     * یک بستهٔ مشترک، نه دو عنصرِ مستقلِ هم‌مکان‌شده با دو کنترلِ فاصلهٔ
+     * جدا: چون همیشه با هم دیده می‌شوند، «فاصله از کفِ کادر» و «فاصلهٔ
+     * بینشان» یک تصمیم است، نه دو کنترلی که مدیر باید هماهنگشان نگه دارد.
+     */
+    private function render_tools(array $data, array $settings, string $base, bool $show_counter, bool $zoom): void {
+        echo '<div class="zig-gallery__tools">';
 
-        if ($many && 'yes' === ($settings['show_counter'] ?? 'yes')) {
+        if ($show_counter) {
             $this->render_counter(count($data['slides']), $settings);
         }
 
+        if ($zoom) {
+            $this->render_zoom_link($data, $settings, $base);
+        }
+
         echo '</div>';
+    }
+
+    /**
+     * دکمهٔ بزرگ‌نمایی.
+     *
+     * یک لینکِ واقعی، نه یک ‎<button>‎: ‎href‎ به تصویرِ اصلیِ اسلایدِ اول
+     * اشاره می‌کند، پس حتی بدونِ جاوااسکریپت هم چیزی باز می‌شود — یک تبِ
+     * تازه با تصویرِ کامل، به‌جای هیچ. جاوااسکریپت کلیک را می‌گیرد و
+     * به‌جایش لایت‌باکسِ درون‌صفحه‌ای را باز می‌کند.
+     */
+    private function render_zoom_link(array $data, array $settings, string $base): void {
+        $size = (string) ($settings['lightbox_size'] ?? 'full');
+        $url  = $this->attachment_url((int) ($data['slides'][0] ?? 0), $size);
+
+        printf(
+            '<a class="zig-gallery__zoom" href="%s" data-zig-zoom aria-haspopup="dialog" aria-controls="%s">%s</a>',
+            esc_url($url),
+            esc_attr($base . '-lightbox'),
+            esc_html__('بزرگ‌نمایی', 'zig3d-widgets')
+        );
     }
 
     /**
@@ -814,6 +1123,80 @@ final class Product_Gallery extends Widget_Base {
         }
 
         echo '</ul>';
+    }
+
+    /**
+     * لایت‌باکس: همان اسلایدها، این‌بار در یک دیالوگِ تمام‌صفحه.
+     *
+     * از ‎<dialog>‎ بومی استفاده می‌شود، نه یک ‎<div>‎ با نقشِ دستی: مرورگر
+     * خودش تلهٔ فوکوس، بستن با Esc، و لایهٔ بالای صفحه (بالاتر از هر
+     * ‎overflow: hidden‎ی که این ویجت زیرش نشسته) را می‌دهد — دقیقاً همان
+     * الگویی که فیلترهای آرشیو با ‎<details>‎ به‌جای اکاردئونِ دستی به کار
+     * بردند.
+     *
+     * فلش، شمارنده و بندانگشتیِ داخلش دوباره همان توابع‌اند — ‎render_nav‎،
+     * ‎render_counter‎، ‎render_thumbs‎ — فقط با شناسه‌های ‎-lb‎ که مانعِ
+     * برخوردشان با نمونهٔ اصلی می‌شود. اگر شناسه یکی می‌ماند، دو عنصر با
+     * یک ‎id‎ در صفحه بود و لنگرهای بندانگشتیِ لایت‌باکس به فریمِ اشتباه
+     * می‌پرید.
+     */
+    private function render_lightbox(array $data, array $settings, string $base, bool $many, bool $fill): void {
+        $lightbox_base = $base . '-lb';
+        $size          = (string) ($settings['lightbox_size'] ?? 'full');
+
+        /*
+         * ‎data-zig-loop‎ باید اینجا هم باشد، جدا از ‎<figure>‎: ‎Gallery‎ی
+         * داخلِ لایت‌باکس چرخشی‌بودن را از همین دیالوگ می‌خواند، نه از
+         * صحنهٔ اصلی. بدونش، خواندنِ مقدار ‎null‎ برابر با «چرخشی نیست»
+         * می‌شد و فلشِ قبلی روی اسلایدِ اول همیشه غیرفعال می‌ماند — حتی
+         * وقتی مدیر چرخشی را روشن کرده بود.
+         */
+        printf(
+            '<dialog class="zig-gallery__lightbox%s" id="%s" data-zig-lightbox data-zig-loop="%s" aria-label="%s">',
+            $fill ? ' zig-gallery--fill' : '',
+            esc_attr($base . '-lightbox'),
+            esc_attr($many && 'yes' === ($settings['loop'] ?? 'yes') ? '1' : '0'),
+            esc_attr__('نمایش بزرگ تصاویر محصول', 'zig3d-widgets')
+        );
+
+        echo '<div class="zig-gallery__lightbox-panel">';
+
+        printf(
+            '<button type="button" class="zig-gallery__lightbox-close" data-zig-lightbox-close aria-label="%s">%s</button>',
+            esc_attr__('بستن', 'zig3d-widgets'),
+            Markup::svg_icon('close', 'zig-gallery__lightbox-close-icon') // phpcs:ignore WordPress.Security.EscapeOutput -- SVG ثابت
+        );
+
+        echo '<div class="zig-gallery__lightbox-stage">';
+
+        $this->render_frames($data, $lightbox_base, $size, false);
+
+        if ($many && 'yes' === ($settings['show_nav'] ?? 'yes')) {
+            $this->render_nav();
+        }
+
+        if ($many && 'yes' === ($settings['show_counter'] ?? 'yes')) {
+            $this->render_counter(count($data['slides']), $settings);
+        }
+
+        echo '</div>';
+
+        if ($many && 'yes' === ($settings['show_thumbs'] ?? 'yes')) {
+            $this->render_thumbs($data, $settings, $lightbox_base);
+        }
+
+        echo '</div></dialog>';
+    }
+
+    /** آدرسِ یک پیوست در یک اندازهٔ مشخص؛ رشتهٔ خالی اگر پیدا نشد */
+    private function attachment_url(int $id, string $size): string {
+        if ($id <= 0) {
+            return '';
+        }
+
+        $url = wp_get_attachment_image_url($id, $size);
+
+        return is_string($url) ? $url : '';
     }
 
     /* =====================================================================

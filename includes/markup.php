@@ -97,6 +97,7 @@ final class Markup {
             'arrow'    => '<path d="M19 12H5M11 18l-6-6 6-6"/>',
             'sort'     => '<path d="M4 6h16M7 12h10M10 18h4"/>',
             'phone'    => '<path d="M6 3h4l2 5-3 2a12 12 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 014 5a2 2 0 012-2z"/>',
+            'close'    => '<path d="M6 6l12 12M18 6L6 18"/>',
         ];
 
         if (!isset($paths[$name])) {

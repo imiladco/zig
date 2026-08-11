@@ -2252,6 +2252,17 @@ a.zig-list__label:focus-visible {
    ندارد. این عمدی است و در ‎Product_Gallery‎ توضیح داده شده.
    ========================================================================== */
 
+/*
+ * قفلِ اسکرولِ پس‌زمینه، وقتی لایت‌باکس باز است.
+ *
+ * کلاس روی ‎<html>‎ می‌نشیند نه روی خودِ گالری، چون چیزی که باید
+ * اسکرول نکند خودِ صفحه است. جاوااسکریپت آن را می‌گذارد و برمی‌دارد؛
+ * توضیحِ شمارشِ ارجاع در ‎zig3d-gallery.js‎ است.
+ */
+html.zig-gallery-lightbox-open {
+	overflow: hidden;
+}
+
 .zig-gallery {
 	display: flex;
 	flex-direction: column;
@@ -2437,11 +2448,29 @@ a.zig-list__label:focus-visible {
  * مثل فلش‌ها، تا بالا آمدنِ JS پنهان است: عددی که بعد از یک کشیدنِ انگشت
  * به‌روز نمی‌شود، اطلاعاتِ غلط است نه اطلاعاتِ کم.
  */
-.zig-gallery__counter {
+/*
+ * جایگاهِ مشترکِ شمارنده و دکمهٔ بزرگ‌نمایی: پایینِ صحنه، وسط‌چین.
+ *
+ * قبلاً این پوزیشن روی خودِ شمارنده بود. از وقتی بزرگ‌نمایی کنارش نشست،
+ * «فاصله از کفِ کادر» و «فاصلهٔ بینشان» مالِ *ردیف* است، نه فقط یکی از
+ * دو عضوش — پس کنترلش هم در بخشِ «دکمهٔ بزرگ‌نمایی» است، نه «شمارنده».
+ */
+.zig-gallery__tools {
 	position: absolute;
-	inset-block-end: var(--zig-gal-counter-offset, 16px);
+	inset-block-end: var(--zig-gal-tools-offset, 16px);
 	inset-inline-start: 50%;
 	transform: translateX(50%);
+	display: flex;
+	align-items: center;
+	gap: var(--zig-gal-tools-gap, 8px);
+}
+
+/* در چیدمان چپ‌به‌راست، جابه‌جاییِ وسط‌چین باید برعکس شود */
+[dir="ltr"] .zig-gallery__tools {
+	transform: translateX(-50%);
+}
+
+.zig-gallery__counter {
 	display: none;
 	align-items: center;
 	gap: var(--zig-gal-counter-gap, 6px);
@@ -2456,18 +2485,50 @@ a.zig-list__label:focus-visible {
 	pointer-events: none;
 }
 
-.zig-gallery.is-ready .zig-gallery__counter {
+/*
+ * دو زمینه برای دیده‌شدن: صحنهٔ اصلی که تا ‎is-ready‎ صبر می‌کند (توضیح
+ * بالای فایل)، و لایت‌باکس که خودش هرگز بدونِ اجرای اسکریپت دیده
+ * نمی‌شود، پس نیازی به همان گیت ندارد.
+ */
+.zig-gallery.is-ready .zig-gallery__counter,
+.zig-gallery__lightbox .zig-gallery__counter {
 	display: inline-flex;
-}
-
-/* در چیدمان چپ‌به‌راست، جابه‌جاییِ وسط‌چین باید برعکس شود */
-[dir="ltr"] .zig-gallery__counter {
-	transform: translateX(-50%);
 }
 
 .zig-gallery__counter-sep,
 .zig-gallery__counter-all {
 	color: var(--zig-gal-counter-dim, rgba(255, 255, 255, 0.6));
+}
+
+/* --------------------------------------------------------------------------
+   دکمهٔ بزرگ‌نمایی
+   -------------------------------------------------------------------------- */
+
+/*
+ * برخلافِ فلش و شمارنده، این یکی از اول یک لینکِ واقعی و معنادار است
+ * (توضیح در ‎render_zoom_link()‎)، پس گیتِ ‎is-ready‎ نمی‌خواهد.
+ */
+.zig-gallery__zoom {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--zig-gal-zoom-padding, 8px 16px);
+	border-radius: var(--zig-gal-zoom-radius, 999px);
+	background-color: var(--zig-gal-zoom-bg, rgba(28, 19, 48, 0.72));
+	color: var(--zig-gal-zoom-color, #fff);
+	font-size: 13px;
+	line-height: 1.6;
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: color, background-color;
+}
+
+.zig-gallery__zoom:hover,
+.zig-gallery__zoom:focus-visible {
+	background-color: var(--zig-gal-zoom-hover-bg, var(--zig-gal-zoom-bg, rgba(28, 19, 48, 0.72)));
+	color: var(--zig-gal-zoom-hover-color, var(--zig-gal-zoom-color, #fff));
 }
 
 /* --------------------------------------------------------------------------
@@ -2571,6 +2632,138 @@ a.zig-list__label:focus-visible {
 	opacity: var(--zig-gal-thumb-on-opacity, var(--zig-gal-thumb-opacity, 1));
 }
 
+/* ==========================================================================
+   لایت‌باکس
+
+   همان اجزا — فریم، فلش، شمارنده، بندانگشتی — دوباره، این‌بار داخلِ یک
+   <dialog> بومی به‌جای یک <div> با نقشِ دستی: مرورگر خودش تلهٔ فوکوس،
+   بستن با Esc، و لایهٔ بالای صفحه (بالاتر از هر overflow: hidden‌ی که
+   این ویجت زیرش نشسته) را می‌دهد — همان الگویی که فیلترهای آرشیو با
+   <details> به‌جای اکاردئونِ دستی به کار بردند.
+
+   رنگِ فلش/شمارنده/بندانگشتیِ داخلش را از همان متغیرهایی می‌گیرد که
+   بالاتر برای خودِ صحنه نوشته شد؛ توضیحش در Product_Gallery است. آنچه
+   اینجاست فقط چیزهایی است که واقعاً مختصِ همین‌جاست.
+   ========================================================================== */
+
+/*
+ * ریستِ ظاهرِ پیش‌فرضِ ‎<dialog>‎. عمداً ‎display‎ روی سلکتورِ بی‌قید تنظیم
+ * نمی‌شود: قاعدهٔ خودِ مرورگر — ‎dialog:not([open]) { display: none }‎ —
+ * باید دست‌نخورده بماند، وگرنه دیالوگ حتی پیش از ‎showModal()‎ هم دیده
+ * می‌شود. فقط زیرِ ‎[open]‎ صریحاً ‎display‎ می‌گیرد.
+ */
+.zig-gallery__lightbox {
+	margin: auto;
+	border: 0;
+	padding: 0;
+	max-inline-size: min(94vw, var(--zig-gal-lightbox-max-width, 1100px));
+	max-block-size: 92vh;
+	inline-size: 100%;
+	background: transparent;
+	box-sizing: border-box;
+}
+
+.zig-gallery__lightbox[open] {
+	display: block;
+}
+
+.zig-gallery__lightbox::backdrop {
+	background-color: var(--zig-gal-lightbox-backdrop, rgba(13, 10, 23, 0.72));
+	backdrop-filter: blur(var(--zig-gal-lightbox-backdrop-blur, 6px));
+}
+
+/*
+ * پنل به‌جای خودِ ‎<dialog>‎ صاحبِ پس‌زمینه و ‎position: relative‎ است.
+ * ‎<dialog>‎ی نمایش‌داده‌شده با ‎showModal()‎ خودش ‎position: fixed‎ از
+ * مرورگر می‌گیرد تا وسطِ دیدگاه بماند؛ اگر همان‌جا ‎position‎ عوض
+ * می‌شد، آن مرکزچینیِ بومی می‌شکست. یک لایهٔ داخلی، بدونِ دست‌زدن به
+ * ‎position‎ دیالوگ، همان تکیه‌گاه را برای دکمهٔ بستن فراهم می‌کند.
+ */
+.zig-gallery__lightbox-panel {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	inline-size: 100%;
+	block-size: 100%;
+	padding: var(--zig-gal-lightbox-padding, 20px);
+	border-radius: var(--zig-gal-lightbox-radius, 20px);
+	background-color: var(--zig-gal-lightbox-bg, #14101f);
+	box-sizing: border-box;
+}
+
+.zig-gallery__lightbox-close {
+	position: absolute;
+	inset-block-start: 12px;
+	inset-inline-end: 12px;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--zig-gal-lightbox-close-size, 36px);
+	block-size: var(--zig-gal-lightbox-close-size, 36px);
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background-color: var(--zig-gal-lightbox-close-bg, rgba(255, 255, 255, 0.12));
+	color: var(--zig-gal-lightbox-close-color, #fff);
+	cursor: pointer;
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: color, background-color;
+}
+
+.zig-gallery__lightbox-close:hover,
+.zig-gallery__lightbox-close:focus-visible {
+	background-color: var(--zig-gal-lightbox-close-hover-bg, rgba(255, 255, 255, 0.24));
+	color: var(--zig-gal-lightbox-close-hover-color, var(--zig-gal-lightbox-close-color, #fff));
+}
+
+.zig-gallery__lightbox-close-icon {
+	inline-size: 16px;
+	block-size: 16px;
+}
+
+.zig-gallery__lightbox-stage {
+	position: relative;
+	flex: 1 1 auto;
+	min-block-size: 0;
+}
+
+/*
+ * فریم و تصویر، بازتعریف‌شده برای اینجا: صحنهٔ اصلی یک نسبتِ ثابت
+ * می‌خواهد (‎--zig-gal-ratio‎، معمولاً مربع) تا کارتِ محصول یک‌دست
+ * بماند. لایت‌باکس نه — هدفش دیدنِ کاملِ تصویر است، با هر نسبتی که خودش
+ * دارد، در فضایی که خودِ دیالوگ می‌دهد.
+ */
+.zig-gallery__lightbox .zig-gallery__frames {
+	block-size: 100%;
+	border-radius: var(--zig-gal-lightbox-image-radius, 16px);
+	background: transparent;
+}
+
+.zig-gallery__lightbox .zig-gallery__frame {
+	aspect-ratio: auto;
+	block-size: 100%;
+	padding: 0;
+}
+
+.zig-gallery__lightbox .zig-gallery__image {
+	object-fit: contain;
+}
+
+/*
+ * فلش و شمارنده اینجا از اول دیده‌اند، بدونِ گیتِ ‎is-ready‎: تا وقتی
+ * جاوااسکریپت این ‎<dialog>‎ را باز نکرده، اصلاً روی صفحه نیست — پس هر
+ * چیزی داخلش، به‌محضِ دیده‌شدن، پشتِ سرِ یک اسکریپتِ از پیش‌اجراشده است.
+ * فلش تکرار نشده چون قاعدهٔ آن تک‌کلاسه است و همین‌جا هم صدق می‌کند؛
+ * فقط شمارنده — که در صحنهٔ اصلی به ‎.is-ready‎ وابسته بود — بالاتر
+ * برایش استثنا نوشته شد.
+ */
+.zig-gallery__lightbox .zig-gallery__nav {
+	display: inline-flex;
+}
+
 /*
  * با «حرکت کمتر»، پرشِ بینِ تصویرها آنی می‌شود.
  *
@@ -2584,6 +2777,8 @@ a.zig-list__label:focus-visible {
 	}
 
 	.zig-gallery__nav,
+	.zig-gallery__zoom,
+	.zig-gallery__lightbox-close,
 	.zig-gallery__thumb-link,
 	.zig-gallery__thumb-image {
 		transition: none;
@@ -2591,12 +2786,14 @@ a.zig-list__label:focus-visible {
 }
 
 /*
- * در چاپ، فلش و شمارنده و نوارِ اسکرول معنایی ندارند: کاغذ تصویر بعدی
- * ندارد. به‌جای یک فریم، همه پشت سر هم چاپ می‌شوند.
+ * در چاپ، فلش و ردیفِ ابزار و نوارِ اسکرول معنایی ندارند: کاغذ تصویر
+ * بعدی ندارد. به‌جای یک فریم، همه پشت سر هم چاپ می‌شوند. لایت‌باکس خودش
+ * هیچ‌وقت باز نیست — بدونِ اسکریپتی که ‎showModal()‎ بزند، همان قاعدهٔ
+ * پیش‌فرضِ ‎dialog:not([open])‎ کافی است.
  */
 @media print {
 	.zig-gallery__nav,
-	.zig-gallery__counter,
+	.zig-gallery__tools,
 	.zig-gallery__thumbs {
 		display: none;
 	}
