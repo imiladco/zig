@@ -854,6 +854,17 @@ a.zig-list__label:focus-visible {
 	 */
 	position: relative;
 	padding: var(--zig-filters-cap, 24px) var(--zig-filters-inset, 16px);
+	/*
+	 * پس‌زمینه روی خودِ ظرف، نه فقط روی کارتِ درون.
+	 *
+	 * ناحیهٔ پدینگ — همان ۲۴ بالا و پایین و ۱۶ دو طرف — هم بخشی از پنل
+	 * است، پس باید رنگ خودش را داشته باشد. بدون این، آن حاشیه زمینهٔ
+	 * صفحه را نشان می‌داد و پنل روی هر قالبی یک شکل درنمی‌آمد.
+	 *
+	 * تکهٔ بنفش با ‎::before‎ رویش می‌نشیند، پس این رنگ زیرِ آن هم هست و
+	 * دو تا با هم نمی‌جنگند.
+	 */
+	background-color: var(--zig-filters-outer-bg, var(--zig-surface));
 	border-radius: var(--zig-filters-outer-radius, 24px);
 }
 
@@ -1131,8 +1142,16 @@ a.zig-list__label:focus-visible {
    گروه‌ها
    ----------------------------------------------------------------------- */
 
+/*
+ * فاصلهٔ افقی مالِ خودِ ردیف‌هاست، نه ظرفشان.
+ *
+ * وقتی پدینگ روی ظرف بود، پس‌زمینهٔ هاورِ عنوان از دو طرف تو می‌ماند و
+ * شبیه یک نوارِ شناور می‌شد نه یک ردیفِ کامل. حالا پدینگ روی خودِ
+ * ‎__title‎ است، پس رنگ تا لبهٔ پنل می‌رود و ناحیهٔ کلیک هم همان‌قدر
+ * بزرگ می‌شود.
+ */
 .zig-filters__groups {
-	padding: 0 18px 8px;
+	padding: 0 0 8px;
 }
 
 .zig-facet {
@@ -1149,10 +1168,12 @@ a.zig-list__label:focus-visible {
 	align-items: center;
 	gap: 8px;
 	cursor: pointer;
-	padding-block: 14px;
+	padding: var(--zig-facet-title-padding, 14px 18px);
 	font-size: var(--zig-facet-title-size, 0.95rem);
 	font-weight: 600;
 	line-height: 1.7;
+	background-color: var(--zig-facet-title-bg, transparent);
+	transition: background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
 	/* نشانگر پیش‌فرض مرورگر جای خودش را به فلشِ خودمان می‌دهد */
 	list-style: none;
 }
@@ -1161,19 +1182,94 @@ a.zig-list__label:focus-visible {
 	display: none;
 }
 
+/*
+ * هاور و بازبودن دو حالتِ جدا هستند و رنگشان هم.
+ *
+ * «موس رویش است» و «الان باز است» دو خبر متفاوت‌اند؛ با یک رنگ، کاربر
+ * نمی‌فهمد گروهی که می‌بیند باز است یا فقط زیر مکان‌نماست.
+ *
+ * ترتیب مهم است: قاعدهٔ ‎open‎ بعد از ‎hover‎ می‌آید تا وقتی هر دو
+ * برقرارند، حالتِ باز برنده شود.
+ */
+.zig-facet__title:hover {
+	background-color: var(--zig-facet-title-hover-bg, rgba(17, 12, 46, 0.04));
+}
+
+.zig-facet[open] > .zig-facet__title {
+	background-color: var(--zig-facet-title-open-bg, var(--zig-brand-soft));
+	color: var(--zig-facet-title-open-color, inherit);
+}
+
+/*
+ * عنوان به اندازهٔ متنش، نه تمام‌عرض.
+ *
+ * قبلاً ‎flex: 1 1 auto‎ بود و کل فضای خالی را می‌گرفت. با آن، بولتِ
+ * «فیلتر فعال» می‌افتاد ته ردیف و آن‌قدر از اسم دور می‌شد که معلوم نبود
+ * مالِ کدام گروه است. حالا عنوان به‌اندازهٔ متنش است و بولت بلافاصله
+ * کنارش می‌نشیند.
+ *
+ * ‎0 1 auto‎ و نه ‎0 0 auto‎: عنوان بلند باید بتواند کوچک شود، وگرنه از
+ * پنل می‌زند بیرون. سه‌نقطه هم برای همان حالت است.
+ */
 .zig-facet__name {
-	flex: 1 1 auto;
+	order: 0;
+	flex: 0 1 auto;
 	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/*
+ * بولتِ «این گروه فیلتر فعال دارد».
+ *
+ * روی ‎.zig-facet‎ می‌نشیند نه روی ‎[open]‎، چون بعد از بستنِ گروه هم باید
+ * بماند — همان‌جا که تنها نشانهٔ فعال‌بودن است.
+ *
+ * ‎order‎ لازم است چون ‎::before‎ در ترتیب طبیعی اولِ ظرف است؛ بدون آن
+ * بولت می‌رفت ابتدای ردیف، جلوی اسم نه کنارش.
+ *
+ * و ‎margin-inline-end: auto‎ اینجاست نه روی نام: فضای خالی باید *بعد*
+ * از بولت بیاید تا فلش ته ردیف بنشیند و بولت چسبیده به متن بماند. روی
+ * نام که بود، کلِ بولت و فلش با هم به انتها رانده می‌شدند.
+ */
+.zig-facet.is-active > .zig-facet__title::before {
+	content: "";
+	order: 1;
+	flex: none;
+	align-self: center;
+	inline-size: var(--zig-facet-bullet-size, 8px);
+	block-size: var(--zig-facet-bullet-size, 8px);
+	margin-inline-end: auto;
+	border-radius: 50%;
+	background-color: var(--zig-facet-bullet-bg, var(--zig-brand));
+}
+
+/*
+ * گروهِ بی‌فیلتر بولت ندارد، ولی فضای خالی باید همچنان بعد از نام بیاید
+ * تا فلش سرِ جایش بماند.
+ */
+.zig-facet:not(.is-active) > .zig-facet__title .zig-facet__name {
+	margin-inline-end: auto;
 }
 
 /* فلش، با چرخش در حالت باز */
 .zig-facet__chevron {
+	order: 2;
 	flex: none;
-	transition: transform var(--zig-transition, 200ms ease);
+	color: var(--zig-facet-chevron-color, inherit);
+	transition: transform var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
 }
 
+/*
+ * فلشِ گروهِ باز رنگ خودش را می‌گیرد.
+ *
+ * با پس‌زمینهٔ روشنِ حالت باز، فلشِ هم‌رنگِ متن کم‌پیدا می‌شود؛ و همین
+ * فلش تنها چیزی است که می‌گوید کلیکِ بعدی گروه را می‌بندد.
+ */
 .zig-facet[open] > .zig-facet__title .zig-facet__chevron {
 	transform: rotate(180deg);
+	color: var(--zig-facet-chevron-open-color, var(--zig-brand));
 }
 
 /*
@@ -1201,6 +1297,15 @@ a.zig-list__label:focus-visible {
 	display: flex;
 	flex-direction: column;
 	gap: var(--zig-facet-list-gap, 8px);
+	/*
+	 * تشک همان‌قدر تو می‌رود که عنوانِ بالایش.
+	 *
+	 * پدینگِ افقی از ظرفِ گروه‌ها به خودِ عنوان‌ها منتقل شد تا رنگِ هاور تا
+	 * لبه برود؛ ولی همان پدینگ *تشک* را هم تو نگه می‌داشت. بدون این خط،
+	 * تشکِ گِردگوشه می‌چسبد به لبهٔ کارت و از عنوانِ بالایش بیرون‌تر
+	 * می‌زند. صفر گذاشتنش تشک را تمام‌عرض می‌کند.
+	 */
+	margin-inline: var(--zig-facet-list-inset, 18px);
 	max-block-size: var(--zig-facet-list-max, 280px);
 	overflow-y: auto;
 	overscroll-behavior: contain;

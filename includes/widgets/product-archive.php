@@ -1265,6 +1265,13 @@ final class Product_Archive extends Widget_Base {
             'type'  => Controls_Manager::HEADING,
         ]);
 
+        $this->add_control('filters_outer_bg', [
+            'label'       => __('پس‌زمینهٔ ظرف بیرونی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::COLOR,
+            'description' => __('حاشیهٔ دور کارت را هم می‌گیرد، پشتِ نوار رنگی.', 'zig3d-widgets'),
+            'selectors'   => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-outer-bg: {{VALUE}};'],
+        ]);
+
         $this->add_control('filters_bg', [
             'label'     => __('پس‌زمینهٔ پنل', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
@@ -1505,10 +1512,78 @@ final class Product_Archive extends Widget_Base {
             'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-item-radius: {{SIZE}}{{UNIT}};'],
         ]);
 
+        /* --- عنوان گروه --- */
+
         $this->add_control('facet_title_color', [
             'label'     => __('رنگ عنوان گروه فیلتر', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
+            'separator' => 'before',
             'selectors' => ['{{WRAPPER}} .zig-facet__title' => 'color: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('facet_title_padding', [
+            'label'      => __('فاصلهٔ داخلی عنوان گروه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-archive__filters' => '--zig-facet-title-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_control('facet_title_bg', [
+            'label'     => __('پس‌زمینهٔ عنوان گروه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-title-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_title_hover_bg', [
+            'label'     => __('پس‌زمینهٔ عنوان در هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-title-hover-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_title_open_bg', [
+            'label'     => __('پس‌زمینهٔ عنوان در حالت باز', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-title-open-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_title_open_color', [
+            'label'     => __('رنگ متن عنوان در حالت باز', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-title-open-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_chevron_color', [
+            'label'     => __('رنگ فلش گروه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-chevron-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('facet_chevron_open_color', [
+            'label'     => __('رنگ فلش در حالت باز', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-chevron-open-color: {{VALUE}};'],
+        ]);
+
+        /*
+         * بولتِ کنار عنوان: نشانهٔ «این گروه فیلتر فعال دارد».
+         *
+         * صفر کردنِ اندازه برش می‌دارد، بدون اینکه لازم باشد قاعده‌ای
+         * لغو شود.
+         */
+        $this->add_control('facet_bullet_bg', [
+            'label'     => __('رنگ بولتِ گروه فعال', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-bullet-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('facet_bullet_size', [
+            'label'      => __('اندازهٔ بولت', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 20]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-bullet-size: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('facet_option_color', [
@@ -2246,10 +2321,23 @@ final class Product_Archive extends Widget_Base {
          * ولی گروهی که کاربر در آن انتخابی کرده باید باز بماند، وگرنه
          * انتخابش را از دست‌رفته می‌بیند.
          */
+        /*
+         * ‎is-active‎ جدا از ‎open‎ است و باید هم باشد.
+         *
+         * ‎open‎ می‌گوید گروه *الان* باز است — و کاربر می‌تواند هر گروهی
+         * را باز کند. ‎is-active‎ می‌گوید این گروه انتخابی دارد، که چیز
+         * دیگری است و بعد از بستنِ گروه هم درست می‌ماند. بولتِ کنار
+         * عنوان از این یکی می‌آید، وگرنه با بستنِ گروه غیب می‌شد —
+         * دقیقاً همان لحظه‌ای که تنها نشانهٔ «اینجا فیلتری فعال است»
+         * همان بولت است.
+         */
+        $selected = $state->selected($taxonomy);
+
         printf(
-            '<details class="zig-facet"%s><summary class="zig-facet__title">'
-                . '<span class="zig-facet__name">%s</span>%s</summary><ul class="zig-facet__list">',
-            $state->selected($taxonomy) ? ' open' : '',
+            '<details class="zig-facet%1$s"%2$s><summary class="zig-facet__title">'
+                . '<span class="zig-facet__name">%3$s</span>%4$s</summary><ul class="zig-facet__list">',
+            $selected ? ' is-active' : '',
+            $selected ? ' open' : '',
             esc_html(Attributes::label($taxonomy)),
             Markup::svg_icon('chevron', 'zig-facet__chevron')
         );

@@ -115,6 +115,18 @@ async function settle(p, { started = true } = {}) {
 async function visit(p, url) {
 	await p.goto(url, { waitUntil: 'domcontentloaded' });
 	await p.waitForFunction((s) => !!document.querySelector(s)?.zigArchive, $.root, { timeout: 15000 });
+
+	/*
+	 * و صبر تا رویداد ‎load‎ خودِ سند.
+	 *
+	 * سوارشدن جاوااسکریپت روی ‎DOMContentLoaded‎ اتفاق می‌افتد، ولی
+	 * ‎load‎ منتظر تصویرها هم می‌ماند. بدون این خط، بخشی که بلافاصله
+	 * ‎loads.length = 0‎ می‌کرد گاهی همان ‎load‎ِ عقب‌مانده را می‌شمرد و
+	 * ادعای «بدون پیمایش کامل» را قرمز می‌کرد — بی‌آنکه چیزی خراب باشد.
+	 *
+	 * گذرا بود و تا وقتی دادهٔ نمونه تصویر نداشت اصلاً پیدا نمی‌شد.
+	 */
+	await p.waitForLoadState('load');
 }
 
 const run = async () => {
@@ -838,6 +850,82 @@ const run = async () => {
 		await settle(page);
 
 		check('از راه چیپ هم لغو می‌شود', (await countOf(page)) === clean, String(await countOf(page)));
+
+
+	});
+	await section('۲۶ عنوان گروه: تمام‌عرض، سه‌حالته، با بولت', async () => {
+
+		/*
+		 * پنج ادعای دیداری که هیچ‌کدام در خروجی رندر پیدا نیستند و
+		 * خرابی‌شان هم خطایی نمی‌دهد — فقط پنل کمی «بی‌ربط» می‌شود. تنها
+		 * راهِ دیدنشان پرسیدن از خودِ مرورگر است.
+		 */
+		await visit(page, BASE + '?filter_brand=up3d');
+
+		const box = await page.evaluate(() => {
+			const outer = document.querySelector('.zig-archive__filters');
+			const card = document.querySelector('.zig-filters__card');
+			const groups = document.querySelector('.zig-filters__groups');
+			const active = document.querySelector('.zig-facet.is-active');
+			const plain = document.querySelector('.zig-facet:not(.is-active)');
+
+			if (!active || !plain) {
+				return null;
+			}
+
+			const at = active.querySelector('.zig-facet__title');
+			const pt = plain.querySelector('.zig-facet__title');
+			const name = active.querySelector('.zig-facet__name');
+
+			return {
+				outerBg: getComputedStyle(outer).backgroundColor,
+				groupsPad: parseFloat(getComputedStyle(groups).paddingInlineStart),
+				titlePad: parseFloat(getComputedStyle(at).paddingInlineStart),
+				openBg: getComputedStyle(at).backgroundColor,
+				closedBg: getComputedStyle(pt).backgroundColor,
+				openChevron: getComputedStyle(active.querySelector('.zig-facet__chevron')).color,
+				closedChevron: getComputedStyle(plain.querySelector('.zig-facet__chevron')).color,
+				bullet: getComputedStyle(at, '::before').content,
+				bulletW: parseFloat(getComputedStyle(at, '::before').width) || 0,
+				plainBullet: getComputedStyle(pt, '::before').content,
+				nameW: name.getBoundingClientRect().width,
+				titleW: at.getBoundingClientRect().width,
+				cardW: card.getBoundingClientRect().width,
+			};
+		});
+
+		check('گروهِ فعال و غیرفعال هر دو هستند', box !== null);
+
+		if (!box) {
+			return;
+		}
+
+		const opaque = (c) => !/rgba\(0, 0, 0, 0\)|transparent/.test(c);
+
+		check('ظرف بیرونی پس‌زمینه دارد', opaque(box.outerBg), box.outerBg);
+		check('پدینگ افقی از ظرف گروه‌ها رفته', box.groupsPad === 0, `${box.groupsPad}px`);
+		check('و روی خودِ عنوان نشسته', box.titlePad > 0, `${box.titlePad}px`);
+		check('پس عنوان تا لبهٔ کارت می‌رود', Math.round(box.titleW) === Math.round(box.cardW), `${Math.round(box.titleW)} / ${Math.round(box.cardW)}`);
+
+		check('حالت باز پس‌زمینهٔ خودش را دارد', opaque(box.openBg) && box.openBg !== box.closedBg, `${box.openBg} ≠ ${box.closedBg}`);
+		check('فلشِ باز رنگ متفاوت می‌گیرد', box.openChevron !== box.closedChevron, `${box.openChevron} ≠ ${box.closedChevron}`);
+
+		check('گروهِ فعال بولت دارد', box.bullet !== 'none' && box.bulletW > 0, `${box.bulletW}px`);
+		check('و گروهِ بی‌فیلتر ندارد', box.plainBullet === 'none', box.plainBullet);
+		check('عنوان به اندازهٔ متنش است، نه تمام‌عرض', box.nameW < box.titleW / 2, `${Math.round(box.nameW)} از ${Math.round(box.titleW)}`);
+
+		/*
+		 * هاور باید از هر دو حالتِ دیگر جدا باشد، وگرنه کاربر نمی‌فهمد
+		 * گروهی که می‌بیند باز است یا فقط زیر مکان‌نماست.
+		 */
+		const closed = page.locator('.zig-facet:not(.is-active) .zig-facet__title').first();
+		await closed.hover();
+		await page.waitForTimeout(250);
+
+		const hovered = await closed.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+		check('هاور هم رنگ خودش را دارد', opaque(hovered) && hovered !== box.closedBg, `${hovered} ≠ ${box.closedBg}`);
+		check('و با حالت باز یکی نیست', hovered !== box.openBg, `${hovered} ≠ ${box.openBg}`);
 
 
 	});
