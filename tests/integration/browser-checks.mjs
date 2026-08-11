@@ -929,58 +929,33 @@ const run = async () => {
 
 
 	});
-	await section('۲۷ سایهٔ پنل، رنگِ کلِ گروهِ فعال، و سقفِ چیپ‌ها', async () => {
+	await section('۲۷ سایهٔ پنل، و سقفِ چیپ‌ها', async () => {
 
 		/*
-		 * سه ادعای مستقل که سه راه شکستن دارند و هیچ‌کدام خطا نمی‌دهد:
+		 * دو ادعای مستقل که هر دو راهِ شکستن دارند و هیچ‌کدام خطا
+		 * نمی‌دهد:
 		 *
 		 *   • سایه روی ‎.zig-archive__filters‎ نشسته باشد نه روی کارتِ
 		 *     ‎overflow: hidden‎ی داخل آن — وگرنه بریده می‌شد.
-		 *   • پس‌زمینهٔ «گروهِ فعال» روی خودِ ‎.zig-facet‎ باشد، نه فقط
-		 *     روی ‎.zig-facet__title‎اش — وگرنه فقط نوارِ سربرگ رنگ
-		 *     می‌گرفت و بدنهٔ باز نه.
 		 *   • ردیفِ چیپ‌ها با تعداد کافی واقعاً اسکرول بگیرد، نه فقط
 		 *     ‎overflow-y: auto‎ داشته باشد بدون آنکه هیچ‌وقت لازم شود.
+		 *
+		 * (پس‌زمینهٔ کلِ گروهِ فعال امتحان و کنار گذاشته شد — دیزاین آن
+		 * حالت را نمی‌خواست.)
 		 */
-		await visit(page, BASE + '?filter_axis=5-axis');
+		await visit(page, BASE);
 
 		const shadow = await page.locator('.zig-archive__filters').evaluate((el) => getComputedStyle(el).boxShadow);
 
 		check('پنل سایه دارد', shadow !== 'none' && shadow !== '', shadow);
 
-		const activeBg = await page.evaluate(() => {
-			const active = document.querySelector('.zig-facet.is-active');
-
-			if (!active) {
-				return null;
-			}
-
-			return {
-				facet: getComputedStyle(active).backgroundColor,
-				title: getComputedStyle(active.querySelector('.zig-facet__title')).backgroundColor,
-			};
-		});
-
-		check('گروهِ فعال هست', activeBg !== null);
-
-		if (activeBg) {
-			check(
-				'پس‌زمینهٔ خودِ گروه هم‌رنگِ سربرگش است',
-				activeBg.facet === activeBg.title,
-				`${activeBg.facet} / ${activeBg.title}`
-			);
-		}
-
 		/*
-		 * چند فیلترِ مختلفِ *دیگر* می‌زنیم تا چیپ‌ها از سقفِ ۷۰ پیکسل رد
-		 * شوند — ‎filter_axis|5-axis‎ از فهرست بیرون است چون همان چیزی
-		 * است که با بازکردنِ آدرس فعال شد؛ دوباره‌زدنش برش می‌داشت و
-		 * سنجهٔ «گروهِ فعال هست» را زیرِ پا می‌گذاشت.
-		 *
+		 * چند فیلترِ مختلف می‌زنیم تا چیپ‌ها از سقفِ ۷۰ پیکسل رد شوند.
 		 * دیبونسِ فیلتر ۲۵۰ میلی‌ثانیه است؛ کلیک‌های پشتِ‌سرهم را
 		 * ‎settle()‎ خودش جفت‌وجور می‌کند.
 		 */
 		const toggles = [
+			'filter_axis|5-axis',
 			'filter_axis|3-axis',
 			'filter_brand|up3d',
 			'filter_brand|vhf',
@@ -1014,6 +989,69 @@ const run = async () => {
 		check('ردیفِ چیپ‌ها سقف ارتفاع دارد', chips.maxHeight > 0, `${chips.maxHeight}px`);
 		check('و اسکرول می‌گیرد', chips.overflowY === 'auto');
 		check('چون محتوا واقعاً از سقف رد شده', chips.scrollHeight > chips.clientHeight, `${chips.scrollHeight} > ${chips.clientHeight}`);
+
+
+	});
+	await section('۲۸ پنل واقعاً چسبنده است، بدون فاصلهٔ اضافه از بالا', async () => {
+
+		/*
+		 * این باگ خودش را در CSS نشان داد نه در رفتار: قاعده یک بار
+		 * ‎position: sticky‎ داشت و چند خط پایین‌تر، در همان بلوک،
+		 * دوباره ‎position: relative‎ — و در CSS آخرین مقدار برنده
+		 * می‌شود. نتیجه‌اش دو پیامد بود که هیچ‌کدام خطا نمی‌داد:
+		 *
+		 *   ۱. ‎inset-block-start‎ که قرار بود «آستانهٔ چسبیدن» باشد،
+		 *      روی ‎relative‎ یک افستِ همیشگی شد — پنل از همان اول چند
+		 *      پیکسل از بالای گرید پایین‌تر می‌نشست.
+		 *   ۲. خودِ چسبندگی از کار افتاد؛ پنل موقع اسکرول سرِ جایش
+		 *      نمی‌ماند.
+		 *
+		 * پس اینجا دو چیز سنجیده می‌شود: ‎position‎ واقعاً ‎sticky‎ است —
+		 * همان امضای دقیقِ باگ، چون ‎relative‎ی جایگزین‌شده دقیقاً همین
+		 * مقدار را عوض می‌کرد — و فاصلهٔ اولیه از ستونِ اصلی از همان
+		 * آستانهٔ چسبیدن (‎--zig-archive-sticky‎، پیش‌فرض ‎16px‎) بیشتر
+		 * نمی‌شود.
+		 *
+		 * برابریِ کامل را عمداً نمی‌خواهیم: وقتی ویجت از همان بالای صفحه
+		 * شروع شود (مثل همین هارنس، بدون هدر)، خودِ ‎sticky‎ درست هم
+		 * بلافاصله همان ۱۶ پیکسل را اعمال می‌کند — این رفتارِ درستِ
+		 * چسبندگی است، نه باگ. آنچه باگ می‌ساخت این بود که این فاصله از
+		 * همان آستانه فراتر می‌رفت و با هیچ اسکرولی هم عوض نمی‌شد.
+		 */
+		await visit(page, BASE);
+
+		const align = await page.evaluate(() => {
+			const filters = document.querySelector('.zig-archive__filters');
+			const main = document.querySelector('.zig-archive__main');
+
+			return {
+				position: getComputedStyle(filters).position,
+				gap: Math.round(filters.getBoundingClientRect().top - main.getBoundingClientRect().top),
+			};
+		});
+
+		check('پنل واقعاً sticky است', align.position === 'sticky', align.position);
+		check(
+			'و فاصلهٔ اولیه از آستانهٔ چسبیدن فراتر نمی‌رود',
+			align.gap >= 0 && align.gap <= 16,
+			`${align.gap}px`
+		);
+
+		/*
+		 * و خودِ چسبندگی: تا ته صفحه اسکرول می‌کنیم و می‌بینیم پنل هنوز
+		 * داخل دیدرس است — یعنی همراهِ صفحه رفته، نه اینکه در بالای
+		 * گرید جا مانده باشد.
+		 */
+		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+		await page.waitForTimeout(200);
+
+		const stuck = await page.evaluate(() => {
+			const r = document.querySelector('.zig-archive__filters').getBoundingClientRect();
+
+			return r.top < window.innerHeight && r.bottom > 0;
+		});
+
+		check('و موقع اسکرول همراهِ صفحه می‌ماند، نه رهاشده در بالای گرید', stuck);
 
 
 	});

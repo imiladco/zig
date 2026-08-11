@@ -1462,6 +1462,17 @@ final class Product_Archive extends Widget_Base {
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-list-bg: {{VALUE}};'],
         ]);
 
+        /*
+         * فاصلهٔ بالای تشک تا زیرِ عنوان — جدا از پدینگِ خودِ عنوان.
+         */
+        $this->add_responsive_control('facet_list_top', [
+            'label'      => __('فاصله تا زیرِ عنوان', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-list-top: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->add_control('facet_item_bg', [
             'label'     => __('پس‌زمینهٔ گزینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
@@ -1599,19 +1610,6 @@ final class Product_Archive extends Widget_Base {
             'label'     => __('رنگ فلش در حالت باز', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-chevron-open-color: {{VALUE}};'],
-        ]);
-
-        /*
-         * پس‌زمینهٔ کل گروه — نه فقط سربرگش — وقتی گروه فیلتر فعال دارد.
-         *
-         * زیرِ رنگِ هاور/بازبودنِ عنوان می‌نشیند و از پشتِ آن (وقتی
-         * عنوان هنوز شفاف است) دیده می‌شود، پس «این گروه فیلتر فعال
-         * دارد» یک بلوکِ پیوسته است، نه فقط یک نوار بالای گروه.
-         */
-        $this->add_control('facet_active_bg', [
-            'label'     => __('پس‌زمینهٔ گروهِ فعال', 'zig3d-widgets'),
-            'type'      => Controls_Manager::COLOR,
-            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-active-bg: {{VALUE}};'],
         ]);
 
         /*
