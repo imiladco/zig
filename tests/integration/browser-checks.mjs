@@ -785,6 +785,62 @@ const run = async () => {
 
 
 	});
+	await section('۲۵ اسلاگ غیرلاتین', async () => {
+
+		/*
+		 * اسلاگ فارسی در دیتابیس وردپرس درصدکدشده ذخیره می‌شود
+		 * (‎±۳۵ درجه‎ ⇐ ‎%c2%b1%db%b3%db%b5-…‎) و ‎data-zig-toggle‎ همان را
+		 * می‌آورد؛ ولی ‎URLSearchParams.get()‎ یک بار دیکد می‌کند. دو
+		 * نوشتار از یک ترم.
+		 *
+		 * با مقایسهٔ رشته‌ایِ ساده هیچ‌وقت برابر نمی‌شدند و لغوِ فیلتر
+		 * به‌جای برداشتن، دوباره اضافه‌اش می‌کرد. روی اسلاگ لاتین هرگز
+		 * دیده نمی‌شد، چون آنجا دو نوشتار یکی‌اند — برای همین همهٔ
+		 * سنجه‌های قبلی سبز بودند.
+		 */
+		const FA = '%c2%b1%db%b3%db%b5-%d8%af%d8%b1%d8%ac%d9%87';
+
+		await visit(page, BASE);
+
+		const exists = (await page.locator(`[data-zig-toggle="filter_b-axis|${FA}"]`).count()) > 0;
+
+		// اگر دادهٔ نمونه این ترم را نداشته باشد، سنجه باید قرمز شود نه
+		// اینکه بی‌صدا رد شود؛ وگرنه پوششِ همین باگ خاموش می‌ماند.
+		check('ترمِ با اسلاگ فارسی در سایدبار هست', exists, exists ? FA : 'دادهٔ نمونه ندارد — tests/INTEGRATION.md');
+
+		if (!exists) {
+			return;
+		}
+
+		const clean = await countOf(page);
+
+		await (await option(page, `filter_b-axis|${FA}`)).click();
+		await settle(page);
+
+		const filtered = await countOf(page);
+		check('اعمال می‌شود', filtered < clean, `${clean} ⇐ ${filtered}`);
+		check('و در آدرس می‌نشیند', new URL(page.url()).searchParams.has('filter_b-axis'));
+
+		await (await option(page, `filter_b-axis|${FA}`)).click();
+		await settle(page);
+
+		check('و لغو هم می‌شود', (await countOf(page)) === clean, String(await countOf(page)));
+		check('آدرس تمیز شد', !new URL(page.url()).searchParams.has('filter_b-axis'), page.url().split('?')[1] || '(تمیز)');
+		check('و تیک برداشته شد', (await page.locator($.selected).count()) === 0);
+
+		/*
+		 * چیپ همان دلتا را دارد ولی مسیر جدایی است؛ وقتی یکی خراب بود،
+		 * آن یکی هم بود.
+		 */
+		await (await option(page, `filter_b-axis|${FA}`)).click();
+		await settle(page);
+		await page.locator('.zig-filters__chip a').first().click();
+		await settle(page);
+
+		check('از راه چیپ هم لغو می‌شود', (await countOf(page)) === clean, String(await countOf(page)));
+
+
+	});
 	check('در کل هیچ خطای جاوااسکریپتی رخ نداد', errors.length === 0, errors.slice(0, 3).join(' | '));
 
 	await browser.close();
