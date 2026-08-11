@@ -248,6 +248,17 @@ namespace {
     if (!function_exists('wc_get_attribute_taxonomy_names')) {
         function wc_get_attribute_taxonomy_names() { return $GLOBALS['__zig_attr_names'] ?? []; }
     }
+
+    /*
+     * تاکسونومی‌های *ثبت‌شده* — منبع دومِ فهرست ویژگی‌ها.
+     *
+     * جدا از ‎wc_get_attribute_taxonomy_names()‎ نگه داشته می‌شود، چون کل
+     * نکتهٔ آن منبع دوم همین است که وقتی اولی خالی برمی‌گردد، این یکی
+     * هنوز جواب بدهد.
+     */
+    if (!function_exists('get_taxonomies')) {
+        function get_taxonomies($args = [], $output = 'names') { return $GLOBALS['__zig_registered_taxonomies'] ?? []; }
+    }
     if (!function_exists('wc_attribute_label')) {
         function wc_attribute_label($name) { return (string) $name; }
     }

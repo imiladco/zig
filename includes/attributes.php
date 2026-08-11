@@ -525,6 +525,34 @@ final class Attributes {
             $known = array_merge($known, array_values((array) wc_get_attribute_taxonomy_names()));
         }
 
+        /*
+         * منبع دوم، و دلیلش یک باگ واقعی روی استیج است.
+         *
+         * ‎wc_get_attribute_taxonomy_names()‎ فهرست را از ترنزینت
+         * ‎wc_attribute_taxonomies‎ می‌خواند. روی سایتی با کش شیء همان
+         * فراخوانی می‌تواند در یک درخواست فهرست کامل بدهد و در درخواست
+         * بعدی خالی — بی‌خطا و بی‌نشانه. و چون همین فهرست مبنای «کدام
+         * ‎filter_*‎ مجاز است» بود، صفحهٔ سالم ‎invalid‎ می‌گرفت یعنی ‎404‎
+         * و ‎noindex‎. روی استیج یک آدرسِ یکسان در دو درخواست پشت سر هم،
+         * یک بار ‎invalid‎ داد و یک بار ‎ok‎.
+         *
+         * تاکسونومی‌های ثبت‌شده منبعی مستقل‌اند: ووکامرس یک بار روی ‎init‎
+         * ثبتشان می‌کند و از آن به بعد در حافظهٔ همین درخواست می‌مانند، پس
+         * کشِ سردِ وسطِ کار نمی‌تواند خالی‌شان کند.
+         *
+         * این «هر تاکسونومیِ ‎pa_‎داری را قبول کن» نیست: پیشوند را خودِ
+         * ووکامرس رزرو کرده و ‎wc_attribute_taxonomy_name()‎ می‌سازدش، پس
+         * هرچه با آن ثبت شده واقعاً ویژگیِ محصول است — همان چیزی که منبع
+         * اول هم قرار بود بگوید.
+         */
+        if (function_exists('get_taxonomies')) {
+            foreach ((array) get_taxonomies([], 'names') as $taxonomy) {
+                if (0 === strpos((string) $taxonomy, 'pa_')) {
+                    $known[] = (string) $taxonomy;
+                }
+            }
+        }
+
         if (!function_exists('apply_filters')) {
             return array_values(array_unique($known));
         }
