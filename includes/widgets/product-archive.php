@@ -2,6 +2,7 @@
 namespace Zig3d_Widgets\Widgets;
 
 use Elementor\Controls_Manager;
+use Elementor\Group_Control_Box_Shadow;
 use Elementor\Repeater;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Archive_Endpoint;
@@ -1287,6 +1288,24 @@ final class Product_Archive extends Widget_Base {
         ]);
 
         /*
+         * سایه روی ظرفِ بیرونی است، نه کارتِ درون — کارت ‎overflow: hidden‎
+         * دارد و سایه‌ای که پشتِ آن مرز بماند بریده می‌شود.
+         *
+         * گروه‌کنترلِ خودِ المنتور، نه چند اسلایدرِ جدا: سایه یک‌جا روشن یا
+         * خاموش می‌شود، و تا وقتی خاموش است، پیش‌فرضِ خودِ شیت
+         * (‎--zig-filters-shadow‎) دست‌نخورده می‌ماند. با اسلایدرهای جدا،
+         * حالتِ «سایهٔ خالی یعنی هیچ» را باید دوباره از صفر می‌ساختیم —
+         * چیزی که این کنترل رایگان می‌دهد.
+         */
+        $this->add_group_control(
+            Group_Control_Box_Shadow::get_type(),
+            [
+                'name'     => 'filters_shadow',
+                'selector' => '{{WRAPPER}} .zig-archive__filters',
+            ]
+        );
+
+        /*
          * نوار رنگیِ بالای پنل، سه کنترلِ جدا.
          *
          * جداکردنشان لازم بود چون سه چیزِ مستقل‌اند و در دیزاین هم سه عدد
@@ -1419,6 +1438,22 @@ final class Product_Archive extends Widget_Base {
             'size_units' => ['px', 'rem'],
             'range'      => ['px' => ['min' => 0, 'max' => 48]],
             'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-active-gap: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        /*
+         * سقف ارتفاعِ ردیفِ چیپ‌ها، با اسکرولِ خودش.
+         *
+         * کاربری که هشت فیلتر را با هم زده، هشت چیپ می‌بیند؛ بدون سقف
+         * همین یک ردیف به‌اندازهٔ کل بقیهٔ پنل بلند می‌شود. صفرکردنش
+         * سقف را برمی‌دارد.
+         */
+        $this->add_responsive_control('filters_chips_max', [
+            'label'      => __('حداکثر ارتفاع چیپ‌ها (اسکرول)', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'default'    => ['size' => 70, 'unit' => 'px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 400]],
+            'selectors'  => ['{{WRAPPER}} .zig-archive__filters' => '--zig-filters-chips-max: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('facet_list_bg', [
@@ -1564,6 +1599,19 @@ final class Product_Archive extends Widget_Base {
             'label'     => __('رنگ فلش در حالت باز', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
             'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-chevron-open-color: {{VALUE}};'],
+        ]);
+
+        /*
+         * پس‌زمینهٔ کل گروه — نه فقط سربرگش — وقتی گروه فیلتر فعال دارد.
+         *
+         * زیرِ رنگِ هاور/بازبودنِ عنوان می‌نشیند و از پشتِ آن (وقتی
+         * عنوان هنوز شفاف است) دیده می‌شود، پس «این گروه فیلتر فعال
+         * دارد» یک بلوکِ پیوسته است، نه فقط یک نوار بالای گروه.
+         */
+        $this->add_control('facet_active_bg', [
+            'label'     => __('پس‌زمینهٔ گروهِ فعال', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-archive__filters' => '--zig-facet-active-bg: {{VALUE}};'],
         ]);
 
         /*

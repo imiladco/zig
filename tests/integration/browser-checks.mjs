@@ -929,6 +929,94 @@ const run = async () => {
 
 
 	});
+	await section('۲۷ سایهٔ پنل، رنگِ کلِ گروهِ فعال، و سقفِ چیپ‌ها', async () => {
+
+		/*
+		 * سه ادعای مستقل که سه راه شکستن دارند و هیچ‌کدام خطا نمی‌دهد:
+		 *
+		 *   • سایه روی ‎.zig-archive__filters‎ نشسته باشد نه روی کارتِ
+		 *     ‎overflow: hidden‎ی داخل آن — وگرنه بریده می‌شد.
+		 *   • پس‌زمینهٔ «گروهِ فعال» روی خودِ ‎.zig-facet‎ باشد، نه فقط
+		 *     روی ‎.zig-facet__title‎اش — وگرنه فقط نوارِ سربرگ رنگ
+		 *     می‌گرفت و بدنهٔ باز نه.
+		 *   • ردیفِ چیپ‌ها با تعداد کافی واقعاً اسکرول بگیرد، نه فقط
+		 *     ‎overflow-y: auto‎ داشته باشد بدون آنکه هیچ‌وقت لازم شود.
+		 */
+		await visit(page, BASE + '?filter_axis=5-axis');
+
+		const shadow = await page.locator('.zig-archive__filters').evaluate((el) => getComputedStyle(el).boxShadow);
+
+		check('پنل سایه دارد', shadow !== 'none' && shadow !== '', shadow);
+
+		const activeBg = await page.evaluate(() => {
+			const active = document.querySelector('.zig-facet.is-active');
+
+			if (!active) {
+				return null;
+			}
+
+			return {
+				facet: getComputedStyle(active).backgroundColor,
+				title: getComputedStyle(active.querySelector('.zig-facet__title')).backgroundColor,
+			};
+		});
+
+		check('گروهِ فعال هست', activeBg !== null);
+
+		if (activeBg) {
+			check(
+				'پس‌زمینهٔ خودِ گروه هم‌رنگِ سربرگش است',
+				activeBg.facet === activeBg.title,
+				`${activeBg.facet} / ${activeBg.title}`
+			);
+		}
+
+		/*
+		 * چند فیلترِ مختلفِ *دیگر* می‌زنیم تا چیپ‌ها از سقفِ ۷۰ پیکسل رد
+		 * شوند — ‎filter_axis|5-axis‎ از فهرست بیرون است چون همان چیزی
+		 * است که با بازکردنِ آدرس فعال شد؛ دوباره‌زدنش برش می‌داشت و
+		 * سنجهٔ «گروهِ فعال هست» را زیرِ پا می‌گذاشت.
+		 *
+		 * دیبونسِ فیلتر ۲۵۰ میلی‌ثانیه است؛ کلیک‌های پشتِ‌سرهم را
+		 * ‎settle()‎ خودش جفت‌وجور می‌کند.
+		 */
+		const toggles = [
+			'filter_axis|3-axis',
+			'filter_brand|up3d',
+			'filter_brand|vhf',
+			'filter_brand|roland',
+			'filter_material|pmma',
+		];
+
+		for (const t of toggles) {
+			const el = await option(page, t);
+
+			if (await el.count()) {
+				await el.click();
+				await settle(page);
+			}
+		}
+
+		const chips = await page.evaluate(() => {
+			const el = document.querySelector('.zig-filters__chips');
+			const cs = getComputedStyle(el);
+
+			return {
+				count: document.querySelectorAll('.zig-filters__chip').length,
+				maxHeight: parseFloat(cs.maxHeight) || 0,
+				overflowY: cs.overflowY,
+				scrollHeight: el.scrollHeight,
+				clientHeight: el.clientHeight,
+			};
+		});
+
+		check('چند چیپ همزمان فعال شدند', chips.count >= 4, String(chips.count));
+		check('ردیفِ چیپ‌ها سقف ارتفاع دارد', chips.maxHeight > 0, `${chips.maxHeight}px`);
+		check('و اسکرول می‌گیرد', chips.overflowY === 'auto');
+		check('چون محتوا واقعاً از سقف رد شده', chips.scrollHeight > chips.clientHeight, `${chips.scrollHeight} > ${chips.clientHeight}`);
+
+
+	});
 	check('در کل هیچ خطای جاوااسکریپتی رخ نداد', errors.length === 0, errors.slice(0, 3).join(' | '));
 
 	await browser.close();

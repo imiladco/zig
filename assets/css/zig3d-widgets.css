@@ -866,6 +866,16 @@ a.zig-list__label:focus-visible {
 	 */
 	background-color: var(--zig-filters-outer-bg, var(--zig-surface));
 	border-radius: var(--zig-filters-outer-radius, 24px);
+	/*
+	 * سایه روی ظرفِ بیرونی، نه روی کارتِ درون.
+	 *
+	 * کارت ‎overflow: hidden‎ دارد — لازمهٔ گوشه‌های گِرد و اسکرول — و
+	 * سایه‌ای که پشتِ همان مرز باشد بریده می‌شود. ظرف بیرونی این مرز را
+	 * ندارد، پس سایه کامل و بدون قاچ‌شدن دیده می‌شود؛ در ضمن هم روی
+	 * تکهٔ بنفش می‌افتد هم روی کارتِ سفید، یعنی سایهٔ *کل پنل* است نه
+	 * فقط بخشِ زیرِ سربرگ.
+	 */
+	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
 }
 
 /*
@@ -897,7 +907,8 @@ a.zig-list__label:focus-visible {
  *
  * اگر داشت، جلوی بنفش را می‌گرفت و شیشهٔ سربرگ چیزی برای بلورکردن
  * نداشت. پس سفیدی را بخش‌های *زیرِ* سربرگ می‌آورند و خودِ کارت فقط
- * گوشه، سایه و اسکرول را نگه می‌دارد.
+ * گوشه و اسکرول را نگه می‌دارد؛ سایه هم مالِ ظرف بیرونی است، نه اینجا
+ * — دلیلش کنار همان قاعده آمده.
  *
  * ‎position: relative‎ تا روی ‎::before‎ بنشیند — هر دو عنصرِ موقعیت‌دارند
  * و به ترتیبِ درخت نقاشی می‌شوند، پس ‎z-index‎ لازم نیست.
@@ -912,7 +923,6 @@ a.zig-list__label:focus-visible {
 	overflow: hidden;
 	max-block-size: var(--zig-filters-max, calc(100vh - 96px));
 	border-radius: var(--zig-filters-radius, 16px);
-	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
 }
 
 .zig-filters__active,
@@ -1106,13 +1116,44 @@ a.zig-list__label:focus-visible {
 	text-decoration: underline;
 }
 
+/*
+ * ردیفِ چیپ‌ها سقف ارتفاع دارد و خودش اسکرول می‌گیرد.
+ *
+ * کاربری که هشت فیلتر را با هم زده، هشت چیپ می‌بیند — و بدون سقف، همین
+ * یک ردیف به‌اندازهٔ کل بقیهٔ پنل بلند می‌شد و «گروه‌ها» را تا پایین
+ * صفحه می‌راند. سقف نگهش می‌دارد و اسکرولِ خودش، مثل فهرستِ هر گروه،
+ * از سرایت به بقیهٔ پنل جلوگیری می‌کند.
+ *
+ * صفرکردنِ ‎--zig-filters-chips-max‎ سقف را برمی‌دارد.
+ */
 .zig-filters__chips {
 	display: flex;
 	flex-wrap: wrap;
+	align-content: flex-start;
 	gap: 8px;
 	margin: 0;
 	padding: 0;
+	max-block-size: var(--zig-filters-chips-max, 70px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
 	list-style: none;
+}
+
+.zig-filters__chips::-webkit-scrollbar {
+	width: var(--zig-scroll-size, 10px);
+}
+
+.zig-filters__chips::-webkit-scrollbar-track {
+	background-color: transparent;
+}
+
+.zig-filters__chips::-webkit-scrollbar-thumb {
+	border: var(--zig-scroll-pad, 3px) solid transparent;
+	background-clip: padding-box;
+	border-radius: 999px;
+	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
 }
 
 .zig-filters__chip > a {
@@ -1157,10 +1198,25 @@ a.zig-list__label:focus-visible {
 .zig-facet {
 	border-block-end: 1px solid var(--zig-archive-rule, rgba(17, 12, 46, 0.08));
 	padding-block: 4px;
+	transition: background-color var(--zig-transition, 200ms ease);
 }
 
 .zig-facet:last-child {
 	border-block-end: 0;
+}
+
+/*
+ * پس‌زمینهٔ فعال روی کل گروه، نه فقط روی سربرگش.
+ *
+ * ‎.zig-facet__title‎ رنگ خودش را برای هاور و بازبودن دارد؛ این یکی
+ * زیرِ همه‌چیز می‌نشیند، پس وقتی گروه فعال *و* بسته است، رنگ از پشتِ
+ * عنوانِ شفاف (‎transparent‎) دیده می‌شود، و وقتی هم فعال هم باز است،
+ * زیرِ ناحیهٔ عنوان تا زیرِ تشکِ گزینه‌ها هم ادامه پیدا می‌کند —
+ * یعنی «این گروه فیلتر فعال دارد» یک بلوکِ پیوسته است، نه فقط یک نوار
+ * بالای آن.
+ */
+.zig-facet.is-active {
+	background-color: var(--zig-facet-active-bg, var(--zig-brand-soft));
 }
 
 .zig-facet__title {
