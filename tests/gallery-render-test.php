@@ -175,6 +175,23 @@ Tests::keeps('و اندازهٔ بندانگشتی جدا از آن است', $si
 Tests::keeps('اسلاید اول تنبل نیست', $sizes, 'loading="eager"');
 Tests::keeps('ولی بقیه هستند', $sizes, 'loading="lazy"');
 
+/*
+ * فقط تصویرِ اول اولویتِ دانلود بالا می‌گیرد؛ آن یکی معمولاً بزرگ‌ترین
+ * عنصرِ صفحهٔ محصول است. اگر همه این ویژگی را بگیرند، مرورگر هیچ اولویتی
+ * نمی‌بیند و خودِ کنترل بی‌اثر می‌شود.
+ */
+Tests::same(
+    'فقط یک تصویر اولویتِ بالا دارد',
+    substr_count($sizes, 'fetchpriority="high"'),
+    1
+);
+
+Tests::ok(
+    'و آن یکی، اسلاید اول است',
+    strpos($sizes, 'fetchpriority="high"') < strpos($sizes, 'data-zig-index="1"'),
+    'ترتیب fetchpriority'
+);
+
 $capped = zig_gallery(
     ['id' => 11, 'image' => 51, 'gallery' => [52, 53, 54, 55]],
     ['max' => 3]

@@ -685,23 +685,26 @@ final class Product_Gallery extends Widget_Base {
                 $index
             );
 
-            echo wp_get_attachment_image( // phpcs:ignore WordPress.Security.EscapeOutput -- خروجی خودِ وردپرس
-                $id,
-                $size,
-                false,
-                [
-                    'class'    => 'zig-gallery__image',
-                    /*
-                     * فقط اسلاید اول ‎eager‎ است. بقیه ‎lazy‎ می‌مانند چون
-                     * در همان ابتدا بیرون از دیدند — ولی اولی اگر ‎lazy‎
-                     * باشد، بزرگ‌ترین عنصرِ صفحه دیرتر می‌آید و LCP را
-                     * می‌سوزاند.
-                     */
-                    'loading'  => 0 === $index ? 'eager' : 'lazy',
-                    'decoding' => 'async',
-                    'alt'      => $data['title'],
-                ]
-            );
+            $attr = [
+                'class'    => 'zig-gallery__image',
+                /*
+                 * فقط اسلاید اول ‎eager‎ است. بقیه ‎lazy‎ می‌مانند چون در
+                 * همان ابتدا بیرون از دیدند — ولی اولی اگر ‎lazy‎ باشد،
+                 * بزرگ‌ترین عنصرِ صفحه دیرتر می‌آید و LCP را می‌سوزاند.
+                 * ‎fetchpriority‎ همان تصمیم را یک قدم جلوتر می‌برد: به
+                 * مرورگر می‌گوید حتی در صفِ دانلود هم این یکی را زودتر
+                 * بگیرد، نه فقط دیرتر ‎lazy‎نکردنش.
+                 */
+                'loading'  => 0 === $index ? 'eager' : 'lazy',
+                'decoding' => 'async',
+                'alt'      => $data['title'],
+            ];
+
+            if (0 === $index) {
+                $attr['fetchpriority'] = 'high';
+            }
+
+            echo wp_get_attachment_image($id, $size, false, $attr); // phpcs:ignore WordPress.Security.EscapeOutput -- خروجی خودِ وردپرس
 
             echo '</div>';
         }

@@ -2293,6 +2293,13 @@ a.zig-list__label:focus-visible {
 	overflow-x: auto;
 	overflow-y: hidden;
 	scroll-snap-type: x mandatory;
+	/*
+	 * برای مسیرِ بدونِ JS: کلیک روی لنگرِ یک بندانگشتی، بدون این، یک پرشِ
+	 * آنی است. با JS فرقی نمی‌کند — کلیک را ‎preventDefault‎ می‌کند و
+	 * خودش با ‎scrollBy({behavior})‎ حرکت می‌دهد — ولی اسکریپتی که هنوز
+	 * نرسیده نباید نرمی را هم قربانی کند.
+	 */
+	scroll-behavior: smooth;
 	overscroll-behavior-inline: contain;
 	scrollbar-width: none;
 	border-radius: var(--zig-gal-stage-radius, 24px);
