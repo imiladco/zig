@@ -219,9 +219,36 @@ final class Spec_Groups_Page {
         $name      = sprintf('zig3d_groups[%s][items][%s]', $box_id, $i);
         $options   = self::attribute_options();
 
-        echo '<li class="zig3d-spec-row" draggable="true">';
-        echo '<span class="zig3d-spec-row__handle dashicons dashicons-menu" aria-hidden="true"></span>';
+        /*
+         * «ناتمام» یعنی هنوز چیزی برایِ نشان‌دادن ندارد — نه ویژگی‌ای
+         * انتخاب شده، نه کلیدِ متایی نوشته شده. دو جا از همین یک پرچم
+         * استفاده می‌کنند: هم متنِ خلاصه (بندِ ۴)، هم اینکه آکاردئون بازِ
+         * پیش‌فرض بماند یا نه (بندِ ۳) — مشخصهٔ تازه‌افزوده هم دقیقاً از
+         * همین راه باز می‌ماند، چون خودش هم ناتمام است، بدونِ نیاز به
+         * پرچمِ جداگانه‌ای برایِ «تازه بودن».
+         */
+        $incomplete = ('attribute' === $source && '' === $attribute) || ('custom_meta' === $source && '' === $meta_key);
+        [$summaryPrimary, $summarySecondary] = self::item_summary($source, $attribute, $meta_key, $label, $options, $incomplete);
 
+        printf('<li class="zig3d-spec-row%s" draggable="true">', $incomplete ? '' : ' zig3d-spec-row--collapsed');
+
+        echo '<div class="zig3d-spec-row__header" data-zig3d-row-toggle>';
+        echo '<span class="zig3d-spec-row__handle dashicons dashicons-menu" aria-hidden="true"></span>';
+        echo '<span class="zig3d-spec-row__summary">';
+        printf('<span class="zig3d-spec-row__summary-primary">%s</span>', esc_html($summaryPrimary));
+        // همیشه در DOM — جاوااسکریپت بعداً همین عنصر را زنده به‌روز می‌کند، نه اینکه بسازدش
+        printf(
+            '<span class="zig3d-spec-row__summary-secondary"%s>%s</span>',
+            '' === $summarySecondary ? ' hidden' : '',
+            esc_html($summarySecondary)
+        );
+        echo '</span>';
+        echo '<button type="button" class="zig3d-spec-row__remove" data-zig3d-remove-item title="' . esc_attr__('حذف', 'zig3d-widgets') . '">'
+            . '<span class="dashicons dashicons-no-alt"></span></button>';
+        echo '<span class="zig3d-spec-row__chevron dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span>';
+        echo '</div>';
+
+        echo '<div class="zig3d-spec-row__panel">';
         echo '<div class="zig3d-spec-row__body">';
 
         echo '<label class="zig3d-spec-field zig3d-spec-field--source">';
@@ -294,11 +321,36 @@ final class Spec_Groups_Page {
         echo '</label>';
 
         echo '</div>'; // .zig3d-spec-row__body
-
-        echo '<button type="button" class="zig3d-spec-row__remove" data-zig3d-remove-item title="' . esc_attr__('حذف', 'zig3d-widgets') . '">'
-            . '<span class="dashicons dashicons-no-alt"></span></button>';
+        echo '</div>'; // .zig3d-spec-row__panel
 
         echo '</li>';
+    }
+
+    /**
+     * متنِ خلاصهٔ حالتِ بسته: خط اول چیزی‌ست که این مشخصه واقعاً نشان
+     * می‌دهد (برچسبِ دلخواه، یا نامِ ویژگی/کلیدِ متا/برچسبِ مبدأ)، خط دوم
+     * نوعِ مبدأ — مگر وقتی چیزی برایِ نشان‌دادن نیست، که آن‌وقت هر دو خط
+     * صریحاً می‌گویند «هنوز کامل نشده».
+     *
+     * @param array<string,string> $options
+     * @return array{0:string,1:string}
+     */
+    private static function item_summary(string $source, string $attribute, string $meta_key, string $label, array $options, bool $incomplete): array {
+        if ($incomplete) {
+            return [
+                __('مشخصهٔ تازه', 'zig3d-widgets'),
+                'custom_meta' === $source
+                    ? __('هنوز کلیدِ متا تعیین نشده', 'zig3d-widgets')
+                    : __('هنوز ویژگی انتخاب نشده', 'zig3d-widgets'),
+            ];
+        }
+
+        $sourceLabel = self::source_labels()[$source] ?? $source;
+        $resolved    = 'attribute' === $source ? ($options[$attribute] ?? $attribute) : ('custom_meta' === $source ? $meta_key : $sourceLabel);
+        $primary     = '' !== $label ? $label : $resolved;
+
+        // اگر خطِ دوم چیزِ تازه‌ای نمی‌گوید (همان چیزی‌ست که خطِ اول گفت)، تکرار نشود
+        return [$primary, $primary === $sourceLabel ? '' : $sourceLabel];
     }
 
     /** کش‌شده برایِ همین رندر — چند بار در هر ردیف پرسیده می‌شود */
@@ -372,6 +424,7 @@ final class Spec_Groups_Page {
         .zig3d-spec-wrap {
             --zig3d-primary: #7B5CFF;
             --zig3d-primary-dark: #6D28D9;
+            --zig3d-primary-light: #C4B5FD;
             --zig3d-bg: #F8FAFC;
             --zig3d-card: #FFFFFF;
             --zig3d-border: #E2E8F0;
@@ -690,42 +743,94 @@ final class Spec_Groups_Page {
             content: "هنوز مشخصه‌ای اضافه نشده";
         }
 
-        /* ---------------- ردیفِ مشخصه (mini-card) ---------------- */
+        /* ---------------- ردیفِ مشخصه (آکاردئون) ---------------- */
 
+        /*
+         * وقتی گروهی پنج‌شش مشخصه دارد، سه فیلدِ کامل برایِ هرکدام یعنی
+         * کارتِ گروه چند صفحه بلند می‌شود — همان چیزی که خوانایی را
+         * می‌خورد. بسته، هر مشخصه فقط یک ردیفِ خلاصه است؛ با کلیک رویِ
+         * سرستون باز می‌شود. حالتِ پیش‌فرض (باز/بسته) در PHP تصمیم گرفته
+         * می‌شود (‎render_item()‎)، نه اینجا — این‌جا فقط ظاهرِ دو حالت است.
+         */
         .zig3d-spec-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
             background: var(--zig3d-field-bg);
-            border: 1px solid var(--zig3d-field-item-border);
-            border-radius: 10px;
-            padding: 12px;
-            cursor: grab;
+            border: 1px solid var(--zig3d-border);
+            border-radius: 12px;
+            transition: background-color .15s ease, border-color .15s ease;
         }
-        .zig3d-spec-row:active { cursor: grabbing; }
+        .zig3d-spec-row:hover { border-color: var(--zig3d-primary-light); }
 
         .zig3d-spec-row.zig3d-dragging { opacity: .5; }
 
-        .zig3d-spec-row__handle {
-            flex-shrink: 0;
-            color: #94A3B8;
-            margin-top: 8px;
-            font-size: 14px;
-            opacity: .8;
+        .zig3d-spec-row:not(.zig3d-spec-row--collapsed) {
+            background: var(--zig3d-card);
+            border-color: var(--zig3d-primary-light);
+        }
+        .zig3d-spec-row--collapsed .zig3d-spec-row__panel { display: none; }
+
+        .zig3d-spec-row__header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 52px;
+            padding: 8px 10px;
+            cursor: pointer;
         }
 
-        /*
-         * هر فیلد ردیفِ خودش را می‌گیرد — سه‌ستونیِ قبلی با کمبوباکسِ
-         * ویژگی (که گاه یک فیلدِ نامِ سفارشی یا یک راهنمای متنی هم زیرش
-         * باز می‌شود) روی صفحه‌های معمولی هم تنگ می‌شد؛ تک‌ستونی خواناتر
-         * است، even اگر کارت کمی بلندتر شود.
-         */
-        .zig3d-spec-row__body {
+        .zig3d-spec-row__handle {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            min-height: 18px;
+            color: #94A3B8;
+            font-size: 14px;
+            opacity: .8;
+            cursor: grab;
+        }
+        .zig3d-spec-row:active .zig3d-spec-row__handle { cursor: grabbing; }
+
+        .zig3d-spec-row__summary {
             flex: 1;
             min-width: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            overflow: hidden;
+        }
+
+        .zig3d-spec-row__summary-primary {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--zig3d-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zig3d-spec-row__summary-secondary {
+            flex-shrink: 0;
+            font-size: 11.5px;
+            color: var(--zig3d-text-muted);
+        }
+
+        .zig3d-spec-row__chevron {
+            flex-shrink: 0;
+            color: var(--zig3d-text-muted);
+            font-size: 16px;
+            transition: transform .15s ease;
+        }
+        .zig3d-spec-row--collapsed .zig3d-spec-row__chevron { transform: rotate(-90deg); }
+
+        .zig3d-spec-row__panel { padding: 0 14px 14px; }
+
+        .zig3d-spec-row__body {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
-            gap: 10px;
+            gap: 8px;
+            padding-top: 4px;
+            border-top: 1px solid var(--zig3d-border);
         }
 
         .zig3d-spec-field {
@@ -782,7 +887,6 @@ final class Spec_Groups_Page {
             justify-content: center;
             width: 28px;
             height: 28px;
-            margin-top: 6px;
             border: 0;
             border-radius: 8px;
             background: #FEF2F2;
@@ -919,8 +1023,75 @@ final class Spec_Groups_Page {
                 badge.textContent = n + ' ' + <?php echo wp_json_encode(__('مشخصه', 'zig3d-widgets')); ?>;
             }
 
+            /**
+             * باز/بسته‌شدنِ آکاردئونِ یک مشخصه. حالتِ پیش‌فرض (کدام مشخصه
+             * باز باشد) در PHP تصمیم گرفته شده؛ اینجا فقط toggleِ زنده‌اش
+             * است. کلیک روی خودِ دستهٔ درگ toggle نمی‌کند — کاربری که
+             * می‌خواهد بکشد نباید هر بار اول باز/بسته‌اش کند.
+             */
+            function wireRowToggle(row) {
+                var header = row.querySelector('[data-zig3d-row-toggle]');
+                if (!header) { return; }
+
+                header.addEventListener('click', function (e) {
+                    if (e.target.closest('button, .zig3d-spec-row__handle')) { return; }
+                    row.classList.toggle('zig3d-spec-row--collapsed');
+                });
+            }
+
+            /**
+             * متنِ خلاصهٔ حالتِ بسته را زنده نگه می‌دارد — همان منطقِ
+             * ‎item_summary()‎ سمتِ PHP، ولی این‌بار بدونِ رفت‌وبرگشت به
+             * سرور، چون کاربر ممکن است ویژگی را عوض کند و بدونِ ذخیره
+             * ردیف را ببندد؛ اگر خلاصه به‌روز نشود، ردیفِ بسته دروغ
+             * می‌گوید.
+             */
+            function wireRowSummary(row) {
+                var primaryEl = row.querySelector('.zig3d-spec-row__summary-primary');
+                var secondaryEl = row.querySelector('.zig3d-spec-row__summary-secondary');
+                var sourceSelect = row.querySelector('[data-zig3d-source]');
+                if (!primaryEl || !secondaryEl || !sourceSelect) { return; }
+
+                var NEW_LABEL = <?php echo wp_json_encode(__('مشخصهٔ تازه', 'zig3d-widgets')); ?>;
+                var NO_ATTR = <?php echo wp_json_encode(__('هنوز ویژگی انتخاب نشده', 'zig3d-widgets')); ?>;
+                var NO_META = <?php echo wp_json_encode(__('هنوز کلیدِ متا تعیین نشده', 'zig3d-widgets')); ?>;
+
+                var update = function () {
+                    var source = sourceSelect.value;
+                    var sourceLabel = sourceSelect.options[sourceSelect.selectedIndex].text;
+                    var attrSelect = row.querySelector('[data-zig3d-when="attribute"] select:not(:disabled)');
+                    var metaIn = row.querySelector('[data-zig3d-when="custom_meta"]');
+                    var labelIn = row.querySelector('.zig3d-spec-field--label input');
+
+                    var incomplete = ('attribute' === source && (!attrSelect || '' === attrSelect.value))
+                        || ('custom_meta' === source && metaIn && '' === metaIn.value.trim());
+
+                    if (incomplete) {
+                        primaryEl.textContent = NEW_LABEL;
+                        secondaryEl.textContent = 'custom_meta' === source ? NO_META : NO_ATTR;
+                        secondaryEl.hidden = false;
+                        return;
+                    }
+
+                    var resolved = 'attribute' === source
+                        ? attrSelect.options[attrSelect.selectedIndex].text
+                        : ('custom_meta' === source ? metaIn.value.trim() : sourceLabel);
+
+                    var primary = (labelIn && labelIn.value.trim()) || resolved;
+
+                    primaryEl.textContent = primary;
+                    secondaryEl.hidden = primary === sourceLabel;
+                    secondaryEl.textContent = sourceLabel;
+                };
+
+                row.addEventListener('change', update);
+                row.addEventListener('input', update);
+            }
+
             function wireItemRow(row, box) {
                 wireSourceVisibility(row);
+                wireRowToggle(row);
+                wireRowSummary(row);
 
                 var remove = row.querySelector('[data-zig3d-remove-item]');
                 if (remove) {
@@ -976,6 +1147,10 @@ final class Spec_Groups_Page {
                 list.appendChild(frag);
                 wireItemRow(row, box);
                 refreshCount(box);
+                // مشخصهٔ تازه خودش ناتمام است، پس آکاردئونش از PHP باز آمده — فقط دیدش می‌کنیم
+                row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                var firstField = row.querySelector('[data-zig3d-source]');
+                if (firstField) { firstField.focus(); }
             }
 
             /* ---------------- جعبهٔ گروه ---------------- */
