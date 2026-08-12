@@ -2263,17 +2263,50 @@ html.zig-gallery-lightbox-open {
 	overflow: hidden;
 }
 
+/*
+ * قابِ بیرونی: پس‌زمینه، گِردی، سایه — با پیش‌فرضِ خودِ شیت، دقیقاً همان
+ * الگویی که ‎.zig-archive__filters‎ دارد. کنترلِ سایه (بخشِ «قاب گالری»)
+ * وقتی دست‌نخورده بماند هیچ سلکتوری چاپ نمی‌کند و همین مقدارِ ‎var()‎
+ * دست‌نخورده می‌ماند؛ وقتی مدیر تنظیمش کند، سلکتورِ المنتور (با وزنِ
+ * ‎{{WRAPPER}}‎) رویش می‌نشیند.
+ */
 .zig-gallery {
 	display: flex;
 	flex-direction: column;
 	gap: var(--zig-gal-root-gap, 12px);
-	padding: var(--zig-gal-root-padding, 0);
+	padding: var(--zig-gal-root-padding, 24px);
 	margin: 0;
+	background-color: var(--zig-gal-bg, #fff);
+	border-radius: var(--zig-gal-radius, 24px);
+	box-shadow: var(--zig-gal-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
 	box-sizing: border-box;
 }
 
 .zig-gallery * {
 	box-sizing: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   نشان
+   -------------------------------------------------------------------------- */
+
+/*
+ * جزوِ چیدمانِ عادیِ ستون است، نه ‎position: absolute‎: با ‎align-self‎ به
+ * سمتِ منطقیِ «پایان» می‌چسبد — در راست‌به‌چپ یعنی چپ، در چپ‌به‌راست یعنی
+ * راست — بدونِ قاعدهٔ جداگانه برای هر جهت. جای اولش هم به همین دلیل است:
+ * تنها فرزندی که پیش از صحنه می‌آید.
+ */
+.zig-gallery__badge {
+	align-self: flex-end;
+	margin: 0;
+	padding: var(--zig-gal-badge-padding, 6px 16px);
+	border: 1px solid rgba(17, 12, 46, 0.12);
+	border-radius: var(--zig-gal-badge-radius, 999px);
+	background-color: var(--zig-gal-badge-bg, #fff);
+	color: var(--zig-gal-badge-color, var(--zig-ink, #1c1330));
+	font-size: 13px;
+	line-height: 1.6;
+	white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
@@ -2383,6 +2416,13 @@ html.zig-gallery-lightbox-open {
 	border-radius: var(--zig-gal-nav-radius, 50%);
 	background-color: var(--zig-gal-nav-bg, #fff);
 	color: var(--zig-gal-nav-color, var(--zig-ink, #1c1330));
+	/*
+	 * سایهٔ پیش‌فرض، نه فقط یک گروه‌کنترلِ خالی: دکمه‌ای سفید روی
+	 * پس‌زمینهٔ روشنِ صحنه بدونِ سایه تقریباً محو می‌شود — همان چیزی که
+	 * بدونِ این خط پیش می‌آمد. کنترلِ ‎nav_shadow‎ وقتی دست‌نخورده بماند
+	 * این مقدار را دست‌نخورده می‌گذارد، درست مثلِ ‎--zig-gal-shadow‎ی قاب.
+	 */
+	box-shadow: var(--zig-gal-nav-shadow, 0 4px 12px rgba(17, 12, 46, 0.12));
 	cursor: pointer;
 	transition-duration: var(--zig-transition, 250ms);
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

@@ -385,3 +385,60 @@ Tests::keeps('با تک‌عکس هم دکمه هست', $single_zoom, 'class="zi
 Tests::keeps('دیالوگ هم هست', $single_zoom, '<dialog class="zig-gallery__lightbox');
 Tests::blocks('ولی داخلش فلشی نیست', $single_zoom, 'zig-gallery__nav');
 Tests::blocks('و نوار بندانگشتی هم نه', $single_zoom, 'zig-gallery__thumbs');
+
+/* ==========================================================================
+ * نشان
+ * ======================================================================= */
+
+Tests::group('گالری › نشان');
+
+/*
+ * پیش‌فرض خاموش است — این یک ادعاست («تصویرِ واقعی، نه رندر») که فقط
+ * وقتی درست است که مدیر خودش تأییدش کند. اگر بی‌سروصدا روشن می‌ماند، هر
+ * محصولی — حتی آن‌که فقط رندرِ سه‌بعدی دارد — همین برچسب را می‌گرفت.
+ */
+$default_badge = zig_gallery(['id' => 24, 'image' => 100, 'gallery' => [101]]);
+
+Tests::blocks('پیش‌فرض، نشانی چاپ نمی‌شود', $default_badge, 'zig-gallery__badge');
+
+$badged = zig_gallery(
+    ['id' => 25, 'image' => 102, 'gallery' => [103]],
+    ['show_badge' => 'yes', 'badge_text' => 'تصویر واقعی محصول']
+);
+
+Tests::keeps('با روشن‌کردنش، نشان رندر می‌شود', $badged, '<p class="zig-gallery__badge">تصویر واقعی محصول</p>');
+
+/*
+ * نشان اولین فرزندِ ‎<figure>‎ است — قبل از صحنه — چون با ‎align-self‎
+ * جایگاهش را می‌گیرد، نه با ‎position: absolute‎. اگر جایش عوض شود،
+ * دیگر بالای کارت نمی‌نشیند.
+ */
+Tests::ok(
+    'و پیش از صحنه می‌آید',
+    strpos($badged, 'zig-gallery__badge') < strpos($badged, 'zig-gallery__stage'),
+    'ترتیب در DOM'
+);
+
+/*
+ * متنِ خالی یعنی چیزی برای نمایش نیست — حتی اگر مدیر سوییچ را روشن
+ * گذاشته باشد، چاپ‌کردن یک نشانِ خالی فقط یک قابِ بی‌معنی روی کارت
+ * می‌گذاشت.
+ */
+$empty_badge = zig_gallery(
+    ['id' => 26, 'image' => 104, 'gallery' => [105]],
+    ['show_badge' => 'yes', 'badge_text' => '  ']
+);
+
+Tests::blocks('متنِ خالی، نشانی چاپ نمی‌کند', $empty_badge, 'zig-gallery__badge');
+
+/*
+ * خروجی خام است، اسکیپ‌شده در لحظهٔ چاپ — همان قاعدهٔ کل افزونه. اگر
+ * متنِ نشان اینجا خام می‌ماند، یک مدیرِ بدخواه می‌توانست HTML تزریق کند.
+ */
+$xss_badge = zig_gallery(
+    ['id' => 27, 'image' => 106, 'gallery' => [107]],
+    ['show_badge' => 'yes', 'badge_text' => '<script>alert(1)</script>']
+);
+
+Tests::blocks('متنِ نشان اسکیپ می‌شود', $xss_badge, '<script>');
+Tests::keeps('و به‌صورتِ متنِ امن باقی می‌ماند', $xss_badge, '&lt;script&gt;');

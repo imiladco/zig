@@ -88,6 +88,8 @@ final class Product_Gallery extends Widget_Base {
         $this->section_product();
         $this->section_behaviour();
         $this->section_layout();
+        $this->section_style_card();
+        $this->section_style_badge();
         $this->section_style_stage();
         $this->section_style_nav();
         $this->section_style_counter();
@@ -206,6 +208,32 @@ final class Product_Gallery extends Widget_Base {
             'description'  => __('برخلافِ فلش و شمارنده، این دکمه از اول یک لینکِ واقعی به تصویرِ اصلی است — بدون جاوااسکریپت هم چیزی را باز می‌کند، فقط تمام‌صفحه به‌جای داخل صفحه. اسکریپت آن را به یک پنجرهٔ بزرگ‌نماییِ درون‌صفحه‌ای ارتقا می‌دهد.', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('badge_heading', [
+            'label'     => __('نشان', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        /*
+         * پیش‌فرض خاموش، عمداً: این یک ادعاست («تصویرِ واقعی، نه رندر»)
+         * که فقط وقتی درست است که مدیر خودش تأییدش کند. روشن‌بودنِ
+         * پیش‌فرض یعنی هر محصولی — حتی آن‌که فقط رندرِ سه‌بعدی دارد —
+         * همین برچسب را می‌گرفت.
+         */
+        $this->add_control('show_badge', [
+            'label'        => __('نمایش نشان', 'zig3d-widgets'),
+            'type'         => Controls_Manager::SWITCHER,
+            'default'      => '',
+            'return_value' => 'yes',
+        ]);
+
+        $this->add_control('badge_text', [
+            'label'     => __('متن نشان', 'zig3d-widgets'),
+            'type'      => Controls_Manager::TEXT,
+            'default'   => __('تصویر واقعی محصول', 'zig3d-widgets'),
+            'condition' => ['show_badge' => 'yes'],
+        ]);
+
         $this->add_control('single_note', [
             'type'            => Controls_Manager::RAW_HTML,
             'raw'             => __('محصولی که فقط یک تصویر دارد، خودبه‌خود بدون فلش و شمارنده و نوار بندانگشتی رندر می‌شود — این تنظیم‌ها لازم نیست برای آن خاموش شوند.', 'zig3d-widgets'),
@@ -270,6 +298,89 @@ final class Product_Gallery extends Widget_Base {
                 ]);
             }
         }
+
+        $this->end_controls_section();
+    }
+
+    /* =====================================================================
+     * استایل: قابِ بیرونی
+     *
+     * فاصله و ترتیبِ «کل گالری» اینجا نیستند — بخشِ «ساختار گالری»
+     * صاحبِ آن‌هاست. دو کنترل برای یک خاصیت یعنی هر بار یکی از دو مقدار
+     * بی‌صدا برنده می‌شود، همان چیزی که در «کارت» آرشیو هم رعایت شده.
+     * =================================================================== */
+
+    private function section_style_card(): void {
+        $this->start_controls_section('sty_card', ['label' => __('قاب گالری', 'zig3d-widgets')]);
+
+        $this->add_control('gal_bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('gal_radius', [
+            'label'      => __('گِردی گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_group_control(Group_Control_Box_Shadow::get_type(), [
+            'name'     => 'gal_shadow',
+            'selector' => '{{WRAPPER}} .zig-gallery',
+        ]);
+
+        $this->end_controls_section();
+    }
+
+    /* =====================================================================
+     * استایل: نشان
+     * =================================================================== */
+
+    private function section_style_badge(): void {
+        $this->start_controls_section('sty_badge', [
+            'label'     => __('نشان', 'zig3d-widgets'),
+            'condition' => ['show_badge' => 'yes'],
+        ]);
+
+        $this->add_group_control(Group_Control_Typography::get_type(), [
+            'name'     => 'badge_typography',
+            'selector' => '{{WRAPPER}} .zig-gallery__badge',
+        ]);
+
+        $this->add_control('badge_color', [
+            'label'     => __('رنگ متن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-badge-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('badge_bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-badge-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('badge_padding', [
+            'label'      => __('فاصلهٔ درونی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'rem'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-badge-padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('badge_radius', [
+            'label'      => __('گِردی گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', 'rem'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-badge-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_group_control(Group_Control_Border::get_type(), [
+            'name'     => 'badge_border',
+            'selector' => '{{WRAPPER}} .zig-gallery__badge',
+        ]);
 
         $this->end_controls_section();
     }
@@ -894,6 +1005,10 @@ final class Product_Gallery extends Widget_Base {
             esc_attr(implode(' ', $classes)),
             esc_attr($many && 'yes' === ($settings['loop'] ?? 'yes') ? '1' : '0')
         );
+
+        if ('yes' === ($settings['show_badge'] ?? '') && '' !== trim((string) ($settings['badge_text'] ?? ''))) {
+            printf('<p class="zig-gallery__badge">%s</p>', esc_html($settings['badge_text']));
+        }
 
         $this->render_stage($data, $settings, $base, $many, $zoom);
 
