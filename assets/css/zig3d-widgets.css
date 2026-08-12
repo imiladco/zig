@@ -2693,3 +2693,93 @@ body.zig-gallery-noscroll {
 [dir="rtl"] .zig-gallery__more-count--center {
 	transform: translate(50%, -50%);
 }
+
+/* ==========================================================================
+   مشخصاتِ فنی محصول
+   ========================================================================== */
+
+.zig-specs {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.zig-specs__group {
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+	transition-duration: var(--zig-transition, 250ms);
+	transition-property: transform, background-color, border-color, box-shadow;
+	overflow: hidden;
+}
+
+/*
+ * سرستونِ گروه — هم برایِ حالتِ آکاردئونی (‎summary‎) هم حالتِ تخت (‎div‎)
+ * همین یک کلاس. ‎list-style: none‎ فلشِ پیش‌فرضِ مرورگر را رویِ ‎summary‎
+ * برمی‌دارد؛ فلشِ خودمان (SVG) جایگزینش می‌شود، پس دو فلش روی هم نمی‌آید.
+ */
+.zig-specs__group-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+}
+
+.zig-specs__group-title::-webkit-details-marker {
+	display: none;
+}
+
+.zig-specs__group-title-text {
+	font-weight: 700;
+}
+
+.zig-specs__chevron {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	transition: transform var(--zig-transition, 250ms) ease;
+}
+
+/* details[open] یعنی باز است — فلش می‌چرخد تا «رو به بالا» بشود */
+.zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron {
+	transform: rotate(180deg);
+}
+
+.zig-specs__list {
+	margin: 0;
+	padding: 0;
+}
+
+.zig-specs__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 16px;
+	padding-block: 10px;
+	border-top: 1px solid var(--zig-specs-divider, rgba(17, 24, 39, .08));
+}
+
+.zig-specs__row:first-child {
+	border-top: 0;
+}
+
+.zig-specs__label {
+	flex-shrink: 0;
+}
+
+.zig-specs__value {
+	margin: 0;
+	text-align: end;
+	overflow-wrap: anywhere;
+}
+
+.zig-specs__notice {
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}

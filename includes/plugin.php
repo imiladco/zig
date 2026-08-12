@@ -35,6 +35,7 @@ final class Plugin {
         'product-stock' => Widgets\Product_Stock::class,
         'product-archive' => Widgets\Product_Archive::class,
         'product-gallery' => Widgets\Product_Gallery::class,
+        'product-specs' => Widgets\Product_Specs::class,
     ];
 
     public static function instance(): self {
@@ -97,7 +98,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 

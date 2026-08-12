@@ -388,21 +388,12 @@ final class Spec_Groups_Page {
         return self::$attribute_options = $options;
     }
 
-    /** @return array<string,string> */
+    /**
+     * @return array<string,string>
+     * @see Spec_Group::source_labels() منبعِ واحد؛ اینجا فقط نامِ کوتاه‌تر است
+     */
     private static function source_labels(): array {
-        return [
-            'attribute'   => __('ویژگی محصول', 'zig3d-widgets'),
-            'category'    => __('دسته‌بندی', 'zig3d-widgets'),
-            'tag'         => __('برچسب‌ها', 'zig3d-widgets'),
-            'sku'         => __('شناسهٔ محصول (SKU)', 'zig3d-widgets'),
-            'rating'      => __('امتیازِ خریداران', 'zig3d-widgets'),
-            'stock'       => __('وضعیتِ موجودی', 'zig3d-widgets'),
-            'weight'      => __('وزن', 'zig3d-widgets'),
-            'length'      => __('طول', 'zig3d-widgets'),
-            'width'       => __('عرض', 'zig3d-widgets'),
-            'height'      => __('ارتفاع', 'zig3d-widgets'),
-            'custom_meta' => __('فیلدِ دلخواه (متا)', 'zig3d-widgets'),
-        ];
+        return Spec_Group::source_labels();
     }
 
     /** جعبه/ردیفِ خام، برایِ کپی‌شدن با جاوااسکریپت */

@@ -61,6 +61,17 @@ namespace {
                     // گالری
                     'image'     => 0,
                     'gallery'   => [],
+                    // مشخصاتِ فنی (Spec_Value)
+                    'sku'          => '',
+                    'attr_map'     => [],
+                    'rating_count' => 0,
+                    'rating_avg'   => '0',
+                    'weight'       => '',
+                    'length'       => '',
+                    'width'        => '',
+                    'height'       => '',
+                    'post_terms'   => [],
+                    'cat_ids'      => [],
                 ];
 
                 if ($this->props['id']) {
@@ -136,6 +147,19 @@ namespace {
 
                 return (int) $this->props['qty'] - (int) $qty_in_cart < 1;
             }
+
+            /* ---------------------- مشخصاتِ فنی (Spec_Value) ---------------------- */
+
+            public function get_sku() { return $this->props['sku']; }
+            public function get_attribute($taxonomy) { return $this->props['attr_map'][$taxonomy] ?? ''; }
+            public function get_rating_count() { return (int) $this->props['rating_count']; }
+            public function get_average_rating() { return $this->props['rating_avg']; }
+            public function get_weight() { return $this->props['weight']; }
+            public function get_length() { return $this->props['length']; }
+            public function get_width() { return $this->props['width']; }
+            public function get_height() { return $this->props['height']; }
+            public function zig_post_terms() { return $this->props['post_terms']; }
+            public function zig_cat_ids() { return $this->props['cat_ids']; }
         }
     }
 
@@ -236,6 +260,58 @@ namespace {
         }
     }
 
+    /**
+     * ‎wp_get_post_terms‎، جدا از ‎get_the_terms‎ چون Spec_Value فقط نامِ
+     * ترم‌ها را می‌خواهد (‎fields => names‎)، نه شیءِ کامل — همان چیزی که
+     * ‎post_terms‎ی محصولِ آزمایشی مستقیم نگه می‌دارد.
+     */
+    if (!function_exists('wp_get_post_terms')) {
+        function wp_get_post_terms($id, $taxonomy, $args = []) {
+            $product = \WC_Product::$registry[(int) $id] ?? null;
+            $terms   = $product ? $product->zig_post_terms() : [];
+
+            return $terms[$taxonomy] ?? [];
+        }
+    }
+
+    if (!function_exists('wc_get_product_stock_status_options')) {
+        function wc_get_product_stock_status_options() {
+            return $GLOBALS['__zig_stock_status_options'] ?? [
+                'instock'     => 'موجود در انبار',
+                'outofstock'  => 'ناموجود',
+                'onbackorder' => 'قابل پیش‌سفارش',
+            ];
+        }
+    }
+
+    if (!function_exists('number_format_i18n')) {
+        function number_format_i18n($number, $decimals = 0) {
+            return number_format((float) $number, (int) $decimals);
+        }
+    }
+
+    /** شناسهٔ دسته‌هایِ محصول — ویجتِ مشخصاتِ فنی از همین‌ها گروه‌هایش را پیدا می‌کند */
+    if (!function_exists('wc_get_product_terms')) {
+        function wc_get_product_terms($product_id, $taxonomy, $args = []) {
+            $product = \WC_Product::$registry[(int) $product_id] ?? null;
+
+            return $product ? $product->zig_cat_ids() : [];
+        }
+    }
+
+    /** فقط همان شکلِ ساده‌ای که Spec_Store لازم دارد: شناسهٔ دسته => آرایهٔ متا */
+    if (!function_exists('get_term_meta')) {
+        function get_term_meta($term_id, $key = '', $single = false) {
+            $value = $GLOBALS['__zig_term_meta'][(int) $term_id][$key] ?? null;
+
+            if (null === $value) {
+                return $single ? '' : [];
+            }
+
+            return $single ? $value : [$value];
+        }
+    }
+
     if (!function_exists('get_permalink')) {
         function get_permalink($id = 0) { return 'https://zig3d.test/?p=' . (int) $id; }
     }
@@ -310,6 +386,7 @@ namespace {
         $GLOBALS['__zig_queried']    = 0;
         $GLOBALS['__zig_post']       = 0;
         $GLOBALS['__zig_options']    = [];
+        $GLOBALS['__zig_term_meta']  = [];
         unset($GLOBALS['product'], $GLOBALS['__zig_visibility']);
     }
 }

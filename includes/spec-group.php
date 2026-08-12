@@ -33,6 +33,30 @@ final class Spec_Group {
     ];
 
     /**
+     * برچسبِ خوانایِ هر مبدأ — هم پنلِ مدیریت (کمبوباکسِ «نوعِ مقدار») و هم
+     * ویجتِ نمایش (‎Spec_Value‎، برایِ برچسبِ پیش‌فرضِ مشخصه‌ای که عنوانِ
+     * دلخواه ندارد) از همین یک نسخه می‌خوانند — تا رنگ‌عوض‌کردنِ یک نام در
+     * پنل، فراموش نشود که در صفحهٔ محصول هم عوض شود.
+     *
+     * @return array<string,string>
+     */
+    public static function source_labels(): array {
+        return [
+            'attribute'   => __('ویژگی محصول', 'zig3d-widgets'),
+            'category'    => __('دسته‌بندی', 'zig3d-widgets'),
+            'tag'         => __('برچسب‌ها', 'zig3d-widgets'),
+            'sku'         => __('شناسهٔ محصول (SKU)', 'zig3d-widgets'),
+            'rating'      => __('امتیازِ خریداران', 'zig3d-widgets'),
+            'stock'       => __('وضعیتِ موجودی', 'zig3d-widgets'),
+            'weight'      => __('وزن', 'zig3d-widgets'),
+            'length'      => __('طول', 'zig3d-widgets'),
+            'width'       => __('عرض', 'zig3d-widgets'),
+            'height'      => __('ارتفاع', 'zig3d-widgets'),
+            'custom_meta' => __('فیلدِ دلخواه (متا)', 'zig3d-widgets'),
+        ];
+    }
+
+    /**
      * یک گروه، یا ‎null‎ اگر بعدِ پاک‌سازی هیچ مشخصهٔ معتبری نماند.
      *
      * @return array{label:string,items:array}|null

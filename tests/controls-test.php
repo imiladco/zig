@@ -44,6 +44,10 @@ require_once $root . '/includes/card.php';
 require_once $root . '/includes/product-card.php';
 require_once $root . '/includes/widgets/product-archive.php';
 require_once $root . '/includes/widgets/product-gallery.php';
+require_once $root . '/includes/spec-group.php';
+require_once $root . '/includes/spec-store.php';
+require_once $root . '/includes/spec-value.php';
+require_once $root . '/includes/widgets/product-specs.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -53,6 +57,7 @@ $widgets = [
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
+    'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
 ];
 
 foreach ($widgets as $label => $class) {
