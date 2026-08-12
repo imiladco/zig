@@ -2241,210 +2241,455 @@ a.zig-list__label:focus-visible {
 /* ==========================================================================
    گالری محصول
 
-   پورتِ مستقیمِ شورت‌کدِ product_gallery_modal2 از قالبِ الماس‌آرا (کلاس‌ها
-   با پیشوندِ zig-gallery*). خودِ قالب هیچ CSSای برای این نشانه‌ها ندارد —
-   نه در custom.css، نه در single-product.css، نه جای دیگری — و سایتِ زنده
-   هنگامِ نوشتنِ این استایل در دسترس نبود (۵۰۳ روی هر درخواست). پس این
-   «استخراجِ عینی» نیست؛ زبانِ بصریِ خودِ قالب است: رنگِ اصلیِ ‎#e7004a‎ که
-   در custom.css برای تخفیف و قیمت به کار رفته، رادیوسِ کارت‌های
-   single-product.css، و پس‌زمینهٔ سفید/خاکستریِ روشنِ همه‌جای سایت. فونت
-   عمداً اینجا تنظیم نشده — از تایپوگرافیِ خودِ قالب (Anjoman) ارث می‌برد.
+   پورتِ مستقیمِ ‎amw-pg‎/‎amw-pg-modal‎ از افزونهٔ almasara-elementor-widgets
+   (‎assets/css/almasara-widgets.css‎ آنجا) — همان قاعده‌ها، عیناً، فقط با
+   تعویضِ پیشوندها:
 
-   مثلِ بقیهٔ این فایل، رنگ‌ها و اندازه‌ها پشتِ متغیرِ CSS‌اند
-   (‎--zig-gal-*‎) تا کنترل‌های پنل — که هنوز اضافه نشده‌اند — بعداً بتوانند
-   بدون دست‌زدن به این سلکتورها رویش بنشینند.
+       amw-pg          → zig-gallery
+       amw-pg-modal     → zig-gallery-modal
+       --amw-pg-*       → --zig-gal-*
+       amw-pg-noscroll  → zig-gallery-noscroll
+
+   ساختار: .zig-gallery (position:relative) > .zig-gallery__strip > شاخص +
+   همه تامبنیل‌ها (flat).
+
+   دسکتاپ (>=768px): گرید N ستونه (--zig-gal-thumbs)؛ تصویر شاخص تمام عرض
+   سطر اول، فقط N تامبنیل اول نمایش و بقیه (--extra) مخفی.
+
+   موبایل «یکی‌درمیون»: نوار اسکرول افقی. ترفند: flex ستونی + wrap با
+   ارتفاع ثابت (--zig-gal-mh). آیتم تمام‌ارتفاع یک «ستون» کامل را می‌گیرد
+   و مربع است (عرض = ارتفاع از aspect-ratio)؛ دو آیتم نصف‌ارتفاع خودکار در
+   یک ستون روی هم می‌نشینند. الگوی 3n+1 تعیین می‌کند کدام آیتم‌ها بزرگ
+   باشند: شاخص(۱) بزرگ، ۲تای بعد کوچک، جایگاه ۴ بزرگ، … یکی‌درمیون.
    ======================================================================= */
 
 .zig-gallery {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	background-color: var(--zig-gal-bg, #fff);
-	border-radius: var(--zig-gal-radius, 16px);
-	box-shadow: var(--zig-gal-shadow, 0 2px 16px rgba(17, 12, 46, 0.08));
-	padding: var(--zig-gal-padding, 16px);
+	position: relative;
+	--zig-gal-rgap: 8px;
+	--zig-gal-cgap: 8px;
 }
 
-.zig-gallery__main {
-	border-radius: var(--zig-gal-image-radius, 12px);
-	overflow: hidden;
-	background-color: var(--zig-gal-image-bg, #f3f5f8);
+.zig-gallery__strip {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	row-gap: var(--zig-gal-rgap);
+	column-gap: var(--zig-gal-cgap);
 }
 
-.zig-gallery__main img {
-	display: block;
-	width: 100%;
-	height: auto;
-}
-
-.zig-gallery__thumbs {
-	display: flex;
-	gap: var(--zig-gal-thumb-gap, 10px);
-}
-
+.zig-gallery__main,
 .zig-gallery__thumb {
-	flex: 1 1 0;
-	min-width: 0;
-	border-radius: var(--zig-gal-thumb-radius, 10px);
-	overflow: hidden;
-	cursor: pointer;
-	outline: 2px solid transparent;
-	outline-offset: -2px;
-	transition: outline-color 0.15s ease;
-}
-
-.zig-gallery__thumb:hover,
-.zig-gallery__thumb:focus-visible {
-	outline-color: var(--zig-gal-accent, #e7004a);
-}
-
-.zig-gallery__thumb img {
+	position: relative;
 	display: block;
 	width: 100%;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	overflow: hidden;
 	aspect-ratio: 1 / 1;
+}
+
+.zig-gallery__main img,
+.zig-gallery__thumb img {
+	width: 100%;
+	height: 100%;
 	object-fit: cover;
+	object-position: center center;
+	display: block;
+	transition: all 0.3s ease;
 }
 
-/* ------------------------------ مودال ------------------------------ */
+@media (max-width: 767px) {
 
-.zig-gallery-modal {
-	position: fixed;
-	inset: 0;
-	z-index: 999999;
+	/* ---- نوار اسکرول افقی یکی‌درمیون ---- */
+	.zig-gallery--mobile-alt .zig-gallery__strip {
+		display: flex;
+		flex-direction: column;
+		flex-wrap: wrap;
+		height: var(--zig-gal-mh, 85vw);
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.zig-gallery--mobile-alt .zig-gallery__strip::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* پیش‌فرض: مربع کوچک، دوتا در هر ستون */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb {
+		flex: 0 0 auto;
+		height: calc((100% - var(--zig-gal-rgap, 8px)) / 2);
+		width: auto;
+		scroll-snap-align: center;
+	}
+
+	/* آیتم‌های جایگاه 3n+1 (شاخص، تامبنیل ۳، ۶، ...) تمام‌ارتفاع و مربع بزرگ */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__main,
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb:nth-child(3n + 1) {
+		flex: 0 0 auto;
+		height: 100%;
+		width: auto;
+		scroll-snap-align: center;
+	}
+
+	/* در موبایل همه تصاویر دیده می‌شوند؛ اورلی و بلور «بیشتر» بی‌معنی است */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb--more .zig-gallery__more-overlay {
+		display: none;
+	}
+
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb--more img {
+		filter: none;
+	}
+
+	/* ---- حالت «همان چیدمان دسکتاپ» در موبایل: گرید ۲ ستونه ---- */
+	.zig-gallery--mobile-match .zig-gallery__strip > .zig-gallery__main {
+		grid-column: 1 / -1;
+	}
+
+	.zig-gallery--mobile-match .zig-gallery__strip > .zig-gallery__thumb--extra {
+		display: none;
+	}
+}
+
+/* دسکتاپ */
+@media (min-width: 768px) {
+	.zig-gallery__strip {
+		grid-template-columns: repeat(var(--zig-gal-thumbs, 4), minmax(0, 1fr));
+	}
+
+	.zig-gallery__strip > .zig-gallery__main {
+		grid-column: 1 / -1;
+	}
+
+	.zig-gallery__strip > .zig-gallery__thumb--extra {
+		display: none;
+	}
+}
+
+/* ---- نشانگر پیشرفت + تعداد (فقط موبایل یکی‌درمیون) ---- */
+
+.zig-gallery__counter {
 	display: none;
-	flex-direction: column;
-	background-color: var(--zig-gal-modal-bg, rgba(2, 6, 23, 0.92));
-	backdrop-filter: blur(6px);
-	-webkit-backdrop-filter: blur(6px);
 }
 
-.zig-gallery-modal__header {
+@media (max-width: 767px) {
+	.zig-gallery--mobile-alt > .zig-gallery__counter {
+		position: absolute;
+		bottom: 12px;
+		inset-inline-start: 12px;
+		z-index: 2;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 7px 12px;
+		border-radius: 999px;
+		background-color: rgba(255, 255, 255, 0.92);
+		box-shadow: 0 2px 10px rgba(16, 24, 40, 0.15);
+		color: #1a2b4a;
+		font-size: 13px;
+		font-weight: 700;
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	.zig-gallery__counter-bar {
+		width: 44px;
+		height: 5px;
+		border-radius: 999px;
+		background-color: #e4e7ee;
+		overflow: hidden;
+	}
+
+	.zig-gallery__counter-fill {
+		display: block;
+		height: 100%;
+		width: 0;
+		border-radius: inherit;
+		background-color: #8a94a6;
+		transition: width 0.15s ease;
+	}
+}
+
+/* اورلی «تصاویر بیشتر» با سه‌نقطه */
+.zig-gallery__more-overlay {
+	position: absolute;
+	inset: 0;
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 18px 20px;
-	color: var(--zig-gal-modal-title-color, #fff);
-	font-weight: 600;
-}
-
-.zig-gallery-modal__close,
-.zig-gallery-modal__prev,
-.zig-gallery-modal__next {
-	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0;
-	border: 0;
-	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.12);
-	color: #fff;
-	cursor: pointer;
-	transition: background-color 0.15s ease;
+	background-color: rgba(16, 24, 40, 0.6);
 }
 
-.zig-gallery-modal__close:hover,
-.zig-gallery-modal__prev:hover,
-.zig-gallery-modal__next:hover {
-	background-color: rgba(255, 255, 255, 0.22);
+.zig-gallery__dots {
+	display: flex;
+	gap: 5px;
+}
+
+.zig-gallery__dots span {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: #fff;
+}
+
+/* ---------- مودال گالری ---------- */
+
+body.zig-gallery-noscroll {
+	overflow: hidden;
+}
+
+.zig-gallery-modal {
+	--zig-gal-modal-dur: 260ms;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background-color: rgba(255, 255, 255, 0.98);
+	padding: 16px;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity var(--zig-gal-modal-dur) ease,
+		transform var(--zig-gal-modal-dur) cubic-bezier(0.16, 1, 0.3, 1),
+		visibility var(--zig-gal-modal-dur);
+}
+
+.zig-gallery-modal.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+	transition-delay: 0s;
+}
+
+/* ---------- انیمیشن‌های ورود/خروج مودال ---------- */
+
+.zig-gallery-modal--anim-fade {
+	transform: none;
+}
+
+.zig-gallery-modal--anim-fade-scale {
+	transform: scale(0.96);
+}
+.zig-gallery-modal--anim-fade-scale.is-open {
+	transform: scale(1);
+}
+
+.zig-gallery-modal--anim-slide-up {
+	transform: translateY(30px);
+}
+.zig-gallery-modal--anim-slide-up.is-open {
+	transform: translateY(0);
+}
+
+.zig-gallery-modal--anim-zoom .zig-gallery-modal__stage,
+.zig-gallery-modal--anim-zoom .zig-gallery-modal__tab,
+.zig-gallery-modal--anim-zoom .zig-gallery-modal__strip {
+	transform: scale(0.9);
+	transition: transform var(--zig-gal-modal-dur) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.zig-gallery-modal--anim-zoom.is-open .zig-gallery-modal__stage,
+.zig-gallery-modal--anim-zoom.is-open .zig-gallery-modal__tab,
+.zig-gallery-modal--anim-zoom.is-open .zig-gallery-modal__strip {
+	transform: scale(1);
+}
+
+/* رعایت prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+	.zig-gallery-modal,
+	.zig-gallery-modal * {
+		transition-duration: 1ms;
+		animation-duration: 1ms;
+	}
 }
 
 .zig-gallery-modal__close {
-	width: 36px;
-	height: 36px;
+	position: absolute;
+	top: 20px;
+	inset-inline-start: 20px;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px;
+	border: 0;
+	background: none;
+	color: #1a2b4a;
+	font-size: 26px;
+	cursor: pointer;
+	line-height: 1;
 }
 
-.zig-gallery-modal__close .zig-icon-line {
-	width: 18px;
-	height: 18px;
+.zig-gallery-modal__tab {
+	flex-shrink: 0;
+	margin-bottom: 8px;
+	padding: 8px 22px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	box-shadow: 0 2px 12px rgba(16, 24, 40, 0.1);
+	color: #1a2b4a;
+	font-size: 14px;
+	font-weight: 700;
 }
 
-.zig-gallery-modal__body {
-	flex: 1;
-	min-height: 0;
-	display: flex;
-	padding: 0 20px;
-}
-
-.zig-gallery-modal__slider {
+.zig-gallery-modal__stage {
 	position: relative;
-	flex: 1;
-	min-width: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	gap: 16px;
+	flex: 1 1 auto;
+	width: 100%;
+	min-height: 0;
 }
 
-.zig-gallery-modal__image {
+.zig-gallery-modal__imgwrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+	height: 100%;
+}
+
+.zig-gallery-modal__img {
 	max-width: 100%;
-	max-height: 70vh;
-	border-radius: var(--zig-gal-modal-image-radius, 12px);
+	max-height: 72vh;
+	width: auto;
+	height: auto;
 	object-fit: contain;
+	transition: opacity 0.2s ease;
 }
 
-.zig-gallery-modal__prev,
-.zig-gallery-modal__next {
+.zig-gallery-modal__img.is-loading {
+	opacity: 0.4;
+}
+
+.zig-gallery-modal__spinner {
 	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
+	width: 32px;
+	height: 32px;
+	border: 3px solid rgba(26, 43, 74, 0.15);
+	border-top-color: #1a2b4a;
+	border-radius: 50%;
+	animation: zig-gallery-spin 0.8s linear infinite;
+}
+
+@keyframes zig-gallery-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.zig-gallery-modal__nav {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	width: 44px;
 	height: 44px;
+	border: 0;
+	border-radius: 50%;
+	background-color: #ffffff;
+	box-shadow: 0 2px 12px rgba(16, 24, 40, 0.12);
+	color: #1a2b4a;
+	cursor: pointer;
+	transition: all 0.2s ease;
 }
 
-.zig-gallery-modal__prev .zig-icon-line,
-.zig-gallery-modal__next .zig-icon-line {
-	width: 22px;
-	height: 22px;
-}
-
-/*
- * آیکونِ «arrow» به‌صورتِ پیش‌فرض به چپ اشاره دارد (یعنی «قبلی/برگشت»)؛
- * دکمهٔ «بعدی» با آینه‌کردنِ همان یک آیکون به راست اشاره می‌کند — بدون
- * وابستگی به جهتِ RTL/LTR صفحه، چون این‌جا معنایش «عقب/جلو» است نه
- * «راست/چپِ متن».
- */
-.zig-gallery-modal__next-icon {
-	transform: scaleX(-1);
-}
-
-.zig-gallery-modal__prev {
-	inset-inline-start: 12px;
-}
-
-.zig-gallery-modal__next {
-	inset-inline-end: 12px;
-}
-
-.zig-gallery-modal__footer {
+.zig-gallery-modal__strip {
+	flex-shrink: 0;
 	display: flex;
-	gap: 10px;
-	padding: 16px 20px 20px;
+	align-items: center;
+	gap: 8px;
+	max-width: 100%;
+	margin-top: 12px;
+	padding: 4px;
 	overflow-x: auto;
+	scrollbar-width: thin;
 }
 
-.zig-gallery-modal__footer-thumb {
-	flex: 0 0 auto;
+.zig-gallery-modal__strip button {
+	flex-shrink: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	line-height: 0;
+}
+
+.zig-gallery-modal__strip img {
 	width: 64px;
 	height: 64px;
-	border-radius: 8px;
 	object-fit: cover;
-	cursor: pointer;
-	outline: 2px solid transparent;
-	outline-offset: -2px;
-	transition: outline-color 0.15s ease;
+	border-radius: 8px;
+	border: 2px solid transparent;
+	opacity: 0.75;
+	transition: all 0.2s ease;
 }
 
-.zig-gallery-modal__footer-thumb:hover,
-.zig-gallery-modal__footer-thumb:focus-visible {
-	outline-color: var(--zig-gal-accent, #e7004a);
+.zig-gallery-modal__strip button:hover img {
+	opacity: 1;
 }
 
-@media (max-width: 640px) {
-	.zig-gallery-modal__image {
-		max-height: 55vh;
-	}
+.zig-gallery-modal__strip .is-active img {
+	opacity: 1;
+	border-color: #1a2b4a;
+}
 
-	.zig-gallery-modal__footer-thumb {
-		width: 52px;
-		height: 52px;
-	}
+/* ---------- استایل کارتی تامبنیل + بج تعداد ---------- */
+
+.zig-gallery__thumb {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+}
+
+.zig-gallery__more-count {
+	position: absolute;
+	top: 10px;
+	inset-inline-start: 10px;
+	z-index: 1;
+	padding: 4px 10px;
+	border-radius: 8px;
+	background-color: #1a2b40;
+	color: #fff;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.4;
+	direction: ltr;
+}
+
+.zig-gallery__more-count--top-end {
+	inset-inline-start: auto;
+	inset-inline-end: 10px;
+}
+
+.zig-gallery__more-count--bottom-start {
+	top: auto;
+	bottom: 10px;
+}
+
+.zig-gallery__more-count--bottom-end {
+	top: auto;
+	bottom: 10px;
+	inset-inline-start: auto;
+	inset-inline-end: 10px;
+}
+
+.zig-gallery__more-count--center {
+	top: 50%;
+	inset-inline-start: 50%;
+	transform: translate(-50%, -50%);
+}
+
+[dir="rtl"] .zig-gallery__more-count--center {
+	transform: translate(50%, -50%);
 }

@@ -68,14 +68,7 @@ foreach ($widgets as $label => $class) {
 
     $selectors = zig_collect_selectors($class);
 
-    /*
-     * گالری محصول موقتاً استثناست: پورتِ مستقیمِ شورت‌کدِ الماس‌آرا است و
-     * هنوز هیچ کنترلِ استایلی (و در نتیجه هیچ سلکتوری) ندارد — طراحی در
-     * دورِ اصلاحاتِ بعدی اضافه می‌شود.
-     */
-    if ('گالری محصول' !== $label) {
-        Tests::ok('سلکتوری ثبت شده', count($selectors) > 10, sprintf('تعداد: %d', count($selectors)));
-    }
+    Tests::ok('سلکتوری ثبت شده', count($selectors) > 10, sprintf('تعداد: %d', count($selectors)));
 
     $leaked = [];
 

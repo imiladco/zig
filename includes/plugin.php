@@ -59,6 +59,14 @@ final class Plugin {
         // در ادیتور همیشه لود می‌شود تا پیش‌نمایش با سایت یکی باشد
         add_action('elementor/editor/after_enqueue_styles', [$this, 'enqueue_editor_styles']);
 
+        /*
+         * نقطهٔ REST گالری. برخلافِ نقطهٔ آژاکسِ آرشیو (که وضعیتِ فیلتر و
+         * صفحه از کلاینت می‌آید و باید نانس داشته باشد)، این یکی فقط
+         * آدرسِ تصاویرِ یک محصولِ منتشرشده را برمی‌گرداند — دادهٔ کاملاً
+         * عمومی، بدون نیاز به احراز هویت، پس صفحه/CDN هم می‌تواند کشش کند.
+         */
+        add_action('rest_api_init', [$this, 'register_rest_routes']);
+
         add_action('init', [$this, 'maybe_flush_after_update'], 20);
 
         add_action('init', [$this, 'boot_filters'], 5);
@@ -250,6 +258,20 @@ final class Plugin {
         );
 
         /*
+         * کنترلرِ مشترکِ مودال‌ها فایلِ جدا دارد — نه چون گالری تنها
+         * مصرف‌کننده‌اش می‌ماند، بلکه چون هر ویجتِ مودال‌دارِ بعدیِ این
+         * افزونه باید همان حبسِ فوکوس/inert/Esc را بگیرد بدون کپی‌کردنِ
+         * منطقش. گالری آن را به‌عنوانِ وابستگی می‌آورد تا قبل از خودش لود شود.
+         */
+        wp_register_script(
+            'zig3d-modal',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-modal.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
          * گالری فایل جدا دارد و نه بخشی از آرشیو، چون هیچ صفحه‌ای هر دو را
          * لازم ندارد: آرشیو در فهرست است و گالری در صفحهٔ محصول. یک فایلِ
          * مشترک یعنی صفحهٔ محصول کل منطق فیلتر و صفحه‌بندی را هم می‌گیرد.
@@ -257,7 +279,7 @@ final class Plugin {
         wp_register_script(
             'zig3d-gallery',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-gallery.js',
-            [],
+            ['zig3d-modal'],
             ZIG3D_WIDGETS_VERSION,
             true
         );
@@ -266,6 +288,70 @@ final class Plugin {
     public function enqueue_editor_styles(): void {
         $this->register_styles();
         wp_enqueue_style('zig3d-widgets');
+    }
+
+    /**
+     * نقطهٔ REST عمومی برایِ لودِ ایجکسیِ تصاویرِ گالریِ محصول.
+     *
+     * پورتِ مستقیمِ ‎rest_product_gallery()‎ از almasara-elementor-widgets؛
+     * فقط مسیر از ‎almasara/v1‎ به ‎zig3d/v1‎ عوض شده.
+     */
+    public function register_rest_routes(): void {
+        register_rest_route('zig3d/v1', '/product-gallery/(?P<id>\d+)', [
+            'methods'             => 'GET',
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'id' => ['sanitize_callback' => 'absint'],
+            ],
+            'callback'            => [$this, 'rest_product_gallery'],
+        ]);
+    }
+
+    /**
+     * خروجی فقط URLِ تصاویر است (دادهٔ عمومی)، پس کشِ صفحه/CDN هم می‌تواند
+     * کشش کند — به همین دلیل هم ‎permission_callback‎ باز است و نه پشتِ نانس.
+     */
+    public function rest_product_gallery($request) {
+        if (!function_exists('wc_get_product')) {
+            return new \WP_Error('woocommerce_missing', 'WooCommerce is not active.', ['status' => 500]);
+        }
+
+        $product = wc_get_product((int) $request['id']);
+        if (!$product || 'publish' !== $product->get_status()) {
+            return new \WP_Error('not_found', 'Product not found.', ['status' => 404]);
+        }
+
+        $ids = [];
+        if ($product->get_image_id()) {
+            $ids[] = (int) $product->get_image_id();
+        }
+        foreach ($product->get_gallery_image_ids() as $gallery_id) {
+            $ids[] = (int) $gallery_id;
+        }
+
+        $images = [];
+        foreach ($ids as $attachment_id) {
+            $full = wp_get_attachment_image_src($attachment_id, 'large');
+            if (!$full) {
+                $full = wp_get_attachment_image_src($attachment_id, 'full');
+            }
+            if (!$full) {
+                continue;
+            }
+
+            $thumb = wp_get_attachment_image_src($attachment_id, 'medium');
+
+            $images[] = [
+                'full'  => $full[0],
+                'thumb' => $thumb ? $thumb[0] : $full[0],
+                'alt'   => (string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true),
+            ];
+        }
+
+        $response = rest_ensure_response($images);
+        $response->header('Cache-Control', 'public, max-age=3600');
+
+        return $response;
     }
 
     public function flush_facet_cache(): void {

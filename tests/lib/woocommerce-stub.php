@@ -83,6 +83,24 @@ namespace {
             public function get_attributes() { return $this->props['attrs']; }
             public function get_image_id() { return (int) $this->props['image']; }
             public function get_gallery_image_ids() { return $this->props['gallery']; }
+            public function get_status() { return $this->props['status_post'] ?? 'publish'; }
+
+            /**
+             * ‎WC_DateTime‎ واقعی، برای پارامترِ کش‌بستنِ ‎?v=‎ در گالری کافی
+             * نیست؛ فقط ‎getTimestamp()‎ لازم است.
+             */
+            public function get_date_modified() {
+                if (!isset($this->props['modified'])) {
+                    return null;
+                }
+
+                return new class((int) $this->props['modified']) {
+                    private int $ts;
+                    public function __construct(int $ts) { $this->ts = $ts; }
+                    public function getTimestamp(): int { return $this->ts; }
+                };
+            }
+
             public function zig_meta() { return $this->props['meta']; }
             public function zig_terms() { return $this->props['terms']; }
             public function zig_thumb() { return $this->props['thumb']; }
