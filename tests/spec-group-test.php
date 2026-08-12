@@ -28,15 +28,15 @@ Tests::same(
 );
 
 Tests::same(
-    'ویژگیِ سفارشیِ با نام معتبر می‌ماند',
-    Spec_Group::sanitize_item(['source' => 'attribute', 'attribute' => 'custom', 'custom_attribute' => 'رنگ'])['custom_attribute'],
-    'رنگ'
+    'ویژگیِ انتخاب‌نشده هیچی نیست — نامِ آزاد این‌جا راه ندارد',
+    Spec_Group::sanitize_item(['source' => 'attribute', 'attribute' => '']),
+    null
 );
 
 Tests::same(
-    'ویژگیِ سفارشیِ بی‌نام هیچی نیست',
-    Spec_Group::sanitize_item(['source' => 'attribute', 'attribute' => 'custom', 'custom_attribute' => '  ']),
-    null
+    'مقدارِ ناسالمِ ویژگی به یک اسلاگِ امن پاک می‌شود، نه دور نمی‌ریزد',
+    Spec_Group::sanitize_item(['source' => 'attribute', 'attribute' => 'PA_Brand!!'])['attribute'],
+    'pa_brand'
 );
 
 Tests::same(

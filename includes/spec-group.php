@@ -47,7 +47,7 @@ final class Spec_Group {
 
     /**
      * @param array<int,array> $items
-     * @return array<int,array{source:string,attribute:string,custom_attribute:string,meta_key:string,label:string}>
+     * @return array<int,array{source:string,attribute:string,meta_key:string,label:string}>
      */
     public static function sanitize_items(array $items): array {
         $out = [];
@@ -63,27 +63,28 @@ final class Spec_Group {
         return $out;
     }
 
-    /** یک مشخصه، یا ‎null‎ اگر هیچ مبدأِ واقعی‌ای معلوم نکند */
+    /**
+     * یک مشخصه، یا ‎null‎ اگر هیچ مبدأِ واقعی‌ای معلوم نکند.
+     *
+     * ‎attribute‎ همیشه یک تاکسونومیِ واقعیِ ووکامرس است (‎pa_...‎) — نامِ
+     * دلخواه/تایپی این‌جا راه ندارد. کاربر یک ویژگی از فهرستِ همان چیزی که
+     * در ووکامرس ساخته انتخاب می‌کند، نه یک رشتهٔ آزاد؛ اگر واقعاً یک
+     * مقدارِ کاملاً سفارشی لازم باشد، مبدأ می‌شود ‎custom_meta‎.
+     */
     public static function sanitize_item(array $item): ?array {
         $source = in_array($item['source'] ?? '', self::SOURCES, true) ? $item['source'] : 'attribute';
 
         $attribute = self::taxonomy((string) ($item['attribute'] ?? ''));
-        if ('' === $attribute) {
-            $attribute = 'custom';
-        }
-
-        $custom_attribute = self::text((string) ($item['custom_attribute'] ?? ''));
 
         $clean = [
-            'source'           => $source,
-            'attribute'        => $attribute,
-            'custom_attribute' => $custom_attribute,
-            'meta_key'         => self::key((string) ($item['meta_key'] ?? '')),
-            'label'            => self::text((string) ($item['label'] ?? '')),
+            'source'    => $source,
+            'attribute' => $attribute,
+            'meta_key'  => self::key((string) ($item['meta_key'] ?? '')),
+            'label'     => self::text((string) ($item['label'] ?? '')),
         ];
 
-        // نه ویژگیِ سراسری انتخاب شده، نه نامی برایِ ویژگیِ سفارشی — یعنی هیچی
-        if ('attribute' === $source && 'custom' === $attribute && '' === $custom_attribute) {
+        // هیچ ویژگی‌ای انتخاب نشده — یعنی هیچی
+        if ('attribute' === $source && '' === $attribute) {
             return null;
         }
 
@@ -99,9 +100,7 @@ final class Spec_Group {
      * =================================================================== */
 
     private static function taxonomy(string $value): string {
-        $value = strtolower(trim($value));
-
-        return 'custom' === $value ? 'custom' : (string) preg_replace('/[^a-z0-9_\-]/', '', $value);
+        return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim($value)));
     }
 
     private static function key(string $value): string {

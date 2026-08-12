@@ -1,7 +1,6 @@
 <?php
 namespace Zig3d_Widgets\Admin;
 
-use Zig3d_Widgets\Attributes;
 use Zig3d_Widgets\Spec_Group;
 use Zig3d_Widgets\Spec_Store;
 
@@ -29,9 +28,6 @@ final class Spec_Groups_Page {
 
     private const SLUG  = 'zig3d-spec-groups';
     private const NONCE = 'zig3d_spec_groups';
-
-    /** متنِ گزینهٔ «سفارشی» در کمبوباکسِ انتخابِ ویژگی */
-    private const CUSTOM_ATTRIBUTE_LABEL = 'ویژگیِ سفارشی…';
 
     public static function boot(): void {
         add_action('admin_menu', [self::class, 'register'], 21);
@@ -140,7 +136,6 @@ final class Spec_Groups_Page {
         echo '</form>';
 
         self::render_box_template();
-        self::render_item_datalist();
         self::render_script();
     }
 
@@ -217,13 +212,12 @@ final class Spec_Groups_Page {
      * @param int|string $i
      */
     private static function render_item(string $box_id, $i, array $item): void {
-        $source           = $item['source'] ?? 'attribute';
-        $attribute        = $item['attribute'] ?? 'custom';
-        $custom_attribute = $item['custom_attribute'] ?? '';
-        $meta_key         = $item['meta_key'] ?? '';
-        $label            = $item['label'] ?? '';
-        $name             = sprintf('zig3d_groups[%s][items][%s]', $box_id, $i);
-        $attr_text        = 'custom' === $attribute ? self::CUSTOM_ATTRIBUTE_LABEL : Attributes::label($attribute);
+        $source    = $item['source'] ?? 'attribute';
+        $attribute = $item['attribute'] ?? '';
+        $meta_key  = $item['meta_key'] ?? '';
+        $label     = $item['label'] ?? '';
+        $name      = sprintf('zig3d_groups[%s][items][%s]', $box_id, $i);
+        $options   = self::attribute_options();
 
         echo '<li class="zig3d-spec-row" draggable="true">';
         echo '<span class="zig3d-spec-row__handle dashicons dashicons-menu" aria-hidden="true"></span>';
@@ -241,30 +235,45 @@ final class Spec_Groups_Page {
 
         echo '<div class="zig3d-spec-field zig3d-spec-field--attr">';
         echo '<span class="zig3d-spec-field__label">' . esc_html__('ویژگی', 'zig3d-widgets') . '</span>';
-        echo '<span class="zig3d-combobox" data-zig3d-when="attribute"' . ('attribute' === $source ? '' : ' hidden') . '>';
-        printf(
-            '<input type="text" class="zig3d-spec-field__control zig3d-combobox__input" list="zig3d-attr-options" value="%s" placeholder="%s" autocomplete="off">',
-            esc_attr($attr_text),
-            esc_attr__('نامِ ویژگی…', 'zig3d-widgets')
-        );
-        printf('<input type="hidden" name="%s[attribute]" value="%s" data-zig3d-combobox-value>', esc_attr($name), esc_attr($attribute));
-        echo '</span>';
-        if (!self::has_attribute_taxonomies()) {
+        echo '<span data-zig3d-when="attribute"' . ('attribute' === $source ? '' : ' hidden') . '>';
+        /*
+         * فقط انتخاب از فهرستِ واقعیِ ووکامرس — نه یک ورودیِ آزاد. اگر
+         * فروشگاه هنوز ویژگیِ سراسری‌ای نساخته، سلکت غیرفعال است و همان
+         * پیام را نشان می‌دهد؛ راهِ نوشتنِ نامِ دلخواه (وقتی واقعاً لازم
+         * باشد) مبدأِ «فیلدِ دلخواه» است، نه این‌جا.
+         */
+        if ($options) {
+            printf('<select name="%s[attribute]" class="zig3d-spec-field__control">', esc_attr($name));
             printf(
-                '<p class="zig3d-spec-field__hint" data-zig3d-when="attribute"%s>%s <a href="%s" target="_blank" rel="noopener">%s</a></p>',
-                'attribute' === $source ? '' : ' hidden',
-                esc_html__('این فروشگاه هنوز ویژگیِ سراسری‌ای ندارد؛ نامش را در «ویژگیِ سفارشی…» بنویسید یا', 'zig3d-widgets'),
+                '<option value=""%s>%s</option>',
+                selected('', $attribute, false),
+                esc_html__('انتخابِ ویژگیِ محصول', 'zig3d-widgets')
+            );
+            foreach ($options as $taxonomy => $attrLabel) {
+                printf(
+                    '<option value="%s"%s>%s</option>',
+                    esc_attr($taxonomy),
+                    selected($taxonomy, $attribute, false),
+                    esc_html($attrLabel)
+                );
+            }
+            echo '</select>';
+        } else {
+            // اگر قبلاً مقداری ذخیره شده (مثلاً فروشگاه موقتاً ویژگی ندارد)، با ذخیرهٔ دوباره پاک نشود
+            if ('' !== $attribute) {
+                printf('<input type="hidden" name="%s[attribute]" value="%s">', esc_attr($name), esc_attr($attribute));
+            }
+            printf(
+                '<select class="zig3d-spec-field__control" disabled><option>%s</option></select>',
+                esc_html__('هیچ ویژگی ووکامرسی یافت نشد', 'zig3d-widgets')
+            );
+            printf(
+                '<p class="zig3d-spec-field__hint"><a href="%s" target="_blank" rel="noopener">%s</a></p>',
                 esc_url(admin_url('edit.php?post_type=product&page=product_attributes')),
-                esc_html__('از اینجا یکی بسازید', 'zig3d-widgets')
+                esc_html__('از اینجا یک ویژگیِ محصول بسازید', 'zig3d-widgets')
             );
         }
-        printf(
-            '<input type="text" class="zig3d-spec-field__control" name="%s[custom_attribute]" value="%s" placeholder="%s" data-zig3d-when="custom"%s>',
-            esc_attr($name),
-            esc_attr($custom_attribute),
-            esc_attr__('نامِ ویژگیِ سفارشی', 'zig3d-widgets'),
-            'custom' === $attribute ? '' : ' hidden'
-        );
+        echo '</span>';
         printf(
             '<input type="text" class="zig3d-spec-field__control" name="%s[meta_key]" value="%s" placeholder="%s" data-zig3d-when="custom_meta"%s>',
             esc_attr($name),
@@ -293,21 +302,38 @@ final class Spec_Groups_Page {
     }
 
     /** کش‌شده برایِ همین رندر — چند بار در هر ردیف پرسیده می‌شود */
-    private static ?bool $has_taxonomies = null;
+    private static ?array $attribute_options = null;
 
     /**
-     * آیا این فروشگاه حداقل یک ویژگیِ سراسری (taxonomy) دارد؟
+     * ویژگی‌هایِ واقعیِ ووکامرس، همان‌هایی که در Products › Attributes
+     * ساخته شده‌اند — تاکسونومی => برچسبِ خوانا.
      *
-     * اگر نه، کمبوباکسِ «ویژگی» جز گزینهٔ «سفارشی» چیزی برایِ نشان‌دادن
-     * ندارد — که خودش شبیهِ خرابی است، نه یک حالتِ خالیِ روشن. اینجا همان
-     * را تشخیص می‌دهیم تا زیرِ فیلد یک راهنمایِ صریح بگذاریم.
+     * عمداً مستقیم از ‎wc_get_attribute_taxonomies()‎ می‌آید، نه از
+     * ‎Attributes::all()‎ (که برایِ فیلترهایِ سایدبار است و برند/تاکسونومی‌های
+     * دیگر را هم قاطی می‌کند). این‌جا فقط همان جدولِ ووکامرس معتبر است —
+     * دقیقاً منبعی که قرار است.
      */
-    private static function has_attribute_taxonomies(): bool {
-        if (null === self::$has_taxonomies) {
-            self::$has_taxonomies = [] !== Attributes::all();
+    private static function attribute_options(): array {
+        if (null !== self::$attribute_options) {
+            return self::$attribute_options;
         }
 
-        return self::$has_taxonomies;
+        $options = [];
+
+        if (function_exists('wc_get_attribute_taxonomies') && function_exists('wc_attribute_taxonomy_name')) {
+            foreach ((array) wc_get_attribute_taxonomies() as $attribute) {
+                $taxonomy = (string) wc_attribute_taxonomy_name((string) ($attribute->attribute_name ?? ''));
+
+                if ('' === $taxonomy) {
+                    continue;
+                }
+
+                $label = trim((string) ($attribute->attribute_label ?? ''));
+                $options[$taxonomy] = '' !== $label ? $label : $taxonomy;
+            }
+        }
+
+        return self::$attribute_options = $options;
     }
 
     /** @return array<string,string> */
@@ -334,15 +360,6 @@ final class Spec_Groups_Page {
         echo '<template id="zig3d-item-template">';
         self::render_item('__B__', '__I__', []);
         echo '</template>';
-    }
-
-    private static function render_item_datalist(): void {
-        echo '<datalist id="zig3d-attr-options">';
-        printf('<option value="%s" data-slug="custom">', esc_attr(self::CUSTOM_ATTRIBUTE_LABEL));
-        foreach (Attributes::all() as $taxonomy) {
-            printf('<option value="%s" data-slug="%s">', esc_attr(Attributes::label($taxonomy)), esc_attr($taxonomy));
-        }
-        echo '</datalist>';
     }
 
     /* =====================================================================
@@ -726,8 +743,7 @@ final class Spec_Groups_Page {
             color: var(--zig3d-text-muted);
         }
 
-        .zig3d-spec-field__control,
-        .zig3d-combobox__input {
+        .zig3d-spec-field__control {
             width: 100%;
             height: 40px;
             padding: 0 10px;
@@ -739,21 +755,17 @@ final class Spec_Groups_Page {
             transition: border-color .15s ease, box-shadow .15s ease;
         }
 
-        .zig3d-spec-field__control:focus,
-        .zig3d-combobox__input:focus {
+        .zig3d-spec-field__control:focus {
             outline: none;
             border-color: var(--zig3d-primary);
             box-shadow: 0 0 0 3px rgba(123, 92, 255, .12);
         }
 
-        /*
-         * ‎[hidden]‎ خودِ HTML یک قاعدهٔ UA است، نه author — یعنی همین
-         * ‎display: block‎ی ساده، با هم‌ارزیِ specificity، آن را می‌بَرد و
-         * عنصر با وجودِ ‎hidden‎ باز نمایان می‌ماند. رگهٔ دوم صراحتاً
-         * ‎[hidden]‎ را برمی‌گرداند.
-         */
-        .zig3d-combobox { display: block; }
-        .zig3d-combobox[hidden] { display: none; }
+        .zig3d-spec-field__control:disabled {
+            background: var(--zig3d-field-bg);
+            color: var(--zig3d-text-muted);
+            cursor: not-allowed;
+        }
 
         .zig3d-spec-field__hint {
             margin: 6px 0 0;
@@ -866,72 +878,37 @@ final class Spec_Groups_Page {
 
             /* ---------------- ردیفِ مشخصه ---------------- */
 
-            /*
-             * دو سیگنالِ جدا نمایانی را تعیین می‌کنند، نه یکی: کدام مبدأ
-             * («نوعِ مقدار») و — فقط وقتی مبدأ «ویژگی» است — آیا خودِ
-             * ویژگیِ انتخاب‌شده «سفارشی» است. باگِ قبلی همهٔ
-             * ‎[data-zig3d-when]‎ را فقط با مقدارِ سلکتِ مبدأ می‌سنجید، و چون
-             * «سفارشی» هرگز مقدارِ آن سلکت نیست، فیلدِ «نامِ ویژگیِ سفارشی»
-             * بعدِ اولین sync (که بی‌درنگ، همان لحظهٔ wire‌شدن، اجرا می‌شود)
-             * برایِ همیشه پنهان می‌ماند — حتی وقتی از قبل مقدار داشت.
+            /**
+             * نمایانیِ فیلدها فقط به یک سیگنال بند است: مقدارِ «نوعِ
+             * مقدار». دیگر زیرمبدأِ «سفارشی» ای در کارِ ویژگی نیست — سلکتِ
+             * ویژگی فقط از فهرستِ واقعیِ ووکامرس انتخاب می‌کند، پس یک
+             * سیگنالِ دوم لازم نبود.
              */
             function wireSourceVisibility(row) {
                 var select = row.querySelector('[data-zig3d-source]');
                 if (!select) { return; }
 
-                var comboWrap  = row.querySelector('[data-zig3d-when="attribute"]');
-                var customHint = row.querySelectorAll('.zig3d-spec-field__hint[data-zig3d-when="attribute"]');
-                var customIn   = row.querySelector('[data-zig3d-when="custom"]');
-                var metaIn     = row.querySelector('[data-zig3d-when="custom_meta"]');
-                var comboValue = row.querySelector('[data-zig3d-combobox-value]');
+                var attrWrap = row.querySelector('[data-zig3d-when="attribute"]');
+                var attrSelect = attrWrap ? attrWrap.querySelector('select[name*="[attribute]"]') : null;
+                var metaIn = row.querySelector('[data-zig3d-when="custom_meta"]');
 
                 var sync = function () {
-                    var isAttribute = 'attribute' === select.value;
-                    if (comboWrap) { comboWrap.hidden = !isAttribute; }
-                    customHint.forEach(function (el) { el.hidden = !isAttribute; });
+                    if (attrWrap) { attrWrap.hidden = 'attribute' !== select.value; }
                     if (metaIn) { metaIn.hidden = 'custom_meta' !== select.value; }
-                    if (customIn) {
-                        customIn.hidden = !(isAttribute && comboValue && 'custom' === comboValue.value);
-                    }
                 };
 
                 select.addEventListener('change', function () {
                     /*
-                     * تعویضِ مبدأ یعنی فیلدهای مبدأهایِ دیگر دیگر معنا
-                     * ندارند — پاک‌شان می‌کنیم تا داده‌ای که دیگر دیده
-                     * نمی‌شود بی‌سروصدا زیرِ فرم نماند.
+                     * تعویضِ مبدأ یعنی فیلدِ مبدأِ قبلی دیگر معنا ندارد —
+                     * پاک می‌شود تا داده‌ای که دیگر دیده نمی‌شود بی‌سروصدا
+                     * زیرِ فرم نماند.
                      */
-                    if ('attribute' !== select.value) {
-                        var input = row.querySelector('.zig3d-combobox__input');
-                        if (input) { input.value = ''; }
-                        if (comboValue) { comboValue.value = 'custom'; }
-                        if (customIn) { customIn.value = ''; }
-                    }
-                    if ('custom_meta' !== select.value && metaIn) {
-                        metaIn.value = '';
-                    }
+                    if ('attribute' !== select.value && attrSelect) { attrSelect.value = ''; }
+                    if ('custom_meta' !== select.value && metaIn) { metaIn.value = ''; }
                     sync();
                 });
 
-                row.__zig3dSyncVisibility = sync;
                 sync();
-            }
-
-            function wireCombobox(row) {
-                var input = row.querySelector('.zig3d-combobox__input');
-                var hidden = row.querySelector('[data-zig3d-combobox-value]');
-                var list = document.getElementById('zig3d-attr-options');
-                if (!input || !hidden) { return; }
-
-                var sync = function () {
-                    var text = input.value.trim();
-                    var match = list && text ? list.querySelector('option[value="' + CSS.escape(text) + '"]') : null;
-                    hidden.value = match ? match.getAttribute('data-slug') : 'custom';
-                    // مبدأ همچنان «ویژگی» است، ولی حالا شاید سراغِ فیلدِ نامِ سفارشی برویم
-                    if (row.__zig3dSyncVisibility) { row.__zig3dSyncVisibility(); }
-                };
-                input.addEventListener('change', sync);
-                input.addEventListener('blur', sync);
             }
 
             /** شمارشِ زندهٔ «N مشخصه» بالایِ جعبه — فقط بازخوردِ چشمی، ذخیره از رویِ خودِ DOM حساب می‌شود */
@@ -944,7 +921,6 @@ final class Spec_Groups_Page {
 
             function wireItemRow(row, box) {
                 wireSourceVisibility(row);
-                wireCombobox(row);
 
                 var remove = row.querySelector('[data-zig3d-remove-item]');
                 if (remove) {
