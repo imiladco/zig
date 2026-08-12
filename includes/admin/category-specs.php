@@ -58,7 +58,7 @@ final class Category_Specs {
             printf(
                 '<p class="description">%s <a href="%s">%s</a></p>',
                 esc_html__('هنوز گروهی ساخته نشده.', 'zig3d-widgets'),
-                esc_url(Spec_Groups_Page::url('new')),
+                esc_url(Spec_Groups_Page::url()),
                 esc_html__('ساختنِ اولین گروه', 'zig3d-widgets')
             );
 
