@@ -97,16 +97,16 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-schema', 'spec-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
         Schema_Store::register();
 
         /*
-         * قالب‌های مشخصات فنی؛ خواهرِ Schema_Store برای گروه‌بندیِ نمایشِ
-         * مشخصات — نه فیلترِ سایدبار. ثبتِ متا هم به همان دلیل بیرون از
-         * شرطِ ادمین است.
+         * کتابخانهٔ گروه‌هایِ مشخصاتِ فنی؛ خواهرِ Schema_Store برایِ
+         * گروه‌بندیِ نمایشِ مشخصات — نه فیلترِ سایدبار. ثبتِ متا هم به همان
+         * دلیل بیرون از شرطِ ادمین است.
          */
         Spec_Store::register();
 
@@ -141,12 +141,12 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/admin/category-filters.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/admin/schemas-page.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/admin/category-specs.php';
-        require_once ZIG3D_WIDGETS_PATH . 'includes/admin/spec-schemas-page.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/admin/spec-groups-page.php';
 
         Admin\Category_Filters::boot();
         Admin\Schemas_Page::boot();
         Admin\Category_Specs::boot();
-        Admin\Spec_Schemas_Page::boot();
+        Admin\Spec_Groups_Page::boot();
     }
 
     /**

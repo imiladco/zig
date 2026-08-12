@@ -1,124 +1,99 @@
 <?php
 /**
- * ذخیره‌سازیِ قالب‌های مشخصات فنی.
+ * ذخیره‌سازیِ کتابخانهٔ گروه‌هایِ مشخصاتِ فنی.
  *
- * خواهرِ ‎schema-store-test.php‎؛ همان بی‌اعتمادی به هرچه از دیتابیس
- * می‌آید، برای یک ساختارِ دوسطحی به‌جای فهرستِ تخت.
+ * هرچه از دیتابیس می‌آید مشکوک است: گروهی که پاک شده ولی دسته‌ای هنوز به
+ * نامش ارجاع دارد، فهرستِ نامِ گروهی که کسی دستی خراب کرده، تکراری در
+ * فهرستِ یک دسته. هیچ‌کدام خطا نمی‌دهند؛ فقط صفحهٔ محصول یک گروه کم دارد.
  */
 
 require_once __DIR__ . '/bootstrap.php';
 
 $root = dirname(__DIR__);
 
-require_once $root . '/includes/spec-schema.php';
+require_once $root . '/includes/spec-group.php';
 require_once $root . '/includes/spec-store.php';
 
-use Zig3d_Widgets\Spec_Schema;
 use Zig3d_Widgets\Spec_Store;
 
 /* ==========================================================================
- * قالب‌های مشترک
+ * کتابخانهٔ گروه‌ها
  * ======================================================================= */
 
-Tests::group('ذخیره‌سازیِ مشخصات › قالب‌ها');
+Tests::group('ذخیره‌سازیِ مشخصات › کتابخانه');
 
-$clean = Spec_Store::sanitize_schemas([
-    'cnc' => [
-        'label'  => 'دستگاه CNC',
-        'groups' => [
-            ['label' => 'سیستم ماشین‌کاری', 'items' => [['source' => 'weight']]],
-        ],
+$clean = Spec_Store::sanitize_groups([
+    'machining' => [
+        'label' => 'سیستم ماشین‌کاری',
+        'items' => [['source' => 'weight']],
     ],
-    'Laser Cutters!' => [
-        'label'  => 'برش لیزری',
-        'groups' => [
-            ['label' => 'قدرت', 'items' => [['source' => 'dimensions']]],
-        ],
+    'Dimensions & Infra!' => [
+        'label' => 'ابعاد و زیرساخت',
+        'items' => [['source' => 'dimensions']],
     ],
 ]);
 
-Tests::same('نامِ قالب به شکلِ امن درمی‌آید', array_keys($clean), ['cnc', 'lasercutters']);
-Tests::same('برچسب نگه داشته می‌شود', $clean['cnc']['label'], 'دستگاه CNC');
-Tests::same('گروه‌ها پاک‌سازی می‌شوند', count($clean['cnc']['groups']), 1);
+Tests::same('نامِ گروه به شکلِ امن درمی‌آید', array_keys($clean), ['machining', 'dimensionsinfra']);
+Tests::same('برچسب نگه داشته می‌شود', $clean['machining']['label'], 'سیستم ماشین‌کاری');
 
 Tests::same(
-    'قالبِ بی‌گروهِ معتبر ذخیره نمی‌شود',
-    Spec_Store::sanitize_schemas(['empty' => ['label' => 'خالی', 'groups' => []]]),
+    'گروهِ بی‌آیتمِ معتبر ذخیره نمی‌شود',
+    Spec_Store::sanitize_groups(['empty' => ['label' => 'خالی', 'items' => []]]),
     []
 );
 
-Tests::same(
-    'قالبی که همهٔ گروه‌هایش بی‌آیتم‌اند هم ذخیره نمی‌شود',
-    Spec_Store::sanitize_schemas(['x' => ['groups' => [['label' => 'گ', 'items' => []]]]]),
-    []
-);
-
-Tests::same(
-    'برچسبِ خالی، نامِ قالب را می‌گیرد',
-    Spec_Store::sanitize_schemas(['cnc' => ['groups' => [['items' => [['source' => 'weight']]]]]])['cnc']['label'],
-    'cnc'
-);
+Tests::same('نامِ بی‌اعتبار کنار می‌رود', Spec_Store::sanitize_groups(['!!!' => ['items' => [['source' => 'weight']]]]), []);
+Tests::same('مقدارِ غیرآرایه کنار می‌رود', Spec_Store::sanitize_groups(['x' => 'string']), []);
 
 Tests::same(
     'تگ از برچسب پاک می‌شود',
-    Spec_Store::sanitize_schemas([
-        'x' => ['label' => '<script>bad</script>CNC', 'groups' => [['items' => [['source' => 'weight']]]]],
+    Spec_Store::sanitize_groups([
+        'x' => ['label' => '<script>bad</script>CNC', 'items' => [['source' => 'weight']]],
     ])['x']['label'],
     'CNC'
 );
 
-Tests::same('نامِ بی‌اعتبار کنار می‌رود', Spec_Store::sanitize_schemas(['!!!' => ['groups' => []]]), []);
-Tests::same('مقدارِ غیرآرایه کنار می‌رود', Spec_Store::sanitize_schemas(['x' => 'string']), []);
-
 /* ==========================================================================
- * اتصالِ دسته
+ * فهرستِ گروه‌هایِ یک دسته
  * ======================================================================= */
 
-Tests::group('ذخیره‌سازیِ مشخصات › اتصالِ دسته');
+Tests::group('ذخیره‌سازیِ مشخصات › فهرستِ دسته');
 
 Tests::same(
-    'ورودیِ خالی، اتصالِ پیش‌فرض می‌دهد',
-    Spec_Store::sanitize_binding([]),
-    ['mode' => Spec_Schema::MODE_NONE, 'schema' => '']
+    'ترتیب حفظ می‌شود',
+    Spec_Store::sanitize_category_groups(['b', 'a', 'c']),
+    ['b', 'a', 'c']
 );
 
 Tests::same(
-    'حالتِ ناشناخته به «بدونِ گروه‌بندی» برمی‌گردد',
-    Spec_Store::sanitize_binding(['mode' => 'ghost'])['mode'],
-    Spec_Schema::MODE_NONE
+    'تکراری فقط یک بار می‌ماند، در اولین جایگاهش',
+    Spec_Store::sanitize_category_groups(['a', 'b', 'a']),
+    ['a', 'b']
 );
 
+Tests::same('نامِ خالی دور ریخته می‌شود', Spec_Store::sanitize_category_groups(['a', '', '  ']), ['a']);
+
 Tests::same(
-    'حالتِ قالب شناخته می‌شود',
-    Spec_Store::sanitize_binding(['mode' => 'schema', 'schema' => 'CNC'])['schema'],
-    'cnc'
+    'نامِ ناامن هم پاک می‌شود',
+    Spec_Store::sanitize_category_groups(['Machining!'])[0],
+    'machining'
 );
+
+/* ==========================================================================
+ * حلِ نهایی
+ * ======================================================================= */
+
+Tests::group('ذخیره‌سازیِ مشخصات › حلِ نهایی');
 
 /*
- * بدونِ لایهٔ بازنویسی — کلیدِ اضافه‌ای که کسی بفرستد باید بی‌اثر بماند،
- * نه اینکه در اتصالِ ذخیره‌شده سر دربیاورد.
+ * چسبیدنِ کتابخانه و فهرستِ دسته باید مستقیم آزمون‌پذیر باشد، بدونِ
+ * دیتابیس — پس هر دو تابع را روی همان کش‌های استاتیک صدا نمی‌زنیم؛ به‌جایش
+ * می‌سنجیم که پاک‌سازیِ هرکدام جدا درست کار می‌کند و ترکیبشان در
+ * ‎resolve()‎ (که خودش get_option/get_term_meta لازم دارد) در تستِ
+ * یکپارچگی، نه اینجا، سنجیده می‌شود.
  */
 Tests::same(
-    'کلیدِ اضافه (مثلاً overrides) نادیده گرفته می‌شود',
-    Spec_Store::sanitize_binding(['mode' => 'schema', 'schema' => 'cnc', 'overrides' => ['x' => 'y']]),
-    ['mode' => Spec_Schema::MODE_SCHEMA, 'schema' => 'cnc']
+    'گروهِ گم‌شده در پاک‌سازیِ فهرستِ دسته حذف نمی‌شود — فقط در resolve',
+    Spec_Store::sanitize_category_groups(['gone', 'machining']),
+    ['gone', 'machining']
 );
-
-/* ==========================================================================
- * چسبیدن به لایهٔ تصمیم
- * ======================================================================= */
-
-Tests::group('ذخیره‌سازیِ مشخصات › اتصال به تصمیم');
-
-$resolved = Spec_Schema::resolve(
-    Spec_Store::sanitize_binding(['mode' => 'schema', 'schema' => 'cnc']),
-    Spec_Store::sanitize_schemas([
-        'cnc' => [
-            'label'  => 'دستگاه CNC',
-            'groups' => [['label' => 'سیستم ماشین‌کاری', 'items' => [['source' => 'weight']]]],
-        ],
-    ])
-);
-
-Tests::same('قالب اعمال می‌شود', count($resolved['groups']), 1);
-Tests::same('و هشداری در کار نیست', $resolved['notes'], []);
