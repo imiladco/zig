@@ -12,6 +12,8 @@
  */
 
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/lib/elementor-stub.php';
+require_once __DIR__ . '/lib/woocommerce-stub.php';
 
 $root = dirname(__DIR__);
 
@@ -169,3 +171,39 @@ Tests::same('شماره از یک شروع می‌شود', Gallery::label(0, fal
 Tests::same('و نه از صفر', Gallery::label(3, false), '4');
 Tests::same('ارقام فارسی', Gallery::label(0, true), '۱');
 Tests::same('عدد دورقمی فارسی', Gallery::label(11, true), '۱۲');
+
+/* ==========================================================================
+ * دادهٔ کامل › ‎slides‎ در برابرِ ‎all_slides‎
+ * ======================================================================= */
+
+Tests::group('گالری › دادهٔ کامل');
+
+/*
+ * دلیلِ وجودِ دو فهرست: ‎max‎ فقط باید *نمایشِ* صحنه و نوارِ اصلی را
+ * محدود کند، نه دسترسیِ مشتری به بقیهٔ عکس‌ها. اگر ‎all_slides‎ هم بریده
+ * می‌شد، لایت‌باکس دقیقاً همان محدودیت را تکرار می‌کرد و «چند عکسِ
+ * دیگر» اصلاً قابلِ دیدن نمی‌ماند.
+ */
+$product = new WC_Product(['id' => 50, 'image' => 1, 'gallery' => [2, 3, 4, 5, 6]]);
+$data    = Gallery::data($product, ['max' => 3]);
+
+Tests::same('فهرستِ نمایشی با سقف بریده می‌شود', $data['slides'], [1, 2, 3]);
+Tests::same('فهرستِ کامل بریده نمی‌شود', $data['all_slides'], [1, 2, 3, 4, 5, 6]);
+
+$unbounded = Gallery::data($product, ['max' => 0]);
+
+Tests::same(
+    'بدونِ سقف، هر دو فهرست یکی‌اند',
+    $unbounded['slides'],
+    $unbounded['all_slides']
+);
+
+/*
+ * تکراری‌ها هم باید در هر دو فهرست یک‌جور یکتا شوند — وگرنه شمارشِ
+ * «چندتای پنهان» (تفاوتِ طولِ این دو فهرست) غلط از آب درمی‌آمد.
+ */
+$dup_product = new WC_Product(['id' => 51, 'image' => 10, 'gallery' => [10, 11, 12]]);
+$dup_data    = Gallery::data($dup_product, ['max' => 2]);
+
+Tests::same('فهرستِ نمایشی، تکراری را یکتا کرده', $dup_data['slides'], [10, 11]);
+Tests::same('فهرستِ کامل هم همین‌طور', $dup_data['all_slides'], [10, 11, 12]);

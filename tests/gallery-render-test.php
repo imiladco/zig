@@ -387,6 +387,113 @@ Tests::blocks('ولی داخلش فلشی نیست', $single_zoom, 'zig-gallery_
 Tests::blocks('و نوار بندانگشتی هم نه', $single_zoom, 'zig-gallery__thumbs');
 
 /* ==========================================================================
+ * عکس‌های پنهانِ پشتِ سقف — لایت‌باکس همیشه کامل است
+ * ======================================================================= */
+
+Tests::group('گالری › عکس‌های پنهان');
+
+/*
+ * محصولی با شش عکس و سقفِ نمایشیِ سه‌تا: صحنه و نوارِ اصلی فقط سه‌تا
+ * نشان می‌دهند، ولی لایت‌باکس — چون از ‎all_slides‎ می‌خواند نه
+ * ‎slides‎ — باید هر شش‌تا را داشته باشد. اگر لایت‌باکس هم بریده
+ * می‌شد، «+۳» یک وعدهٔ توخالی بود.
+ */
+$hidden_gallery = zig_gallery(
+    ['id' => 30, 'image' => 200, 'gallery' => [201, 202, 203, 204, 205]],
+    ['max' => 3, 'show_zoom' => 'yes']
+);
+
+/*
+ * تقسیمِ رشته به دو نیمه — پیش و پسِ ‎<dialog>‎ — تا بشود «چند فریم در
+ * صحنهٔ اصلی» را از «چند فریم در لایت‌باکس» جدا شمرد. هر دو از یک
+ * کلاسِ ‎.zig-gallery__frame‎ استفاده می‌کنند، پس تنها راهِ تفکیک همین
+ * موقعیتِ در متن است.
+ */
+$dialog_pos    = strpos($hidden_gallery, '<dialog');
+$before_dialog = substr($hidden_gallery, 0, $dialog_pos);
+$inside_dialog = substr($hidden_gallery, $dialog_pos);
+
+Tests::same(
+    'صحنه/نوارِ اصلی (پیش از دیالوگ) فقط سه فریم دارند',
+    substr_count($before_dialog, 'class="zig-gallery__frame"'),
+    3
+);
+
+Tests::same(
+    'ولی خودِ لایت‌باکس هر شش‌تا را دارد',
+    substr_count($inside_dialog, 'class="zig-gallery__frame"'),
+    6
+);
+
+Tests::same(
+    'بندانگشتیِ لایت‌باکس هم شش‌تاست، نه سه‌تا',
+    substr_count($inside_dialog, 'class="zig-gallery__thumb-link"'),
+    6
+);
+
+/*
+ * سه عکسِ پنهان: ‎۶ − ۳ = ۳‎. آخرین بندانگشتیِ *دیده‌شده* باید این عدد
+ * را نشان بدهد، نه بندانگشتیِ سوم‌ازآخر یا اولی.
+ */
+Tests::keeps('روی آخرین بندانگشتیِ دیده‌شده، «+۳» می‌نشیند', $before_dialog, 'class="zig-gallery__thumb-more" aria-hidden="true">+۳<');
+
+Tests::ok(
+    'دقیقاً همان یکی نشانِ «بیشتر» می‌گیرد',
+    1 === substr_count($before_dialog, 'data-zig-more'),
+    substr_count($before_dialog, 'data-zig-more')
+);
+
+/*
+ * آن بندانگشتی باید به لایت‌باکسِ همین نمونه وصل باشد تا JS بتواند
+ * پیدایش کند — نه صرفاً یک صفتِ تزئینی.
+ */
+preg_match('/data-zig-more aria-controls="([^"]+)"/', $before_dialog, $more_controls);
+preg_match('/<dialog[^>]*\sid="([^"]+)"/', $inside_dialog, $dialog_id);
+
+Tests::ok('بندانگشتی aria-controls دارد', !empty($more_controls[1]), 'یافت نشد');
+Tests::ok('دیالوگ شناسه دارد', !empty($dialog_id[1]), 'یافت نشد');
+
+Tests::same(
+    'و aria-controls دقیقاً همان شناسهٔ دیالوگ است',
+    $more_controls[1] ?? null,
+    $dialog_id[1] ?? null
+);
+
+/*
+ * بدونِ زوم، هیچ لایت‌باکسی نیست که «+N» به آن اشاره کند — پس اصلاً
+ * چاپ نمی‌شود، نه اینکه به یک دیالوگِ نبود اشاره کند.
+ */
+$hidden_no_zoom = zig_gallery(
+    ['id' => 31, 'image' => 210, 'gallery' => [211, 212, 213, 214, 215]],
+    ['max' => 3, 'show_zoom' => '']
+);
+
+Tests::blocks('بدونِ زوم، نشانِ «بیشتر» چاپ نمی‌شود', $hidden_no_zoom, 'zig-gallery__thumb-more');
+Tests::blocks('و data-zig-more هم نه', $hidden_no_zoom, 'data-zig-more');
+
+/*
+ * وقتی چیزی پنهان نیست (سقف از تعداد بزرگ‌تر است)، هیچ بندانگشتی‌ای
+ * این نشان را نمی‌گیرد.
+ */
+$not_hidden = zig_gallery(
+    ['id' => 32, 'image' => 220, 'gallery' => [221]],
+    ['max' => 9, 'show_zoom' => 'yes']
+);
+
+Tests::blocks('سقفِ بزرگ‌تر از تعداد، چیزی پنهان نمی‌کند', $not_hidden, 'zig-gallery__thumb-more');
+
+/* ==========================================================================
+ * سرتیترِ لایت‌باکس
+ * ======================================================================= */
+
+Tests::group('گالری › سرتیترِ لایت‌باکس');
+
+$titled = zig_gallery(['id' => 33, 'image' => 230, 'gallery' => [231]], ['show_zoom' => 'yes']);
+
+Tests::keeps('عنوانِ محصول در سرتیترِ لایت‌باکس می‌آید', $titled, '<p class="zig-gallery__lightbox-title">دستگاه نمونه</p>');
+Tests::keeps('و دکمهٔ بستن همان‌جا، کنارش', $titled, 'zig-gallery__lightbox-head');
+
+/* ==========================================================================
  * نشان
  * ======================================================================= */
 

@@ -41,12 +41,93 @@
 
 		if (zoomLink && dialog && window.HTMLDialogElement) {
 			root.zigLightbox = new Lightbox(dialog, zoomLink, root);
+
+			/*
+			 * کلیک روی خودِ تصویر هم لایت‌باکس را باز می‌کند، نه فقط دکمهٔ
+			 * «بزرگ‌نمایی». رویداد روی ظرفِ فریم‌ها بسته می‌شود — نه تک‌تکِ
+			 * تصویرها — چون فریم‌های بعدی ممکن است بعداً هم اضافه نشوند،
+			 * ولی حتی اگر می‌شدند این یک شنوندهٔ کمتر برای مدیریت بود.
+			 *
+			 * بعد از یک کشیدنِ انگشت روی ظرف، مرورگر خودش رویدادِ ‎click‎
+			 * را سرکوب می‌کند — پس نیازی به تشخیصِ دستیِ «کشیدن در برابرِ
+			 * کلیک» نیست.
+			 */
+			/*
+			 * از خودِ ‎Gallery‎ی صحنهٔ اصلی گرفته می‌شود، نه با یک
+			 * ‎querySelector‎ی تازه: آن یکی از قبل درست محدود شده (فقط
+			 * صحنهٔ اصلی، نه فریم‌های تودرتوی لایت‌باکس)، توضیحش در
+			 * ‎scopedQueryAll‎.
+			 */
+			var scroller = root.zigGallery.scroller;
+
+			if (scroller) {
+				root.classList.add('zig-gallery--zoomable');
+
+				scroller.addEventListener('click', function (event) {
+					if (event.target.closest('.zig-gallery__image')) {
+						root.zigLightbox.open();
+					}
+				});
+			}
+
+			/*
+			 * بندانگشتیِ «+N»: همان کلیک هم‌زمان دو مسیر را صدا می‌زند —
+			 * مسیرِ عادیِ ‎Gallery‎ (صحنهٔ اصلی را به همین ایندکس می‌برد) و
+			 * این یکی (لایت‌باکس را باز می‌کند). ایندکس را مستقیم از
+			 * ‎data-zig-goto‎ی همین عنصر می‌خوانیم، نه از
+			 * ‎outer.zigGallery.index‎: آن مقدار را همین کلیک دارد
+			 * ناهمگام به‌روز می‌کند (منتظرِ ناظرِ اسکرول)، پس اگر همین‌جا
+			 * می‌خواندیمش، هنوز کهنه بود.
+			 */
+			var more = root.querySelector('[data-zig-more]');
+
+			if (more) {
+				more.addEventListener('click', function () {
+					root.zigLightbox.open(Number(more.getAttribute('data-zig-goto')) || 0);
+				});
+			}
 		}
 	}
 
 	/* ======================================================================
 	 * نمونه
 	 * =================================================================== */
+
+	/**
+	 * مثلِ ‎querySelectorAll‎، ولی اگر ‎root‎ خودش یک لایت‌باکس نیست، هر
+	 * چیزی که داخلِ یک لایت‌باکسِ تودرتو باشد را کنار می‌گذارد.
+	 *
+	 * چرا لازم است: ‎<dialog>‎ی لایت‌باکس عمداً *داخلِ* ‎<figure>‎ی گالریِ
+	 * اصلی است — برای اینکه متغیرهای ‎--zig-gal-*‎ به ارث برسند (توضیح در
+	 * ‎render_gallery()‎ی PHP). یعنی همان کلاس‌ها و صفت‌ها —
+	 * ‎.zig-gallery__frame‎، ‎[data-zig-goto]‎ و بقیه — هم در صحنهٔ اصلی
+	 * هستند هم در لایت‌باکس، و یک ‎querySelectorAll‎ی ساده روی ریشهٔ
+	 * ‎<figure>‎ هر دو مجموعه را با هم برمی‌گرداند.
+	 *
+	 * بدونِ این فیلتر، ‎Gallery‎ی صحنهٔ اصلی ناظرش را روی فریم‌های
+	 * *لایت‌باکس* هم می‌بست — عناصری که اصلاً داخلِ ظرفِ اسکرولِ همین
+	 * ‎Gallery‎ نیستند — و از آنجا که ‎IntersectionObserver‎ برای هدفی
+	 * بیرون از درختِ ‎root‎ی مشخص‌شده رفتارِ تعریف‌نشده‌ای دارد، دو ناظر
+	 * روی هم می‌افتادند: بندانگشتیِ فعال و شمارنده بی‌دلیل عوض می‌شدند.
+	 */
+	function scopedQueryAll(root, selector) {
+		var all = root.querySelectorAll(selector);
+		var result = [];
+
+		for (var i = 0; i < all.length; i++) {
+			var lightbox = all[i].closest('[data-zig-lightbox]');
+
+			if (!lightbox || lightbox === root) {
+				result.push(all[i]);
+			}
+		}
+
+		return result;
+	}
+
+	function scopedQuery(root, selector) {
+		return scopedQueryAll(root, selector)[0] || null;
+	}
 
 	/**
 	 * @param {Element} root
@@ -56,11 +137,11 @@
 	 */
 	function Gallery(root, startIndex) {
 		this.root = root;
-		this.frames = root.querySelectorAll('.zig-gallery__frame');
-		this.scroller = root.querySelector('.zig-gallery__frames');
-		this.thumbs = root.querySelectorAll('[data-zig-goto]');
-		this.counter = root.querySelector('[data-zig-counter]');
-		this.navs = root.querySelectorAll('[data-zig-step]');
+		this.frames = scopedQueryAll(root, '.zig-gallery__frame');
+		this.scroller = scopedQuery(root, '.zig-gallery__frames');
+		this.thumbs = scopedQueryAll(root, '[data-zig-goto]');
+		this.counter = scopedQuery(root, '[data-zig-counter]');
+		this.navs = scopedQueryAll(root, '[data-zig-step]');
 		this.loop = '1' === root.getAttribute('data-zig-loop');
 		this.index = 0;
 
@@ -85,8 +166,14 @@
 		 * درستِ زیر را با یک ایندکسِ غلط رونویسی می‌کرد. با این ترتیب،
 		 * وقتی ناظر برای اولین بار نگاه می‌کند، صحنه از قبل روی فریمِ
 		 * درست ایستاده و چیزی برای رونویسی نیست.
+		 *
+		 * با این حال، دیده شد که همان اولین مشاهده — درست همین‌جا، وقتی
+		 * ریشه لحظاتی پیش از ‎display:none‎ درآمده — می‌تواند برای دو
+		 * فریمِ کنارِ هم هر دو نسبتِ ‎۱٫۰‎ گزارش کند (توضیح در ‎watch()‎).
+		 * پرچمِ زیر همان یک نوبتِ اول را نادیده می‌گیرد.
 		 */
 		if (startIndex) {
+			this.suppressFirstObservation = true;
 			this.go(startIndex, true);
 		}
 
@@ -159,6 +246,24 @@
 	 * ‎threshold‎ روی ‎0.6‎ است نه ‎0.5‎: با نصف، در میانهٔ یک کشیدنِ آرام
 	 * هر دو فریم هم‌زمان از آستانه رد می‌شوند و شمارنده بین دو عدد
 	 * می‌لرزد. با ۶۰٪ همیشه حداکثر یکی برنده است.
+	 *
+	 * دو محافظِ دیگر هم اینجاست، هر دو برای یک نوبتِ خاص: وقتی این
+	 * گالری تازه ساخته شده و مستقیم روی فریمی غیرصفر باز می‌شود (لایت‌باکس
+	 * روی ایندکسِ صحنهٔ اصلی) — یعنی همان لحظه‌ای که یک ‎<dialog>‎ از
+	 * ‎display:none‎ به دیده‌شدن می‌رود و هم‌زمان یک اسکرولِ فوری هم رویش
+	 * اجرا شده:
+	 *
+	 *   ۱. از میانِ همهٔ ورودی‌هایی که در یک نوبتِ ناظر رسیده‌اند، فقط
+	 *      بیشترین نسبت برنده می‌شود — نه هرکدام که آخر پیمایش شود.
+	 *
+	 *   ۲. حتی با آن، اولین نوبتِ ناظر برایِ فریم‌هایی که تازه مشاهده
+	 *      شده‌اند می‌تواند نسبتی نادرست بدهد — در آزمایش، دو فریمِ
+	 *      کنارِ هم هر دو با نسبتِ ‎۱٫۰‎ رسیدند، در حالی که هندسهٔ واقعی
+	 *      فقط یکی را کاملاً نشان می‌داد. چون ‎go(index, true)‎ همین
+	 *      یک لحظه پیش، بر پایهٔ همان هندسهٔ واقعی، جوابِ درست را رویِ
+	 *      ‎this.index‎ نشانده، اولین نوبتِ ناظر — و فقط همان یکی — نادیده
+	 *      گرفته می‌شود؛ نوبت‌های بعدی که ناظر روی صحنه‌ای پایدار
+	 *      می‌بندد، کاملاً قابل‌اعتمادند.
 	 */
 	Gallery.prototype.watch = function () {
 		var self = this;
@@ -169,12 +274,20 @@
 
 		var observer = new window.IntersectionObserver(
 			function (entries) {
+				var best = null;
+
 				for (var i = 0; i < entries.length; i++) {
-					if (entries[i].isIntersecting) {
-						self.index = Number(entries[i].target.getAttribute('data-zig-index')) || 0;
-						self.sync();
+					if (entries[i].isIntersecting && (!best || entries[i].intersectionRatio > best.intersectionRatio)) {
+						best = entries[i];
 					}
 				}
+
+				if (best && !self.suppressFirstObservation) {
+					self.index = Number(best.target.getAttribute('data-zig-index')) || 0;
+					self.sync();
+				}
+
+				self.suppressFirstObservation = false;
 			},
 			{ root: this.scroller, threshold: 0.6 }
 		);
@@ -225,9 +338,21 @@
 
 		var delta = frame.getBoundingClientRect().left - this.scroller.getBoundingClientRect().left;
 
+		/*
+		 * ‎'auto'‎ یعنی «هرچه CSS خودِ عنصر گفته»، نه «فوری» — و
+		 * ‎.zig-gallery__frames‎ عمداً ‎scroll-behavior: smooth‎ دارد
+		 * (برای مسیرِ بدونِ JS). یعنی اگر اینجا برای حالتِ ‎instant‎ هم
+		 * ‎'auto'‎ می‌گذاشتیم، هرگز واقعاً فوری نمی‌شد — یک اسکرولِ نرمِ
+		 * چندصدمیلی‌ثانیه‌ای بود که فقط برای پرش‌های کوتاه (یکی‌دو فریم)
+		 * آن‌قدر سریع تمام می‌شد که فوری به نظر برسد، و برای بازکردنِ
+		 * لایت‌باکس روی فریمِ چهارم، ناظرِ اسکرول را از وسطِ راه رد
+		 * می‌کرد — بندانگشتیِ فعال و شمارنده چند صد میلی‌ثانیه چیزِ
+		 * اشتباه نشان می‌دادند. کلیدواژهٔ ‎'instant'‎ صریحاً CSS را دور
+		 * می‌زند.
+		 */
 		this.scroller.scrollBy({
 			left: delta,
-			behavior: (!instant && this.motion()) ? 'smooth' : 'auto'
+			behavior: instant ? 'instant' : (this.motion() ? 'smooth' : 'auto')
 		});
 
 		/*
@@ -363,11 +488,23 @@
 	 * لایت‌باکس همیشه از فریمِ صفر باز می‌شود، مهم نیست کجای صحنهٔ اصلی
 	 * بوده‌ای.
 	 */
-	Lightbox.prototype.open = function () {
+	/**
+	 * @param {number} [index] فریمی که باید باز شود. حذفش یعنی «هرچه
+	 *   الان در صحنهٔ اصلی است» — از ‎outer.zigGallery.index‎ خوانده
+	 *   می‌شود. این آرگومان برای وقتی است که کلیک، خودش هم‌زمان دارد
+	 *   ‎outer.zigGallery.index‎ را عوض می‌کند (مثلِ بندانگشتیِ «+N» —
+	 *   کلیکِ آن هم‌زمان مسیرِ عادیِ ‎Gallery‎ را هم صدا می‌زند): آن مسیر
+	 *   ایندکس را *ناهمگام* به‌روز می‌کند (منتظرِ ناظرِ اسکرول)، پس
+	 *   خواندنِ ‎index‎ درست همین‌جا و همین لحظه، مقدارِ کهنه را می‌داد.
+	 *   وقتی خودِ کلیک می‌داند مقصد کجاست، باید همان را مستقیم بدهد.
+	 */
+	Lightbox.prototype.open = function (index) {
 		lockScroll();
 		this.dialog.showModal();
 
-		var index = this.startIndex();
+		if (undefined === index) {
+			index = this.startIndex();
+		}
 
 		if (!this.gallery && this.dialog.querySelector('.zig-gallery__frame')) {
 			/*
@@ -406,6 +543,15 @@
 		 * گالریِ اصلی را با آخرین تصویریِ دیده‌شده در لایت‌باکس همگام کن —
 		 * کاربری که آنجا سه تصویر جلو رفته، با بستنِ پنجره نباید به
 		 * تصویرِ اولِ صحنهٔ اصلی برگردد.
+		 *
+		 * این فقط برای همان کاربردِ عادی نیست — دیده شد که خودِ ‎showModal()‎،
+		 * وقتی از داخلِ یک شنوندهٔ کلیکِ بسته‌شده روی ظرفِ فریم‌های *همین*
+		 * صحنه صدا زده می‌شود (مسیرِ «کلیک روی تصویر»)، ‎scrollLeft‎ی آن
+		 * ظرف را به‌طور گذرا صفر می‌کند و ناظرِ آن، بی‌خبر از این تغییرِ
+		 * بیرونی، ‎index‎ی گالریِ اصلی را هم با آن هماهنگ می‌کند — همه‌اش
+		 * پشتِ پردهٔ لایت‌باکس، پس دیده نمی‌شود، ولی اگر همین‌جا درستش
+		 * نمی‌کردیم، با بستنِ لایت‌باکس ناگهان صحنهٔ اصلی از اسلایدِ اشتباه
+		 * سر برمی‌آورد. این خط هر دو حالت را یک‌جا جواب می‌دهد.
 		 */
 		var outer = this.outerRoot.zigGallery;
 

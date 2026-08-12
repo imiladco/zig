@@ -896,6 +896,23 @@ final class Product_Gallery extends Widget_Base {
             'selector' => '{{WRAPPER}} .zig-gallery__lightbox-panel',
         ]);
 
+        $this->add_control('lightbox_title_heading', [
+            'label'     => __('سرتیترِ عنوان', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('lightbox_title_color', [
+            'label'     => __('رنگ متن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-lightbox-title-color: {{VALUE}};'],
+        ]);
+
+        $this->add_group_control(Group_Control_Typography::get_type(), [
+            'name'     => 'lightbox_title_typography',
+            'selector' => '{{WRAPPER}} .zig-gallery__lightbox-title',
+        ]);
+
         $this->add_control('lightbox_close_heading', [
             'label'     => __('دکمهٔ بستن', 'zig3d-widgets'),
             'type'      => Controls_Manager::HEADING,
@@ -980,7 +997,17 @@ final class Product_Gallery extends Widget_Base {
 
     private function render_gallery(array $data, array $settings): void {
         $slides = $data['slides'];
+        $all    = $data['all_slides'];
         $total  = count($slides);
+
+        /*
+         * چند اسلاید با ‎max‎ از دیدِ صحنه و نوارِ اصلی پنهان مانده‌اند —
+         * نه از دیدِ مشتری، فقط از دیدِ *این دو*. لایت‌باکس همیشه از
+         * ‎all_slides‎ می‌خواند، پس این عدد دقیقاً یعنی «چندتا فقط از
+         * لایت‌باکس قابلِ دیدن‌اند» — همان چیزی که روی آخرین بندانگشتیِ
+         * دیده‌شده به‌صورتِ «+N» نشان داده می‌شود.
+         */
+        $hidden = max(0, count($all) - $total);
 
         /*
          * تکِ تصویر یعنی چیزی برای حرکت‌کردن نیست. فلش، شمارنده و
@@ -988,9 +1015,10 @@ final class Product_Gallery extends Widget_Base {
          * دسترسِ صفحه‌خوان می‌ماندند، بلکه اصلاً چاپ نمی‌شوند. بزرگ‌نمایی
          * جزوِ این سه نیست: دیدنِ بزرگ‌ترِ همان یک عکس هم معنا دارد.
          */
-        $many = $total > 1;
-        $zoom = 'yes' === ($settings['show_zoom'] ?? 'yes');
-        $fill = 'yes' === ($settings['thumbs_fill'] ?? 'yes');
+        $many     = $total > 1;
+        $many_all = count($all) > 1;
+        $zoom     = 'yes' === ($settings['show_zoom'] ?? 'yes');
+        $fill     = 'yes' === ($settings['thumbs_fill'] ?? 'yes');
 
         $base = 'zig-gal-' . $this->get_id();
 
@@ -1013,7 +1041,12 @@ final class Product_Gallery extends Widget_Base {
         $this->render_stage($data, $settings, $base, $many, $zoom);
 
         if ($many && 'yes' === ($settings['show_thumbs'] ?? 'yes')) {
-            $this->render_thumbs($data, $settings, $base);
+            /*
+             * «+N» فقط وقتی معنا دارد که جایی برای دیدنِ آن N تا باشد.
+             * بدونِ لایت‌باکس، آن تصویرها اصلاً در دسترسِ کاربر نیستند —
+             * نشان‌دادنِ عددشان فقط وعده‌ای می‌داد که هیچ‌جا عملی نمی‌شد.
+             */
+            $this->render_thumbs($slides, $data['title'], $settings, $base, $zoom ? $hidden : 0, $base . '-lightbox');
         }
 
         /*
@@ -1024,7 +1057,7 @@ final class Product_Gallery extends Widget_Base {
          * لایت‌باکس هیچ‌کدام از رنگ‌ها و اندازه‌های تنظیم‌شده را نمی‌گرفت.
          */
         if ($zoom) {
-            $this->render_lightbox($data, $settings, $base, $many, $fill);
+            $this->render_lightbox($data, $settings, $base, $many_all, $fill);
         }
 
         echo '</figure>';
@@ -1042,7 +1075,7 @@ final class Product_Gallery extends Widget_Base {
 
         $size = (string) ($settings['image_size'] ?? 'woocommerce_single');
 
-        $this->render_frames($data, $base, $size, true);
+        $this->render_frames($data['slides'], $data['title'], $base, $size, true);
 
         if ($many && 'yes' === ($settings['show_nav'] ?? 'yes')) {
             $this->render_nav();
@@ -1064,20 +1097,21 @@ final class Product_Gallery extends Widget_Base {
      * همان فهرستِ اسلایدها، فقط اندازهٔ تصویر و اولویتِ بارگذاری فرق
      * می‌کند.
      *
-     * @param bool $prioritize_first فقط برای صحنهٔ اصلی معنا دارد: اسلاید
+     * @param int[]  $slides           شناسه‌های اسلاید، به ترتیب.
+     * @param bool   $prioritize_first فقط برای صحنهٔ اصلی معنا دارد: اسلاید
      *   اول ‎eager‎ و ‎fetchpriority=high‎ می‌گیرد چون معمولاً بزرگ‌ترین
      *   عنصرِ صفحه است. تصاویرِ لایت‌باکس تا بازنشدنِ آن هرگز دیده
      *   نمی‌شوند، پس این اولویت آنجا بی‌معناست — و حتی می‌تواند رقیبِ
      *   دانلودِ همان تصویرِ واقعاً روی صفحه شود.
      */
-    private function render_frames(array $data, string $base, string $size, bool $prioritize_first): void {
+    private function render_frames(array $slides, string $title, string $base, string $size, bool $prioritize_first): void {
         printf(
             '<div class="zig-gallery__frames" id="%s-frames" tabindex="0" role="group" aria-label="%s">',
             esc_attr($base),
             esc_attr__('تصاویر محصول', 'zig3d-widgets')
         );
 
-        foreach (array_values($data['slides']) as $index => $id) {
+        foreach (array_values($slides) as $index => $id) {
             printf(
                 '<div class="zig-gallery__frame" id="%1$s-%2$d" data-zig-index="%2$d">',
                 esc_attr($base),
@@ -1090,7 +1124,7 @@ final class Product_Gallery extends Widget_Base {
                 'class'    => 'zig-gallery__image',
                 'loading'  => $eager ? 'eager' : 'lazy',
                 'decoding' => 'async',
-                'alt'      => $data['title'],
+                'alt'      => $title,
             ];
 
             if ($eager) {
@@ -1198,28 +1232,61 @@ final class Product_Gallery extends Widget_Base {
      * ‎<a href="#frame">‎ واقعی، نه ‎<button>‎: بدون JS همین لینک‌ها ظرفِ
      * اسکرول را روی فریمِ مقصد می‌برند و گالری کار می‌کند. JS فقط جلوی
      * پرشِ صفحه را می‌گیرد و ‎aria-current‎ را جابه‌جا می‌کند.
+     *
+     * @param int[]  $slides      شناسه‌های اسلایدهایی که *نمایش* داده
+     *   می‌شوند — ممکن است با ‎max‎ بریده شده باشد.
+     * @param int    $hidden      چند اسلایدِ دیگر هست که این فهرست
+     *   نشانشان نمی‌دهد؛ فقط لایت‌باکس (با ‎all_slides‎) آن‌ها را دارد.
+     *   ‎۰‎ یعنی هیچ‌چیزی پنهان نیست — همان چیزی که تا امروز همیشه بود.
+     * @param string $lightbox_id شناسهٔ ‎<dialog>‎، برای وصل‌کردنِ
+     *   بندانگشتیِ آخر (وقتی چیزی پنهان است) به لایت‌باکس.
      */
-    private function render_thumbs(array $data, array $settings, string $base): void {
+    private function render_thumbs(array $slides, string $title, array $settings, string $base, int $hidden = 0, string $lightbox_id = ''): void {
         $size    = (string) ($settings['thumb_size'] ?? 'woocommerce_thumbnail');
         $persian = 'yes' === ($settings['persian_digits'] ?? 'yes');
+        $slides  = array_values($slides);
+        $last    = count($slides) - 1;
+
+        /*
+         * ‎$hidden‎ یک *شمارش* است، نه شمارهٔ یک اسلاید — ‎Gallery::label()‎
+         * برای دومی ساخته شده (ایندکسِ صفرمبنا را یکی زیاد می‌کند) و اینجا
+         * به کار نمی‌آید. تبدیلِ رقم مستقیماً همان کاری است که لازم است.
+         */
+        $hidden_label = $persian ? Price::persian((string) $hidden) : (string) $hidden;
 
         printf(
             '<ul class="zig-gallery__thumbs" role="list" aria-label="%s">',
             esc_attr__('انتخاب تصویر', 'zig3d-widgets')
         );
 
-        foreach (array_values($data['slides']) as $index => $id) {
+        foreach ($slides as $index => $id) {
+            /*
+             * فقط آخرین بندانگشتیِ *دیده‌شده*، و فقط وقتی واقعاً چیزی
+             * پشتِ آن پنهان است. این بندانگشتی هنوز عکسِ خودش را نشان
+             * می‌دهد — رویش فقط یک لایهٔ نیمه‌شفاف با «+N» می‌نشیند — پس
+             * کاربری که JS ندارد هم با کلیک روی آن به همان فریمِ عادی
+             * می‌رسد؛ کاربری که JS دارد، لایت‌باکس باز می‌شود.
+             */
+            $more = $hidden > 0 && $index === $last;
+
             printf(
                 '<li class="zig-gallery__thumb"><a class="zig-gallery__thumb-link" href="#%1$s-%2$d"'
-                    . ' data-zig-goto="%2$d"%3$s aria-label="%4$s">',
+                    . ' data-zig-goto="%2$d"%3$s%4$s aria-label="%5$s">',
                 esc_attr($base),
                 $index,
                 0 === $index ? ' aria-current="true"' : '',
-                esc_attr(sprintf(
-                    /* translators: %s: شمارهٔ تصویر */
-                    __('تصویر %s', 'zig3d-widgets'),
-                    Gallery::label($index, $persian)
-                ))
+                $more ? ' data-zig-more aria-controls="' . esc_attr($lightbox_id) . '"' : '',
+                esc_attr($more
+                    ? sprintf(
+                        /* translators: %s: تعداد تصویرهای باقی‌مانده */
+                        __('%s تصویرِ دیگر — باز کردنِ همه', 'zig3d-widgets'),
+                        $hidden_label
+                    )
+                    : sprintf(
+                        /* translators: %s: شمارهٔ تصویر */
+                        __('تصویر %s', 'zig3d-widgets'),
+                        Gallery::label($index, $persian)
+                    ))
             );
 
             echo wp_get_attachment_image( // phpcs:ignore WordPress.Security.EscapeOutput -- خروجی خودِ وردپرس
@@ -1233,6 +1300,13 @@ final class Product_Gallery extends Widget_Base {
                     'alt'      => '',
                 ]
             );
+
+            if ($more) {
+                printf(
+                    '<span class="zig-gallery__thumb-more" aria-hidden="true">+%s</span>',
+                    esc_html($hidden_label)
+                );
+            }
 
             echo '</a></li>';
         }
@@ -1255,9 +1329,18 @@ final class Product_Gallery extends Widget_Base {
      * یک ‎id‎ در صفحه بود و لنگرهای بندانگشتیِ لایت‌باکس به فریمِ اشتباه
      * می‌پرید.
      */
-    private function render_lightbox(array $data, array $settings, string $base, bool $many, bool $fill): void {
+    /**
+     * @param bool $many_all آیا لایت‌باکس بیش از یک اسلاید دارد — از رویِ
+     *   ‎all_slides‎ حساب می‌شود، نه ‎slides‎ی که ممکن است با ‎max‎ بریده
+     *   شده باشد. لایت‌باکس همیشه کاملِ فهرست را نشان می‌دهد؛ اگر این
+     *   پرچم از رویِ فهرستِ بریده‌شده حساب می‌شد، محصولی با ‎max=1‎ ولی
+     *   ده عکس، داخلِ لایت‌باکس هم فلش و شمارنده و بندانگشتی نمی‌گرفت —
+     *   دقیقاً همان‌جایی که این‌ها بیشترین معنا را دارند.
+     */
+    private function render_lightbox(array $data, array $settings, string $base, bool $many_all, bool $fill): void {
         $lightbox_base = $base . '-lb';
         $size          = (string) ($settings['lightbox_size'] ?? 'full');
+        $all_slides    = $data['all_slides'];
 
         /*
          * ‎data-zig-loop‎ باید اینجا هم باشد، جدا از ‎<figure>‎: ‎Gallery‎ی
@@ -1270,34 +1353,43 @@ final class Product_Gallery extends Widget_Base {
             '<dialog class="zig-gallery__lightbox%s" id="%s" data-zig-lightbox data-zig-loop="%s" aria-label="%s">',
             $fill ? ' zig-gallery--fill' : '',
             esc_attr($base . '-lightbox'),
-            esc_attr($many && 'yes' === ($settings['loop'] ?? 'yes') ? '1' : '0'),
+            esc_attr($many_all && 'yes' === ($settings['loop'] ?? 'yes') ? '1' : '0'),
             esc_attr__('نمایش بزرگ تصاویر محصول', 'zig3d-widgets')
         );
 
         echo '<div class="zig-gallery__lightbox-panel">';
 
+        /*
+         * سرتیتر: عنوانِ محصول + دکمهٔ بستن، کنارِ هم. بدونِ این، دکمهٔ
+         * بستن تنها روی گوشهٔ تصویر شناور بود و اولین باز شدنِ لایت‌باکس
+         * هیچ زمینه‌ای دربارهٔ اینکه «این چیست، مالِ کدام محصول است» به
+         * کاربر نمی‌داد.
+         */
+        echo '<div class="zig-gallery__lightbox-head">';
+        printf('<p class="zig-gallery__lightbox-title">%s</p>', esc_html($data['title']));
         printf(
             '<button type="button" class="zig-gallery__lightbox-close" data-zig-lightbox-close aria-label="%s">%s</button>',
             esc_attr__('بستن', 'zig3d-widgets'),
             Markup::svg_icon('close', 'zig-gallery__lightbox-close-icon') // phpcs:ignore WordPress.Security.EscapeOutput -- SVG ثابت
         );
+        echo '</div>';
 
         echo '<div class="zig-gallery__lightbox-stage">';
 
-        $this->render_frames($data, $lightbox_base, $size, false);
+        $this->render_frames($all_slides, $data['title'], $lightbox_base, $size, false);
 
-        if ($many && 'yes' === ($settings['show_nav'] ?? 'yes')) {
+        if ($many_all && 'yes' === ($settings['show_nav'] ?? 'yes')) {
             $this->render_nav();
         }
 
-        if ($many && 'yes' === ($settings['show_counter'] ?? 'yes')) {
-            $this->render_counter(count($data['slides']), $settings);
+        if ($many_all && 'yes' === ($settings['show_counter'] ?? 'yes')) {
+            $this->render_counter(count($all_slides), $settings);
         }
 
         echo '</div>';
 
-        if ($many && 'yes' === ($settings['show_thumbs'] ?? 'yes')) {
-            $this->render_thumbs($data, $settings, $lightbox_base);
+        if ($many_all && 'yes' === ($settings['show_thumbs'] ?? 'yes')) {
+            $this->render_thumbs($all_slides, $data['title'], $settings, $lightbox_base);
         }
 
         echo '</div></dialog>';

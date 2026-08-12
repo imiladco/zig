@@ -2384,6 +2384,16 @@ html.zig-gallery-lightbox-open {
 	object-fit: var(--zig-gal-image-fit, contain);
 }
 
+/*
+ * نشانگرِ دست، فقط وقتی کلیک روی تصویر واقعاً کاری می‌کند — یعنی
+ * لایت‌باکس ساخته شده و JS این کلاس را گذاشته. بدونِ این شرط، کاربر
+ * روی محصولی که بزرگ‌نمایی خاموش است هم نشانگرِ «قابل‌کلیک» می‌دید و
+ * روی تصویر می‌زد بدونِ اینکه اتفاقی بیفتد.
+ */
+.zig-gallery--zoomable .zig-gallery__image {
+	cursor: zoom-in;
+}
+
 /* --------------------------------------------------------------------------
    دکمه‌های حرکت
    -------------------------------------------------------------------------- */
@@ -2622,19 +2632,44 @@ html.zig-gallery-lightbox-open {
  * قابِ فعال ‎outline‎ است نه ‎border‎: عرض جعبه را عوض نمی‌کند، پس
  * جابه‌جا شدنِ تصویرِ فعال کل نوار را یک پیکسل تکان نمی‌دهد — چیزی که با
  * ‎border‎ در هر کلیک دیده می‌شود.
+ *
+ * پیش‌فرضِ حالتِ عادی دیگر ‎transparent‎ نیست: عکسِ محصولی که پس‌زمینه‌اش
+ * سفید است، روی کارتِ سفید و بی‌قابِ گالری کاملاً محو می‌شود و بندانگشتی
+ * دیگر یک کاشیِ مجزا به نظر نمی‌رسد. یک خطِ نازکِ خاکستری کافی است که هر
+ * بندانگشتی — صرف‌نظر از رنگِ خودِ عکس — از کارتِ اطرافش جدا بماند.
  */
 .zig-gallery__thumb-link {
+	position: relative;
 	display: block;
 	inline-size: var(--zig-gal-thumb-size, 76px);
 	block-size: var(--zig-gal-thumb-size, 76px);
 	border-radius: var(--zig-gal-thumb-radius, 14px);
 	background-color: var(--zig-gal-thumb-bg, #f4f2f8);
-	outline: var(--zig-gal-thumb-ring, 2px) solid var(--zig-gal-thumb-ring-color, transparent);
+	outline: var(--zig-gal-thumb-ring, 2px) solid var(--zig-gal-thumb-ring-color, rgba(17, 12, 46, 0.1));
 	outline-offset: var(--zig-gal-thumb-ring-gap, 2px);
 	overflow: hidden;
 	transition-duration: var(--zig-transition, 250ms);
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 	transition-property: outline-color, background-color, opacity;
+}
+
+/*
+ * لایهٔ «+N» روی آخرین بندانگشتیِ دیده‌شده — وقتی محصول عکسِ بیشتری
+ * دارد که فقط لایت‌باکس نشانشان می‌دهد. عکسِ خودِ آن بندانگشتی زیرش
+ * دیده می‌شود؛ این فقط یک پردهٔ تیره‌کنندهٔ نیمه‌شفاف است تا عددِ
+ * سفید روی هر تصویری — روشن یا تیره — خوانا بماند.
+ */
+.zig-gallery__thumb-more {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(13, 10, 23, 0.55);
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
+	pointer-events: none;
 }
 
 .zig-gallery__thumb-image {
@@ -2732,11 +2767,32 @@ html.zig-gallery-lightbox-open {
 	box-sizing: border-box;
 }
 
+/*
+ * سرتیتر: عنوانِ محصول و دکمهٔ بستن، در یک ردیف. اول از همه می‌آید —
+ * فرزندِ اولِ پنل — تا با ‎gap‎ی که خودِ پنل دارد جدا بماند، بدونِ
+ * قاعدهٔ حاشیهٔ اضافه.
+ */
+.zig-gallery__lightbox-head {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-inline-size: 0;
+}
+
+.zig-gallery__lightbox-title {
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--zig-gal-lightbox-title-color, #fff);
+	font-size: 15px;
+	font-weight: 600;
+}
+
 .zig-gallery__lightbox-close {
-	position: absolute;
-	inset-block-start: 12px;
-	inset-inline-end: 12px;
-	z-index: 1;
+	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;

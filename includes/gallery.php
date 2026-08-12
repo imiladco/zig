@@ -30,6 +30,7 @@ final class Gallery {
     /** شکل خالی، تا هر مسیر بازگشتی همان کلیدها را داشته باشد */
     private const EMPTY = [
         'slides'      => [],
+        'all_slides'  => [],
         'placeholder' => true,
         'title'       => '',
         'url'         => '',
@@ -38,11 +39,22 @@ final class Gallery {
     /**
      * دادهٔ گالری.
      *
+     * دو فهرست برمی‌گرداند، نه یکی: ‎slides‎ (که ممکن است با ‎max‎ بریده
+     * شده باشد — برای صحنه و نوارِ بندانگشتیِ اصلی) و ‎all_slides‎ (کاملِ
+     * بی‌سقف — برای لایت‌باکس).
+     *
+     * چرا دوتا: ‎max‎ برای این هست که *صفحه* شلوغ نشود — ده بندانگشتیِ
+     * ریز زیرِ یک عکس. ولی این محدودیتِ *نمایشی* دلیل نمی‌شود که مشتری
+     * دیگر نتواند بقیهٔ عکس‌های محصول را ببیند؛ آن‌ها فقط باید جای دیگری
+     * — لایت‌باکس — در دسترس بمانند. اگر یک فهرست داشتیم، یا باید همه‌جا
+     * می‌بریدیمش (و آن عکس‌های «اضافه» را از مشتری پنهان می‌کردیم) یا
+     * هیچ‌جا (و کنترلِ ‎max‎ اصلاً اثری نداشت).
+     *
      * @param array $fields {
      *     @type bool $featured آیا تصویر شاخص هم یک اسلاید باشد.
-     *     @type int  $max     سقف تعداد اسلاید؛ ‎0‎ یعنی بی‌سقف.
+     *     @type int  $max     سقف تعداد اسلایدِ *نمایشی*؛ ‎0‎ یعنی بی‌سقف.
      * }
-     * @return array{slides:int[],placeholder:bool,title:string,url:string}
+     * @return array{slides:int[],all_slides:int[],placeholder:bool,title:string,url:string}
      */
     public static function data(\WC_Product $product, array $fields = []): array {
         $fields += [
@@ -50,15 +62,16 @@ final class Gallery {
             'max'      => 0,
         ];
 
-        $slides = self::order(
-            (int) $product->get_image_id(),
-            (array) $product->get_gallery_image_ids(),
-            (bool) $fields['featured'],
-            (int) $fields['max']
-        );
+        $featured_id = (int) $product->get_image_id();
+        $gallery_ids = (array) $product->get_gallery_image_ids();
+        $with_featured = (bool) $fields['featured'];
+
+        $all_slides = self::order($featured_id, $gallery_ids, $with_featured, 0);
+        $slides     = self::order($featured_id, $gallery_ids, $with_featured, (int) $fields['max']);
 
         return [
             'slides'      => $slides,
+            'all_slides'  => $all_slides,
             'placeholder' => [] === $slides,
             'title'       => (string) $product->get_name(),
             'url'         => (string) get_permalink($product->get_id()),
