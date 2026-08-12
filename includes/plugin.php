@@ -189,7 +189,6 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/selector.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
-        require_once ZIG3D_WIDGETS_PATH . 'includes/gallery.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';

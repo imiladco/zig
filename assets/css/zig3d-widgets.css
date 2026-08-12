@@ -2237,685 +2237,109 @@ a.zig-list__label:focus-visible {
 	}
 }
 
+
 /* ==========================================================================
    گالری محصول
 
-   ساختار در سه لایه است و هر لایه یک کارِ مشخص می‌کند:
+   پورتِ مستقیمِ شورت‌کدِ product_gallery_modal2 از قالبِ الماس‌آرا — فقط
+   با تعویضِ کلاس‌ها به zig-gallery*. جست‌وجوی کاملِ فایل‌های CSS قالب
+   (custom.css، single-product.css، kit.css و بقیه) هیچ قاعده‌ای برای این
+   نشانه‌ها پیدا نکرد، پس اینجا فقط چیدمانِ ساختاریِ حداقلی است — همان‌قدر
+   که گالری و مودال کار کنند: بندانگشتی‌ها کنارِ هم، مودال تمامِ صفحه.
+   هیچ رنگ، سایه یا رادیوسی عمداً اضافه نشده؛ طراحیِ واقعی در دورِ
+   اصلاحاتِ بعدی می‌آید.
+   ======================================================================= */
 
-     ‎.zig-gallery__frames‎  ناحیهٔ اسکرولِ افقی با ‎scroll-snap‎ — همین یک
-                            خط، لمس و کشیدن و پیمایش با صفحه‌کلید را بدون
-                            هیچ جاوااسکریپتی می‌سازد.
-     ‎.zig-gallery__nav‎     دو دکمه روی صحنه، که تا بالا آمدنِ JS پنهان‌اند.
-     ‎.zig-gallery__thumbs‎  لینک‌های واقعی به لنگرِ هر فریم.
-
-   یعنی اگر اسکریپت هرگز نرسد، گالری همچنان گالری است — فقط فلش و شمارنده
-   ندارد. این عمدی است و در ‎Product_Gallery‎ توضیح داده شده.
-   ========================================================================== */
-
-/*
- * قفلِ اسکرولِ پس‌زمینه، وقتی لایت‌باکس باز است.
- *
- * کلاس روی ‎<html>‎ می‌نشیند نه روی خودِ گالری، چون چیزی که باید
- * اسکرول نکند خودِ صفحه است. جاوااسکریپت آن را می‌گذارد و برمی‌دارد؛
- * توضیحِ شمارشِ ارجاع در ‎zig3d-gallery.js‎ است.
- */
-html.zig-gallery-lightbox-open {
-	overflow: hidden;
+.zig-gallery__main img {
+	display: block;
+	width: 100%;
+	height: auto;
 }
-
-/*
- * قابِ بیرونی: پس‌زمینه، گِردی، سایه — با پیش‌فرضِ خودِ شیت، دقیقاً همان
- * الگویی که ‎.zig-archive__filters‎ دارد. کنترلِ سایه (بخشِ «قاب گالری»)
- * وقتی دست‌نخورده بماند هیچ سلکتوری چاپ نمی‌کند و همین مقدارِ ‎var()‎
- * دست‌نخورده می‌ماند؛ وقتی مدیر تنظیمش کند، سلکتورِ المنتور (با وزنِ
- * ‎{{WRAPPER}}‎) رویش می‌نشیند.
- */
-.zig-gallery {
-	display: flex;
-	flex-direction: column;
-	gap: var(--zig-gal-root-gap, 12px);
-	padding: var(--zig-gal-root-padding, 24px);
-	margin: 0;
-	background-color: var(--zig-gal-bg, #fff);
-	border-radius: var(--zig-gal-radius, 24px);
-	box-shadow: var(--zig-gal-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
-	box-sizing: border-box;
-}
-
-.zig-gallery * {
-	box-sizing: inherit;
-}
-
-/* --------------------------------------------------------------------------
-   نشان
-   -------------------------------------------------------------------------- */
-
-/*
- * جزوِ چیدمانِ عادیِ ستون است، نه ‎position: absolute‎: با ‎align-self‎ به
- * سمتِ منطقیِ «پایان» می‌چسبد — در راست‌به‌چپ یعنی چپ، در چپ‌به‌راست یعنی
- * راست — بدونِ قاعدهٔ جداگانه برای هر جهت. جای اولش هم به همین دلیل است:
- * تنها فرزندی که پیش از صحنه می‌آید.
- */
-.zig-gallery__badge {
-	align-self: flex-end;
-	margin: 0;
-	padding: var(--zig-gal-badge-padding, 6px 16px);
-	border: 1px solid rgba(17, 12, 46, 0.12);
-	border-radius: var(--zig-gal-badge-radius, 999px);
-	background-color: var(--zig-gal-badge-bg, #fff);
-	color: var(--zig-gal-badge-color, var(--zig-ink, #1c1330));
-	font-size: 13px;
-	line-height: 1.6;
-	white-space: nowrap;
-}
-
-/* --------------------------------------------------------------------------
-   صحنه
-   -------------------------------------------------------------------------- */
-
-.zig-gallery__stage {
-	position: relative;
-	order: var(--zig-gal-stage-order, 1);
-	padding: var(--zig-gal-stage-padding, 0);
-	min-width: 0;
-}
-
-/*
- * ظرفِ اسکرول.
- *
- * ‎overscroll-behavior-inline: contain‎ جلوی «سرریزِ» حرکت به صفحه را
- * می‌گیرد: بدون آن، کشیدنِ انگشت روی آخرین تصویر در موبایل، مرورگر را به
- * حرکتِ «بازگشت به صفحهٔ قبل» می‌برد.
- *
- * نوارِ اسکرول عمداً پنهان است — بندانگشتی‌ها و شمارنده همان اطلاعات را
- * بهتر می‌دهند و یک نوار زیرِ عکس، کادر را می‌شکند. پنهان‌کردنش دسترسی را
- * از بین نمی‌برد چون خودِ ظرف ‎tabindex‎ دارد و با کلیدهای جهت پیمایش
- * می‌شود.
- */
-.zig-gallery__frames {
-	display: flex;
-	overflow-x: auto;
-	overflow-y: hidden;
-	scroll-snap-type: x mandatory;
-	/*
-	 * برای مسیرِ بدونِ JS: کلیک روی لنگرِ یک بندانگشتی، بدون این، یک پرشِ
-	 * آنی است. با JS فرقی نمی‌کند — کلیک را ‎preventDefault‎ می‌کند و
-	 * خودش با ‎scrollBy({behavior})‎ حرکت می‌دهد — ولی اسکریپتی که هنوز
-	 * نرسیده نباید نرمی را هم قربانی کند.
-	 */
-	scroll-behavior: smooth;
-	overscroll-behavior-inline: contain;
-	scrollbar-width: none;
-	border-radius: var(--zig-gal-stage-radius, 24px);
-	background-color: var(--zig-gal-stage-bg, #f4f2f8);
-}
-
-.zig-gallery__frames::-webkit-scrollbar {
-	display: none;
-}
-
-/* حلقهٔ فوکوس فقط برای پیمایش با صفحه‌کلید، نه برای کلیک با ماوس */
-.zig-gallery__frames:focus-visible {
-	outline: 2px solid var(--zig-gal-thumb-on-ring-color, #6a3ff5);
-	outline-offset: 2px;
-}
-
-.zig-gallery__frame {
-	flex: 0 0 100%;
-	scroll-snap-align: center;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: var(--zig-gal-frame-padding, 16px);
-	aspect-ratio: var(--zig-gal-ratio, 1);
-}
-
-/*
- * تصویر کلِ کادر را می‌گیرد و ‎object-fit‎ تصمیم می‌گیرد داخلش چه شود.
- *
- * وسوسهٔ ‎width: auto‎ با ‎max-width: 100%‎ هست — ظاهرش هم درست درمی‌آید —
- * ولی آن‌وقت جعبهٔ تصویر همیشه هم‌نسبتِ خودِ تصویر است و ‎object-fit‎ هیچ
- * کاری نمی‌کند: گزینهٔ «کادر را پر کند» یک کنترلِ بی‌اثر می‌شد که مدیر
- * می‌زندش و هیچ اتفاقی نمی‌افتد.
- */
-.zig-gallery__image {
-	inline-size: 100%;
-	block-size: 100%;
-	object-fit: var(--zig-gal-image-fit, contain);
-}
-
-/*
- * نشانگرِ دست، فقط وقتی کلیک روی تصویر واقعاً کاری می‌کند — یعنی
- * لایت‌باکس ساخته شده و JS این کلاس را گذاشته. بدونِ این شرط، کاربر
- * روی محصولی که بزرگ‌نمایی خاموش است هم نشانگرِ «قابل‌کلیک» می‌دید و
- * روی تصویر می‌زد بدونِ اینکه اتفاقی بیفتد.
- */
-.zig-gallery--zoomable .zig-gallery__image {
-	cursor: zoom-in;
-}
-
-/* --------------------------------------------------------------------------
-   دکمه‌های حرکت
-   -------------------------------------------------------------------------- */
-
-/*
- * تا وقتی ریشه ‎is-ready‎ نگرفته، این دو وجود ندارند. ‎display: none‎ و نه
- * ‎visibility‎ یا ‎opacity‎: دکمه‌ای که دیده نمی‌شود ولی با Tab به آن
- * می‌رسند، بدتر از دکمهٔ بی‌اثر است.
- */
-/*
- * ترتیبِ این دو قاعده هم عمدی است: *همهٔ* استایل روی سلکتور تک‌کلاسه
- * می‌نشیند و فقط ‎display‎ داخل گیتِ ‎is-ready‎ می‌ماند.
- *
- * اگر استایل هم داخل ‎.zig-gallery.is-ready .zig-gallery__nav‎ می‌رفت،
- * وزنش با ‎{{WRAPPER}} .zig-gallery__nav‎ی که المنتور تولید می‌کند برابر
- * می‌شد و برنده به ترتیبِ چاپِ فایل‌ها بستگی داشت — یعنی کنترلِ رنگ گاهی
- * کار می‌کرد و گاهی نه. قاعدهٔ کل این شیت این است که پنل همیشه می‌چربد.
- */
-.zig-gallery__nav {
-	position: absolute;
-	inset-block-start: 50%;
-	transform: translateY(-50%);
-	display: none;
-	align-items: center;
-	justify-content: center;
-	inline-size: var(--zig-gal-nav-size, 40px);
-	block-size: var(--zig-gal-nav-size, 40px);
-	padding: 0;
-	border: 1px solid var(--zig-gal-nav-border, transparent);
-	border-radius: var(--zig-gal-nav-radius, 50%);
-	background-color: var(--zig-gal-nav-bg, #fff);
-	color: var(--zig-gal-nav-color, var(--zig-ink, #1c1330));
-	/*
-	 * سایهٔ پیش‌فرض، نه فقط یک گروه‌کنترلِ خالی: دکمه‌ای سفید روی
-	 * پس‌زمینهٔ روشنِ صحنه بدونِ سایه تقریباً محو می‌شود — همان چیزی که
-	 * بدونِ این خط پیش می‌آمد. کنترلِ ‎nav_shadow‎ وقتی دست‌نخورده بماند
-	 * این مقدار را دست‌نخورده می‌گذارد، درست مثلِ ‎--zig-gal-shadow‎ی قاب.
-	 */
-	box-shadow: var(--zig-gal-nav-shadow, 0 4px 12px rgba(17, 12, 46, 0.12));
-	cursor: pointer;
-	transition-duration: var(--zig-transition, 250ms);
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	transition-property: color, background-color, border-color, box-shadow, opacity;
-}
-
-.zig-gallery.is-ready .zig-gallery__nav {
-	display: inline-flex;
-}
-
-/* منطقی، نه فیزیکی: در چیدمان راست‌به‌چپ «قبلی» خودبه‌خود سمت راست می‌نشیند */
-.zig-gallery__nav--prev {
-	inset-inline-start: var(--zig-gal-nav-inset, 12px);
-}
-
-.zig-gallery__nav--next {
-	inset-inline-end: var(--zig-gal-nav-inset, 12px);
-}
-
-/*
- * آیکون یکی است و برای یکی از دو دکمه آینه می‌شود. مقدارِ آینه یک متغیر
- * است تا در چیدمان چپ‌به‌راست فقط همان متغیر برعکس شود، نه یک قاعدهٔ
- * تکراری.
- */
-.zig-gallery__nav-icon {
-	inline-size: var(--zig-gal-nav-icon, 18px);
-	block-size: var(--zig-gal-nav-icon, 18px);
-	transform: scaleX(var(--zig-gal-nav-flip, 1));
-}
-
-.zig-gallery__nav--prev {
-	--zig-gal-nav-flip: -1;
-}
-
-[dir="ltr"] .zig-gallery__nav--prev {
-	--zig-gal-nav-flip: 1;
-}
-
-[dir="ltr"] .zig-gallery__nav--next {
-	--zig-gal-nav-flip: -1;
-}
-
-.zig-gallery__nav:hover,
-.zig-gallery__nav:focus-visible {
-	border-color: var(--zig-gal-nav-hover-border, var(--zig-gal-nav-border, transparent));
-	background-color: var(--zig-gal-nav-hover-bg, var(--zig-gal-nav-bg, #fff));
-	color: var(--zig-gal-nav-hover-color, var(--zig-gal-nav-color, var(--zig-ink, #1c1330)));
-}
-
-.zig-gallery__nav[disabled] {
-	border-color: var(--zig-gal-nav-off-border, var(--zig-gal-nav-border, transparent));
-	background-color: var(--zig-gal-nav-off-bg, var(--zig-gal-nav-bg, #fff));
-	color: var(--zig-gal-nav-off-color, var(--zig-gal-nav-color, var(--zig-ink, #1c1330)));
-	opacity: var(--zig-gal-nav-off-opacity, 0.4);
-	cursor: default;
-}
-
-/* --------------------------------------------------------------------------
-   شمارنده
-   -------------------------------------------------------------------------- */
-
-/*
- * مثل فلش‌ها، تا بالا آمدنِ JS پنهان است: عددی که بعد از یک کشیدنِ انگشت
- * به‌روز نمی‌شود، اطلاعاتِ غلط است نه اطلاعاتِ کم.
- */
-/*
- * جایگاهِ مشترکِ شمارنده و دکمهٔ بزرگ‌نمایی: پایینِ صحنه، وسط‌چین.
- *
- * قبلاً این پوزیشن روی خودِ شمارنده بود. از وقتی بزرگ‌نمایی کنارش نشست،
- * «فاصله از کفِ کادر» و «فاصلهٔ بینشان» مالِ *ردیف* است، نه فقط یکی از
- * دو عضوش — پس کنترلش هم در بخشِ «دکمهٔ بزرگ‌نمایی» است، نه «شمارنده».
- */
-.zig-gallery__tools {
-	position: absolute;
-	inset-block-end: var(--zig-gal-tools-offset, 16px);
-	inset-inline-start: 50%;
-	transform: translateX(50%);
-	display: flex;
-	align-items: center;
-	gap: var(--zig-gal-tools-gap, 8px);
-}
-
-/* در چیدمان چپ‌به‌راست، جابه‌جاییِ وسط‌چین باید برعکس شود */
-[dir="ltr"] .zig-gallery__tools {
-	transform: translateX(-50%);
-}
-
-.zig-gallery__counter {
-	display: none;
-	align-items: center;
-	gap: var(--zig-gal-counter-gap, 6px);
-	margin: 0;
-	padding: var(--zig-gal-counter-padding, 4px 12px);
-	border-radius: var(--zig-gal-counter-radius, 999px);
-	background-color: var(--zig-gal-counter-bg, rgba(28, 19, 48, 0.72));
-	color: var(--zig-gal-counter-color, #fff);
-	font-size: 13px;
-	line-height: 1.6;
-	white-space: nowrap;
-	pointer-events: none;
-}
-
-/*
- * دو زمینه برای دیده‌شدن: صحنهٔ اصلی که تا ‎is-ready‎ صبر می‌کند (توضیح
- * بالای فایل)، و لایت‌باکس که خودش هرگز بدونِ اجرای اسکریپت دیده
- * نمی‌شود، پس نیازی به همان گیت ندارد.
- */
-.zig-gallery.is-ready .zig-gallery__counter,
-.zig-gallery__lightbox .zig-gallery__counter {
-	display: inline-flex;
-}
-
-.zig-gallery__counter-sep,
-.zig-gallery__counter-all {
-	color: var(--zig-gal-counter-dim, rgba(255, 255, 255, 0.6));
-}
-
-/* --------------------------------------------------------------------------
-   دکمهٔ بزرگ‌نمایی
-   -------------------------------------------------------------------------- */
-
-/*
- * برخلافِ فلش و شمارنده، این یکی از اول یک لینکِ واقعی و معنادار است
- * (توضیح در ‎render_zoom_link()‎)، پس گیتِ ‎is-ready‎ نمی‌خواهد.
- */
-.zig-gallery__zoom {
-	display: inline-flex;
-	align-items: center;
-	padding: var(--zig-gal-zoom-padding, 8px 16px);
-	border-radius: var(--zig-gal-zoom-radius, 999px);
-	background-color: var(--zig-gal-zoom-bg, rgba(28, 19, 48, 0.72));
-	color: var(--zig-gal-zoom-color, #fff);
-	font-size: 13px;
-	line-height: 1.6;
-	white-space: nowrap;
-	text-decoration: none;
-	cursor: pointer;
-	transition-duration: var(--zig-transition, 250ms);
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	transition-property: color, background-color;
-}
-
-.zig-gallery__zoom:hover,
-.zig-gallery__zoom:focus-visible {
-	background-color: var(--zig-gal-zoom-hover-bg, var(--zig-gal-zoom-bg, rgba(28, 19, 48, 0.72)));
-	color: var(--zig-gal-zoom-hover-color, var(--zig-gal-zoom-color, #fff));
-}
-
-/* --------------------------------------------------------------------------
-   بندانگشتی‌ها
-   -------------------------------------------------------------------------- */
 
 .zig-gallery__thumbs {
-	order: var(--zig-gal-thumbs-order, 2);
 	display: flex;
-	gap: var(--zig-gal-thumbs-gap, 10px);
-	padding: var(--zig-gal-thumbs-padding, 0);
-	margin: 0;
-	list-style: none;
-	overflow-x: auto;
-	overscroll-behavior-inline: contain;
-	scrollbar-width: none;
-}
-
-.zig-gallery__thumbs::-webkit-scrollbar {
-	display: none;
+	gap: 8px;
+	margin-top: 8px;
 }
 
 .zig-gallery__thumb {
-	flex: 0 0 auto;
+	cursor: pointer;
 }
 
-/*
- * حالت پرکننده: بندانگشتی‌ها عرضِ نوار را بین خودشان تقسیم می‌کنند.
- *
- * ‎flex: 1 1 <size>‎ به‌علاوهٔ ‎min-inline-size‎ همان یک قاعده است که هر دو
- * سرِ طیف را می‌پوشاند: با چهار تصویر، هرکدام بزرگ‌تر از اندازهٔ پایه
- * می‌شود و ردیف کامل پر می‌شود؛ با بیست تصویر، روی اندازهٔ پایه متوقف
- * می‌شوند و نوار به اسکرول می‌افتد. بدون ‎min‎، بیست بندانگشتیِ ده‌پیکسلی
- * می‌ماند که هیچ‌کدام قابل تشخیص نیستند.
- *
- * ‎aspect-ratio‎ جای ‎block-size‎ می‌نشیند چون عرض دیگر ثابت نیست و ارتفاعِ
- * ثابت، مربع را به مستطیل تبدیل می‌کرد.
- */
-.zig-gallery--fill .zig-gallery__thumb {
-	flex: 1 1 var(--zig-gal-thumb-size, 76px);
-	min-inline-size: var(--zig-gal-thumb-size, 76px);
-}
-
-.zig-gallery--fill .zig-gallery__thumb-link {
-	inline-size: 100%;
-	block-size: auto;
-	aspect-ratio: 1;
-}
-
-/*
- * قابِ فعال ‎outline‎ است نه ‎border‎: عرض جعبه را عوض نمی‌کند، پس
- * جابه‌جا شدنِ تصویرِ فعال کل نوار را یک پیکسل تکان نمی‌دهد — چیزی که با
- * ‎border‎ در هر کلیک دیده می‌شود.
- *
- * پیش‌فرضِ حالتِ عادی ‎transparent‎ است، عمداً و دوباره: یک بار قرار بود
- * برای عکس‌های سفیدپس‌زمینه یک خطِ خاکستری همیشه‌روشن باشد، ولی چون
- * ‎outline-offset‎ آن را از هر چهار طرف بیرون می‌کشد، کنارِ هم که
- * می‌نشستند خطِ هر بندانگشتی با همسایه‌اش قاطی می‌شد — دقیقاً برخلافِ
- * ردیفِ تمیزِ گالریِ الماس‌آرا که فقط با فاصله از هم جدا می‌مانند، بدونِ
- * هیچ خطی تا وقتی فعال یا هاور نشده‌اند. جداییِ بندانگشتی‌ها کارِ خودِ
- * ‎gap‎ است، نه یک قابِ همیشگی.
- */
-.zig-gallery__thumb-link {
-	position: relative;
+.zig-gallery__thumb img {
 	display: block;
-	inline-size: var(--zig-gal-thumb-size, 76px);
-	block-size: var(--zig-gal-thumb-size, 76px);
-	border-radius: var(--zig-gal-thumb-radius, 14px);
-	background-color: var(--zig-gal-thumb-bg, #f4f2f8);
-	outline: var(--zig-gal-thumb-ring, 2px) solid var(--zig-gal-thumb-ring-color, transparent);
-	outline-offset: var(--zig-gal-thumb-ring-gap, 2px);
-	overflow: hidden;
-	transition-duration: var(--zig-transition, 250ms);
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	transition-property: outline-color, background-color, opacity;
+	width: 100%;
+	height: auto;
 }
 
-/*
- * لایهٔ «+N» روی آخرین بندانگشتیِ دیده‌شده — وقتی محصول عکسِ بیشتری
- * دارد که فقط لایت‌باکس نشانشان می‌دهد. عکسِ خودِ آن بندانگشتی زیرش
- * دیده می‌شود؛ این فقط یک پردهٔ تیره‌کنندهٔ نیمه‌شفاف است تا عددِ
- * سفید روی هر تصویری — روشن یا تیره — خوانا بماند.
- */
-.zig-gallery__thumb-more {
-	position: absolute;
+.zig-gallery-modal {
+	position: fixed;
 	inset: 0;
-	display: flex;
+	z-index: 999999;
+	display: none;
 	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 3px;
-	background-color: var(--zig-gal-more-bg, rgba(13, 10, 23, 0.6));
-	backdrop-filter: blur(var(--zig-gal-more-blur, 3px));
-	-webkit-backdrop-filter: blur(var(--zig-gal-more-blur, 3px));
-	color: #fff;
-	font-size: 15px;
-	font-weight: 700;
-	pointer-events: none;
+	background: rgba(0, 0, 0, 0.85);
 }
 
-/* سه نقطهٔ زیرِ عدد — همان نشانهٔ آشنای «و بقیه» */
-.zig-gallery__thumb-more::after {
-	content: '\2022\2022\2022';
-	font-size: 10px;
-	font-weight: 400;
-	letter-spacing: 2px;
-	opacity: 0.85;
-}
-
-.zig-gallery__thumb-image {
-	inline-size: 100%;
-	block-size: 100%;
-	object-fit: cover;
-	display: block;
-	opacity: var(--zig-gal-thumb-opacity, 1);
-	transition: opacity var(--zig-transition, 250ms) cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.zig-gallery__thumb-link:hover {
-	outline-color: var(--zig-gal-thumb-hover-ring-color, var(--zig-gal-thumb-ring-color, transparent));
-	background-color: var(--zig-gal-thumb-hover-bg, var(--zig-gal-thumb-bg, #f4f2f8));
-}
-
-.zig-gallery__thumb-link:hover .zig-gallery__thumb-image {
-	opacity: var(--zig-gal-thumb-hover-opacity, var(--zig-gal-thumb-opacity, 1));
-}
-
-/*
- * حالت فعال با ‎aria-current‎ سلکت می‌شود نه با یک کلاسِ جدا.
- *
- * دلیلش این نیست که کوتاه‌تر است؛ این است که آن‌وقت «فعال» فقط یک منبعِ
- * حقیقت دارد. با کلاسِ جدا، JS باید هر بار هر دو را عوض کند و روزی یکی‌شان
- * جا می‌ماند — و نتیجه‌اش گالری‌ای است که چیزی را برجسته نشان می‌دهد که
- * صفحه‌خوان آن را فعال نمی‌داند.
- */
-.zig-gallery__thumb-link[aria-current="true"] {
-	outline-color: var(--zig-gal-thumb-on-ring-color, #6a3ff5);
-	background-color: var(--zig-gal-thumb-on-bg, var(--zig-gal-thumb-bg, #f4f2f8));
-}
-
-.zig-gallery__thumb-link[aria-current="true"] .zig-gallery__thumb-image {
-	opacity: var(--zig-gal-thumb-on-opacity, var(--zig-gal-thumb-opacity, 1));
-}
-
-/* ==========================================================================
-   لایت‌باکس
-
-   همان اجزا — فریم، فلش، شمارنده، بندانگشتی — دوباره، این‌بار داخلِ یک
-   <dialog> بومی به‌جای یک <div> با نقشِ دستی: مرورگر خودش تلهٔ فوکوس،
-   بستن با Esc، و لایهٔ بالای صفحه (بالاتر از هر overflow: hidden‌ی که
-   این ویجت زیرش نشسته) را می‌دهد — همان الگویی که فیلترهای آرشیو با
-   <details> به‌جای اکاردئونِ دستی به کار بردند.
-
-   رنگِ فلش/شمارنده/بندانگشتیِ داخلش را از همان متغیرهایی می‌گیرد که
-   بالاتر برای خودِ صحنه نوشته شد؛ توضیحش در Product_Gallery است. آنچه
-   اینجاست فقط چیزهایی است که واقعاً مختصِ همین‌جاست.
-   ========================================================================== */
-
-/*
- * ریستِ ظاهرِ پیش‌فرضِ ‎<dialog>‎. عمداً ‎display‎ روی سلکتورِ بی‌قید تنظیم
- * نمی‌شود: قاعدهٔ خودِ مرورگر — ‎dialog:not([open]) { display: none }‎ —
- * باید دست‌نخورده بماند، وگرنه دیالوگ حتی پیش از ‎showModal()‎ هم دیده
- * می‌شود. فقط زیرِ ‎[open]‎ صریحاً ‎display‎ می‌گیرد.
- */
-.zig-gallery__lightbox {
-	margin: auto;
-	border: 0;
-	padding: 0;
-	max-inline-size: min(94vw, var(--zig-gal-lightbox-max-width, 1100px));
-	max-block-size: 92vh;
-	inline-size: 100%;
-	background: transparent;
-	box-sizing: border-box;
-}
-
-.zig-gallery__lightbox[open] {
-	display: block;
-}
-
-.zig-gallery__lightbox::backdrop {
-	background-color: var(--zig-gal-lightbox-backdrop, rgba(13, 10, 23, 0.72));
-	backdrop-filter: blur(var(--zig-gal-lightbox-backdrop-blur, 6px));
-}
-
-/*
- * پنل به‌جای خودِ ‎<dialog>‎ صاحبِ پس‌زمینه و ‎position: relative‎ است.
- * ‎<dialog>‎ی نمایش‌داده‌شده با ‎showModal()‎ خودش ‎position: fixed‎ از
- * مرورگر می‌گیرد تا وسطِ دیدگاه بماند؛ اگر همان‌جا ‎position‎ عوض
- * می‌شد، آن مرکزچینیِ بومی می‌شکست. یک لایهٔ داخلی، بدونِ دست‌زدن به
- * ‎position‎ دیالوگ، همان تکیه‌گاه را برای دکمهٔ بستن فراهم می‌کند.
- */
-.zig-gallery__lightbox-panel {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-	inline-size: 100%;
-	block-size: 100%;
-	padding: var(--zig-gal-lightbox-padding, 20px);
-	border-radius: var(--zig-gal-lightbox-radius, 20px);
-	background-color: var(--zig-gal-lightbox-bg, #14101f);
-	box-sizing: border-box;
-}
-
-/*
- * سرتیتر: عنوانِ محصول و دکمهٔ بستن، در یک ردیف. اول از همه می‌آید —
- * فرزندِ اولِ پنل — تا با ‎gap‎ی که خودِ پنل دارد جدا بماند، بدونِ
- * قاعدهٔ حاشیهٔ اضافه.
- */
-.zig-gallery__lightbox-head {
-	flex: 0 0 auto;
+.zig-gallery-modal__header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	min-inline-size: 0;
 }
 
-.zig-gallery__lightbox-title {
-	margin: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	color: var(--zig-gal-lightbox-title-color, #fff);
-	font-size: 15px;
-	font-weight: 600;
+.zig-gallery-modal__close {
+	cursor: pointer;
+	background: none;
+	border: 0;
 }
 
-.zig-gallery__lightbox-close {
-	flex: 0 0 auto;
-	display: inline-flex;
+.zig-gallery-modal__body {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+}
+
+.zig-gallery-modal__slider {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+	display: flex;
 	align-items: center;
 	justify-content: center;
-	inline-size: var(--zig-gal-lightbox-close-size, 36px);
-	block-size: var(--zig-gal-lightbox-close-size, 36px);
-	padding: 0;
-	border: 0;
-	border-radius: 50%;
-	background-color: var(--zig-gal-lightbox-close-bg, rgba(255, 255, 255, 0.12));
-	color: var(--zig-gal-lightbox-close-color, #fff);
+}
+
+.zig-gallery-modal__image {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.zig-gallery-modal__prev,
+.zig-gallery-modal__next {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
 	cursor: pointer;
-	transition-duration: var(--zig-transition, 250ms);
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	transition-property: color, background-color;
+	background: none;
+	border: 0;
 }
 
-.zig-gallery__lightbox-close:hover,
-.zig-gallery__lightbox-close:focus-visible {
-	background-color: var(--zig-gal-lightbox-close-hover-bg, rgba(255, 255, 255, 0.24));
-	color: var(--zig-gal-lightbox-close-hover-color, var(--zig-gal-lightbox-close-color, #fff));
+.zig-gallery-modal__prev {
+	inset-inline-start: 0;
 }
 
-.zig-gallery__lightbox-close-icon {
-	inline-size: 16px;
-	block-size: 16px;
+.zig-gallery-modal__next {
+	inset-inline-end: 0;
 }
 
-.zig-gallery__lightbox-stage {
-	position: relative;
-	flex: 1 1 auto;
-	min-block-size: 0;
+.zig-gallery-modal__footer {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
 }
 
-/*
- * فریم و تصویر، بازتعریف‌شده برای اینجا: صحنهٔ اصلی یک نسبتِ ثابت
- * می‌خواهد (‎--zig-gal-ratio‎، معمولاً مربع) تا کارتِ محصول یک‌دست
- * بماند. لایت‌باکس نه — هدفش دیدنِ کاملِ تصویر است، با هر نسبتی که خودش
- * دارد، در فضایی که خودِ دیالوگ می‌دهد.
- */
-.zig-gallery__lightbox .zig-gallery__frames {
-	block-size: 100%;
-	border-radius: var(--zig-gal-lightbox-image-radius, 16px);
-	background: transparent;
-}
-
-.zig-gallery__lightbox .zig-gallery__frame {
-	aspect-ratio: auto;
-	block-size: 100%;
-	padding: 0;
-}
-
-.zig-gallery__lightbox .zig-gallery__image {
-	object-fit: contain;
-}
-
-/*
- * فلش و شمارنده اینجا از اول دیده‌اند، بدونِ گیتِ ‎is-ready‎: تا وقتی
- * جاوااسکریپت این ‎<dialog>‎ را باز نکرده، اصلاً روی صفحه نیست — پس هر
- * چیزی داخلش، به‌محضِ دیده‌شدن، پشتِ سرِ یک اسکریپتِ از پیش‌اجراشده است.
- * فلش تکرار نشده چون قاعدهٔ آن تک‌کلاسه است و همین‌جا هم صدق می‌کند؛
- * فقط شمارنده — که در صحنهٔ اصلی به ‎.is-ready‎ وابسته بود — بالاتر
- * برایش استثنا نوشته شد.
- */
-.zig-gallery__lightbox .zig-gallery__nav {
-	display: inline-flex;
-}
-
-/*
- * با «حرکت کمتر»، پرشِ بینِ تصویرها آنی می‌شود.
- *
- * JS هم همین را می‌خواند و ‎behavior: 'smooth'‎ را کنار می‌گذارد؛ این
- * قاعده برای مسیرِ بدونِ JS است، جایی که خودِ مرورگر لنگر را نرم دنبال
- * می‌کند.
- */
-@media (prefers-reduced-motion: reduce) {
-	.zig-gallery__frames {
-		scroll-behavior: auto;
-	}
-
-	.zig-gallery__nav,
-	.zig-gallery__zoom,
-	.zig-gallery__lightbox-close,
-	.zig-gallery__thumb-link,
-	.zig-gallery__thumb-image {
-		transition: none;
-	}
-}
-
-/*
- * در چاپ، فلش و ردیفِ ابزار و نوارِ اسکرول معنایی ندارند: کاغذ تصویر
- * بعدی ندارد. به‌جای یک فریم، همه پشت سر هم چاپ می‌شوند. لایت‌باکس خودش
- * هیچ‌وقت باز نیست — بدونِ اسکریپتی که ‎showModal()‎ بزند، همان قاعدهٔ
- * پیش‌فرضِ ‎dialog:not([open])‎ کافی است.
- */
-@media print {
-	.zig-gallery__nav,
-	.zig-gallery__tools,
-	.zig-gallery__thumbs {
-		display: none;
-	}
-
-	.zig-gallery__frames {
-		display: block;
-		overflow: visible;
-	}
-
-	.zig-gallery__frame {
-		break-inside: avoid;
-	}
+.zig-gallery-modal__footer-thumb {
+	cursor: pointer;
+	width: 64px;
+	height: 64px;
+	object-fit: cover;
 }

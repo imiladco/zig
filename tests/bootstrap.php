@@ -38,6 +38,12 @@ if (!function_exists('esc_html__')) {
 if (!function_exists('esc_attr__')) {
     function esc_attr__($text, $domain = null) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
 }
+if (!function_exists('esc_html_e')) {
+    function esc_html_e($text, $domain = null) { echo htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+}
+if (!function_exists('esc_attr_e')) {
+    function esc_attr_e($text, $domain = null) { echo htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+}
 if (!function_exists('wp_kses_post')) {
     function wp_kses_post($text) { return (string) $text; }
 }
