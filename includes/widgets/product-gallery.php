@@ -3,6 +3,7 @@ namespace Zig3d_Widgets\Widgets;
 
 use Elementor\Controls_Manager;
 use Elementor\Widget_Base;
+use Zig3d_Widgets\Markup;
 use Zig3d_Widgets\Plugin;
 use Zig3d_Widgets\Price;
 
@@ -171,7 +172,9 @@ final class Product_Gallery extends Widget_Base {
         <div class="zig-gallery-modal" style="display: none;">
             <div class="zig-gallery-modal__header">
                 <div class="zig-gallery-modal__title"><?php esc_html_e('رسمی', 'zig3d-widgets'); ?></div>
-                <button type="button" class="zig-gallery-modal__close" aria-label="<?php esc_attr_e('بستن', 'zig3d-widgets'); ?>">×</button>
+                <button type="button" class="zig-gallery-modal__close" aria-label="<?php esc_attr_e('بستن', 'zig3d-widgets'); ?>">
+                    <?php echo Markup::svg_icon('close'); ?>
+                </button>
             </div>
             <div class="zig-gallery-modal__body">
                 <div class="zig-gallery-modal__slider">
@@ -184,8 +187,12 @@ final class Product_Gallery extends Widget_Base {
                             alt=""
                         >
                     <?php endforeach; ?>
-                    <button type="button" class="zig-gallery-modal__prev" aria-label="<?php esc_attr_e('قبلی', 'zig3d-widgets'); ?>">«</button>
-                    <button type="button" class="zig-gallery-modal__next" aria-label="<?php esc_attr_e('بعدی', 'zig3d-widgets'); ?>">»</button>
+                    <button type="button" class="zig-gallery-modal__prev" aria-label="<?php esc_attr_e('قبلی', 'zig3d-widgets'); ?>">
+                        <?php echo Markup::svg_icon('arrow'); ?>
+                    </button>
+                    <button type="button" class="zig-gallery-modal__next" aria-label="<?php esc_attr_e('بعدی', 'zig3d-widgets'); ?>">
+                        <?php echo Markup::svg_icon('arrow', 'zig-gallery-modal__next-icon'); ?>
+                    </button>
                 </div>
             </div>
             <div class="zig-gallery-modal__footer">

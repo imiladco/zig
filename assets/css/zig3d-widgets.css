@@ -2241,14 +2241,35 @@ a.zig-list__label:focus-visible {
 /* ==========================================================================
    گالری محصول
 
-   پورتِ مستقیمِ شورت‌کدِ product_gallery_modal2 از قالبِ الماس‌آرا — فقط
-   با تعویضِ کلاس‌ها به zig-gallery*. جست‌وجوی کاملِ فایل‌های CSS قالب
-   (custom.css، single-product.css، kit.css و بقیه) هیچ قاعده‌ای برای این
-   نشانه‌ها پیدا نکرد، پس اینجا فقط چیدمانِ ساختاریِ حداقلی است — همان‌قدر
-   که گالری و مودال کار کنند: بندانگشتی‌ها کنارِ هم، مودال تمامِ صفحه.
-   هیچ رنگ، سایه یا رادیوسی عمداً اضافه نشده؛ طراحیِ واقعی در دورِ
-   اصلاحاتِ بعدی می‌آید.
+   پورتِ مستقیمِ شورت‌کدِ product_gallery_modal2 از قالبِ الماس‌آرا (کلاس‌ها
+   با پیشوندِ zig-gallery*). خودِ قالب هیچ CSSای برای این نشانه‌ها ندارد —
+   نه در custom.css، نه در single-product.css، نه جای دیگری — و سایتِ زنده
+   هنگامِ نوشتنِ این استایل در دسترس نبود (۵۰۳ روی هر درخواست). پس این
+   «استخراجِ عینی» نیست؛ زبانِ بصریِ خودِ قالب است: رنگِ اصلیِ ‎#e7004a‎ که
+   در custom.css برای تخفیف و قیمت به کار رفته، رادیوسِ کارت‌های
+   single-product.css، و پس‌زمینهٔ سفید/خاکستریِ روشنِ همه‌جای سایت. فونت
+   عمداً اینجا تنظیم نشده — از تایپوگرافیِ خودِ قالب (Anjoman) ارث می‌برد.
+
+   مثلِ بقیهٔ این فایل، رنگ‌ها و اندازه‌ها پشتِ متغیرِ CSS‌اند
+   (‎--zig-gal-*‎) تا کنترل‌های پنل — که هنوز اضافه نشده‌اند — بعداً بتوانند
+   بدون دست‌زدن به این سلکتورها رویش بنشینند.
    ======================================================================= */
+
+.zig-gallery {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background-color: var(--zig-gal-bg, #fff);
+	border-radius: var(--zig-gal-radius, 16px);
+	box-shadow: var(--zig-gal-shadow, 0 2px 16px rgba(17, 12, 46, 0.08));
+	padding: var(--zig-gal-padding, 16px);
+}
+
+.zig-gallery__main {
+	border-radius: var(--zig-gal-image-radius, 12px);
+	overflow: hidden;
+	background-color: var(--zig-gal-image-bg, #f3f5f8);
+}
 
 .zig-gallery__main img {
 	display: block;
@@ -2258,19 +2279,33 @@ a.zig-list__label:focus-visible {
 
 .zig-gallery__thumbs {
 	display: flex;
-	gap: 8px;
-	margin-top: 8px;
+	gap: var(--zig-gal-thumb-gap, 10px);
 }
 
 .zig-gallery__thumb {
+	flex: 1 1 0;
+	min-width: 0;
+	border-radius: var(--zig-gal-thumb-radius, 10px);
+	overflow: hidden;
 	cursor: pointer;
+	outline: 2px solid transparent;
+	outline-offset: -2px;
+	transition: outline-color 0.15s ease;
+}
+
+.zig-gallery__thumb:hover,
+.zig-gallery__thumb:focus-visible {
+	outline-color: var(--zig-gal-accent, #e7004a);
 }
 
 .zig-gallery__thumb img {
 	display: block;
 	width: 100%;
-	height: auto;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
 }
+
+/* ------------------------------ مودال ------------------------------ */
 
 .zig-gallery-modal {
 	position: fixed;
@@ -2278,25 +2313,56 @@ a.zig-list__label:focus-visible {
 	z-index: 999999;
 	display: none;
 	flex-direction: column;
-	background: rgba(0, 0, 0, 0.85);
+	background-color: var(--zig-gal-modal-bg, rgba(2, 6, 23, 0.92));
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
 }
 
 .zig-gallery-modal__header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	padding: 18px 20px;
+	color: var(--zig-gal-modal-title-color, #fff);
+	font-weight: 600;
+}
+
+.zig-gallery-modal__close,
+.zig-gallery-modal__prev,
+.zig-gallery-modal__next {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background-color: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.zig-gallery-modal__close:hover,
+.zig-gallery-modal__prev:hover,
+.zig-gallery-modal__next:hover {
+	background-color: rgba(255, 255, 255, 0.22);
 }
 
 .zig-gallery-modal__close {
-	cursor: pointer;
-	background: none;
-	border: 0;
+	width: 36px;
+	height: 36px;
+}
+
+.zig-gallery-modal__close .zig-icon-line {
+	width: 18px;
+	height: 18px;
 }
 
 .zig-gallery-modal__body {
 	flex: 1;
 	min-height: 0;
 	display: flex;
+	padding: 0 20px;
 }
 
 .zig-gallery-modal__slider {
@@ -2310,7 +2376,9 @@ a.zig-list__label:focus-visible {
 
 .zig-gallery-modal__image {
 	max-width: 100%;
-	max-height: 100%;
+	max-height: 70vh;
+	border-radius: var(--zig-gal-modal-image-radius, 12px);
+	object-fit: contain;
 }
 
 .zig-gallery-modal__prev,
@@ -2318,28 +2386,65 @@ a.zig-list__label:focus-visible {
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-	cursor: pointer;
-	background: none;
-	border: 0;
+	width: 44px;
+	height: 44px;
+}
+
+.zig-gallery-modal__prev .zig-icon-line,
+.zig-gallery-modal__next .zig-icon-line {
+	width: 22px;
+	height: 22px;
+}
+
+/*
+ * آیکونِ «arrow» به‌صورتِ پیش‌فرض به چپ اشاره دارد (یعنی «قبلی/برگشت»)؛
+ * دکمهٔ «بعدی» با آینه‌کردنِ همان یک آیکون به راست اشاره می‌کند — بدون
+ * وابستگی به جهتِ RTL/LTR صفحه، چون این‌جا معنایش «عقب/جلو» است نه
+ * «راست/چپِ متن».
+ */
+.zig-gallery-modal__next-icon {
+	transform: scaleX(-1);
 }
 
 .zig-gallery-modal__prev {
-	inset-inline-start: 0;
+	inset-inline-start: 12px;
 }
 
 .zig-gallery-modal__next {
-	inset-inline-end: 0;
+	inset-inline-end: 12px;
 }
 
 .zig-gallery-modal__footer {
 	display: flex;
-	gap: 8px;
+	gap: 10px;
+	padding: 16px 20px 20px;
 	overflow-x: auto;
 }
 
 .zig-gallery-modal__footer-thumb {
-	cursor: pointer;
+	flex: 0 0 auto;
 	width: 64px;
 	height: 64px;
+	border-radius: 8px;
 	object-fit: cover;
+	cursor: pointer;
+	outline: 2px solid transparent;
+	outline-offset: -2px;
+	transition: outline-color 0.15s ease;
+}
+
+.zig-gallery-modal__footer-thumb:hover,
+.zig-gallery-modal__footer-thumb:focus-visible {
+	outline-color: var(--zig-gal-accent, #e7004a);
+}
+
+@media (max-width: 640px) {
+	.zig-gallery-modal__image {
+		max-height: 55vh;
+	}
+
+	.zig-gallery-modal__footer-thumb {
+		width: 52px;
+		height: 52px;
+	}
 }
