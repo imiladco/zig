@@ -697,16 +697,18 @@ final class Spec_Groups_Page {
             opacity: .8;
         }
 
+        /*
+         * هر فیلد ردیفِ خودش را می‌گیرد — سه‌ستونیِ قبلی با کمبوباکسِ
+         * ویژگی (که گاه یک فیلدِ نامِ سفارشی یا یک راهنمای متنی هم زیرش
+         * باز می‌شود) روی صفحه‌های معمولی هم تنگ می‌شد؛ تک‌ستونی خواناتر
+         * است، even اگر کارت کمی بلندتر شود.
+         */
         .zig3d-spec-row__body {
             flex: 1;
             min-width: 0;
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: minmax(0, 1fr);
             gap: 10px;
-        }
-
-        @media (max-width: 480px) {
-            .zig3d-spec-row__body { grid-template-columns: minmax(0, 1fr); }
         }
 
         .zig3d-spec-field {
@@ -744,7 +746,14 @@ final class Spec_Groups_Page {
             box-shadow: 0 0 0 3px rgba(123, 92, 255, .12);
         }
 
+        /*
+         * ‎[hidden]‎ خودِ HTML یک قاعدهٔ UA است، نه author — یعنی همین
+         * ‎display: block‎ی ساده، با هم‌ارزیِ specificity، آن را می‌بَرد و
+         * عنصر با وجودِ ‎hidden‎ باز نمایان می‌ماند. رگهٔ دوم صراحتاً
+         * ‎[hidden]‎ را برمی‌گرداند.
+         */
         .zig3d-combobox { display: block; }
+        .zig3d-combobox[hidden] { display: none; }
 
         .zig3d-spec-field__hint {
             margin: 6px 0 0;
