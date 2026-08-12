@@ -249,6 +249,15 @@ final class Spec_Groups_Page {
         );
         printf('<input type="hidden" name="%s[attribute]" value="%s" data-zig3d-combobox-value>', esc_attr($name), esc_attr($attribute));
         echo '</span>';
+        if (!self::has_attribute_taxonomies()) {
+            printf(
+                '<p class="zig3d-spec-field__hint" data-zig3d-when="attribute"%s>%s <a href="%s" target="_blank" rel="noopener">%s</a></p>',
+                'attribute' === $source ? '' : ' hidden',
+                esc_html__('این فروشگاه هنوز ویژگیِ سراسری‌ای ندارد؛ نامش را در «ویژگیِ سفارشی…» بنویسید یا', 'zig3d-widgets'),
+                esc_url(admin_url('edit.php?post_type=product&page=product_attributes')),
+                esc_html__('از اینجا یکی بسازید', 'zig3d-widgets')
+            );
+        }
         printf(
             '<input type="text" class="zig3d-spec-field__control" name="%s[custom_attribute]" value="%s" placeholder="%s" data-zig3d-when="custom"%s>',
             esc_attr($name),
@@ -281,6 +290,24 @@ final class Spec_Groups_Page {
             . '<span class="dashicons dashicons-no-alt"></span></button>';
 
         echo '</li>';
+    }
+
+    /** کش‌شده برایِ همین رندر — چند بار در هر ردیف پرسیده می‌شود */
+    private static ?bool $has_taxonomies = null;
+
+    /**
+     * آیا این فروشگاه حداقل یک ویژگیِ سراسری (taxonomy) دارد؟
+     *
+     * اگر نه، کمبوباکسِ «ویژگی» جز گزینهٔ «سفارشی» چیزی برایِ نشان‌دادن
+     * ندارد — که خودش شبیهِ خرابی است، نه یک حالتِ خالیِ روشن. اینجا همان
+     * را تشخیص می‌دهیم تا زیرِ فیلد یک راهنمایِ صریح بگذاریم.
+     */
+    private static function has_attribute_taxonomies(): bool {
+        if (null === self::$has_taxonomies) {
+            self::$has_taxonomies = [] !== Attributes::all();
+        }
+
+        return self::$has_taxonomies;
     }
 
     /** @return array<string,string> */
@@ -719,6 +746,14 @@ final class Spec_Groups_Page {
 
         .zig3d-combobox { display: block; }
 
+        .zig3d-spec-field__hint {
+            margin: 6px 0 0;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--zig3d-text-muted);
+        }
+        .zig3d-spec-field__hint a { color: var(--zig3d-primary-dark); text-decoration: underline; }
+
         .zig3d-spec-row__remove {
             flex-shrink: 0;
             display: inline-flex;
@@ -822,15 +857,54 @@ final class Spec_Groups_Page {
 
             /* ---------------- ردیفِ مشخصه ---------------- */
 
+            /*
+             * دو سیگنالِ جدا نمایانی را تعیین می‌کنند، نه یکی: کدام مبدأ
+             * («نوعِ مقدار») و — فقط وقتی مبدأ «ویژگی» است — آیا خودِ
+             * ویژگیِ انتخاب‌شده «سفارشی» است. باگِ قبلی همهٔ
+             * ‎[data-zig3d-when]‎ را فقط با مقدارِ سلکتِ مبدأ می‌سنجید، و چون
+             * «سفارشی» هرگز مقدارِ آن سلکت نیست، فیلدِ «نامِ ویژگیِ سفارشی»
+             * بعدِ اولین sync (که بی‌درنگ، همان لحظهٔ wire‌شدن، اجرا می‌شود)
+             * برایِ همیشه پنهان می‌ماند — حتی وقتی از قبل مقدار داشت.
+             */
             function wireSourceVisibility(row) {
                 var select = row.querySelector('[data-zig3d-source]');
                 if (!select) { return; }
+
+                var comboWrap  = row.querySelector('[data-zig3d-when="attribute"]');
+                var customHint = row.querySelectorAll('.zig3d-spec-field__hint[data-zig3d-when="attribute"]');
+                var customIn   = row.querySelector('[data-zig3d-when="custom"]');
+                var metaIn     = row.querySelector('[data-zig3d-when="custom_meta"]');
+                var comboValue = row.querySelector('[data-zig3d-combobox-value]');
+
                 var sync = function () {
-                    row.querySelectorAll('[data-zig3d-when]').forEach(function (el) {
-                        el.hidden = el.getAttribute('data-zig3d-when') !== select.value;
-                    });
+                    var isAttribute = 'attribute' === select.value;
+                    if (comboWrap) { comboWrap.hidden = !isAttribute; }
+                    customHint.forEach(function (el) { el.hidden = !isAttribute; });
+                    if (metaIn) { metaIn.hidden = 'custom_meta' !== select.value; }
+                    if (customIn) {
+                        customIn.hidden = !(isAttribute && comboValue && 'custom' === comboValue.value);
+                    }
                 };
-                select.addEventListener('change', sync);
+
+                select.addEventListener('change', function () {
+                    /*
+                     * تعویضِ مبدأ یعنی فیلدهای مبدأهایِ دیگر دیگر معنا
+                     * ندارند — پاک‌شان می‌کنیم تا داده‌ای که دیگر دیده
+                     * نمی‌شود بی‌سروصدا زیرِ فرم نماند.
+                     */
+                    if ('attribute' !== select.value) {
+                        var input = row.querySelector('.zig3d-combobox__input');
+                        if (input) { input.value = ''; }
+                        if (comboValue) { comboValue.value = 'custom'; }
+                        if (customIn) { customIn.value = ''; }
+                    }
+                    if ('custom_meta' !== select.value && metaIn) {
+                        metaIn.value = '';
+                    }
+                    sync();
+                });
+
+                row.__zig3dSyncVisibility = sync;
                 sync();
             }
 
@@ -844,6 +918,8 @@ final class Spec_Groups_Page {
                     var text = input.value.trim();
                     var match = list && text ? list.querySelector('option[value="' + CSS.escape(text) + '"]') : null;
                     hidden.value = match ? match.getAttribute('data-slug') : 'custom';
+                    // مبدأ همچنان «ویژگی» است، ولی حالا شاید سراغِ فیلدِ نامِ سفارشی برویم
+                    if (row.__zig3dSyncVisibility) { row.__zig3dSyncVisibility(); }
                 };
                 input.addEventListener('change', sync);
                 input.addEventListener('blur', sync);
