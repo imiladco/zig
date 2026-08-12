@@ -395,10 +395,13 @@ final class Product_Specs extends Widget_Base {
             return;
         }
 
-        $groups = $this->resolved_groups($product);
+        $term_ids = wc_get_product_terms($product->get_id(), Spec_Store::TAXONOMY, ['fields' => 'ids']);
+        $term_ids = is_array($term_ids) ? $term_ids : [];
+
+        $groups = $this->resolved_groups($product, $term_ids);
 
         if (!$groups) {
-            $this->notice(__('این محصول هیچ گروهِ مشخصاتِ فنیِ پُری ندارد — نه دسته‌بندیِ محصول گروهی دارد، نه مقداری برایِ مشخصه‌هایش تنظیم شده.', 'zig3d-widgets'));
+            $this->notice($this->empty_reason($term_ids));
 
             return;
         }
@@ -426,13 +429,7 @@ final class Product_Specs extends Widget_Base {
      *
      * @return array<int,array{label:string,rows:array<int,array{label:string,value:string}>}>
      */
-    private function resolved_groups(\WC_Product $product): array {
-        $term_ids = wc_get_product_terms($product->get_id(), Spec_Store::TAXONOMY, ['fields' => 'ids']);
-
-        if (!is_array($term_ids)) {
-            return [];
-        }
-
+    private function resolved_groups(\WC_Product $product, array $term_ids): array {
         $seen   = [];
         $result = [];
 
@@ -467,6 +464,42 @@ final class Product_Specs extends Widget_Base {
         }
 
         return $result;
+    }
+
+    /**
+     * پیامِ خالی‌بودن قبلاً یک جمله بود که همیشه یک چیز می‌گفت — «نه دسته
+     * گروه دارد، نه مشخصه‌ای مقدار» — یعنی مدیری که هر سه مرحله را انجام
+     * داده بود (ویژگیِ محصول را پر کرده، گروه را در کتابخانه ساخته) باز هم
+     * همان پیام را می‌دید و نمی‌فهمید کدام مرحله جا افتاده. زنجیره سه حلقه
+     * دارد — این تابع می‌گوید دقیقاً کدام حلقه پاره است:
+     *
+     *   ۱) محصول اصلاً دسته ندارد
+     *   ۲) دسته(ها) هست ولی هیچ‌کدام از «گروه‌های مشخصات فنی» را انتخاب نکرده‌اند
+     *   ۳) گروه انتخاب شده، ولی هیچ‌کدام از مشخصه‌هایش رویِ *این* محصول مقدار ندارد
+     *
+     * @param int[] $term_ids
+     */
+    private function empty_reason(array $term_ids): string {
+        if (!$term_ids) {
+            return __(
+                'این محصول هیچ دسته‌بندی‌ای ندارد — بدونِ دسته، هیچ گروهِ مشخصاتی به آن وصل نمی‌شود. از صفحهٔ ویرایشِ محصول یک دسته انتخاب کنید.',
+                'zig3d-widgets'
+            );
+        }
+
+        foreach ($term_ids as $term_id) {
+            if (Spec_Store::category_groups((int) $term_id)) {
+                return __(
+                    'گروه‌ها به دستهٔ این محصول وصل‌اند، ولی هیچ‌کدام از مشخصه‌هایشان رویِ *این* محصول مقدار ندارد — مثلاً ویژگیِ انتخاب‌شده رویِ این محصول تنظیم نشده، یا وزن/ابعادش خالی است. مقدارها را در برگهٔ «ویژگی‌ها»/«حمل‌ونقل» محصول کامل کنید.',
+                    'zig3d-widgets'
+                );
+            }
+        }
+
+        return __(
+            'دستهٔ این محصول هنوز هیچ گروهی از «گروه‌های مشخصات فنی» انتخاب نکرده. از صفحهٔ ویرایشِ همان دسته، بخشِ «گروه‌های مشخصاتِ این دسته» را باز کنید و گروه‌های موردنظر را تیک بزنید.',
+            'zig3d-widgets'
+        );
     }
 
     /**
