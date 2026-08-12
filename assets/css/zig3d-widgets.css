@@ -2700,26 +2700,89 @@ body.zig-gallery-noscroll {
 
 .zig-specs {
 	--zig-specs-accent: #7B5CFF;
-	--zig-specs-header-bg: #F4F4FA;
-	--zig-specs-header-bg-hover: #EDEDF6;
-	--zig-specs-badge-bg: #FFFFFF;
-	--zig-specs-badge-border: #E3E3EC;
+	--zig-specs-accent-border: #D8C8FB;
+	--zig-specs-card-bg: #FFFFFF;
+	--zig-specs-card-border: #E4E5EA;
+	--zig-specs-header-bg-open: #FBF9FF;
+	--zig-specs-header-bg-hover: #F6F3FD;
+	--zig-specs-divider-open: #ECE4FB;
+	--zig-specs-badge-bg: #F8F8FB;
+	--zig-specs-badge-border: #E7E7EE;
 	--zig-specs-badge-icon: #8B8B99;
 	--zig-specs-title-color: #1E1E2D;
 	--zig-specs-label-color: #6B7280;
 	--zig-specs-value-color: #1E1E2D;
 	--zig-specs-row-bg: #FFFFFF;
-	--zig-specs-row-bg-alt: #F7F7FB;
-	--zig-specs-row-bg-hover: #F0EFFB;
+	--zig-specs-row-bg-hover: #F7F5FD;
+	--zig-specs-row-divider: #ECEEF2;
+	--zig-specs-open-gap: 21px;
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 }
 
+/*
+ * کارت. پیش‌فرضِ قبلی هیچ ‎background‎/‎border‎ی رویِ خودِ جعبهٔ بیرونی
+ * نداشت — فقط سرستون و ردیف‌ها پس‌زمینه داشتند. رویِ صفحهٔ سفید یعنی
+ * هیچ مرزی دیده نمی‌شد و کل ظاهر «flat» به‌نظر می‌رسید. جعبهٔ بیرونی
+ * حالا خودش هم کارت است.
+ */
 .zig-specs__group {
-	border-radius: 14px;
+	background: var(--zig-specs-card-bg);
+	border: 1px solid var(--zig-specs-card-border);
+	border-radius: 0;
 	overflow: hidden;
-	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+	position: relative;
+}
+
+/*
+ * گروه‌هایِ بستهٔ پشتِ‌سرهم باید یک کارتِ یکپارچه بسازند، نه نوارهایِ
+ * جداگانه: مرزِ هر کدام رویِ مرزِ قبلی می‌نشیند (١px‑ overlap) تا فقط
+ * یک خط دیده شود. گردیِ گوشه فقط رویِ لبهٔ واقعیِ فهرست می‌آید —
+ * اول/آخرِ کل فهرست، یا لبه‌ای که کنارِ کارتِ بازشده قرار می‌گیرد.
+ */
+.zig-specs__group + .zig-specs__group {
+	margin-top: -1px;
+}
+
+.zig-specs__group:first-child {
+	border-top-left-radius: 16px;
+	border-top-right-radius: 16px;
+}
+
+.zig-specs__group:last-child {
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
+}
+
+/*
+ * کارتِ بازشده از بلوکِ بسته‌ها جدا و مستقل می‌شود.
+ *
+ * فاصله از رویِ متغیرِ CSS خوانده می‌شود، نه مستقیم — کنترلِ المنتور هم
+ * فقط همین متغیر را عوض می‌کند، نه ‎margin-block‎ را. اگر مستقیم بود،
+ * رگهٔ ‎:first-child‎/‎:last-child‎ زیرش (که specificityِ برابر دارد) به
+ * ترتیبِ منبع بستگی پیدا می‌کرد و با تزریقِ ‎<style>‎ِ المنتور بعدِ این
+ * فایل، بی‌صدا شکست می‌خورد. با این واسطه، آن دو رگه همیشه — مستقل از
+ * اینکه کدام فایل دیرتر لود شده — برنده‌اند.
+ */
+.zig-specs__group[open] {
+	border-color: var(--zig-specs-accent-border);
+	border-radius: 16px;
+	margin-block: var(--zig-specs-open-gap, 21px);
+	z-index: 1;
+}
+
+.zig-specs__group[open]:first-child { margin-top: 0; }
+.zig-specs__group[open]:last-child { margin-bottom: 0; }
+
+/* بستهٔ همسایهٔ کارتِ باز، از نگاهِ بصری لبهٔ همان بلوکِ بسته‌هاست — همان‌جا هم گرد می‌شود */
+.zig-specs__group[open] + .zig-specs__group:not([open]) {
+	border-top-left-radius: 16px;
+	border-top-right-radius: 16px;
+}
+
+.zig-specs__group:not([open]):has(+ .zig-specs__group[open]) {
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
 }
 
 /*
@@ -2732,8 +2795,9 @@ body.zig-gallery-noscroll {
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	padding: 16px 18px;
-	background: var(--zig-specs-header-bg);
+	min-height: 81px;
+	padding-inline: 20px;
+	background: var(--zig-specs-card-bg);
 	color: var(--zig-specs-title-color);
 	cursor: pointer;
 	list-style: none;
@@ -2743,6 +2807,16 @@ body.zig-gallery-noscroll {
 
 .zig-specs__group-title::-webkit-details-marker {
 	display: none;
+}
+
+/*
+ * باز: تقریباً همان سفید، فقط رگه‌ای یاسیِ خیلی‌کم — کلِ سرستون نباید
+ * خاکستری/بنفش شود؛ تنها نشانِ فعال‌بودن، رنگِ خودِ فلش است.
+ */
+.zig-specs__group[open] > .zig-specs__group-title {
+	min-height: 77px;
+	background: var(--zig-specs-header-bg-open);
+	border-bottom: 1px solid var(--zig-specs-divider-open);
 }
 
 details.zig-specs__group > .zig-specs__group-title:hover,
@@ -2771,9 +2845,9 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
-	height: 28px;
-	border-radius: 8px;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
 	background: var(--zig-specs-badge-bg);
 	border: 1.5px solid var(--zig-specs-badge-border);
 	color: var(--zig-specs-badge-icon);
@@ -2781,8 +2855,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-specs__chevron {
-	width: 15px;
-	height: 15px;
+	width: 16px;
+	height: 16px;
 	transition: transform .18s ease;
 }
 
@@ -2799,24 +2873,30 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-specs__list {
 	margin: 0;
 	padding: 0;
+	/* پیش‌فرضِ بدونِ‌جاوااسکریپت: بلافاصله دیده می‌شود؛ JS این را برایِ fade-inِ ۴۵ms موقتاً می‌پوشاند */
+	opacity: 1;
 }
 
-/*
- * نوارینه (zebra): ردیفِ زوج/فرد پس‌زمینهٔ متفاوت می‌گیرند — همین خودش
- * ستون‌ها را از ردیفِ بالا/پایین جدا می‌کند، بدونِ خط‌کشیِ اضافه.
- */
+/* بدونِ جاوااسکریپت (یا مرورگرِ بی‌WAAPI)، خودِ ‎<details>‎ نمایش/عدم‌نمایش را مدیریت می‌کند */
+.zig-specs__group:not([open]) > .zig-specs__list {
+	display: none;
+}
+
+/* داخلِ همان کارت بماند، نه flat رویِ پس‌زمینهٔ صفحه — جدولِ ردیف‌ها زیرِ سرستون، هنوز داخلِ همان مرز/گردیِ کارت */
 .zig-specs__row {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	justify-content: space-between;
 	gap: 20px;
-	padding: 13px 18px;
+	min-height: 70px;
+	padding-inline: 20px;
 	background: var(--zig-specs-row-bg);
+	border-top: 1px solid var(--zig-specs-row-divider);
 	transition: background-color .15s ease;
 }
 
-.zig-specs__row:nth-child(even) {
-	background: var(--zig-specs-row-bg-alt);
+.zig-specs__row:first-child {
+	border-top: 0;
 }
 
 .zig-specs__row:hover {
@@ -2827,6 +2907,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex-shrink: 0;
 	color: var(--zig-specs-label-color);
 	font-size: 13.5px;
+	font-weight: 500;
 }
 
 .zig-specs__value {
@@ -2834,8 +2915,15 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	text-align: end;
 	overflow-wrap: anywhere;
 	color: var(--zig-specs-value-color);
-	font-weight: 700;
+	font-weight: 600;
 	font-size: 13.5px;
+	/*
+	 * واحدهایِ لاتین («RPM»، «kg»، «cm»، «ATC») وسطِ رشته‌ای که در یک ظرفِ
+	 * RTL نشسته، بدونِ این می‌توانند برعکس چیده شوند — چون جهتشان از
+	 * رویِ جهتِ *ظرف* حساب می‌شود، نه از رویِ خودِ محتوا. ‎plaintext‎ یعنی
+	 * جهت از رویِ اولین کاراکترِ قویِ همان رشته تعیین شود.
+	 */
+	unicode-bidi: plaintext;
 }
 
 .zig-specs__notice {

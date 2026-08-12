@@ -45,8 +45,6 @@ if (!defined('ABSPATH')) {
  */
 final class Product_Specs extends Widget_Base {
 
-    use Traits\Box;
-
     public function get_name(): string {
         return 'zig3d-product-specs';
     }
@@ -172,15 +170,54 @@ final class Product_Specs extends Widget_Base {
             ]
         );
 
-        $this->add_responsive_control(
-            'group_gap',
+        $this->add_control(
+            'card_bg',
             [
-                'label'      => __('فاصلهٔ بینِ گروه‌ها', 'zig3d-widgets'),
-                'type'       => Controls_Manager::SLIDER,
-                'size_units' => ['px'],
-                'range'      => ['px' => ['min' => 0, 'max' => 60]],
-                'default'    => ['size' => 12, 'unit' => 'px'],
-                'selectors'  => ['{{WRAPPER}} .zig-specs' => 'gap: {{SIZE}}{{UNIT}};'],
+                'label'     => __('پس‌زمینهٔ کارت', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#FFFFFF',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-card-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'card_border_color',
+            [
+                'label'     => __('مرزِ کارتِ بسته', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#E4E5EA',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-card-border: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'accent_border_color',
+            [
+                'label'     => __('مرزِ کارتِ باز', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#D8C8FB',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-accent-border: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'open_card_gap',
+            [
+                'label'       => __('فاصلهٔ کارتِ باز از بسته‌های اطراف', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px'],
+                'range'       => ['px' => ['min' => 0, 'max' => 60]],
+                'default'     => ['size' => 21, 'unit' => 'px'],
+                'condition'   => ['layout_mode' => 'accordion'],
+                /*
+                 * رویِ متغیرِ CSS، نه مستقیم رویِ ‎margin-block‎: خودِ استایل‌شیت
+                 * یک استثنایِ ‎:first-child‎/‎:last-child‎ (بدونِ فاصله در لبه)
+                 * دارد که به همین متغیر بند است. اگر اینجا مستقیم
+                 * ‎margin-block‎ می‌نوشتیم، آن استثنا با تزریقِ ‎<style>‎ِ
+                 * المنتور (که دیرتر از فایلِ استایل لود می‌شود) بی‌صدا
+                 * می‌شکست.
+                 */
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-open-gap: {{SIZE}}{{UNIT}};'],
             ]
         );
 
@@ -204,12 +241,14 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
-            'group_header_bg',
+            'group_header_bg_open',
             [
-                'label'     => __('پس‌زمینهٔ سرستون', 'zig3d-widgets'),
-                'type'      => Controls_Manager::COLOR,
-                'default'   => '#F4F4FA',
-                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg: {{VALUE}};'],
+                'label'       => __('پس‌زمینهٔ سرستونِ باز', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#FBF9FF',
+                'description' => __('سرستونِ بسته همیشه هم‌رنگِ کارت است؛ این فقط رگهٔ خیلی‌کمِ یاسیِ سرستونِ بازشده را کنترل می‌کند.', 'zig3d-widgets'),
+                'condition'   => ['layout_mode' => 'accordion'],
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg-open: {{VALUE}};'],
             ]
         );
 
@@ -218,7 +257,7 @@ final class Product_Specs extends Widget_Base {
             [
                 'label'     => __('پس‌زمینهٔ سرستون در هاور', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'default'   => '#EDEDF6',
+                'default'   => '#F6F3FD',
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg-hover: {{VALUE}};'],
             ]
         );
@@ -259,7 +298,7 @@ final class Product_Specs extends Widget_Base {
             [
                 'label'     => __('رنگِ مرزِ نشان در حالتِ بسته', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'default'   => '#E3E3EC',
+                'default'   => '#E7E7EE',
                 'condition' => ['layout_mode' => 'accordion'],
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-border: {{VALUE}};'],
             ]
@@ -276,8 +315,6 @@ final class Product_Specs extends Widget_Base {
                 'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-accent: {{VALUE}};'],
             ]
         );
-
-        $this->add_box_style_tabs('group', '.zig-specs__group', '.zig-specs__group');
 
         $this->end_controls_section();
     }
@@ -331,7 +368,7 @@ final class Product_Specs extends Widget_Base {
         $this->add_control(
             'row_bg',
             [
-                'label'     => __('پس‌زمینهٔ ردیفِ فرد', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینهٔ ردیف', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#FFFFFF',
                 'separator' => 'before',
@@ -340,13 +377,12 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
-            'row_bg_alt',
+            'row_divider_color',
             [
-                'label'       => __('پس‌زمینهٔ ردیفِ زوج (نواری)', 'zig3d-widgets'),
-                'type'        => Controls_Manager::COLOR,
-                'default'     => '#F7F7FB',
-                'description' => __('رنگِ متناوبِ ردیف‌ها — همان چیزی که ردیف‌ها را بدونِ خط‌کشی از هم جدا نگه می‌دارد.', 'zig3d-widgets'),
-                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg-alt: {{VALUE}};'],
+                'label'     => __('رنگِ خطِ جداکنندهٔ ردیف‌ها', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#ECEEF2',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-divider: {{VALUE}};'],
             ]
         );
 
@@ -355,19 +391,20 @@ final class Product_Specs extends Widget_Base {
             [
                 'label'     => __('پس‌زمینهٔ ردیف در هاور', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'default'   => '#F0EFFB',
+                'default'   => '#F7F5FD',
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg-hover: {{VALUE}};'],
             ]
         );
 
         $this->add_responsive_control(
-            'row_padding_y',
+            'row_min_height',
             [
-                'label'      => __('فاصلهٔ عمودیِ هر ردیف', 'zig3d-widgets'),
+                'label'      => __('حداقلِ ارتفاعِ هر ردیف', 'zig3d-widgets'),
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px'],
-                'range'      => ['px' => ['min' => 0, 'max' => 40]],
-                'selectors'  => ['{{WRAPPER}} .zig-specs__row' => 'padding-block: {{SIZE}}{{UNIT}};'],
+                'range'      => ['px' => ['min' => 40, 'max' => 120]],
+                'default'    => ['size' => 70, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs__row' => 'min-height: {{SIZE}}{{UNIT}};'],
             ]
         );
 

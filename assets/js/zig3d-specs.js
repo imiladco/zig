@@ -24,8 +24,12 @@
 		return;
 	}
 
-	var DURATION = 260;
-	var EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+	// «Premium Motion»: باز/بسته زمانِ متفاوت دارند — بازشدن کمی کندتر از بسته‌شدن، تا حسِ سنگینیِ محتوا بدهد نه فقط یک toggle
+	var DURATION_OPEN = 230;
+	var DURATION_CLOSE = 180;
+	var EASING = 'cubic-bezier(.22, 1, .36, 1)';
+	// پاسخ‌ها کمی بعدِ خودِ جعبه ظاهر می‌شوند — انگار محتوا دنبالِ باز شدنِ جا می‌آید، نه هم‌زمانِ خشکِ آن
+	var FADE_DELAY = 45;
 
 	function Group(details, siblings) {
 		this.el = details;
@@ -33,6 +37,7 @@
 		this.summary = details.querySelector(':scope > .zig-specs__group-title');
 		this.content = details.querySelector(':scope > .zig-specs__list');
 		this.animation = null;
+		this.fade = null;
 		this.isClosing = false;
 		this.isExpanding = false;
 
@@ -60,10 +65,15 @@
 	Group.prototype.shrink = function () {
 		this.isClosing = true;
 
+		if (this.fade) {
+			this.fade.cancel();
+			this.fade = null;
+		}
+
 		var startHeight = this.el.offsetHeight + 'px';
 		var endHeight = this.summary.offsetHeight + 'px';
 
-		this.runAnimation(startHeight, endHeight, false);
+		this.runAnimation(startHeight, endHeight, false, DURATION_CLOSE);
 	};
 
 	Group.prototype.open = function () {
@@ -90,10 +100,16 @@
 		var startHeight = this.el.offsetHeight + 'px';
 		var endHeight = (this.summary.offsetHeight + this.content.offsetHeight) + 'px';
 
-		this.runAnimation(startHeight, endHeight, true);
+		this.runAnimation(startHeight, endHeight, true, DURATION_OPEN);
+
+		this.content.style.opacity = '0';
+		this.fade = this.content.animate(
+			[{ opacity: 0 }, { opacity: 1 }],
+			{ duration: Math.max(0, DURATION_OPEN - FADE_DELAY), delay: FADE_DELAY, easing: 'ease-out', fill: 'forwards' }
+		);
 	};
 
-	Group.prototype.runAnimation = function (startHeight, endHeight, opening) {
+	Group.prototype.runAnimation = function (startHeight, endHeight, opening, duration) {
 		var self = this;
 
 		if (this.animation) {
@@ -102,7 +118,7 @@
 
 		this.animation = this.el.animate(
 			{ height: [startHeight, endHeight] },
-			{ duration: DURATION, easing: EASING }
+			{ duration: duration, easing: EASING }
 		);
 
 		this.animation.onfinish = function () { self.onAnimationFinish(opening); };
@@ -118,6 +134,8 @@
 		this.isExpanding = false;
 		this.el.style.height = '';
 		this.el.style.overflow = '';
+		// از این‌جا به بعد کلاسِ CSSِ خودِ ‎[open]‎ مسئولِ opacity است، نه استایلِ خطی
+		this.content.style.opacity = '';
 	};
 
 	function setup(root) {
