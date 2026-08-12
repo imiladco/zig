@@ -2699,16 +2699,27 @@ body.zig-gallery-noscroll {
    ========================================================================== */
 
 .zig-specs {
+	--zig-specs-accent: #7B5CFF;
+	--zig-specs-header-bg: #F4F4FA;
+	--zig-specs-header-bg-hover: #EDEDF6;
+	--zig-specs-badge-bg: #FFFFFF;
+	--zig-specs-badge-border: #E3E3EC;
+	--zig-specs-badge-icon: #8B8B99;
+	--zig-specs-title-color: #1E1E2D;
+	--zig-specs-label-color: #6B7280;
+	--zig-specs-value-color: #1E1E2D;
+	--zig-specs-row-bg: #FFFFFF;
+	--zig-specs-row-bg-alt: #F7F7FB;
+	--zig-specs-row-bg-hover: #F0EFFB;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 10px;
 }
 
 .zig-specs__group {
-	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
-	transition-duration: var(--zig-transition, 250ms);
-	transition-property: transform, background-color, border-color, box-shadow;
+	border-radius: 14px;
 	overflow: hidden;
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
 }
 
 /*
@@ -2720,28 +2731,67 @@ body.zig-gallery-noscroll {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 10px;
+	gap: 12px;
+	padding: 16px 18px;
+	background: var(--zig-specs-header-bg);
+	color: var(--zig-specs-title-color);
 	cursor: pointer;
 	list-style: none;
 	user-select: none;
+	transition: background-color .18s ease;
 }
 
 .zig-specs__group-title::-webkit-details-marker {
 	display: none;
 }
 
+details.zig-specs__group > .zig-specs__group-title:hover,
+details.zig-specs__group > .zig-specs__group-title:focus-visible {
+	background: var(--zig-specs-header-bg-hover);
+}
+
+details.zig-specs__group > .zig-specs__group-title:focus-visible {
+	outline: 2px solid var(--zig-specs-accent);
+	outline-offset: -2px;
+}
+
 .zig-specs__group-title-text {
 	font-weight: 700;
+	font-size: 15px;
+}
+
+/*
+ * فلش داخلِ یک نشانِ مربعیِ گردشده — نشانگرِ اصلیِ حالتِ «فعال»: مرزش
+ * فقط وقتی گروه باز است رنگِ اصلی می‌گیرد؛ خودِ ردیفِ سرستون بینِ باز و
+ * بسته یکسان می‌ماند، تا تنها یک نشانه برایِ «این باز است» وجود داشته
+ * باشد، نه دو تصمیمِ بصریِ رقیب.
+ */
+.zig-specs__chevron-badge {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	background: var(--zig-specs-badge-bg);
+	border: 1.5px solid var(--zig-specs-badge-border);
+	color: var(--zig-specs-badge-icon);
+	transition: border-color .18s ease, color .18s ease;
 }
 
 .zig-specs__chevron {
-	flex-shrink: 0;
-	width: 18px;
-	height: 18px;
-	transition: transform var(--zig-transition, 250ms) ease;
+	width: 15px;
+	height: 15px;
+	transition: transform .18s ease;
 }
 
-/* details[open] یعنی باز است — فلش می‌چرخد تا «رو به بالا» بشود */
+/* details[open] یعنی باز است — فلش می‌چرخد تا «رو به بالا» بشود، و نشان رنگِ اصلی می‌گیرد */
+.zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron-badge {
+	border-color: var(--zig-specs-accent);
+	color: var(--zig-specs-accent);
+}
+
 .zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron {
 	transform: rotate(180deg);
 }
@@ -2751,27 +2801,41 @@ body.zig-gallery-noscroll {
 	padding: 0;
 }
 
+/*
+ * نوارینه (zebra): ردیفِ زوج/فرد پس‌زمینهٔ متفاوت می‌گیرند — همین خودش
+ * ستون‌ها را از ردیفِ بالا/پایین جدا می‌کند، بدونِ خط‌کشیِ اضافه.
+ */
 .zig-specs__row {
 	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
-	gap: 16px;
-	padding-block: 10px;
-	border-top: 1px solid var(--zig-specs-divider, rgba(17, 24, 39, .08));
+	gap: 20px;
+	padding: 13px 18px;
+	background: var(--zig-specs-row-bg);
+	transition: background-color .15s ease;
 }
 
-.zig-specs__row:first-child {
-	border-top: 0;
+.zig-specs__row:nth-child(even) {
+	background: var(--zig-specs-row-bg-alt);
+}
+
+.zig-specs__row:hover {
+	background: var(--zig-specs-row-bg-hover);
 }
 
 .zig-specs__label {
 	flex-shrink: 0;
+	color: var(--zig-specs-label-color);
+	font-size: 13.5px;
 }
 
 .zig-specs__value {
 	margin: 0;
 	text-align: end;
 	overflow-wrap: anywhere;
+	color: var(--zig-specs-value-color);
+	font-weight: 700;
+	font-size: 13.5px;
 }
 
 .zig-specs__notice {

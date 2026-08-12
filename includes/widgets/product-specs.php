@@ -71,6 +71,14 @@ final class Product_Specs extends Widget_Base {
         return ['zig3d-widgets'];
     }
 
+    /**
+     * بدونِ این اسکریپت هم آکاردئون کار می‌کند — بومیِ ‎<details>‎، بدونِ
+     * انیمیشن و بدونِ تک‌بازشو. فایل فقط آن دو رفتار را اضافه می‌کند.
+     */
+    public function get_script_depends(): array {
+        return ['zig3d-specs'];
+    }
+
     public function has_widget_inner_wrapper(): bool {
         return false;
     }
@@ -196,12 +204,22 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
-            'group_chevron_color',
+            'group_header_bg',
             [
-                'label'     => __('رنگِ فلشِ باز/بسته', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینهٔ سرستون', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'condition' => ['layout_mode' => 'accordion'],
-                'selectors' => ['{{WRAPPER}} .zig-specs__chevron' => 'color: {{VALUE}};'],
+                'default'   => '#F4F4FA',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'group_header_bg_hover',
+            [
+                'label'     => __('پس‌زمینهٔ سرستون در هاور', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#EDEDF6',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg-hover: {{VALUE}};'],
             ]
         );
 
@@ -212,6 +230,50 @@ final class Product_Specs extends Widget_Base {
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem'],
                 'selectors'  => ['{{WRAPPER}} .zig-specs__group-title' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'chevron_heading',
+            [
+                'label'     => __('نشانِ باز/بسته', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+                'condition' => ['layout_mode' => 'accordion'],
+            ]
+        );
+
+        $this->add_control(
+            'group_chevron_icon_color',
+            [
+                'label'     => __('رنگِ آیکون در حالتِ بسته', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#8B8B99',
+                'condition' => ['layout_mode' => 'accordion'],
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-icon: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'group_chevron_border_color',
+            [
+                'label'     => __('رنگِ مرزِ نشان در حالتِ بسته', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#E3E3EC',
+                'condition' => ['layout_mode' => 'accordion'],
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-border: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'group_accent_color',
+            [
+                'label'       => __('رنگِ حالتِ فعال (گروهِ باز)', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#7B5CFF',
+                'description' => __('همان رنگی که مرز و آیکونِ نشان، وقتی گروه باز است، می‌گیرند.', 'zig3d-widgets'),
+                'condition'   => ['layout_mode' => 'accordion'],
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-accent: {{VALUE}};'],
             ]
         );
 
@@ -267,12 +329,34 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
-            'row_divider_color',
+            'row_bg',
             [
-                'label'     => __('رنگِ خطِ جداکنندهٔ ردیف‌ها', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینهٔ ردیفِ فرد', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
+                'default'   => '#FFFFFF',
                 'separator' => 'before',
-                'selectors' => ['{{WRAPPER}} .zig-specs__row' => '--zig-specs-divider: {{VALUE}};'],
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'row_bg_alt',
+            [
+                'label'       => __('پس‌زمینهٔ ردیفِ زوج (نواری)', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#F7F7FB',
+                'description' => __('رنگِ متناوبِ ردیف‌ها — همان چیزی که ردیف‌ها را بدونِ خط‌کشی از هم جدا نگه می‌دارد.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg-alt: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'row_bg_hover',
+            [
+                'label'     => __('پس‌زمینهٔ ردیف در هاور', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#F0EFFB',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg-hover: {{VALUE}};'],
             ]
         );
 
@@ -398,7 +482,7 @@ final class Product_Specs extends Widget_Base {
         printf('<span class="zig-specs__group-title-text">%s</span>', esc_html($group['label']));
 
         if ($accordion) {
-            echo Markup::svg_icon('chevron', 'zig-specs__chevron');
+            echo '<span class="zig-specs__chevron-badge">' . Markup::svg_icon('chevron', 'zig-specs__chevron') . '</span>';
         }
 
         printf('</%s>', $title_tag);

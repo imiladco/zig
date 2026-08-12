@@ -295,6 +295,19 @@ final class Plugin {
             ZIG3D_WIDGETS_VERSION,
             true
         );
+
+        /*
+         * آکاردئونِ مشخصاتِ فنی بدونِ این فایل هم کاملاً کار می‌کند — فقط
+         * بدونِ انیمیشن و بدونِ تک‌بازشو. اسکریپت فقط آن دو رفتار را
+         * پیشرفته می‌کند، پس فایلش هم جداست، نه بخشی از یک فایلِ مشترک.
+         */
+        wp_register_script(
+            'zig3d-specs',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-specs.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
     }
 
     public function enqueue_editor_styles(): void {
