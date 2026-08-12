@@ -2633,10 +2633,13 @@ html.zig-gallery-lightbox-open {
  * جابه‌جا شدنِ تصویرِ فعال کل نوار را یک پیکسل تکان نمی‌دهد — چیزی که با
  * ‎border‎ در هر کلیک دیده می‌شود.
  *
- * پیش‌فرضِ حالتِ عادی دیگر ‎transparent‎ نیست: عکسِ محصولی که پس‌زمینه‌اش
- * سفید است، روی کارتِ سفید و بی‌قابِ گالری کاملاً محو می‌شود و بندانگشتی
- * دیگر یک کاشیِ مجزا به نظر نمی‌رسد. یک خطِ نازکِ خاکستری کافی است که هر
- * بندانگشتی — صرف‌نظر از رنگِ خودِ عکس — از کارتِ اطرافش جدا بماند.
+ * پیش‌فرضِ حالتِ عادی ‎transparent‎ است، عمداً و دوباره: یک بار قرار بود
+ * برای عکس‌های سفیدپس‌زمینه یک خطِ خاکستری همیشه‌روشن باشد، ولی چون
+ * ‎outline-offset‎ آن را از هر چهار طرف بیرون می‌کشد، کنارِ هم که
+ * می‌نشستند خطِ هر بندانگشتی با همسایه‌اش قاطی می‌شد — دقیقاً برخلافِ
+ * ردیفِ تمیزِ گالریِ الماس‌آرا که فقط با فاصله از هم جدا می‌مانند، بدونِ
+ * هیچ خطی تا وقتی فعال یا هاور نشده‌اند. جداییِ بندانگشتی‌ها کارِ خودِ
+ * ‎gap‎ است، نه یک قابِ همیشگی.
  */
 .zig-gallery__thumb-link {
 	position: relative;
@@ -2645,7 +2648,7 @@ html.zig-gallery-lightbox-open {
 	block-size: var(--zig-gal-thumb-size, 76px);
 	border-radius: var(--zig-gal-thumb-radius, 14px);
 	background-color: var(--zig-gal-thumb-bg, #f4f2f8);
-	outline: var(--zig-gal-thumb-ring, 2px) solid var(--zig-gal-thumb-ring-color, rgba(17, 12, 46, 0.1));
+	outline: var(--zig-gal-thumb-ring, 2px) solid var(--zig-gal-thumb-ring-color, transparent);
 	outline-offset: var(--zig-gal-thumb-ring-gap, 2px);
 	overflow: hidden;
 	transition-duration: var(--zig-transition, 250ms);
@@ -2663,13 +2666,26 @@ html.zig-gallery-lightbox-open {
 	position: absolute;
 	inset: 0;
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	background-color: rgba(13, 10, 23, 0.55);
+	gap: 3px;
+	background-color: var(--zig-gal-more-bg, rgba(13, 10, 23, 0.6));
+	backdrop-filter: blur(var(--zig-gal-more-blur, 3px));
+	-webkit-backdrop-filter: blur(var(--zig-gal-more-blur, 3px));
 	color: #fff;
 	font-size: 15px;
 	font-weight: 700;
 	pointer-events: none;
+}
+
+/* سه نقطهٔ زیرِ عدد — همان نشانهٔ آشنای «و بقیه» */
+.zig-gallery__thumb-more::after {
+	content: '\2022\2022\2022';
+	font-size: 10px;
+	font-weight: 400;
+	letter-spacing: 2px;
+	opacity: 0.85;
 }
 
 .zig-gallery__thumb-image {

@@ -787,6 +787,26 @@ final class Product_Gallery extends Widget_Base {
             'separator' => 'before',
         ]);
 
+        $this->add_control('thumb_more_heading', [
+            'label'     => __('لایهٔ «+N»', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('thumb_more_bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-more-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('thumb_more_blur', [
+            'label'      => __('تاریِ شیشه‌ای', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 20]],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery' => '--zig-gal-more-blur: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->end_controls_section();
     }
 
