@@ -283,6 +283,25 @@ final class Product_Gallery extends Widget_Base {
             ],
         ]);
 
+        $this->add_control('main_bg', [
+            'label'       => __('رنگ پس‌زمینه', 'zig3d-widgets'),
+            'type'        => Controls_Manager::COLOR,
+            'description' => __('برای حالت «کامل داخل کادر» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
+            'selectors'   => [
+                '{{WRAPPER}} .zig-gallery__main' => 'background-color: {{VALUE}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('main_padding', [
+            'label'       => __('پدینگ داخلی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::DIMENSIONS,
+            'size_units'  => ['px', 'em', '%'],
+            'description' => __('فاصله تصویر از لبه‌های کادر.', 'zig3d-widgets'),
+            'selectors'   => [
+                '{{WRAPPER}} .zig-gallery__main' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
         $this->add_responsive_control('main_spacing', [
             'label'      => __('فاصله تا تامبنیل‌ها (سطر)', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
@@ -342,6 +361,34 @@ final class Product_Gallery extends Widget_Base {
             'tab'   => Controls_Manager::TAB_STYLE,
         ]);
 
+        $this->add_control('heading_strip', [
+            'label' => __('نوار گالری', 'zig3d-widgets'),
+            'type'  => Controls_Manager::HEADING,
+        ]);
+
+        $this->add_control('strip_bg', [
+            'label'     => __('رنگ پس‌زمینه نوار', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery__strip' => 'background-color: {{VALUE}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('strip_padding', [
+            'label'      => __('پدینگ نوار', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'em', '%'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-gallery__strip' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_group_control(Group_Control_Border::get_type(), [
+            'name'     => 'strip_border',
+            'label'    => __('حاشیه نوار', 'zig3d-widgets'),
+            'selector' => '{{WRAPPER}} .zig-gallery__strip',
+        ]);
+
         $this->add_responsive_control('thumbs_gap', [
             'label'      => __('فاصله بین تامبنیل‌ها (ستون)', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
@@ -351,6 +398,12 @@ final class Product_Gallery extends Widget_Base {
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery' => '--zig-gal-cgap: {{SIZE}}{{UNIT}};',
             ],
+        ]);
+
+        $this->add_control('heading_thumb', [
+            'label'     => __('تک‌تکِ تامبنیل‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
         ]);
 
         $this->add_control('thumb_fit', [
@@ -409,11 +462,30 @@ final class Product_Gallery extends Widget_Base {
         ]);
 
         $this->add_responsive_control('thumb_radius', [
-            'label'      => __('رادیوس', 'zig3d-widgets'),
+            'label'      => __('رادیوس کارت', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', '%'],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
+            ],
+        ]);
+
+        $this->add_responsive_control('thumb_img_radius', [
+            'label'       => __('رادیوس تصویر', 'zig3d-widgets'),
+            'type'        => Controls_Manager::DIMENSIONS,
+            'size_units'  => ['px', '%'],
+            'description' => __('وقتی پدینگِ کارت داده‌اید و تصویر کوچک‌تر از کارت است، رادیوسِ خودِ تصویر را جدا تنظیم کنید.', 'zig3d-widgets'),
+            'selectors'   => [
+                '{{WRAPPER}} .zig-gallery__thumb img' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_control('thumb_opacity', [
+            'label'     => __('شفافیت عادی', 'zig3d-widgets'),
+            'type'      => Controls_Manager::SLIDER,
+            'range'     => ['px' => ['min' => 0.1, 'max' => 1, 'step' => 0.05]],
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery__thumb img' => 'opacity: {{SIZE}};',
             ],
         ]);
 
@@ -423,6 +495,16 @@ final class Product_Gallery extends Widget_Base {
             'range'     => ['px' => ['min' => 0.1, 'max' => 1, 'step' => 0.05]],
             'selectors' => [
                 '{{WRAPPER}} .zig-gallery__thumb:hover img' => 'opacity: {{SIZE}};',
+            ],
+        ]);
+
+        $this->add_control('thumb_active_opacity', [
+            'label'       => __('شفافیت در حالت فعال', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'range'       => ['px' => ['min' => 0.1, 'max' => 1, 'step' => 0.05]],
+            'description' => __('لحظهٔ کلیک (‎:active‎).', 'zig3d-widgets'),
+            'selectors'   => [
+                '{{WRAPPER}} .zig-gallery__thumb:active img' => 'opacity: {{SIZE}};',
             ],
         ]);
 
