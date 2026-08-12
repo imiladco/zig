@@ -20,10 +20,10 @@ if (!defined('ABSPATH')) {
  * دکمهٔ «ذخیره» یکی است، برایِ کلِ گرید — نه یک رفت‌وبرگشتِ صفحه به‌ازایِ
  * هر گروه.
  *
- * نسخهٔ قبلی این صفحه را دو تکه کرده بود (فهرست، و زیرِ آن یک فرمِ ویرایشِ
- * تک‌گروهی که با ‎?group=‎ باز می‌شد) — همان چیزی که «خرابش کرد»: برایِ
- * دیدنِ همهٔ گروه‌ها یک‌جا، یا چیدنشان کنارِ هم، باید بینِ صفحه‌ها رفت‌وآمد
- * می‌شد. اینجا هیچ ناوبریِ دومی نیست.
+ * ظاهر یک دورِ جداگانه پرداخت شد (تولبارِ چسبان با جست‌وجو/افزودن/ذخیره،
+ * کارت‌های سایه‌دار با سلسله‌مراتبِ روشن بینِ گروه/مشخصه/فیلد، حالت‌های
+ * خالی/نامعتبر/درحالِ‌ذخیره) بدونِ دست‌زدن به منطقِ درگ‌اند‌دراپ یا ساختارِ
+ * ذخیره — همان چیزی که پایینِ فایل است، دست‌نخورده.
  */
 final class Spec_Groups_Page {
 
@@ -66,30 +66,57 @@ final class Spec_Groups_Page {
 
         self::render_styles();
 
-        echo '<div class="wrap zig3d-spec-wrap">';
-        printf('<h1>%s</h1>', esc_html__('گروه‌های مشخصات فنی', 'zig3d-widgets'));
+        echo '<div class="wrap zig3d-spec-wrap"><div class="zig3d-spec-panel">';
 
+        self::render_toolbar($notice);
+        self::render_grid($groups);
+
+        echo '</div></div>';
+    }
+
+    /** تیترِ صفحه + جست‌وجو + افزودن + ذخیره، همه یک‌جا و چسبان */
+    private static function render_toolbar(string $notice): void {
+        echo '<div class="zig3d-spec-toolbar">';
+
+        echo '<div class="zig3d-spec-toolbar__intro">';
+        printf('<h1 class="zig3d-spec-toolbar__title">%s</h1>', esc_html__('گروه‌های مشخصات فنی', 'zig3d-widgets'));
         printf(
-            '<p class="description">%s</p>',
+            '<p class="zig3d-spec-toolbar__desc">%s</p>',
             esc_html__(
-                'هر جعبه یک گروهِ آکاردئونی است — یک عنوان و چند مشخصه. جعبه‌ها را بکشید تا ترتیبشان عوض شود؛ هر دستهٔ محصول از صفحهٔ ویرایشِ خودش چند گروه از همین فهرست را انتخاب می‌کند.',
+                'هر کارت یک گروهِ آکاردئونی است — یک عنوان و چند مشخصه. کارت‌ها را بکشید تا ترتیبشان عوض شود؛ هر دستهٔ محصول از صفحهٔ ویرایشِ خودش چند گروه از همین فهرست را انتخاب می‌کند.',
                 'zig3d-widgets'
             )
         );
+        echo '</div>';
+
+        echo '<div class="zig3d-spec-toolbar__actions">';
+
+        echo '<label class="zig3d-spec-search">';
+        echo '<span class="dashicons dashicons-search zig3d-spec-search__icon" aria-hidden="true"></span>';
+        printf(
+            '<input type="text" id="zig3d-spec-search" placeholder="%s">',
+            esc_attr__('جست‌وجو در گروه‌ها…', 'zig3d-widgets')
+        );
+        echo '</label>';
+
+        printf(
+            '<button type="button" class="zig3d-btn zig3d-btn--ghost" data-zig3d-add-box><span class="dashicons dashicons-plus-alt2"></span>%s</button>',
+            esc_html__('افزودنِ گروه', 'zig3d-widgets')
+        );
+
+        printf(
+            '<button type="submit" form="zig3d-spec-form" class="zig3d-btn zig3d-btn--primary" id="zig3d-save-groups"><span class="zig3d-btn__label">%s</span></button>',
+            esc_html__('ذخیرهٔ همه', 'zig3d-widgets')
+        );
+
+        echo '</div></div>';
 
         if ('' !== $notice) {
-            printf('<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html($notice));
+            printf('<div class="notice notice-success is-dismissible zig3d-spec-notice"><p>%s</p></div>', esc_html($notice));
         }
-
-        self::render_grid($groups);
-
-        echo '</div>';
     }
 
     private static function render_grid(array $groups): void {
-        echo '<div class="zig3d-spec-search"><input type="text" id="zig3d-spec-search" placeholder="'
-            . esc_attr__('جست‌وجو در گروه‌ها…', 'zig3d-widgets') . '"></div>';
-
         echo '<form method="post" id="zig3d-spec-form">';
         wp_nonce_field(self::NONCE, self::NONCE . '_nonce');
 
@@ -99,14 +126,12 @@ final class Spec_Groups_Page {
             self::render_box($name, $group, count(Spec_Store::categories_using($name)));
         }
 
-        echo '<button type="button" class="zig3d-spec-box zig3d-spec-box--add" id="zig3d-add-box">'
-            . '<span class="dashicons dashicons-plus-alt2"></span> ' . esc_html__('گروهِ تازه', 'zig3d-widgets')
-            . '</button>';
+        self::render_add_card();
 
         echo '</div>';
 
         printf(
-            '<p class="zig3d-spec-save"><button type="submit" class="button button-primary button-hero">%s</button></p>',
+            '<p class="zig3d-spec-save"><button type="submit" class="zig3d-btn zig3d-btn--primary zig3d-btn--block"><span class="zig3d-btn__label">%s</span></button></p>',
             esc_html__('ذخیرهٔ همه', 'zig3d-widgets')
         );
 
@@ -117,16 +142,22 @@ final class Spec_Groups_Page {
         self::render_script();
     }
 
+    /** کارتِ «افزودنِ گروه» انتهایِ گرید — یک کارتِ واقعی، نه یک قابِ خط‌چینِ خام */
+    private static function render_add_card(): void {
+        echo '<button type="button" class="zig3d-spec-box zig3d-spec-box--add" data-zig3d-add-box>';
+        echo '<span class="zig3d-spec-box--add__icon dashicons dashicons-plus-alt2" aria-hidden="true"></span>';
+        printf('<span class="zig3d-spec-box--add__label">%s</span>', esc_html__('گروهِ تازه', 'zig3d-widgets'));
+        echo '</button>';
+    }
+
     /**
-     * @param int|string $box_id شناسهٔ نمایشیِ جعبه در DOM (نه نامِ ذخیره‌شده — آن در ‎existing_name‎ است)
+     * @param string $existing_name نامِ ذخیره‌شده؛ برایِ گروهِ تازه خالی است
      */
     private static function render_box(string $existing_name, array $group, int $usage): void {
         $box_id = 'b' . preg_replace('/[^a-z0-9]/', '', $existing_name ?: uniqid());
+        $count  = count($group['items'] ?? []);
 
-        printf(
-            '<div class="zig3d-spec-box" draggable="true" data-usage="%d">',
-            $usage
-        );
+        printf('<div class="zig3d-spec-box" draggable="true" data-usage="%d">', $usage);
 
         echo '<div class="zig3d-spec-box__head">';
         echo '<span class="zig3d-spec-box__handle dashicons dashicons-move" aria-hidden="true" title="'
@@ -141,18 +172,28 @@ final class Spec_Groups_Page {
             . '<span class="dashicons dashicons-trash"></span></button>';
         echo '</div>';
 
-        printf('<input type="hidden" name="zig3d_groups[%s][existing_name]" value="%s">', esc_attr($box_id), esc_attr($existing_name));
-
+        echo '<div class="zig3d-spec-box__meta">';
+        printf(
+            '<span class="zig3d-spec-box__count" data-zig3d-count>%s</span>',
+            esc_html(sprintf(
+                /* translators: %d: تعداد مشخصه */
+                _n('%d مشخصه', '%d مشخصه', $count, 'zig3d-widgets'),
+                $count
+            ))
+        );
         if ($usage > 0) {
             printf(
-                '<div class="zig3d-spec-box__usage">%s</div>',
+                '<span class="zig3d-spec-box__usage">%s</span>',
                 esc_html(sprintf(
                     /* translators: %d: تعداد دسته */
-                    _n('در %d دسته استفاده می‌شود', 'در %d دسته استفاده می‌شود', $usage, 'zig3d-widgets'),
+                    _n('در %d دسته', 'در %d دسته', $usage, 'zig3d-widgets'),
                     $usage
                 ))
             );
         }
+        echo '</div>';
+
+        printf('<input type="hidden" name="zig3d_groups[%s][existing_name]" value="%s">', esc_attr($box_id), esc_attr($existing_name));
 
         echo '<ul class="zig3d-spec-box__items" data-zig3d-items>';
         foreach (($group['items'] ?? []) as $i => $item) {
@@ -161,8 +202,9 @@ final class Spec_Groups_Page {
         echo '</ul>';
 
         printf(
-            '<button type="button" class="zig3d-spec-box__add-item" data-zig3d-add-item>%s</button>',
-            esc_html__('+ مشخصه', 'zig3d-widgets')
+            '<button type="button" class="zig3d-spec-box__add-item" data-zig3d-add-item>'
+                . '<span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span>%s</button>',
+            esc_html__('افزودنِ مشخصه', 'zig3d-widgets')
         );
 
         echo '</div>';
@@ -184,43 +226,54 @@ final class Spec_Groups_Page {
         echo '<li class="zig3d-spec-row" draggable="true">';
         echo '<span class="zig3d-spec-row__handle dashicons dashicons-menu" aria-hidden="true"></span>';
 
-        echo '<select name="' . esc_attr($name) . '[source]" class="zig3d-spec-row__source" data-zig3d-source>';
+        echo '<div class="zig3d-spec-row__body">';
+
+        echo '<label class="zig3d-spec-field zig3d-spec-field--source">';
+        echo '<span class="zig3d-spec-field__label">' . esc_html__('نوعِ مقدار', 'zig3d-widgets') . '</span>';
+        echo '<select name="' . esc_attr($name) . '[source]" class="zig3d-spec-field__control" data-zig3d-source>';
         foreach (self::source_labels() as $value => $labelText) {
             printf('<option value="%s"%s>%s</option>', esc_attr($value), selected($value, $source, false), esc_html($labelText));
         }
         echo '</select>';
+        echo '</label>';
 
-        echo '<span class="zig3d-spec-row__attr">';
-        echo '<span data-zig3d-when="attribute"' . ('attribute' === $source ? '' : ' hidden') . '>';
+        echo '<div class="zig3d-spec-field zig3d-spec-field--attr">';
+        echo '<span class="zig3d-spec-field__label">' . esc_html__('ویژگی', 'zig3d-widgets') . '</span>';
+        echo '<span class="zig3d-combobox" data-zig3d-when="attribute"' . ('attribute' === $source ? '' : ' hidden') . '>';
         printf(
-            '<input type="text" class="zig3d-combobox__input" list="zig3d-attr-options" value="%s" placeholder="%s" autocomplete="off">',
+            '<input type="text" class="zig3d-spec-field__control zig3d-combobox__input" list="zig3d-attr-options" value="%s" placeholder="%s" autocomplete="off">',
             esc_attr($attr_text),
             esc_attr__('نامِ ویژگی…', 'zig3d-widgets')
         );
         printf('<input type="hidden" name="%s[attribute]" value="%s" data-zig3d-combobox-value>', esc_attr($name), esc_attr($attribute));
         echo '</span>';
         printf(
-            '<input type="text" name="%s[custom_attribute]" value="%s" placeholder="%s" data-zig3d-when="custom"%s>',
+            '<input type="text" class="zig3d-spec-field__control" name="%s[custom_attribute]" value="%s" placeholder="%s" data-zig3d-when="custom"%s>',
             esc_attr($name),
             esc_attr($custom_attribute),
             esc_attr__('نامِ ویژگیِ سفارشی', 'zig3d-widgets'),
             'custom' === $attribute ? '' : ' hidden'
         );
         printf(
-            '<input type="text" name="%s[meta_key]" value="%s" placeholder="%s" data-zig3d-when="custom_meta"%s>',
+            '<input type="text" class="zig3d-spec-field__control" name="%s[meta_key]" value="%s" placeholder="%s" data-zig3d-when="custom_meta"%s>',
             esc_attr($name),
             esc_attr($meta_key),
             esc_attr__('کلیدِ متا', 'zig3d-widgets'),
             'custom_meta' === $source ? '' : ' hidden'
         );
-        echo '</span>';
+        echo '</div>';
 
+        echo '<label class="zig3d-spec-field zig3d-spec-field--label">';
+        echo '<span class="zig3d-spec-field__label">' . esc_html__('عنوانِ دلخواه', 'zig3d-widgets') . '</span>';
         printf(
-            '<input type="text" class="zig3d-spec-row__label" name="%s[label]" value="%s" placeholder="%s">',
+            '<input type="text" class="zig3d-spec-field__control" name="%s[label]" value="%s" placeholder="%s">',
             esc_attr($name),
             esc_attr($label),
-            esc_attr__('عنوانِ دلخواه', 'zig3d-widgets')
+            esc_attr__('خالی = پیش‌فرض', 'zig3d-widgets')
         );
+        echo '</label>';
+
+        echo '</div>'; // .zig3d-spec-row__body
 
         echo '<button type="button" class="zig3d-spec-row__remove" data-zig3d-remove-item title="' . esc_attr__('حذف', 'zig3d-widgets') . '">'
             . '<span class="dashicons dashicons-no-alt"></span></button>';
@@ -270,45 +323,444 @@ final class Spec_Groups_Page {
     private static function render_styles(): void {
         ?>
         <style>
-        .zig3d-spec-wrap .zig3d-spec-search { margin: 14px 0; max-width: 360px; }
-        .zig3d-spec-wrap .zig3d-spec-search input { width: 100%; padding: 6px 10px; }
-        .zig3d-spec-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px; align-items: start;
+        .zig3d-spec-wrap {
+            --zig3d-primary: #7B5CFF;
+            --zig3d-primary-dark: #6D28D9;
+            --zig3d-bg: #F8FAFC;
+            --zig3d-card: #FFFFFF;
+            --zig3d-border: #E2E8F0;
+            --zig3d-text: #111827;
+            --zig3d-text-muted: #64748B;
+            --zig3d-danger: #EF4444;
+            --zig3d-field-border: #CBD5E1;
+            --zig3d-field-bg: #F8FAFC;
+            --zig3d-field-item-border: #E5E7EB;
+            font-family: 'Yekan Bakh FaNum', Vazirmatn, -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif;
+            direction: rtl;
         }
+
+        .zig3d-spec-wrap * { box-sizing: border-box; }
+
+        .zig3d-spec-panel {
+            max-width: 1280px;
+            margin: 20px auto 0;
+            background: var(--zig3d-bg);
+            padding: 32px;
+            border-radius: 18px;
+            color: var(--zig3d-text);
+        }
+
+        /* ---------------- تولبار ---------------- */
+
+        .zig3d-spec-toolbar {
+            position: sticky;
+            top: 32px;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            background: var(--zig3d-bg);
+            padding-bottom: 20px;
+        }
+
+        .zig3d-spec-toolbar__title {
+            margin: 0 0 4px;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--zig3d-text);
+        }
+
+        .zig3d-spec-toolbar__desc {
+            margin: 0;
+            max-width: 640px;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.9;
+            color: var(--zig3d-text-muted);
+        }
+
+        .zig3d-spec-toolbar__actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .zig3d-spec-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .zig3d-spec-search__icon {
+            position: absolute;
+            inset-inline-start: 12px;
+            color: var(--zig3d-text-muted);
+            pointer-events: none;
+            font-size: 16px;
+        }
+
+        .zig3d-spec-search input {
+            width: 220px;
+            height: 40px;
+            padding: 0 12px 0 12px;
+            padding-inline-start: 34px;
+            border: 1px solid var(--zig3d-field-border);
+            border-radius: 8px;
+            background: var(--zig3d-card);
+            font-size: 13px;
+            color: var(--zig3d-text);
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .zig3d-spec-search input:focus {
+            outline: none;
+            border-color: var(--zig3d-primary);
+            box-shadow: 0 0 0 3px rgba(123, 92, 255, .12);
+        }
+
+        /* ---------------- دکمه‌ها ---------------- */
+
+        .zig3d-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 40px;
+            padding: 0 18px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, opacity .15s ease;
+        }
+
+        .zig3d-btn .dashicons { font-size: 16px; width: 16px; height: 16px; }
+
+        .zig3d-btn--primary {
+            background: var(--zig3d-primary);
+            color: #fff;
+        }
+        .zig3d-btn--primary:hover { background: var(--zig3d-primary-dark); }
+        .zig3d-btn--primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(123, 92, 255, .25);
+        }
+        .zig3d-btn--primary[disabled],
+        .zig3d-btn--primary.is-saving {
+            opacity: .65;
+            cursor: default;
+        }
+
+        .zig3d-btn--ghost {
+            background: var(--zig3d-card);
+            border-color: var(--zig3d-border);
+            color: var(--zig3d-text);
+        }
+        .zig3d-btn--ghost:hover {
+            border-color: var(--zig3d-primary);
+            color: var(--zig3d-primary-dark);
+        }
+
+        .zig3d-btn--block { width: 100%; }
+
+        .zig3d-spec-save { max-width: 320px; margin: 24px 0 0; }
+
+        .zig3d-spec-notice { margin: 0 0 16px; }
+
+        /* ---------------- گرید ---------------- */
+
+        .zig3d-spec-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .zig3d-spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 700px) {
+            .zig3d-spec-panel { padding: 20px; border-radius: 12px; }
+            .zig3d-spec-grid { grid-template-columns: minmax(0, 1fr); }
+            .zig3d-spec-toolbar { position: static; }
+        }
+
+        /* ---------------- کارتِ گروه ---------------- */
+
         .zig3d-spec-box {
-            background: #fff; border: 1px solid #dcdcde; border-radius: 6px; padding: 14px;
+            display: flex;
+            flex-direction: column;
+            background: var(--zig3d-card);
+            border: 1px solid var(--zig3d-border);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, .04);
+            padding: 16px;
+            cursor: grab;
+            transition: box-shadow .15s ease, border-color .15s ease;
+        }
+
+        .zig3d-spec-box:hover {
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+            border-color: #D9DEE7;
+        }
+
+        .zig3d-spec-box.zig3d-dragging {
+            opacity: .5;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .14);
+        }
+
+        .zig3d-spec-box.zig3d-drop-target {
+            border-color: var(--zig3d-primary);
+            box-shadow: 0 0 0 3px rgba(123, 92, 255, .14);
+        }
+
+        .zig3d-spec-box[hidden] { display: none; }
+
+        .zig3d-spec-box__head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zig3d-spec-box__handle {
+            flex-shrink: 0;
+            color: var(--zig3d-text-muted);
+            cursor: grab;
+            font-size: 18px;
+        }
+        .zig3d-spec-box__handle:active { cursor: grabbing; }
+
+        .zig3d-spec-box__title {
+            flex: 1;
+            min-width: 0;
+            height: 36px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 0 10px;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--zig3d-text);
+            transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+        }
+        .zig3d-spec-box__title:hover { background: var(--zig3d-field-bg); }
+        .zig3d-spec-box__title:focus {
+            outline: none;
+            background: var(--zig3d-card);
+            border-color: var(--zig3d-primary);
+            box-shadow: 0 0 0 3px rgba(123, 92, 255, .12);
+        }
+        .zig3d-spec-box__title.is-invalid {
+            border-color: var(--zig3d-danger);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, .12);
+        }
+
+        .zig3d-spec-box__remove {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #FCA5A5;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease;
+        }
+        .zig3d-spec-box__remove:hover {
+            background: rgba(239, 68, 68, .08);
+            color: var(--zig3d-danger);
+        }
+
+        .zig3d-spec-box__meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0 12px;
+            padding-inline-start: 26px;
+        }
+
+        .zig3d-spec-box__count {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--zig3d-text-muted);
+        }
+
+        .zig3d-spec-box__usage {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--zig3d-primary-dark);
+            background: rgba(123, 92, 255, .1);
+            border-radius: 999px;
+            padding: 2px 8px;
+        }
+
+        .zig3d-spec-box__items {
+            list-style: none;
+            margin: 0 0 10px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .zig3d-spec-box__items:empty {
+            display: block;
+            margin-bottom: 10px;
+            padding: 18px 10px;
+            border: 1px dashed var(--zig3d-field-item-border);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--zig3d-text-muted);
+        }
+        .zig3d-spec-box__items:empty::before {
+            content: "هنوز مشخصه‌ای اضافه نشده";
+        }
+
+        /* ---------------- ردیفِ مشخصه (mini-card) ---------------- */
+
+        .zig3d-spec-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: var(--zig3d-field-bg);
+            border: 1px solid var(--zig3d-field-item-border);
+            border-radius: 10px;
+            padding: 12px;
             cursor: grab;
         }
-        .zig3d-spec-box.zig3d-dragging { opacity: .35; }
-        .zig3d-spec-box.zig3d-drop-target { outline: 2px dashed #2271b1; outline-offset: 2px; }
-        .zig3d-spec-box[hidden] { display: none; }
-        .zig3d-spec-box__head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-        .zig3d-spec-box__handle { color: #8c8f94; flex-shrink: 0; cursor: grab; }
-        .zig3d-spec-box__title { flex: 1; font-weight: 600; border: 1px solid transparent; padding: 4px 6px; border-radius: 3px; background: transparent; }
-        .zig3d-spec-box__title:hover, .zig3d-spec-box__title:focus { border-color: #dcdcde; background: #fbfbfc; }
-        .zig3d-spec-box__remove { flex-shrink: 0; border: 0; background: none; color: #b32d2e; cursor: pointer; padding: 2px; }
-        .zig3d-spec-box__usage { font-size: 11px; color: #757575; margin-bottom: 6px; }
-        .zig3d-spec-box__items { list-style: none; margin: 6px 0; padding: 0; }
-        .zig3d-spec-row {
-            display: flex; align-items: center; gap: 4px; padding: 4px;
-            border: 1px solid #f0f0f1; border-radius: 3px; background: #fbfbfc;
-            margin-bottom: 4px; cursor: grab; flex-wrap: wrap;
+        .zig3d-spec-row:active { cursor: grabbing; }
+
+        .zig3d-spec-row.zig3d-dragging { opacity: .5; }
+
+        .zig3d-spec-row__handle {
+            flex-shrink: 0;
+            color: #B7C0CC;
+            margin-top: 8px;
+            font-size: 15px;
         }
-        .zig3d-spec-row.zig3d-dragging { opacity: .35; }
-        .zig3d-spec-row__handle { color: #b5b5b5; flex-shrink: 0; }
-        .zig3d-spec-row__source { flex: 1 1 100%; font-size: 12px; }
-        .zig3d-spec-row__attr { flex: 1 1 100%; display: flex; gap: 4px; }
-        .zig3d-spec-row__attr input { flex: 1; min-width: 0; font-size: 12px; }
-        .zig3d-spec-row__label { flex: 1 1 100%; font-size: 12px; }
-        .zig3d-spec-row__remove { flex-shrink: 0; border: 0; background: none; color: #b32d2e; cursor: pointer; }
-        .zig3d-spec-box__add-item { width: 100%; border: 1px dashed #dcdcde; background: none; border-radius: 3px; padding: 4px; cursor: pointer; color: #2271b1; font-size: 12px; }
+
+        .zig3d-spec-row__body {
+            flex: 1;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr);
+            gap: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .zig3d-spec-row__body { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        .zig3d-spec-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .zig3d-spec-field--attr { position: relative; }
+
+        .zig3d-spec-field__label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--zig3d-text-muted);
+        }
+
+        .zig3d-spec-field__control,
+        .zig3d-combobox__input {
+            width: 100%;
+            height: 40px;
+            padding: 0 10px;
+            border: 1px solid var(--zig3d-field-border);
+            border-radius: 8px;
+            background: var(--zig3d-card);
+            font-size: 12.5px;
+            color: var(--zig3d-text);
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .zig3d-spec-field__control:focus,
+        .zig3d-combobox__input:focus {
+            outline: none;
+            border-color: var(--zig3d-primary);
+            box-shadow: 0 0 0 3px rgba(123, 92, 255, .12);
+        }
+
+        .zig3d-combobox { display: block; }
+
+        .zig3d-spec-row__remove {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            margin-top: 6px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #CBD5E1;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease;
+        }
+        .zig3d-spec-row__remove:hover {
+            background: rgba(239, 68, 68, .08);
+            color: var(--zig3d-danger);
+        }
+
+        /* ---------------- افزودنِ مشخصه ---------------- */
+
+        .zig3d-spec-box__add-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            height: 38px;
+            border: 1px dashed var(--zig3d-field-border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--zig3d-primary-dark);
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+        .zig3d-spec-box__add-item:hover {
+            background: rgba(123, 92, 255, .06);
+            border-color: var(--zig3d-primary);
+        }
+        .zig3d-spec-box__add-item .dashicons { font-size: 14px; width: 14px; height: 14px; }
+
+        /* ---------------- کارتِ افزودنِ گروه ---------------- */
+
         .zig3d-spec-box--add {
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            border: 2px dashed #c3c4c7; background: none; color: #2271b1; cursor: pointer;
-            min-height: 80px; font-size: 14px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 100%;
+            border: 1.5px dashed rgba(123, 92, 255, .35);
+            background: rgba(123, 92, 255, .03);
+            color: var(--zig3d-primary-dark);
+            cursor: pointer;
         }
-        .zig3d-spec-save { margin-top: 20px; }
+        .zig3d-spec-box--add:hover {
+            border-color: var(--zig3d-primary);
+            background: rgba(123, 92, 255, .07);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, .04);
+        }
+        .zig3d-spec-box--add__icon { font-size: 20px; }
+        .zig3d-spec-box--add__label { font-size: 14px; font-weight: 700; }
         </style>
         <?php
     }
@@ -379,12 +831,25 @@ final class Spec_Groups_Page {
                 input.addEventListener('blur', sync);
             }
 
-            function wireItemRow(row) {
+            /** شمارشِ زندهٔ «N مشخصه» بالایِ جعبه — فقط بازخوردِ چشمی، ذخیره از رویِ خودِ DOM حساب می‌شود */
+            function refreshCount(box) {
+                var badge = box.querySelector('[data-zig3d-count]');
+                if (!badge) { return; }
+                var n = box.querySelectorAll('.zig3d-spec-row').length;
+                badge.textContent = n + ' ' + <?php echo wp_json_encode(__('مشخصه', 'zig3d-widgets')); ?>;
+            }
+
+            function wireItemRow(row, box) {
                 wireSourceVisibility(row);
                 wireCombobox(row);
 
                 var remove = row.querySelector('[data-zig3d-remove-item]');
-                if (remove) { remove.addEventListener('click', function () { row.remove(); }); }
+                if (remove) {
+                    remove.addEventListener('click', function () {
+                        row.remove();
+                        refreshCount(box);
+                    });
+                }
 
                 row.addEventListener('dragstart', function (e) {
                     if (e.target.closest('input, select, textarea, button')) {
@@ -430,7 +895,8 @@ final class Spec_Groups_Page {
                 var row = frag.querySelector('.zig3d-spec-row');
                 stampBoxIds(frag, boxId);
                 list.appendChild(frag);
-                wireItemRow(row);
+                wireItemRow(row, box);
+                refreshCount(box);
             }
 
             /* ---------------- جعبهٔ گروه ---------------- */
@@ -441,14 +907,28 @@ final class Spec_Groups_Page {
                 return match ? match[1] : uid();
             }
 
+            function wireTitleValidation(box) {
+                var title = box.querySelector('.zig3d-spec-box__title');
+                if (!title) { return; }
+                var sync = function () {
+                    title.classList.toggle('is-invalid', '' === title.value.trim());
+                };
+                title.addEventListener('blur', sync);
+                title.addEventListener('input', function () {
+                    if (title.classList.contains('is-invalid')) { sync(); }
+                });
+            }
+
             function wireBox(box) {
                 box.setAttribute('data-zig3d-box-id', boxId(box));
 
                 var list = box.querySelector('[data-zig3d-items]');
                 if (list) {
                     wireItemList(list);
-                    list.querySelectorAll('.zig3d-spec-row').forEach(wireItemRow);
+                    list.querySelectorAll('.zig3d-spec-row').forEach(function (row) { wireItemRow(row, box); });
                 }
+
+                wireTitleValidation(box);
 
                 var addItem = box.querySelector('[data-zig3d-add-item]');
                 if (addItem) { addItem.addEventListener('click', function () { addItemTo(box); }); }
@@ -515,20 +995,32 @@ final class Spec_Groups_Page {
                 }
             });
 
-            GRID.querySelectorAll('.zig3d-spec-box').forEach(wireBox);
+            GRID.querySelectorAll('.zig3d-spec-box').forEach(function (box) {
+                if (!box.classList.contains('zig3d-spec-box--add')) { wireBox(box); }
+            });
 
-            var addBox = document.getElementById('zig3d-add-box');
-            if (addBox && BOX_TPL) {
-                addBox.addEventListener('click', function () {
-                    var id = uid();
-                    var frag = BOX_TPL.content.cloneNode(true);
-                    var box = frag.querySelector('.zig3d-spec-box');
-                    stampBoxIds(frag, id);
-                    GRID.insertBefore(frag, addBox);
-                    wireBox(box);
-                    box.querySelector('.zig3d-spec-box__title').focus();
-                });
+            /* افزودنِ گروه — هم دکمهٔ تولبار، هم کارتِ خط‌چینِ انتهایِ گرید، هر دو همین یکی را صدا می‌زنند */
+            function addGroup() {
+                if (!BOX_TPL) { return; }
+                var addCard = GRID.querySelector('.zig3d-spec-box--add');
+                var id = uid();
+                var frag = BOX_TPL.content.cloneNode(true);
+                var box = frag.querySelector('.zig3d-spec-box');
+                stampBoxIds(frag, id);
+                if (addCard) {
+                    GRID.insertBefore(frag, addCard);
+                } else {
+                    GRID.appendChild(frag);
+                }
+                wireBox(box);
+                refreshCount(box);
+                box.querySelector('.zig3d-spec-box__title').focus();
+                box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
+
+            document.querySelectorAll('[data-zig3d-add-box]').forEach(function (trigger) {
+                trigger.addEventListener('click', addGroup);
+            });
 
             var search = document.getElementById('zig3d-spec-search');
             if (search) {
@@ -538,6 +1030,17 @@ final class Spec_Groups_Page {
                         var title = box.querySelector('.zig3d-spec-box__title');
                         var hay = title ? title.value.toLowerCase() : '';
                         box.hidden = q !== '' && hay.indexOf(q) === -1;
+                    });
+                });
+            }
+
+            /* حالتِ «در حالِ ذخیره» — فقط بازخوردِ چشمی برایِ فاصلهٔ کوتاهِ تا رفرشِ صفحه */
+            var form = document.getElementById('zig3d-spec-form');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    document.querySelectorAll('.zig3d-btn--primary').forEach(function (btn) {
+                        btn.disabled = true;
+                        btn.classList.add('is-saving');
                     });
                 });
             }
