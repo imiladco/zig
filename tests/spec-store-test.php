@@ -29,7 +29,7 @@ $clean = Spec_Store::sanitize_groups([
     ],
     'Dimensions & Infra!' => [
         'label' => 'ابعاد و زیرساخت',
-        'items' => [['source' => 'dimensions']],
+        'items' => [['source' => 'length']],
     ],
 ]);
 

@@ -53,7 +53,7 @@ Tests::same(
     'spindle_rpm'
 );
 
-foreach (['category', 'tag', 'sku', 'rating', 'stock', 'weight', 'dimensions'] as $source) {
+foreach (['category', 'tag', 'sku', 'rating', 'stock', 'weight', 'length', 'width', 'height'] as $source) {
     Tests::ok(
         "منبعِ «{$source}» بدونِ فیلدِ دیگری هم می‌ماند",
         null !== Spec_Group::sanitize_item(['source' => $source])
@@ -62,8 +62,8 @@ foreach (['category', 'tag', 'sku', 'rating', 'stock', 'weight', 'dimensions'] a
 
 Tests::same(
     'برچسبِ سفارشی، تگ را از دست می‌دهد نه متن را',
-    Spec_Group::sanitize_item(['source' => 'dimensions', 'label' => '<b>ابعاد</b> کلی'])['label'],
-    'ابعاد کلی'
+    Spec_Group::sanitize_item(['source' => 'length', 'label' => '<b>طول</b> کلی'])['label'],
+    'طول کلی'
 );
 
 /* ==========================================================================

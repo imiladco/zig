@@ -398,7 +398,9 @@ final class Spec_Groups_Page {
             'rating'      => __('امتیازِ خریداران', 'zig3d-widgets'),
             'stock'       => __('وضعیتِ موجودی', 'zig3d-widgets'),
             'weight'      => __('وزن', 'zig3d-widgets'),
-            'dimensions'  => __('ابعاد', 'zig3d-widgets'),
+            'length'      => __('طول', 'zig3d-widgets'),
+            'width'       => __('عرض', 'zig3d-widgets'),
+            'height'      => __('ارتفاع', 'zig3d-widgets'),
             'custom_meta' => __('فیلدِ دلخواه (متا)', 'zig3d-widgets'),
         ];
     }
