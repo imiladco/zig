@@ -126,14 +126,16 @@ final class Spec_Groups_Page {
             self::render_box($name, $group, count(Spec_Store::categories_using($name)));
         }
 
-        self::render_add_card();
+        /*
+         * کارتِ «افزودن» فقط وقتی کتابخانه خالی است — یعنی خودش تنها راهِ
+         * افزودن است. وقتی حداقل یک گروه هست، دکمهٔ تولبار همان کار را
+         * می‌کند و تکرارِ همان دعوت‌به‌عمل در انتهایِ گرید فقط شلوغی است.
+         */
+        if (!$groups) {
+            self::render_add_card();
+        }
 
         echo '</div>';
-
-        printf(
-            '<p class="zig3d-spec-save"><button type="submit" class="zig3d-btn zig3d-btn--primary zig3d-btn--block"><span class="zig3d-btn__label">%s</span></button></p>',
-            esc_html__('ذخیرهٔ همه', 'zig3d-widgets')
-        );
 
         echo '</form>';
 
@@ -142,7 +144,7 @@ final class Spec_Groups_Page {
         self::render_script();
     }
 
-    /** کارتِ «افزودنِ گروه» انتهایِ گرید — یک کارتِ واقعی، نه یک قابِ خط‌چینِ خام */
+    /** کارتِ «افزودنِ گروه» — فقط حالتِ خالی: وقتی هنوز هیچ گروهی نیست */
     private static function render_add_card(): void {
         echo '<button type="button" class="zig3d-spec-box zig3d-spec-box--add" data-zig3d-add-box>';
         echo '<span class="zig3d-spec-box--add__icon dashicons dashicons-plus-alt2" aria-hidden="true"></span>';
@@ -191,7 +193,7 @@ final class Spec_Groups_Page {
                 ))
             );
         }
-        echo '</div>';
+        echo '</div><!-- /.zig3d-spec-box__meta — پایانِ سرستون؛ خطِ زیرش مرزِ بدنه است -->';
 
         printf('<input type="hidden" name="zig3d_groups[%s][existing_name]" value="%s">', esc_attr($box_id), esc_attr($existing_name));
 
@@ -408,7 +410,7 @@ final class Spec_Groups_Page {
             padding: 0 12px 0 12px;
             padding-inline-start: 34px;
             border: 1px solid var(--zig3d-field-border);
-            border-radius: 8px;
+            border-radius: 10px;
             background: var(--zig3d-card);
             font-size: 13px;
             color: var(--zig3d-text);
@@ -468,8 +470,6 @@ final class Spec_Groups_Page {
 
         .zig3d-btn--block { width: 100%; }
 
-        .zig3d-spec-save { max-width: 320px; margin: 24px 0 0; }
-
         .zig3d-spec-notice { margin: 0 0 16px; }
 
         /* ---------------- گرید ---------------- */
@@ -477,6 +477,12 @@ final class Spec_Groups_Page {
         .zig3d-spec-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
+            /*
+             * پیش‌فرضِ grid این است که همهٔ کارت‌هایِ یک ردیف را هم‌قد کند —
+             * یعنی همان گروهِ خالی که تازه compact شد، کنارِ یک گروهِ پر
+             * دوباره کشیده و بلند می‌شد. با start هر کارت قدِ خودش را می‌گیرد.
+             */
+            align-items: start;
             gap: 20px;
         }
 
@@ -497,15 +503,15 @@ final class Spec_Groups_Page {
             flex-direction: column;
             background: var(--zig3d-card);
             border: 1px solid var(--zig3d-border);
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, .04);
+            border-radius: 16px;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .05);
             padding: 16px;
             cursor: grab;
             transition: box-shadow .15s ease, border-color .15s ease;
         }
 
         .zig3d-spec-box:hover {
-            box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+            box-shadow: 0 16px 38px rgba(15, 23, 42, .09);
             border-color: #D9DEE7;
         }
 
@@ -529,9 +535,10 @@ final class Spec_Groups_Page {
 
         .zig3d-spec-box__handle {
             flex-shrink: 0;
-            color: var(--zig3d-text-muted);
+            color: #94A3B8;
             cursor: grab;
-            font-size: 18px;
+            font-size: 15px;
+            opacity: .8;
         }
         .zig3d-spec-box__handle:active { cursor: grabbing; }
 
@@ -539,24 +546,35 @@ final class Spec_Groups_Page {
             flex: 1;
             min-width: 0;
             height: 36px;
-            border: 1px solid transparent;
-            border-radius: 8px;
+            /*
+             * مرزِ پیش‌فرض همرنگِ فیلدهایِ دیگر است، نه شفاف — شفاف‌بودن
+             * یعنی خودِ تعریفِ CSS چیزی نمی‌گوید و اگر جایی (حتی موقتاً) کلاسِ
+             * نامعتبر اشتباه بنشیند، هیچ مرزِ خنثایی برایِ برگشتن نیست.
+             */
+            border: 1px solid var(--zig3d-field-border);
+            border-radius: 10px;
             padding: 0 10px;
-            background: transparent;
+            background: var(--zig3d-field-bg);
             font-size: 15px;
             font-weight: 700;
             color: var(--zig3d-text);
             transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
         }
-        .zig3d-spec-box__title:hover { background: var(--zig3d-field-bg); }
+        .zig3d-spec-box__title:hover { background: var(--zig3d-card); }
         .zig3d-spec-box__title:focus {
             outline: none;
             background: var(--zig3d-card);
             border-color: var(--zig3d-primary);
             box-shadow: 0 0 0 3px rgba(123, 92, 255, .12);
         }
+        /*
+         * فقط بعدِ لمس‌شدن (blur حداقل یک‌بار) و خالی‌بودن قرمز می‌شود —
+         * جاوااسکریپت مسئولِ همین قاعده است؛ این کلاس هرگز در بارگذاریِ
+         * اول یا برایِ کارتِ تازه‌ساخته‌شده نمی‌نشیند.
+         */
         .zig3d-spec-box__title.is-invalid {
             border-color: var(--zig3d-danger);
+            background: #FFF7F7;
             box-shadow: 0 0 0 3px rgba(239, 68, 68, .12);
         }
 
@@ -569,22 +587,21 @@ final class Spec_Groups_Page {
             height: 30px;
             border: 0;
             border-radius: 8px;
-            background: transparent;
-            color: #FCA5A5;
-            cursor: pointer;
-            transition: background-color .15s ease, color .15s ease;
-        }
-        .zig3d-spec-box__remove:hover {
-            background: rgba(239, 68, 68, .08);
+            background: #FEF2F2;
             color: var(--zig3d-danger);
+            cursor: pointer;
+            transition: background-color .15s ease;
         }
+        .zig3d-spec-box__remove:hover { background: #FEE2E2; }
 
         .zig3d-spec-box__meta {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin: 6px 0 12px;
-            padding-inline-start: 26px;
+            margin: 10px 0 12px;
+            padding: 0 0 12px;
+            padding-inline-start: 24px;
+            border-bottom: 1px solid var(--zig3d-border);
         }
 
         .zig3d-spec-box__count {
@@ -612,13 +629,16 @@ final class Spec_Groups_Page {
             flex: 1;
         }
 
+        /*
+         * حالتِ خالی دیگر یک جعبهٔ بزرگِ نقطه‌چین نیست — فقط یک خطِ کوتاهِ
+         * راهنما، چون دکمهٔ «افزودنِ مشخصه» همین زیرش هست و خودش کنشِ لازم
+         * را می‌دهد؛ تکرارِ یک قاب برایِ همین یک پیام لازم نیست.
+         */
         .zig3d-spec-box__items:empty {
             display: block;
-            margin-bottom: 10px;
-            padding: 18px 10px;
-            border: 1px dashed var(--zig3d-field-item-border);
-            border-radius: 10px;
-            text-align: center;
+            margin: 0 0 8px;
+            padding: 0;
+            text-align: start;
             font-size: 12px;
             color: var(--zig3d-text-muted);
         }
@@ -644,17 +664,18 @@ final class Spec_Groups_Page {
 
         .zig3d-spec-row__handle {
             flex-shrink: 0;
-            color: #B7C0CC;
+            color: #94A3B8;
             margin-top: 8px;
-            font-size: 15px;
+            font-size: 14px;
+            opacity: .8;
         }
 
         .zig3d-spec-row__body {
             flex: 1;
             min-width: 0;
             display: grid;
-            grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
         }
 
         @media (max-width: 480px) {
@@ -682,7 +703,7 @@ final class Spec_Groups_Page {
             height: 40px;
             padding: 0 10px;
             border: 1px solid var(--zig3d-field-border);
-            border-radius: 8px;
+            border-radius: 10px;
             background: var(--zig3d-card);
             font-size: 12.5px;
             color: var(--zig3d-text);
@@ -708,15 +729,12 @@ final class Spec_Groups_Page {
             margin-top: 6px;
             border: 0;
             border-radius: 8px;
-            background: transparent;
-            color: #CBD5E1;
-            cursor: pointer;
-            transition: background-color .15s ease, color .15s ease;
-        }
-        .zig3d-spec-row__remove:hover {
-            background: rgba(239, 68, 68, .08);
+            background: #FEF2F2;
             color: var(--zig3d-danger);
+            cursor: pointer;
+            transition: background-color .15s ease;
         }
+        .zig3d-spec-row__remove:hover { background: #FEE2E2; }
 
         /* ---------------- افزودنِ مشخصه ---------------- */
 
@@ -907,16 +925,21 @@ final class Spec_Groups_Page {
                 return match ? match[1] : uid();
             }
 
+            /*
+             * قرمزشدن فقط بعدِ اولین blur مجاز است — نه در بارگذاریِ اول، نه
+             * تا وقتی کاربر اصلاً به فیلد سر نزده. پرچمِ ‎touched‎ همین قاعده
+             * را نگه می‌دارد؛ پیش از آن ‎sync‎ کاری نمی‌کند.
+             */
             function wireTitleValidation(box) {
                 var title = box.querySelector('.zig3d-spec-box__title');
                 if (!title) { return; }
+                var touched = false;
                 var sync = function () {
+                    if (!touched) { return; }
                     title.classList.toggle('is-invalid', '' === title.value.trim());
                 };
-                title.addEventListener('blur', sync);
-                title.addEventListener('input', function () {
-                    if (title.classList.contains('is-invalid')) { sync(); }
-                });
+                title.addEventListener('blur', function () { touched = true; sync(); });
+                title.addEventListener('input', sync);
             }
 
             function wireBox(box) {
@@ -1009,6 +1032,8 @@ final class Spec_Groups_Page {
                 stampBoxIds(frag, id);
                 if (addCard) {
                     GRID.insertBefore(frag, addCard);
+                    // با اولین گروه، حالتِ خالی دیگر برقرار نیست — کارتِ خط‌چین برود
+                    addCard.remove();
                 } else {
                     GRID.appendChild(frag);
                 }
@@ -1038,6 +1063,16 @@ final class Spec_Groups_Page {
             var form = document.getElementById('zig3d-spec-form');
             if (form) {
                 form.addEventListener('submit', function () {
+                    /*
+                     * سرور برایِ عنوانِ خالی خودش یک نامِ پیش‌فرض می‌سازد، پس
+                     * ارسال را نمی‌بندیم — فقط لحظهٔ ذخیره هم همان قرمزیِ
+                     * touched را رویِ فیلدهایِ هنوز خالی نشان می‌دهیم.
+                     */
+                    GRID.querySelectorAll('.zig3d-spec-box__title').forEach(function (title) {
+                        if ('' === title.value.trim()) {
+                            title.classList.add('is-invalid');
+                        }
+                    });
                     document.querySelectorAll('.zig3d-btn--primary').forEach(function (btn) {
                         btn.disabled = true;
                         btn.classList.add('is-saving');
