@@ -726,7 +726,7 @@ final class Product_Stock extends Widget_Base {
              * پوشش بدهد.
              */
             if ($this->should_pulse($settings, $state)) {
-                $bullet[] = self::PULSE_CLASS;
+                $bullet[] = self::pulse_class();
             }
 
             printf('<span class="%s" aria-hidden="true"></span>', esc_attr(implode(' ', $bullet)));

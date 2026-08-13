@@ -730,7 +730,7 @@ final class Bullet_List extends Widget_Base {
                     $bullet_class = $bullet_base;
 
                     if ($pulse_all || 'yes' === ($item['item_pulse'] ?? '')) {
-                        $bullet_class .= ' ' . self::PULSE_CLASS;
+                        $bullet_class .= ' ' . self::pulse_class();
                     }
                     ?>
                     <span class="<?php echo esc_attr($bullet_class); ?>" aria-hidden="true"><?php

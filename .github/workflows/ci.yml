@@ -47,6 +47,7 @@ jobs:
 
       - name: نصب استانداردهای وردپرس
         run: |
+          composer global config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require --no-interaction --quiet \
             wp-coding-standards/wpcs:^3 \
             dealerdirect/phpcodesniffer-composer-installer:^1
