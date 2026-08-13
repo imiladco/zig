@@ -667,11 +667,22 @@ final class Product_Specs extends Widget_Base {
         $this->add_control(
             'row_bg',
             [
-                'label'     => __('پس‌زمینهٔ ردیف', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینهٔ ردیفِ فرد (Odd)', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#FFFFFF',
                 'separator' => 'before',
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'row_bg_even',
+            [
+                'label'       => __('پس‌زمینهٔ ردیفِ زوج (Even) — Zebra', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#FAFAFC',
+                'description' => __('با پس‌زمینهٔ ردیفِ فرد فرق‌گذاری می‌کند تا ردیف‌ها یکی‌درمیان دیده شوند؛ برایِ بازگشت به پس‌زمینهٔ یک‌دست، همین رنگ را با رنگِ ردیفِ فرد یکی کنید.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-row-bg-even: {{VALUE}};'],
             ]
         );
 

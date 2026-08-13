@@ -2731,6 +2731,7 @@ body.zig-gallery-noscroll {
 	--zig-specs-label-color: #6B7280;
 	--zig-specs-value-color: #1E1E2D;
 	--zig-specs-row-bg: #FFFFFF;
+	--zig-specs-row-bg-even: #FAFAFC;
 	--zig-specs-row-bg-hover: #F7F5FD;
 	--zig-specs-row-divider: #ECEEF2;
 	--zig-specs-open-gap: 21px;
@@ -2935,6 +2936,20 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-specs__row:first-child {
 	border-top: 0;
+}
+
+/*
+ * Zebra: ردیفِ فرد از همان var پایه (‎--zig-specs-row-bg‎) می‌آید — کنترلِ
+ * قبلیِ «پس‌زمینهٔ ردیف» دوباره تعریف نشد، فقط زوج یک var مستقل گرفت.
+ * دیوایدر (‎border-top‎) کاملاً مستقل می‌ماند، چون این رگه فقط
+ * ‎background‎ را عوض می‌کند.
+ *
+ * ‎:hover‎ عمداً *بعد* از این رگه آمده: specificityِ هر دو یکی است
+ * (دو pseudo-class)، پس هرکدام دیرتر در همین فایل بیاید، رویِ ردیفِ
+ * زوج هم برنده می‌شود — بدونِ ‎!important‎.
+ */
+.zig-specs__row:nth-child(even) {
+	background: var(--zig-specs-row-bg-even);
 }
 
 .zig-specs__row:hover {
