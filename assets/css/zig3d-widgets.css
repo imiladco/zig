@@ -3008,7 +3008,9 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	--zig-feature-content-fr: 1.35fr;
 	display: flex;
 	flex-direction: column;
-	background: transparent;
+	background-color: var(--zig-feature-frame-bg, transparent);
+	backdrop-filter: blur(var(--zig-feature-frame-blur, 0px));
+	-webkit-backdrop-filter: blur(var(--zig-feature-frame-blur, 0px));
 }
 
 /* ---------------------------------------------------------------------
@@ -3235,6 +3237,12 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  * می‌نشیند (دقیقاً طبقِ Reference)، نه داخلِ یک جعبهٔ سفیدِ جدا. اگر
  * ادمین کارتِ روشن بخواهد، همان کنترل‌های قبلی (پس‌زمینه/مرز/سایه) هنوز
  * هستند — فقط پیش‌فرضشان دیگر «کارت» نیست.
+ *
+ * بافتِ شطرنجیِ خط‌خطیِ ظریف (‎repeating-linear-gradient‎ی مورب) پشتِ
+ * تصویر — یک لایهٔ ‎background-image‎ جدا از ‎background-color‎ی
+ * کنترل‌پذیر، پس با هم تداخل ندارند. فاصلهٔ داخلیِ پیش‌فرض هم برگشت
+ * (نه صفر) تا این بافت واقعاً دورِ تصویر دیده شود، نه زیرش قایم بماند
+ * — بدونِ پس‌زمینهٔ توپر، این هنوز «کارت» نیست، فقط یک سطحِ تکنیکال.
  */
 .zig-feature__media {
 	position: relative;
@@ -3244,9 +3252,10 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	align-items: center;
 	justify-content: center;
 	background-color: transparent;
+	background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 10px);
 	border-radius: 0;
 	overflow: visible;
-	padding: 0;
+	padding: 20px;
 	min-width: 0;
 }
 
@@ -3346,11 +3355,16 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	opacity: var(--zig-feature-glow-opacity, 55%);
 }
 
+/*
+ * ‎inset-inline-start‎ در آرایشِ راست‌به‌چپ یعنی سمتِ راست — نه
+ * ‎inset-inline-end‎ (که سمتِ چپ می‌شود). این لکه باید بالا-راست
+ * بنشیند، پس از همین سمت شروع می‌شود.
+ */
 .zig-feature__glow--content {
 	width: var(--zig-feature-glow-spread, 140px);
 	height: var(--zig-feature-glow-spread, 140px);
-	top: 8%;
-	inset-inline-end: 6%;
+	top: 6%;
+	inset-inline-start: 4%;
 }
 
 /*
@@ -3370,11 +3384,46 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 /*
- * پالسِ خیلی‌کند و ملایم («living light») — فقط وقتی هم کاربر حرکتِ
- * کم را ترجیح نداده، هم گلوی متحرک از استایل خاموش نشده.
+ * لکهٔ محتوا بینِ چهار گوشهٔ پنل می‌گردد — بالا-راست (شروع) ← بالا-چپ ←
+ * پایین-چپ ← پایین-راست ← برگشت. ‎opacity‎ عمداً اینجا نیست — همان
+ * ‎opacity: var(--zig-feature-glow-opacity)‎ِ پایه و انیمیشنِ ورودِ
+ * WAAPI (هنگامِ سوییخِ تب) کافی‌اند؛ اگر این کی‌فریم‌ها هم opacity را
+ * دست می‌زدند، درست همان لحظه‌ای که WAAPI با ‎cancel()‎ رها می‌شود یک
+ * جهش/فلاشِ ریز پیش می‌آمد.
+ *
+ * توقفِ کوتاه رویِ هر گوشه (پله‌هایِ نامساوی: ۸٪/۳۰٪/۳۸٪/...) به‌جایِ
+ * فاصله‌هایِ مساویِ ۲۵٪-۲۵٪، همراه با ‎ease-in-out‎، یعنی سرعتِ حرکت بینِ
+ * گوشه‌ها ثابت نیست — «سرعتِ متغیر»ِ خواسته‌شده، بدونِ نیاز به چند
+ * انیمیشنِ جدا.
+ *
+ * درصدها به‌جایِ ‎transform: translate()‎ عمداً انتخاب شدند: ‎top‎/
+ * ‎inset-inline-start‎ به اندازهٔ *پنل* نسبی‌اند، نه اندازهٔ خودِ لکه —
+ * پس رویِ هر عرض/ارتفاعِ پنلی درست کار می‌کند، حتی اگر پرفورمنسش
+ * به‌اندازهٔ transformِ خالص GPU-friendly نباشد. برایِ یک لکهٔ کوچک و
+ * کند این معاوضه به‌صرفه است.
+ */
+@keyframes zig-feature-glow-orbit {
+	0%, 8%   { top: 6%;  inset-inline-start: 4%;  transform: scale(1); }
+	30%      { top: 6%;  inset-inline-start: 70%; transform: scale(1.1); }
+	38%      { top: 6%;  inset-inline-start: 70%; transform: scale(1); }
+	60%      { top: 62%; inset-inline-start: 70%; transform: scale(1.08); }
+	68%      { top: 62%; inset-inline-start: 70%; transform: scale(1); }
+	92%      { top: 62%; inset-inline-start: 4%;  transform: scale(1.06); }
+	100%     { top: 6%;  inset-inline-start: 4%;  transform: scale(1); }
+}
+
+/*
+ * پالس/گردشِ خیلی‌کند و ملایم («living light») — فقط وقتی هم کاربر
+ * حرکتِ کم را ترجیح نداده، هم گلوی متحرک از استایل خاموش نشده. لکهٔ
+ * محتوا می‌گردد (‎orbit‎)؛ لکهٔ رسانه — که خودش «نورِ کفِ» ثابتِ زیرِ
+ * محصول است — همان پالسِ سادهٔ قبلی را نگه می‌دارد.
  */
 @media (prefers-reduced-motion: no-preference) {
-	.zig-feature:not(.zig-feature--no-glow-animate) .zig-feature__glow {
+	.zig-feature:not(.zig-feature--no-glow-animate) .zig-feature__glow--media {
 		animation: zig-feature-glow-pulse var(--zig-feature-glow-speed, 5s) ease-in-out infinite;
+	}
+
+	.zig-feature:not(.zig-feature--no-glow-animate) .zig-feature__glow--content {
+		animation: zig-feature-glow-orbit calc(var(--zig-feature-glow-speed, 5s) * 3) ease-in-out infinite;
 	}
 }

@@ -108,6 +108,7 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->register_navigation_section();
         $this->register_editor_section();
 
+        $this->register_frame_style_section();
         $this->register_intro_style_section();
         $this->register_tabs_style_section();
         $this->register_panel_style_section();
@@ -115,6 +116,79 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->register_content_style_section();
         $this->register_glow_style_section();
         $this->register_motion_style_section();
+    }
+
+    /**
+     * قابِ بیرونی — خودِ ‎.zig-feature‎ِ ریشه، نه پنلِ شیشه‌ای (که سکشنِ
+     * جداگانهٔ خودش را دارد). پیش‌فرض‌ها همه بی‌اثرند (شفاف/صفر/بدونِ
+     * مرز) — دقیقاً همان اصلِ «ویجت نباید پس‌زمینهٔ سکشن بسازد» که قبلاً
+     * رعایت شد؛ اینجا فقط سطحِ کنترل اضافه می‌شود، نه ظاهرِ پیش‌فرض. اگر
+     * ادمین چیزی نگذارد، ریشه دقیقاً مثلِ قبل transparent می‌ماند.
+     */
+    private function register_frame_style_section(): void {
+        $this->start_controls_section(
+            'fs_frame_style_section',
+            [
+                'label' => __('قابِ بیرونی', 'zig3d-widgets'),
+                'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_control(
+            'frame_bg',
+            [
+                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => 'transparent',
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-frame-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'frame_blur',
+            [
+                'label'       => __('میزانِ Blurِ پشتِ قاب', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px'],
+                'range'       => ['px' => ['min' => 0, 'max' => 48]],
+                'default'     => ['size' => 0, 'unit' => 'px'],
+                'description' => __('بدونِ نیاز به پس‌زمینه هم کار می‌کند — چیزِ پشتِ قاب را محو می‌کند.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-feature' => '--zig-feature-frame-blur: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'frame_padding',
+            [
+                'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
+                'type'       => Controls_Manager::DIMENSIONS,
+                'size_units' => ['px', 'em', 'rem'],
+                'default'    => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_group_control(
+            Group_Control_Border::get_type(),
+            [
+                'name'     => 'frame_border',
+                'selector' => '{{WRAPPER}} .zig-feature',
+            ]
+        );
+
+        $this->add_responsive_control(
+            'frame_radius',
+            [
+                'label'      => __('گردیِ گوشه‌ها', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 60]],
+                'default'    => ['size' => 0, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature' => 'border-radius: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->end_controls_section();
     }
 
     /* =====================================================================
@@ -607,7 +681,8 @@ final class Product_Feature_Showcase extends Widget_Base {
                 'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem'],
-                'default'    => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px'],
+                'default'    => ['top' => '20', 'right' => '20', 'bottom' => '20', 'left' => '20', 'unit' => 'px'],
+                'description' => __('فضایِ کمی لازم است تا بافتِ شطرنجیِ پشتِ تصویر واقعاً دیده شود.', 'zig3d-widgets'),
                 'selectors'  => ['{{WRAPPER}} .zig-feature__media' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
@@ -701,6 +776,14 @@ final class Product_Feature_Showcase extends Widget_Base {
             ]
         );
 
+        $this->add_group_control(
+            Group_Control_Border::get_type(),
+            [
+                'name'     => 'index_border',
+                'selector' => '{{WRAPPER}} .zig-feature__index',
+            ]
+        );
+
         $this->add_responsive_control(
             'index_radius',
             [
@@ -710,6 +793,17 @@ final class Product_Feature_Showcase extends Widget_Base {
                 'range'      => ['px' => ['min' => 0, 'max' => 40]],
                 'default'    => ['size' => 8, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-feature__index' => 'border-radius: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'index_padding',
+            [
+                'label'      => __('فاصلهٔ داخلیِ شماره', 'zig3d-widgets'),
+                'type'       => Controls_Manager::DIMENSIONS,
+                'size_units' => ['px', 'em', 'rem'],
+                'default'    => ['top' => '6', 'right' => '10', 'bottom' => '6', 'left' => '10', 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature__index' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
 
