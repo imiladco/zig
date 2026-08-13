@@ -465,6 +465,15 @@ final class Product_Feature_Showcase extends Widget_Base {
             ]
         );
 
+        $this->add_control(
+            'tab_border_active_note',
+            [
+                'type'            => Controls_Manager::RAW_HTML,
+                'raw'             => __('رنگِ این مرز رویِ تبِ فعال دیده نمی‌شود — تبِ فعال به‌جایِ مرز، گرادیانِ خودش را دارد؛ برایِ مرزِ تبِ فعال از «رنگِ مرز» زیرِ بخشِ «فعال» همین پایین استفاده کنید.', 'zig3d-widgets'),
+                'content_classes' => 'elementor-descriptor',
+            ]
+        );
+
         $this->add_responsive_control(
             'tab_radius',
             [
@@ -510,6 +519,100 @@ final class Product_Feature_Showcase extends Widget_Base {
                 'range'      => ['px' => ['min' => 0, 'max' => 32]],
                 'default'    => ['size' => 10, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-feature__tablist' => 'gap: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'nav_spacing',
+            [
+                'label'      => __('فاصله تا پنلِ زیرش', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 64]],
+                'default'    => ['size' => 24, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature__nav' => 'margin-bottom: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'nav_arrow_heading',
+            [
+                'label'     => __('پیکان‌هایِ ناوبری', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+                'description' => __('این پیکان‌ها فقط وقتی واقعاً نمایان‌اند که ردیفِ تب‌ها سرریز کند.', 'zig3d-widgets'),
+            ]
+        );
+
+        $this->add_control(
+            'nav_arrow_bg',
+            [
+                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#15151F',
+                'selectors' => ['{{WRAPPER}} .zig-feature__nav-arrow' => 'background-color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'nav_arrow_color',
+            [
+                'label'     => __('رنگِ آیکون', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => 'rgba(245,245,248,.7)',
+                'selectors' => ['{{WRAPPER}} .zig-feature__nav-arrow' => 'color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_group_control(
+            Group_Control_Border::get_type(),
+            [
+                'name'     => 'nav_arrow_border',
+                'selector' => '{{WRAPPER}} .zig-feature__nav-arrow',
+            ]
+        );
+
+        $this->add_responsive_control(
+            'nav_arrow_radius',
+            [
+                'label'      => __('گردیِ گوشه‌ها', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 40]],
+                'default'    => ['size' => 10, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature__nav-arrow' => 'border-radius: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'nav_arrow_size',
+            [
+                'label'      => __('اندازه', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 24, 'max' => 56]],
+                'default'    => ['size' => 36, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature__nav-arrow' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'nav_arrow_hover_bg',
+            [
+                'label'     => __('پس‌زمینهٔ هاور', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#1C1C2A',
+                'selectors' => ['{{WRAPPER}} .zig-feature__nav-arrow:hover' => 'background-color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'nav_arrow_hover_color',
+            [
+                'label'     => __('رنگِ آیکونِ هاور', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#F5F5F8',
+                'selectors' => ['{{WRAPPER}} .zig-feature__nav-arrow:hover' => 'color: {{VALUE}};'],
             ]
         );
 
