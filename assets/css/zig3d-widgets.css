@@ -2702,14 +2702,32 @@ body.zig-gallery-noscroll {
 	--zig-specs-accent: #7B5CFF;
 	--zig-specs-accent-border: #D8C8FB;
 	--zig-specs-card-bg: #FFFFFF;
+	--zig-specs-card-bg-open: #FFFFFF;
 	--zig-specs-card-border: #E4E5EA;
+	--zig-specs-card-border-width: 1px;
+	--zig-specs-radius: 16px;
+	--zig-specs-closed-divider: #E4E5EA;
+	--zig-specs-header-bg: #FFFFFF;
 	--zig-specs-header-bg-open: #FBF9FF;
 	--zig-specs-header-bg-hover: #F6F3FD;
+	--zig-specs-header-height: 81px;
+	--zig-specs-header-border-bottom: transparent;
+	--zig-specs-header-border-bottom-width: 0px;
 	--zig-specs-divider-open: #ECE4FB;
+	--zig-specs-divider-width: 1px;
 	--zig-specs-badge-bg: #F8F8FB;
+	--zig-specs-badge-bg-open: #F8F8FB;
 	--zig-specs-badge-border: #E7E7EE;
+	--zig-specs-badge-border-width: 1.5px;
+	--zig-specs-badge-border-open: #7B5CFF;
 	--zig-specs-badge-icon: #8B8B99;
+	--zig-specs-badge-icon-open: #7B5CFF;
+	--zig-specs-badge-size: 40px;
+	--zig-specs-badge-radius: 10px;
+	--zig-specs-chevron-size: 16px;
 	--zig-specs-title-color: #1E1E2D;
+	--zig-specs-title-color-open: #1E1E2D;
+	--zig-specs-body-bg: transparent;
 	--zig-specs-label-color: #6B7280;
 	--zig-specs-value-color: #1E1E2D;
 	--zig-specs-row-bg: #FFFFFF;
@@ -2725,10 +2743,16 @@ body.zig-gallery-noscroll {
  * نداشت — فقط سرستون و ردیف‌ها پس‌زمینه داشتند. رویِ صفحهٔ سفید یعنی
  * هیچ مرزی دیده نمی‌شد و کل ظاهر «flat» به‌نظر می‌رسید. جعبهٔ بیرونی
  * حالا خودش هم کارت است.
+ *
+ * ‎border‎ به سه تکه (width/style/color) شکسته شده تا استایلِ پهنایِ مرز
+ * بتواند مستقلِ رنگِ مرز کنترل شود، بدونِ آنکه یک shorthandِ مشترک را
+ * بازنویسی کند.
  */
 .zig-specs__group {
 	background: var(--zig-specs-card-bg);
-	border: 1px solid var(--zig-specs-card-border);
+	border-width: var(--zig-specs-card-border-width, 1px);
+	border-style: solid;
+	border-color: var(--zig-specs-card-border);
 	border-radius: 0;
 	overflow: hidden;
 	position: relative;
@@ -2736,37 +2760,42 @@ body.zig-gallery-noscroll {
 
 /*
  * گروه‌هایِ بستهٔ پشتِ‌سرهم باید یک کارتِ یکپارچه بسازند، نه نوارهایِ
- * جداگانه: مرزِ هر کدام رویِ مرزِ قبلی می‌نشیند (١px‑ overlap) تا فقط
- * یک خط دیده شود. گردیِ گوشه فقط رویِ لبهٔ واقعیِ فهرست می‌آید —
- * اول/آخرِ کل فهرست، یا لبه‌ای که کنارِ کارتِ بازشده قرار می‌گیرد.
+ * جداگانه: مرزِ هر کدام رویِ مرزِ قبلی می‌نشیند (پهنایِ مرز overlap) تا
+ * فقط یک خط دیده شود — رنگِ همان خط از یک متغیرِ جدا (‎closed-divider‎)
+ * می‌آید تا مستقل از رنگِ مرزِ بیرونیِ کارت (لبه‌هایِ واقعی) قابلِ تنظیم
+ * باشد. گردیِ گوشه فقط رویِ لبهٔ واقعیِ فهرست می‌آید — اول/آخرِ کل فهرست،
+ * یا لبه‌ای که کنارِ کارتِ بازشده قرار می‌گیرد.
  */
 .zig-specs__group + .zig-specs__group {
-	margin-top: -1px;
+	margin-top: calc(-1 * var(--zig-specs-card-border-width, 1px));
+	border-top-color: var(--zig-specs-closed-divider, var(--zig-specs-card-border));
 }
 
 .zig-specs__group:first-child {
-	border-top-left-radius: 16px;
-	border-top-right-radius: 16px;
+	border-top-left-radius: var(--zig-specs-radius, 16px);
+	border-top-right-radius: var(--zig-specs-radius, 16px);
 }
 
 .zig-specs__group:last-child {
-	border-bottom-left-radius: 16px;
-	border-bottom-right-radius: 16px;
+	border-bottom-left-radius: var(--zig-specs-radius, 16px);
+	border-bottom-right-radius: var(--zig-specs-radius, 16px);
 }
 
 /*
  * کارتِ بازشده از بلوکِ بسته‌ها جدا و مستقل می‌شود.
  *
- * فاصله از رویِ متغیرِ CSS خوانده می‌شود، نه مستقیم — کنترلِ المنتور هم
- * فقط همین متغیر را عوض می‌کند، نه ‎margin-block‎ را. اگر مستقیم بود،
- * رگهٔ ‎:first-child‎/‎:last-child‎ زیرش (که specificityِ برابر دارد) به
- * ترتیبِ منبع بستگی پیدا می‌کرد و با تزریقِ ‎<style>‎ِ المنتور بعدِ این
- * فایل، بی‌صدا شکست می‌خورد. با این واسطه، آن دو رگه همیشه — مستقل از
- * اینکه کدام فایل دیرتر لود شده — برنده‌اند.
+ * فاصله/شعاع از رویِ متغیرِ CSS خوانده می‌شوند، نه مستقیم — کنترلِ
+ * المنتور هم فقط همین متغیرها را عوض می‌کند، نه خودِ ‎margin-block‎/
+ * ‎border-radius‎ را. اگر مستقیم بود، رگه‌هایِ ‎:first-child‎/‎:last-child‎
+ * زیرش (که specificityِ برابر دارند) به ترتیبِ منبع بستگی پیدا می‌کرد و
+ * با تزریقِ ‎<style>‎ِ المنتور بعدِ این فایل، بی‌صدا می‌شکست. با این
+ * واسطه، آن رگه‌ها همیشه — مستقل از اینکه کدام فایل دیرتر لود شده —
+ * برنده‌اند.
  */
 .zig-specs__group[open] {
+	background: var(--zig-specs-card-bg-open);
 	border-color: var(--zig-specs-accent-border);
-	border-radius: 16px;
+	border-radius: var(--zig-specs-radius, 16px);
 	margin-block: var(--zig-specs-open-gap, 21px);
 	z-index: 1;
 }
@@ -2776,13 +2805,13 @@ body.zig-gallery-noscroll {
 
 /* بستهٔ همسایهٔ کارتِ باز، از نگاهِ بصری لبهٔ همان بلوکِ بسته‌هاست — همان‌جا هم گرد می‌شود */
 .zig-specs__group[open] + .zig-specs__group:not([open]) {
-	border-top-left-radius: 16px;
-	border-top-right-radius: 16px;
+	border-top-left-radius: var(--zig-specs-radius, 16px);
+	border-top-right-radius: var(--zig-specs-radius, 16px);
 }
 
 .zig-specs__group:not([open]):has(+ .zig-specs__group[open]) {
-	border-bottom-left-radius: 16px;
-	border-bottom-right-radius: 16px;
+	border-bottom-left-radius: var(--zig-specs-radius, 16px);
+	border-bottom-right-radius: var(--zig-specs-radius, 16px);
 }
 
 /*
@@ -2795,10 +2824,11 @@ body.zig-gallery-noscroll {
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	min-height: 81px;
+	min-height: var(--zig-specs-header-height, 81px);
 	padding-inline: 20px;
-	background: var(--zig-specs-card-bg);
+	background: var(--zig-specs-header-bg);
 	color: var(--zig-specs-title-color);
+	border-bottom: var(--zig-specs-header-border-bottom-width, 0px) solid var(--zig-specs-header-border-bottom, transparent);
 	cursor: pointer;
 	list-style: none;
 	user-select: none;
@@ -2811,12 +2841,16 @@ body.zig-gallery-noscroll {
 
 /*
  * باز: تقریباً همان سفید، فقط رگه‌ای یاسیِ خیلی‌کم — کلِ سرستون نباید
- * خاکستری/بنفش شود؛ تنها نشانِ فعال‌بودن، رنگِ خودِ فلش است.
+ * خاکستری/بنفش شود؛ تنها نشانِ فعال‌بودن، رنگِ خودِ فلش است. ارتفاعِ
+ * حالتِ باز همیشه ۴px کمتر از حالتِ بسته می‌ماند (نسبتِ طرح)، حتی وقتی
+ * ارتفاعِ پایه از استایل تغییر کند — چون از رویِ همان متغیر با ‎calc‎
+ * حساب می‌شود، نه عددی جدا.
  */
 .zig-specs__group[open] > .zig-specs__group-title {
-	min-height: 77px;
+	min-height: calc(var(--zig-specs-header-height, 81px) - 4px);
 	background: var(--zig-specs-header-bg-open);
-	border-bottom: 1px solid var(--zig-specs-divider-open);
+	color: var(--zig-specs-title-color-open);
+	border-bottom: var(--zig-specs-divider-width, 1px) solid var(--zig-specs-divider-open);
 }
 
 details.zig-specs__group > .zig-specs__group-title:hover,
@@ -2845,25 +2879,28 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 40px;
-	height: 40px;
-	border-radius: 10px;
+	width: var(--zig-specs-badge-size, 40px);
+	height: var(--zig-specs-badge-size, 40px);
+	border-radius: var(--zig-specs-badge-radius, 10px);
 	background: var(--zig-specs-badge-bg);
-	border: 1.5px solid var(--zig-specs-badge-border);
+	border-width: var(--zig-specs-badge-border-width, 1.5px);
+	border-style: solid;
+	border-color: var(--zig-specs-badge-border);
 	color: var(--zig-specs-badge-icon);
-	transition: border-color .18s ease, color .18s ease;
+	transition: border-color .18s ease, color .18s ease, background-color .18s ease;
 }
 
 .zig-specs__chevron {
-	width: 16px;
-	height: 16px;
+	width: var(--zig-specs-chevron-size, 16px);
+	height: var(--zig-specs-chevron-size, 16px);
 	transition: transform .18s ease;
 }
 
 /* details[open] یعنی باز است — فلش می‌چرخد تا «رو به بالا» بشود، و نشان رنگِ اصلی می‌گیرد */
 .zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron-badge {
-	border-color: var(--zig-specs-accent);
-	color: var(--zig-specs-accent);
+	background: var(--zig-specs-badge-bg-open);
+	border-color: var(--zig-specs-badge-border-open);
+	color: var(--zig-specs-badge-icon-open);
 }
 
 .zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron {
@@ -2873,6 +2910,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-specs__list {
 	margin: 0;
 	padding: 0;
+	background: var(--zig-specs-body-bg, transparent);
 	/* پیش‌فرضِ بدونِ‌جاوااسکریپت: بلافاصله دیده می‌شود؛ JS این را برایِ fade-inِ ۴۵ms موقتاً می‌پوشاند */
 	opacity: 1;
 }

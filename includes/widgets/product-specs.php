@@ -85,7 +85,12 @@ final class Product_Specs extends Widget_Base {
         $this->register_product_section();
         $this->register_layout_section();
         $this->register_group_style_section();
+        $this->register_header_style_section();
+        $this->register_header_open_style_section();
+        $this->register_toggle_style_section();
+        $this->register_body_style_section();
         $this->register_row_style_section();
+        $this->register_closed_group_style_section();
     }
 
     /* =====================================================================
@@ -165,7 +170,7 @@ final class Product_Specs extends Widget_Base {
         $this->start_controls_section(
             'group_style_section',
             [
-                'label' => __('گروه‌ها', 'zig3d-widgets'),
+                'label' => __('آکاردئون / گروه', 'zig3d-widgets'),
                 'tab'   => Controls_Manager::TAB_STYLE,
             ]
         );
@@ -173,7 +178,7 @@ final class Product_Specs extends Widget_Base {
         $this->add_control(
             'card_bg',
             [
-                'label'     => __('پس‌زمینهٔ کارت', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینهٔ کارتِ بسته', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#FFFFFF',
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-card-bg: {{VALUE}};'],
@@ -181,9 +186,20 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
+            'card_bg_open',
+            [
+                'label'     => __('پس‌زمینهٔ کارتِ باز', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#FFFFFF',
+                'condition' => ['layout_mode' => 'accordion'],
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-card-bg-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
             'card_border_color',
             [
-                'label'     => __('مرزِ کارتِ بسته', 'zig3d-widgets'),
+                'label'     => __('رنگِ مرزِ کارتِ بسته', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#E4E5EA',
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-card-border: {{VALUE}};'],
@@ -191,12 +207,42 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
+            'card_border_width',
+            [
+                'label'      => __('پهنایِ مرزِ کارت', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 6]],
+                'default'    => ['size' => 1, 'unit' => 'px'],
+                /*
+                 * همان پهنا رویِ کارتِ باز و بسته، هر دو — طرح فقط رنگِ مرز را
+                 * بینِ باز/بسته فرق می‌گذارد، نه پهنایش.
+                 */
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-card-border-width: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
             'accent_border_color',
             [
-                'label'     => __('مرزِ کارتِ باز', 'zig3d-widgets'),
+                'label'     => __('رنگِ مرزِ کارتِ باز', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#D8C8FB',
+                'condition' => ['layout_mode' => 'accordion'],
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-accent-border: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'group_radius',
+            [
+                'label'       => __('شعاعِ گوشه‌های کارت', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px'],
+                'range'       => ['px' => ['min' => 0, 'max' => 40]],
+                'default'     => ['size' => 16, 'unit' => 'px'],
+                'description' => __('یک شعاعِ مشترک برایِ کارتِ باز و بلوکِ کارت‌هایِ بسته؛ فقط گوشه‌هایِ لبهٔ واقعیِ فهرست گرد می‌شوند.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-radius: {{SIZE}}{{UNIT}};'],
             ]
         );
 
@@ -221,41 +267,51 @@ final class Product_Specs extends Widget_Base {
             ]
         );
 
+        $this->end_controls_section();
+    }
+
+    private function register_header_style_section(): void {
+        $this->start_controls_section(
+            'header_style_section',
+            [
+                'label' => __('سرستون', 'zig3d-widgets'),
+                'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
         $this->add_group_control(
             Group_Control_Typography::get_type(),
             [
                 'name'     => 'group_title_typography',
-                'label'    => __('تایپوگرافیِ عنوانِ گروه', 'zig3d-widgets'),
+                'label'    => __('تایپوگرافیِ عنوان', 'zig3d-widgets'),
                 'selector' => '{{WRAPPER}} .zig-specs__group-title-text',
-                'separator' => 'before',
             ]
         );
 
         $this->add_control(
             'group_title_color',
             [
-                'label'     => __('رنگِ عنوانِ گروه', 'zig3d-widgets'),
+                'label'     => __('رنگِ متن', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'selectors' => ['{{WRAPPER}} .zig-specs__group-title-text' => 'color: {{VALUE}};'],
             ]
         );
 
         $this->add_control(
-            'group_header_bg_open',
+            'header_bg',
             [
-                'label'       => __('پس‌زمینهٔ سرستونِ باز', 'zig3d-widgets'),
-                'type'        => Controls_Manager::COLOR,
-                'default'     => '#FBF9FF',
-                'description' => __('سرستونِ بسته همیشه هم‌رنگِ کارت است؛ این فقط رگهٔ خیلی‌کمِ یاسیِ سرستونِ بازشده را کنترل می‌کند.', 'zig3d-widgets'),
-                'condition'   => ['layout_mode' => 'accordion'],
-                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg-open: {{VALUE}};'],
+                'label'     => __('پس‌زمینه (حالتِ بسته)', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#FFFFFF',
+                'separator' => 'before',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg: {{VALUE}};'],
             ]
         );
 
         $this->add_control(
             'group_header_bg_hover',
             [
-                'label'     => __('پس‌زمینهٔ سرستون در هاور', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینه در هاور', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#F6F3FD',
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg-hover: {{VALUE}};'],
@@ -263,9 +319,22 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_responsive_control(
+            'header_height',
+            [
+                'label'       => __('حداقلِ ارتفاع', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px'],
+                'range'       => ['px' => ['min' => 40, 'max' => 160]],
+                'default'     => ['size' => 81, 'unit' => 'px'],
+                'description' => __('حالتِ بازِ سرستون همیشه ۴px کمتر از همین عدد می‌ماند — طبقِ نسبتِ طرح.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-height: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
             'group_title_padding',
             [
-                'label'      => __('فاصلهٔ داخلیِ عنوانِ گروه', 'zig3d-widgets'),
+                'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem'],
                 'selectors'  => ['{{WRAPPER}} .zig-specs__group-title' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
@@ -273,22 +342,172 @@ final class Product_Specs extends Widget_Base {
         );
 
         $this->add_control(
-            'chevron_heading',
+            'header_border_bottom_color',
             [
-                'label'     => __('نشانِ باز/بسته', 'zig3d-widgets'),
+                'label'     => __('رنگِ مرزِ پایین (حالتِ بسته)', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => 'transparent',
+                'separator' => 'before',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-border-bottom: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'header_border_bottom_width',
+            [
+                'label'      => __('پهنایِ مرزِ پایین (حالتِ بسته)', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 6]],
+                'default'    => ['size' => 0, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-border-bottom-width: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'group_accent_color',
+            [
+                'label'       => __('رنگِ حلقهٔ فوکوسِ کیبوردی', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#7B5CFF',
+                'separator'   => 'before',
+                'description' => __('فقط وقتی سرستون با Tab فوکوس می‌گیرد دیده می‌شود.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-accent: {{VALUE}};'],
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
+    private function register_header_open_style_section(): void {
+        $this->start_controls_section(
+            'header_open_style_section',
+            [
+                'label'     => __('سرستونِ باز (حالتِ فعال)', 'zig3d-widgets'),
+                'tab'       => Controls_Manager::TAB_STYLE,
+                'condition' => ['layout_mode' => 'accordion'],
+            ]
+        );
+
+        $this->add_control(
+            'header_text_color_open',
+            [
+                'label'     => __('رنگِ متن', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#1E1E2D',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-title-color-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'group_header_bg_open',
+            [
+                'label'       => __('پس‌زمینه', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#FBF9FF',
+                'description' => __('سرستونِ بسته با این یکی فرق می‌کند؛ اینجا فقط رگهٔ خیلی‌کمِ یاسیِ سرستونِ بازشده را کنترل می‌کند.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-header-bg-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'header_border_open_color',
+            [
+                'label'       => __('رنگِ مرزِ پایین', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#ECE4FB',
+                'separator'   => 'before',
+                'description' => __('همین خط، مرزِ بینِ سرستون و جدولِ زیرش هم هست — کنترلِ جداگانه‌ای برایِ «Divider جدول» ساخته نشده تا دو کنترل رویِ یک خط اثر نگذارند.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-divider-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'header_border_open_width',
+            [
+                'label'      => __('پهنایِ مرزِ پایین', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 6]],
+                'default'    => ['size' => 1, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-divider-width: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
+    private function register_toggle_style_section(): void {
+        $this->start_controls_section(
+            'toggle_style_section',
+            [
+                'label'     => __('فلش/نشانِ باز-بسته', 'zig3d-widgets'),
+                'tab'       => Controls_Manager::TAB_STYLE,
+                'condition' => ['layout_mode' => 'accordion'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'badge_size',
+            [
+                'label'      => __('اندازهٔ نشان', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 24, 'max' => 64]],
+                'default'    => ['size' => 40, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-size: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'chevron_size',
+            [
+                'label'      => __('اندازهٔ آیکون', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 10, 'max' => 32]],
+                'default'    => ['size' => 16, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-chevron-size: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'badge_radius',
+            [
+                'label'      => __('شعاعِ گوشه‌ها', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 32]],
+                'default'    => ['size' => 10, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-radius: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'toggle_closed_heading',
+            [
+                'label'     => __('حالتِ بسته', 'zig3d-widgets'),
                 'type'      => Controls_Manager::HEADING,
                 'separator' => 'before',
-                'condition' => ['layout_mode' => 'accordion'],
+            ]
+        );
+
+        $this->add_control(
+            'badge_bg',
+            [
+                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#F8F8FB',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-bg: {{VALUE}};'],
             ]
         );
 
         $this->add_control(
             'group_chevron_icon_color',
             [
-                'label'     => __('رنگِ آیکون در حالتِ بسته', 'zig3d-widgets'),
+                'label'     => __('رنگِ آیکون', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#8B8B99',
-                'condition' => ['layout_mode' => 'accordion'],
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-icon: {{VALUE}};'],
             ]
         );
@@ -296,23 +515,103 @@ final class Product_Specs extends Widget_Base {
         $this->add_control(
             'group_chevron_border_color',
             [
-                'label'     => __('رنگِ مرزِ نشان در حالتِ بسته', 'zig3d-widgets'),
+                'label'     => __('رنگِ مرز', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => '#E7E7EE',
-                'condition' => ['layout_mode' => 'accordion'],
                 'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-border: {{VALUE}};'],
             ]
         );
 
         $this->add_control(
-            'group_accent_color',
+            'badge_border_width',
             [
-                'label'       => __('رنگِ حالتِ فعال (گروهِ باز)', 'zig3d-widgets'),
-                'type'        => Controls_Manager::COLOR,
-                'default'     => '#7B5CFF',
-                'description' => __('همان رنگی که مرز و آیکونِ نشان، وقتی گروه باز است، می‌گیرند.', 'zig3d-widgets'),
-                'condition'   => ['layout_mode' => 'accordion'],
-                'selectors'   => ['{{WRAPPER}} .zig-specs' => '--zig-specs-accent: {{VALUE}};'],
+                'label'      => __('پهنایِ مرز', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 6, 'step' => 0.5]],
+                'default'    => ['size' => 1.5, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-border-width: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'toggle_open_heading',
+            [
+                'label'     => __('حالتِ فعال (گروهِ باز)', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
+        $this->add_control(
+            'badge_bg_open',
+            [
+                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#F8F8FB',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-bg-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'badge_icon_open',
+            [
+                'label'     => __('رنگِ آیکون', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#7B5CFF',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-icon-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'badge_border_open',
+            [
+                'label'     => __('رنگِ مرز', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#7B5CFF',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-badge-border-open: {{VALUE}};'],
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
+    private function register_body_style_section(): void {
+        $this->start_controls_section(
+            'body_style_section',
+            [
+                'label' => __('بدنه/جدول', 'zig3d-widgets'),
+                'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_control(
+            'body_bg',
+            [
+                'label'     => __('پس‌زمینهٔ بدنه', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => 'transparent',
+                'selectors' => ['{{WRAPPER}} .zig-specs__list' => 'background-color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'body_padding',
+            [
+                'label'      => __('فاصلهٔ داخلیِ بدنه', 'zig3d-widgets'),
+                'type'       => Controls_Manager::DIMENSIONS,
+                'size_units' => ['px', 'em', 'rem'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs__list' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'body_divider_note',
+            [
+                'type'            => Controls_Manager::RAW_HTML,
+                'raw'             => __('رنگ/پهنایِ خطِ جداکنندهٔ بینِ سرستون و بدنه، در بخشِ «سرستونِ باز» تنظیم می‌شود — همان یک خط است.', 'zig3d-widgets'),
+                'content_classes' => 'elementor-descriptor',
+                'separator'       => 'before',
             ]
         );
 
@@ -405,6 +704,63 @@ final class Product_Specs extends Widget_Base {
                 'range'      => ['px' => ['min' => 40, 'max' => 120]],
                 'default'    => ['size' => 70, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-specs__row' => 'min-height: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'row_padding_x',
+            [
+                'label'      => __('فاصلهٔ داخلیِ افقیِ ردیف', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 60]],
+                'default'    => ['size' => 20, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-specs__row' => 'padding-inline: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'row_padding_y',
+            [
+                'label'      => __('فاصلهٔ داخلیِ عمودیِ ردیف', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 40]],
+                'default'    => ['size' => 0, 'unit' => 'px'],
+                'description' => __('علاوه بر حداقلِ ارتفاع اضافه می‌شود؛ برایِ برچسب/مقدارِ چندخطی مفید است.', 'zig3d-widgets'),
+                'selectors'  => ['{{WRAPPER}} .zig-specs__row' => 'padding-block: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
+    private function register_closed_group_style_section(): void {
+        $this->start_controls_section(
+            'closed_group_style_section',
+            [
+                'label'     => __('گروه‌هایِ بسته', 'zig3d-widgets'),
+                'tab'       => Controls_Manager::TAB_STYLE,
+                'condition' => ['layout_mode' => 'accordion'],
+            ]
+        );
+
+        $this->add_control(
+            'closed_group_note',
+            [
+                'type'            => Controls_Manager::RAW_HTML,
+                'raw'             => __('پس‌زمینه، مرز و شعاعِ گروه‌هایِ بسته از بخشِ «آکاردئون / گروه» می‌آیند — همان کنترل‌ها رویِ کارتِ بسته هم اثر دارند. اینجا فقط خطِ جداکنندهٔ بینِ گروه‌هایِ بستهٔ پشتِ‌سرهم است.', 'zig3d-widgets'),
+                'content_classes' => 'elementor-descriptor',
+            ]
+        );
+
+        $this->add_control(
+            'closed_divider_color',
+            [
+                'label'     => __('رنگِ خطِ جداکنندهٔ بینِ گروه‌هایِ بسته', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#E4E5EA',
+                'selectors' => ['{{WRAPPER}} .zig-specs' => '--zig-specs-closed-divider: {{VALUE}};'],
             ]
         );
 
