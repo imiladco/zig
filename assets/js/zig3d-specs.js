@@ -79,17 +79,22 @@
 	Group.prototype.open = function () {
 		var self = this;
 
-		// تک‌بازشو: قبل از بازکردنِ این یکی، هرکدام از خواهر‌ها که باز است بسته می‌شود
-		this.siblings.forEach(function (other) {
-			if (other !== self && other.el.open) {
-				other.shrink();
-			}
-		});
-
 		this.el.style.height = this.el.offsetHeight + 'px';
 		this.el.open = true;
 
+		/*
+		 * بستنِ خواهرها هم داخلِ همین rAF انجام می‌شود، نه بلافاصله. اگر
+		 * shrink() این‌جا (همزمان با کلیک) صدا زده شود ولی expand() یک
+		 * فریم بعد، انیمیشنِ بسته‌شدن ~۸ میلی‌ثانیه زودتر از بازشدن شروع
+		 * می‌شود — همان لگِ ریزی که حس می‌شد. با هم‌زمان‌کردنِ هر دو در
+		 * یک فریم، هر دو انیمیشن دقیقاً با هم آغاز می‌شوند.
+		 */
 		window.requestAnimationFrame(function () {
+			self.siblings.forEach(function (other) {
+				if (other !== self && other.el.open) {
+					other.shrink();
+				}
+			});
 			self.expand();
 		});
 	};
