@@ -54,6 +54,8 @@ require_once $root . '/includes/spec-group.php';
 require_once $root . '/includes/spec-store.php';
 require_once $root . '/includes/spec-value.php';
 require_once $root . '/includes/widgets/product-specs.php';
+require_once $root . '/includes/feature-repeater.php';
+require_once $root . '/includes/widgets/product-feature-showcase.php';
 
 use Zig3d_Widgets\Selector;
 
@@ -66,6 +68,7 @@ $widgets = [
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
+    'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
 ];
 
 foreach ($widgets as $label => $class) {

@@ -36,6 +36,7 @@ final class Plugin {
         'product-archive' => Widgets\Product_Archive::class,
         'product-gallery' => Widgets\Product_Gallery::class,
         'product-specs' => Widgets\Product_Specs::class,
+        'product-feature-showcase' => Widgets\Product_Feature_Showcase::class,
     ];
 
     public static function instance(): self {
@@ -98,7 +99,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
@@ -304,6 +305,19 @@ final class Plugin {
         wp_register_script(
             'zig3d-specs',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-specs.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * نمایشِ قابلیت‌ها هم بدونِ این فایل کار می‌کند — قابلیتِ اول کامل
+         * دیده می‌شود، فقط بقیه بدونِ راهی برایِ باز شدن. اسکریپت فقط
+         * سوییچِ تب، کیبورد، ناوبریِ سرریز، و انیمیشن را رویش سوار می‌کند.
+         */
+        wp_register_script(
+            'zig3d-feature-showcase',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-feature-showcase.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

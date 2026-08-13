@@ -56,6 +56,30 @@ if (!function_exists('esc_attr')) {
 if (!function_exists('esc_url')) {
     function esc_url($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }
+if (!function_exists('esc_url_raw')) {
+    function esc_url_raw($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
+}
+/**
+ * فقط برایِ رشته‌هایِ سریالایزشدهٔ PHP — دقیقاً همان چیزی که Repeaterِ
+ * JetEngine در ‎postmeta‎ ذخیره می‌کند. اگر ورودی از قبل آرایه باشد (مثلِ
+ * فیکسچرهایِ تست که مستقیم آرایه می‌گذارند)، دست‌نخورده برمی‌گردد —
+ * همان رفتارِ نسخهٔ واقعیِ وردپرس.
+ */
+if (!function_exists('maybe_unserialize')) {
+    function maybe_unserialize($value) {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        if ('a:0:{}' === $value || preg_match('/^[aOs]:\d+:/', $value)) {
+            $unserialized = @unserialize($value);
+
+            return false !== $unserialized ? $unserialized : $value;
+        }
+
+        return $value;
+    }
+}
 if (!function_exists('absint')) {
     function absint($value) { return abs((int) $value); }
 }

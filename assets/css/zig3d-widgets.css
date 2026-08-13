@@ -2988,3 +2988,322 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	border: 1px dashed #e0c25a;
 	border-radius: 6px;
 }
+
+/* ==========================================================================
+   نمایشِ قابلیت‌های محصول
+   ========================================================================== */
+
+/*
+ * پیش‌فرض‌ها این‌جا با مقدارِ واقعی نوشته می‌شوند، نه فقط رویِ کنترل‌هایِ
+ * المنتور — دقیقاً همان دلیلِ ‎.zig-specs‎: بدونِ CSSِ تزریقی‌ِ المنتور
+ * (هارنسِ تست، صادراتِ استاتیک) هم ویجت باید ظاهرِ درست داشته باشد. هر
+ * عددی اینجا دقیقاً با ‎default‎ِ همان کنترل در PHP یکی است.
+ */
+.zig-feature {
+	--zig-feature-media-fr: 1fr;
+	--zig-feature-content-fr: 1.35fr;
+	display: flex;
+	flex-direction: column;
+	background-color: #0A0A12;
+	max-width: 1200px;
+	margin-inline: auto;
+	padding: 48px 40px;
+	border-radius: 28px;
+	position: relative;
+	isolation: isolate;
+}
+
+/* دکورِ گریدِ بسیار ضعیف — فقط یک بافتِ ظریف، نه چیزِ چشم‌گیر */
+.zig-feature::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px);
+	background-size: 32px 32px;
+	border-radius: inherit;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.zig-feature > * {
+	position: relative;
+	z-index: 1;
+}
+
+/* ---------------------------------------------------------------------
+ * معرفی
+ * ------------------------------------------------------------------- */
+
+.zig-feature__intro {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 32px;
+}
+
+.zig-feature__kicker {
+	color: #A78BFA;
+	font-size: 12.5px;
+	font-weight: 700;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+}
+
+.zig-feature__intro-title {
+	margin: 0;
+	color: #F5F5F8;
+	font-size: clamp(22px, 2.4vw, 30px);
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.zig-feature__intro-desc {
+	margin: 0;
+	color: #9A9CAE;
+	font-size: 15px;
+	line-height: 1.8;
+	max-width: 640px;
+}
+
+/* ---------------------------------------------------------------------
+ * ناوبری / تب‌ها
+ * ------------------------------------------------------------------- */
+
+.zig-feature__nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 24px;
+	/* اگر پیکان‌ها نباشند یا سرریز نشود، خودِ ردیف کل عرض را می‌گیرد */
+	min-width: 0;
+}
+
+.zig-feature__tablist {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+	/* تک‌خطی، بدونِ wrap — دقیقاً همان چیزی که برایِ سرریز خواسته شده */
+	flex-wrap: nowrap;
+	scroll-behavior: smooth;
+}
+
+.zig-feature__tablist::-webkit-scrollbar {
+	display: none;
+}
+
+.zig-feature__tab {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	min-height: 44px;
+	padding-inline: 18px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, .06);
+	background-color: #15151F;
+	color: rgba(245, 245, 248, .7);
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.zig-feature__tab:hover {
+	background-color: #1C1C2A;
+	color: #F5F5F8;
+}
+
+.zig-feature__tab:focus-visible {
+	outline: 2px solid #7B5CFF;
+	outline-offset: 2px;
+}
+
+/*
+ * سلکتورِ فعال عمداً هم کلاس هم ویژگیِ آریا را با هم می‌گیرد تا
+ * specificityاش از ‎:hover‎ بالاتر باشد — یعنی هاور رویِ تبِ فعال، رنگِ
+ * «فعال» را نمی‌شکند؛ بدونِ ‎!important‎ و بدونِ وابستگی به ترتیبِ
+ * قاعده‌ها.
+ */
+.zig-feature__tab.is-active[aria-selected="true"] {
+	background-color: #7B5CFF;
+	border-color: #7B5CFF;
+	color: #FFFFFF;
+}
+
+.zig-feature__nav-arrow {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, .08);
+	background-color: #15151F;
+	color: rgba(245, 245, 248, .7);
+	cursor: pointer;
+	transition: background-color .18s ease, color .18s ease;
+}
+
+.zig-feature__nav-arrow:hover {
+	background-color: #1C1C2A;
+	color: #F5F5F8;
+}
+
+.zig-feature__nav-arrow:focus-visible {
+	outline: 2px solid #7B5CFF;
+	outline-offset: 2px;
+}
+
+/* فقط وقتی JS واقعاً سرریز را تشخیص می‌دهد نمایان می‌شود؛ پیش‌فرض پنهان تا از فلشِ بی‌فایده (بدونِ سرریز) جلوگیری شود */
+.zig-feature__nav-arrow {
+	display: none;
+}
+
+.zig-feature__nav.is-overflowing .zig-feature__nav-arrow {
+	display: inline-flex;
+}
+
+/* ---------------------------------------------------------------------
+ * پنل‌ها
+ * ------------------------------------------------------------------- */
+
+.zig-feature__panels {
+	display: block;
+}
+
+.zig-feature__panel {
+	display: grid;
+	/*
+	 * واحدِ ‎fr‎ خودش داخلِ متغیر است (‎1fr‎، نه ‎1‎) — چون ‎var(--x)fr‎
+	 * (چسباندنِ واحد بعدِ فراخوانیِ var) نحوِ نامعتبرِ CSS است و مرورگر کلِ
+	 * این رگه را نادیده می‌گیرد؛ کنترلِ المنتور هم به همین دلیل مستقیم
+	 * ‎…fr‎ می‌نویسد، نه فقط عدد.
+	 *
+	 * ترتیبِ ستون‌ها عمداً «محتوا، رسانه» است، نه «رسانه، محتوا»: در
+	 * Gridِ راست‌به‌چپ، ستونِ *اولِ* تعریف‌شده در inline-start می‌نشیند —
+	 * یعنی سمتِ راست، برخلافِ Flexbox که این‌جا زیاد به آن تکیه کرده‌ایم.
+	 * محتوا باید سمتِ راست بنشیند، رسانه سمتِ چپ؛ پس اندازهٔ ستونِ محتوا
+	 * اول می‌آید. جای واقعیِ ‎.zig-feature__media‎/‎.zig-feature__content‎
+	 * هم با ‎order‎ زیرشان به همین ترتیب پین شده — مستقل از ترتیبِ DOM.
+	 */
+	grid-template-columns: minmax(0, var(--zig-feature-content-fr, 1.35fr)) minmax(0, var(--zig-feature-media-fr, 1fr));
+	column-gap: 40px;
+	align-items: center;
+	background-color: #121219;
+	border: 1px solid rgba(255, 255, 255, .06);
+	border-radius: 24px;
+	padding: 32px;
+}
+
+.zig-feature__panel[hidden] {
+	display: none;
+}
+
+/* بدونِ تصویر: ستونِ محتوا کل عرض را می‌گیرد، نه نصفِ صفحه خالی */
+.zig-feature__panel--no-media {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+/*
+ * سقفِ ‎max-width‎ی پهن‌تر، مخصوصِ حالتِ بدونِ تصویر — وگرنه متن همان
+ * عرضِ باریکِ چیدمانِ دوستونه را نگه می‌دارد و بقیهٔ پنل بصری خالی
+ * به‌نظر می‌رسد، دقیقاً همان مشکلی که قرار بود حل شود. نه تا لبه، چون
+ * طولِ خطِ خیلی‌بلند خودش خوانایی را کم می‌کند.
+ *
+ * هر دو رگه (این‌جا و پایین‌تر رویِ ‎.zig-feature__content‎ِ عادی) از
+ * رویِ *همان* متغیر می‌خوانند — کنترلِ المنتور هم فقط همین متغیر را
+ * می‌نویسد، نه ‎max-width‎ را مستقیم. اگر مستقیم بود، این رگهٔ
+ * specificityـبالاتر همیشه برنده می‌شد، حتی وقتی ادمین برایِ آن کنترل
+ * عددِ دلخواهش را گذاشته. با این واسطه، وقتی ادمین چیزی می‌گذارد هر دو
+ * حالت همان عدد را می‌گیرند؛ فقط وقتی چیزی نگذاشته، سقفِ پیش‌فرضِ
+ * جداگانهٔ هرکدام اعمال می‌شود.
+ */
+.zig-feature__panel--no-media .zig-feature__content {
+	max-width: min(100%, var(--zig-feature-content-max, 720px));
+}
+
+.zig-feature__media {
+	order: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: #F3F3F6;
+	border-radius: 20px;
+	overflow: hidden;
+	padding: 24px;
+	min-width: 0;
+}
+
+.zig-feature__media img {
+	display: block;
+	width: auto;
+	height: auto;
+	max-width: 100%;
+	max-height: 360px;
+	object-fit: contain;
+}
+
+.zig-feature__content {
+	order: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	max-width: var(--zig-feature-content-max, 480px);
+	min-width: 0;
+}
+
+.zig-feature__meta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.zig-feature__index {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 34px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	background-color: #7B5CFF;
+	color: #FFFFFF;
+	font-size: 12.5px;
+	font-weight: 700;
+	unicode-bidi: plaintext;
+}
+
+.zig-feature__label {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 16px;
+	border-radius: 999px;
+	background-color: rgba(255, 255, 255, .05);
+	color: #B7B8C6;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.zig-feature__feature-title {
+	margin: 0;
+	color: #F5F5F8;
+	font-size: clamp(20px, 2vw, 28px);
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.zig-feature__feature-desc {
+	margin: 0;
+	color: #9A9CAE;
+	font-size: 15px;
+	line-height: 1.8;
+	/* واحدهایِ لاتینِ احتمالی وسطِ متنِ فارسی، مثلِ مقادیرِ فنی، جهتشان خراب نشود */
+	unicode-bidi: plaintext;
+}
