@@ -3277,6 +3277,14 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	gap: 20px;
 	max-width: var(--zig-feature-content-max, 480px);
 	min-width: 0;
+	/*
+	 * پنل با ‎align-items: center‎ عمودی وسط‌چین می‌شود، اما محتوا معمولاً
+	 * از تصویر کوتاه‌تر است — نتیجه‌اش این بود که متن در میانهٔ ارتفاعِ
+	 * پنل شناور می‌ماند. اینجا فقط خودِ ستونِ محتوا را به بالای Grid سنجاق
+	 * می‌کنیم (‎align-self‎، نه تغییرِ ‎align-items‎ی کلِ پنل)، تا ستونِ
+	 * رسانه هم‌چنان طبقِ رفتارِ قبلی وسط بماند.
+	 */
+	align-self: start;
 }
 
 .zig-feature__meta {
