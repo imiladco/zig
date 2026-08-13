@@ -27,7 +27,18 @@
 	// «Premium Motion»: باز/بسته زمانِ متفاوت دارند — بازشدن کمی کندتر از بسته‌شدن، تا حسِ سنگینیِ محتوا بدهد نه فقط یک toggle
 	var DURATION_OPEN = 230;
 	var DURATION_CLOSE = 180;
-	var EASING = 'cubic-bezier(.22, 1, .36, 1)';
+	/*
+	 * بازشدن و بسته‌شدن یک easing نیستند. ‎(.22,1,.36,1)‎ یک منحنیِ
+	 * decelerate است: بیشترِ مسیر را همان نیمهٔ اولِ زمان طی می‌کند و
+	 * نیمهٔ دومِ مدت را صرفِ ته‌ماندهٔ خیلی‌کندِ رسیدن به اندازهٔ نهایی
+	 * می‌کند — برایِ بازشدن این «نرم فرود آمدن» طبیعی است، اما همین
+	 * منحنی برایِ بسته‌شدن یعنی جعبه تقریباً از نیمهٔ راه دیگر به‌چشم
+	 * حرکتی ندارد و انگار درست قبلِ بسته‌شدنِ کامل «گیر می‌کند» — همان
+	 * لگِ ریزی که حس می‌شد. راه‌حل: بسته‌شدن یک منحنیِ accelerate
+	 * جداگانه بگیرد که حرکت تا همان لحظهٔ آخر محسوس بماند.
+	 */
+	var EASING_OPEN = 'cubic-bezier(.22, 1, .36, 1)';
+	var EASING_CLOSE = 'cubic-bezier(.4, 0, 1, 1)';
 	// پاسخ‌ها کمی بعدِ خودِ جعبه ظاهر می‌شوند — انگار محتوا دنبالِ باز شدنِ جا می‌آید، نه هم‌زمانِ خشکِ آن
 	var FADE_DELAY = 45;
 
@@ -123,7 +134,7 @@
 
 		this.animation = this.el.animate(
 			{ height: [startHeight, endHeight] },
-			{ duration: duration, easing: EASING }
+			{ duration: duration, easing: opening ? EASING_OPEN : EASING_CLOSE }
 		);
 
 		this.animation.onfinish = function () { self.onAnimationFinish(opening); };
