@@ -3,6 +3,7 @@ namespace Zig3d_Widgets\Widgets;
 
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Border;
+use Elementor\Group_Control_Box_Shadow;
 use Elementor\Group_Control_Typography;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Feature_Repeater;
@@ -30,6 +31,8 @@ if (!defined('ABSPATH')) {
  *         button.zig-feature__nav-arrow--next
  *       div.zig-feature__panels
  *         div.zig-feature__panel[role=tabpanel] × N
+ *           span.zig-feature__glow--content     فقط اگر Glowِ محلی روشن باشد
+ *           span.zig-feature__glow--media       فقط اگر Glow روشن *و* تصویر داشته باشد
  *           div.zig-feature__media              فقط اگر تصویر داشته باشد
  *             img
  *           div.zig-feature__content
@@ -50,6 +53,14 @@ if (!defined('ABSPATH')) {
  * Enter/Space انتخاب را عوض می‌کند — هم برای این‌که در Roving Tabindex
  * فقط یک تب هر بار در توالیِ Tab است، هم چون خودِ درخواست این دو کلید را
  * جدا از پیکان‌ها فهرست کرده.
+ *
+ * چرا این ویجت هیچ‌وقت پس‌زمینهٔ سکشن نمی‌سازد: ‎.zig-feature‎ِ ریشه
+ * transparent است و هیچ background/padding/max-width/دکورِ سکشنی روی
+ * خودش ندارد — قبلاً (نسخه‌های پیشین) داشت و دقیقاً همین باعث می‌شد
+ * ویجت رویِ هر سکشنی مثلِ یک جعبهٔ تیرهٔ کامل بیفتد. سکشن، پس‌زمینه،
+ * فاصله و گردیِ *بیرونی* را المنتور (Advanced tabِ خودِ ویجت یا خودِ
+ * سکشن) می‌دهد؛ این‌جا فقط تب‌ها و پنلِ داخلی self-contained استایل
+ * دارند.
  */
 final class Product_Feature_Showcase extends Widget_Base {
 
@@ -97,12 +108,13 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->register_navigation_section();
         $this->register_editor_section();
 
-        $this->register_section_style_section();
         $this->register_intro_style_section();
         $this->register_tabs_style_section();
+        $this->register_panel_style_section();
         $this->register_media_style_section();
         $this->register_content_style_section();
-        $this->register_panel_style_section();
+        $this->register_glow_style_section();
+        $this->register_motion_style_section();
     }
 
     /* =====================================================================
@@ -248,71 +260,6 @@ final class Product_Feature_Showcase extends Widget_Base {
     /* =====================================================================
      * استایل
      * =================================================================== */
-
-    private function register_section_style_section(): void {
-        $this->start_controls_section(
-            'fs_section_style_section',
-            [
-                'label' => __('بخش', 'zig3d-widgets'),
-                'tab'   => Controls_Manager::TAB_STYLE,
-            ]
-        );
-
-        $this->add_control(
-            'section_bg',
-            [
-                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
-                'type'      => Controls_Manager::COLOR,
-                'default'   => '#0A0A12',
-                'selectors' => ['{{WRAPPER}} .zig-feature' => 'background-color: {{VALUE}};'],
-            ]
-        );
-
-        $this->add_responsive_control(
-            'section_max_width',
-            [
-                'label'      => __('حداکثرِ عرض', 'zig3d-widgets'),
-                'type'       => Controls_Manager::SLIDER,
-                'size_units' => ['px', '%'],
-                'range'      => ['px' => ['min' => 480, 'max' => 1600], '%' => ['min' => 20, 'max' => 100]],
-                'default'    => ['size' => 1200, 'unit' => 'px'],
-                'selectors'  => ['{{WRAPPER}} .zig-feature' => 'max-width: {{SIZE}}{{UNIT}}; margin-inline: auto;'],
-            ]
-        );
-
-        $this->add_responsive_control(
-            'section_padding',
-            [
-                'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
-                'type'       => Controls_Manager::DIMENSIONS,
-                'size_units' => ['px', 'em', 'rem'],
-                'default'    => ['top' => '48', 'right' => '40', 'bottom' => '48', 'left' => '40', 'unit' => 'px'],
-                'selectors'  => ['{{WRAPPER}} .zig-feature' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
-            ]
-        );
-
-        $this->add_group_control(
-            Group_Control_Border::get_type(),
-            [
-                'name'     => 'section_border',
-                'selector' => '{{WRAPPER}} .zig-feature',
-            ]
-        );
-
-        $this->add_responsive_control(
-            'section_radius',
-            [
-                'label'      => __('گردیِ گوشه‌ها', 'zig3d-widgets'),
-                'type'       => Controls_Manager::SLIDER,
-                'size_units' => ['px'],
-                'range'      => ['px' => ['min' => 0, 'max' => 60]],
-                'default'    => ['size' => 28, 'unit' => 'px'],
-                'selectors'  => ['{{WRAPPER}} .zig-feature' => 'border-radius: {{SIZE}}{{UNIT}};'],
-            ]
-        );
-
-        $this->end_controls_section();
-    }
 
     private function register_intro_style_section(): void {
         $this->start_controls_section(
@@ -543,16 +490,32 @@ final class Product_Feature_Showcase extends Widget_Base {
          * سلکتورِ فعال عمداً هم کلاس هم ویژگیِ آریا را با هم می‌گیرد
          * (‎.is-active[aria-selected="true"]‎) تا specificityاش از
          * ‎:hover‎ی بالا بیشتر باشد — یعنی وقتی موس رویِ تبِ فعال می‌ماند،
-         * رنگِ «فعال» برنده است، نه رنگِ عمومیِ هاور؛ بدونِ نیاز به
+         * ظاهرِ «فعال» برنده است، نه رنگِ عمومیِ هاور؛ بدونِ نیاز به
          * ‎!important‎ یا وابستگی به ترتیبِ ثبتِ کنترل‌ها.
+         *
+         * پس‌زمینه یک گرادیانِ دورنگه است (نه رنگِ تخت) — همان چیزی که
+         * برایِ تبِ فعال خواسته شده. دو کنترلِ رنگِ مستقل، نه یک
+         * Group Controlِ گرادیانِ آماده، چون فقط دو نقطهٔ ثابت (شروع/پایان
+         * با زاویهٔ ۱۳۵ درجه) لازم است، نه ویرایشگرِ کاملِ چند-Stopِ
+         * گرادیان.
          */
         $this->add_control(
-            'tab_active_bg',
+            'tab_active_bg_from',
             [
-                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+                'label'     => __('پس‌زمینه — شروعِ گرادیان', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'default'   => '#7B5CFF',
-                'selectors' => ['{{WRAPPER}} .zig-feature__tab.is-active[aria-selected="true"]' => 'background-color: {{VALUE}};'],
+                'default'   => '#8B5CFF',
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-tab-active-from: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'tab_active_bg_to',
+            [
+                'label'     => __('پس‌زمینه — پایانِ گرادیان', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#6D3FFF',
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-tab-active-to: {{VALUE}};'],
             ]
         );
 
@@ -569,10 +532,20 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->add_control(
             'tab_active_border_color',
             [
-                'label'     => __('رنگِ مرز', 'zig3d-widgets'),
-                'type'      => Controls_Manager::COLOR,
-                'default'   => '#7B5CFF',
-                'selectors' => ['{{WRAPPER}} .zig-feature__tab.is-active[aria-selected="true"]' => 'border-color: {{VALUE}};'],
+                'label'       => __('رنگِ مرز', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'description' => __('پیش‌فرض بدونِ مرز است — خودِ گرادیان ظاهرِ فعال را می‌سازد؛ این کنترل فقط برایِ کسی است که رویِ گرادیان هم مرز بخواهد.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-feature__tab.is-active[aria-selected="true"]' => 'border-color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'tabs_glow_note',
+            [
+                'type'            => Controls_Manager::RAW_HTML,
+                'raw'             => __('شدت/رنگِ glowِ پشتِ تبِ فعال از بخشِ «Glow / جلوه‌ها» می‌آید — همان یک کنترلِ مشترک برایِ همهٔ glowهای ویجت، تا کنترلِ تکراری ساخته نشود.', 'zig3d-widgets'),
+                'content_classes' => 'elementor-descriptor',
+                'separator'       => 'before',
             ]
         );
 
@@ -602,6 +575,15 @@ final class Product_Feature_Showcase extends Widget_Base {
             Group_Control_Border::get_type(),
             [
                 'name'     => 'media_border',
+                'selector' => '{{WRAPPER}} .zig-feature__media',
+            ]
+        );
+
+        $this->add_group_control(
+            Group_Control_Box_Shadow::get_type(),
+            [
+                'name'     => 'media_shadow',
+                'label'    => __('سایه', 'zig3d-widgets'),
                 'selector' => '{{WRAPPER}} .zig-feature__media',
             ]
         );
@@ -814,25 +796,62 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->start_controls_section(
             'fs_panel_style_section',
             [
-                'label' => __('پنل', 'zig3d-widgets'),
+                'label' => __('پنلِ اصلی (شیشه‌ای)', 'zig3d-widgets'),
                 'tab'   => Controls_Manager::TAB_STYLE,
             ]
         );
 
         $this->add_control(
-            'panel_bg',
+            'panel_glass_bg',
             [
-                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+                'label'       => __('پس‌زمینهٔ شیشه‌ای', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => 'rgba(16,16,26,.55)',
+                'description' => __('رنگی با شفافیت انتخاب کنید — شفافیتِ خودِ رنگ همان «نیمه‌شفافی»ِ شیشه را می‌سازد.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-feature' => '--zig-feature-panel-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'panel_blur',
+            [
+                'label'      => __('میزانِ Blurِ پشتِ پنل', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 48]],
+                'default'    => ['size' => 20, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature' => '--zig-feature-panel-blur: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'panel_border_color',
+            [
+                'label'     => __('رنگِ مرز', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'default'   => '#121219',
-                'selectors' => ['{{WRAPPER}} .zig-feature__panel' => 'background-color: {{VALUE}};'],
+                'default'   => '#FFFFFF',
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-panel-border-color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'panel_border_opacity',
+            [
+                'label'       => __('شفافیتِ مرز', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['%'],
+                'range'       => ['%' => ['min' => 0, 'max' => 100]],
+                'default'     => ['size' => 10, 'unit' => '%'],
+                'description' => __('مرزِ روشن و خیلی subtile؛ عددِ کم یعنی تقریباً نامرئی.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-feature' => '--zig-feature-panel-border-opacity: {{SIZE}}{{UNIT}};'],
             ]
         );
 
         $this->add_group_control(
-            Group_Control_Border::get_type(),
+            Group_Control_Box_Shadow::get_type(),
             [
-                'name'     => 'panel_border',
+                'name'     => 'panel_shadow',
+                'label'    => __('سایه', 'zig3d-widgets'),
                 'selector' => '{{WRAPPER}} .zig-feature__panel',
             ]
         );
@@ -844,7 +863,7 @@ final class Product_Feature_Showcase extends Widget_Base {
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px'],
                 'range'      => ['px' => ['min' => 0, 'max' => 60]],
-                'default'    => ['size' => 24, 'unit' => 'px'],
+                'default'    => ['size' => 28, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-feature__panel' => 'border-radius: {{SIZE}}{{UNIT}};'],
             ]
         );
@@ -904,6 +923,178 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->end_controls_section();
     }
 
+    /**
+     * جلوه‌هایِ نورانی (Glow) — یک منبعِ رنگ/شدتِ مشترک برایِ هر چهار
+     * محلی که glow دارند: پشتِ تبِ فعال، پشتِ بجِ شماره، لکهٔ ambientِ
+     * پشتِ محتوا، و لکهٔ کوچک‌ترِ گوشهٔ رسانه. کنترلِ جداگانه برایِ
+     * هرکدام نساختیم چون دقیقاً همان چیزی می‌شد که خودِ درخواست گفته
+     * بود نسازیم — یک پنلِ استایلِ غول‌پیکر با ده‌ها کنترلِ تکراری.
+     */
+    private function register_glow_style_section(): void {
+        $this->start_controls_section(
+            'fs_glow_style_section',
+            [
+                'label' => __('Glow / جلوه‌ها', 'zig3d-widgets'),
+                'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_control(
+            'glow_enabled',
+            [
+                'label'   => __('فعال بودنِ Glowِ محلی', 'zig3d-widgets'),
+                'type'    => Controls_Manager::SWITCHER,
+                'default' => 'yes',
+            ]
+        );
+
+        $this->add_control(
+            'glow_color',
+            [
+                'label'     => __('رنگ', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#7B5CFF',
+                'condition' => ['glow_enabled' => 'yes'],
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-glow-color: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'glow_opacity',
+            [
+                'label'      => __('شدت (Opacity)', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['%'],
+                'range'      => ['%' => ['min' => 0, 'max' => 100]],
+                'default'    => ['size' => 55, 'unit' => '%'],
+                'condition'  => ['glow_enabled' => 'yes'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature' => '--zig-feature-glow-opacity: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'glow_blur',
+            [
+                'label'      => __('میزانِ Blur', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 10, 'max' => 140]],
+                'default'    => ['size' => 60, 'unit' => 'px'],
+                'condition'  => ['glow_enabled' => 'yes'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature' => '--zig-feature-glow-blur: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'glow_spread',
+            [
+                'label'       => __('اندازه (Spread)', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px'],
+                'range'       => ['px' => ['min' => 60, 'max' => 320]],
+                'default'     => ['size' => 140, 'unit' => 'px'],
+                'condition'   => ['glow_enabled' => 'yes'],
+                'description' => __('قطرِ لکه‌هایِ ambientِ پشتِ محتوا/رسانه؛ روی glowِ پشتِ تب و بجِ شماره اثر ندارد (آن‌ها سایه‌اند، نه لکه).', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-feature' => '--zig-feature-glow-spread: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'glow_animate_heading',
+            [
+                'label'     => __('انیمیشنِ Glow', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+                'condition' => ['glow_enabled' => 'yes'],
+            ]
+        );
+
+        $this->add_control(
+            'glow_animate',
+            [
+                'label'       => __('پالسِ ملایمِ زنده', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SWITCHER,
+                'default'     => 'yes',
+                'condition'   => ['glow_enabled' => 'yes'],
+                'description' => __('یک تنفسِ خیلی‌کند و ظریف در opacity/اندازهٔ لکه‌ها؛ با prefers-reduced-motion خودکار خاموش می‌شود.', 'zig3d-widgets'),
+            ]
+        );
+
+        $this->add_control(
+            'glow_speed',
+            [
+                'label'     => __('سرعتِ پالس', 'zig3d-widgets'),
+                'type'      => Controls_Manager::SLIDER,
+                'size_units' => ['s'],
+                'range'     => ['s' => ['min' => 2, 'max' => 10, 'step' => .5]],
+                'default'   => ['size' => 5, 'unit' => 's'],
+                'condition' => ['glow_enabled' => 'yes', 'glow_animate' => 'yes'],
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-glow-speed: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
+    /**
+     * موشن — فقط گذارِ سوییچِ بینِ قابلیت‌ها (fade/rise/stagger). باز/
+     * بسته‌ای این‌جا نیست؛ این‌ها مستقیم رویِ متغیرهایِ CSSِ خوانده‌شده
+     * توسطِ جاوااسکریپت می‌نشینند — نه تایمینگِ ثابتِ کدنویسی‌شده — چون
+     * این‌بار (برخلافِ ویجتِ آکاردئونِ مشخصاتِ فنی) صریحاً به‌عنوانِ
+     * Style Control خواسته شده.
+     */
+    private function register_motion_style_section(): void {
+        $this->start_controls_section(
+            'fs_motion_style_section',
+            [
+                'label' => __('موشن', 'zig3d-widgets'),
+                'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_control(
+            'motion_enabled',
+            [
+                'label'       => __('گذارِ نرمِ سوییچ', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SWITCHER,
+                'default'     => 'yes',
+                'description' => __('خاموش یعنی سوییچِ تب فوری است، بدونِ fade/rise. با prefers-reduced-motion هم مستقل از این کنترل خاموش می‌شود.', 'zig3d-widgets'),
+            ]
+        );
+
+        $this->add_control(
+            'motion_duration',
+            [
+                'label'      => __('مدتِ گذار', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['ms'],
+                'range'      => ['ms' => ['min' => 150, 'max' => 500, 'step' => 10]],
+                'default'    => ['size' => 260, 'unit' => 'ms'],
+                'condition'  => ['motion_enabled' => 'yes'],
+                'selectors'  => ['{{WRAPPER}} .zig-feature' => '--zig-feature-motion-duration: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'motion_easing',
+            [
+                'label'     => __('Easing', 'zig3d-widgets'),
+                'type'      => Controls_Manager::SELECT,
+                'default'   => 'cubic-bezier(.22,1,.36,1)',
+                'condition' => ['motion_enabled' => 'yes'],
+                'options'   => [
+                    'cubic-bezier(.22,1,.36,1)' => __('نرم (پیشنهادی)', 'zig3d-widgets'),
+                    'cubic-bezier(.16,1,.3,1)'  => __('سریع‌تر و تیزتر', 'zig3d-widgets'),
+                    'ease-out'                  => __('سادهٔ استاندارد', 'zig3d-widgets'),
+                ],
+                // خودِ مقدارِ گزینه همان رشتهٔ easingِ واقعی است؛ نیازی به نگاشتِ جدا در PHP نیست
+                'selectors' => ['{{WRAPPER}} .zig-feature' => '--zig-feature-motion-easing: {{VALUE}};'],
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
     /* =====================================================================
      * رندر
      * =================================================================== */
@@ -929,8 +1120,24 @@ final class Product_Feature_Showcase extends Widget_Base {
 
         $uid     = 'zig-feat-' . $this->get_id();
         $has_nav = $total > 1;
+        $glow    = 'yes' === ($settings['glow_enabled'] ?? 'yes');
+        $motion  = 'yes' === ($settings['motion_enabled'] ?? 'yes');
 
-        echo '<div class="zig-feature">';
+        $root_classes = 'zig-feature';
+
+        if (!$glow) {
+            $root_classes .= ' zig-feature--no-glow';
+        }
+
+        if ('yes' !== ($settings['glow_animate'] ?? 'yes')) {
+            $root_classes .= ' zig-feature--no-glow-animate';
+        }
+
+        printf(
+            '<div class="%s"%s>',
+            esc_attr($root_classes),
+            $motion ? '' : ' data-zig-motion="off"'
+        );
 
         $this->render_intro($settings);
 
@@ -938,7 +1145,7 @@ final class Product_Feature_Showcase extends Widget_Base {
             $this->render_nav($rows, $active, $uid, $settings);
         }
 
-        $this->render_panels($rows, $active, $uid, $settings, $is_editor, $has_nav);
+        $this->render_panels($rows, $active, $uid, $settings, $is_editor, $has_nav, $glow);
 
         echo '</div>';
     }
@@ -1046,7 +1253,7 @@ final class Product_Feature_Showcase extends Widget_Base {
     /**
      * @param array<int,array{label:string,title:string,description:string,image:array{id:int,url:string}}> $rows
      */
-    private function render_panels(array $rows, int $active, string $uid, array $settings, bool $is_editor, bool $has_nav): void {
+    private function render_panels(array $rows, int $active, string $uid, array $settings, bool $is_editor, bool $has_nav, bool $glow): void {
         $show_index = 'yes' === ($settings['show_index'] ?? 'yes');
         $show_label = 'yes' === ($settings['show_label'] ?? 'yes');
         $show_title = 'yes' === ($settings['show_title'] ?? 'yes');
@@ -1072,6 +1279,21 @@ final class Product_Feature_Showcase extends Widget_Base {
                 $has_nav ? ' role="tabpanel" aria-labelledby="' . esc_attr($uid) . '-tab-' . $i . '" tabindex="0"' : '',
                 $is_active ? '' : ' hidden'
             );
+
+            /*
+             * لکه‌هایِ Glowِ محلی — عنصرِ واقعیِ DOM (نه ‎::before‎)، چون
+             * JS با WAAPI موقعِ سوییچِ تب opacityشان را انیمیت می‌کند و
+             * پشتیبانیِ ‎animate()‎ رویِ pseudo-element هنوز یکدست نیست.
+             * وقتی «Glow محلی» از استایل خاموش است، اصلاً چاپ نمی‌شوند —
+             * نه این‌که با CSS پنهان بمانند.
+             */
+            if ($glow) {
+                echo '<span class="zig-feature__glow zig-feature__glow--content" aria-hidden="true"></span>';
+
+                if ($has_image) {
+                    echo '<span class="zig-feature__glow zig-feature__glow--media" aria-hidden="true"></span>';
+                }
+            }
 
             if ($has_image) {
                 echo '<div class="zig-feature__media">';

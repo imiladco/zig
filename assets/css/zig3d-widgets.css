@@ -2993,43 +2993,22 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
    نمایشِ قابلیت‌های محصول
    ========================================================================== */
 
+
 /*
- * پیش‌فرض‌ها این‌جا با مقدارِ واقعی نوشته می‌شوند، نه فقط رویِ کنترل‌هایِ
- * المنتور — دقیقاً همان دلیلِ ‎.zig-specs‎: بدونِ CSSِ تزریقی‌ِ المنتور
- * (هارنسِ تست، صادراتِ استاتیک) هم ویجت باید ظاهرِ درست داشته باشد. هر
- * عددی اینجا دقیقاً با ‎default‎ِ همان کنترل در PHP یکی است.
+ * این ویجت هیچ‌وقت پس‌زمینهٔ سکشن نیست — فقط تب‌ها و پنلِ داخلی
+ * self-contained استایل دارند. ‎.zig-feature‎ی ریشه هیچ background،
+ * padding، max-width یا دکورِ گریدی ندارد؛ آن‌ها را المنتور رویِ خودِ
+ * سکشن/کانتینر تنظیم می‌کند (یا حتی Advanced tabِ خودِ ویجت، که
+ * پیش‌فرض رویِ هر ویجتِ المنتور هست). اگر این‌جا هم background می‌گذاشتیم،
+ * ویجت رویِ هر سکشنی مثلِ یک جعبهٔ تیرهٔ مستقل می‌افتاد و رنگِ سکشنِ
+ * پشتش دیده نمی‌شد.
  */
 .zig-feature {
 	--zig-feature-media-fr: 1fr;
 	--zig-feature-content-fr: 1.35fr;
 	display: flex;
 	flex-direction: column;
-	background-color: #0A0A12;
-	max-width: 1200px;
-	margin-inline: auto;
-	padding: 48px 40px;
-	border-radius: 28px;
-	position: relative;
-	isolation: isolate;
-}
-
-/* دکورِ گریدِ بسیار ضعیف — فقط یک بافتِ ظریف، نه چیزِ چشم‌گیر */
-.zig-feature::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background-image:
-		linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px);
-	background-size: 32px 32px;
-	border-radius: inherit;
-	pointer-events: none;
-	z-index: 0;
-}
-
-.zig-feature > * {
-	position: relative;
-	z-index: 1;
+	background: transparent;
 }
 
 /* ---------------------------------------------------------------------
@@ -3069,6 +3048,9 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 /* ---------------------------------------------------------------------
  * ناوبری / تب‌ها
+ *
+ * تبِ فعال یک گرادیانِ بنفش با glowِ نرمِ پشتش دارد؛ تبِ غیرِفعال تیره و
+ * مینیمال با مرزِ خیلی‌ظریف — نه رقیبِ تبِ فعال، فقط یک پسِ‌زمینه‌یِ آرام.
  * ------------------------------------------------------------------- */
 
 .zig-feature__nav {
@@ -3097,6 +3079,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-feature__tab {
+	position: relative;
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
@@ -3105,13 +3088,13 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	min-height: 44px;
 	padding-inline: 18px;
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, .06);
+	border: 1px solid rgba(255, 255, 255, .07);
 	background-color: #15151F;
-	color: rgba(245, 245, 248, .7);
+	color: rgba(245, 245, 248, .68);
 	font-size: 14px;
 	font-weight: 600;
 	cursor: pointer;
-	transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+	transition: background-color .18s ease, background-image .18s ease, color .18s ease, border-color .18s ease, box-shadow .25s ease;
 }
 
 .zig-feature__tab:hover {
@@ -3126,14 +3109,20 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 /*
  * سلکتورِ فعال عمداً هم کلاس هم ویژگیِ آریا را با هم می‌گیرد تا
- * specificityاش از ‎:hover‎ بالاتر باشد — یعنی هاور رویِ تبِ فعال، رنگِ
- * «فعال» را نمی‌شکند؛ بدونِ ‎!important‎ و بدونِ وابستگی به ترتیبِ
- * قاعده‌ها.
+ * specificityاش از ‎:hover‎ بالاتر باشد — یعنی وقتی موس رویِ تبِ فعال می‌ماند،
+ * ظاهرِ «فعال» نمی‌شکند؛ بدونِ ‎!important‎ و بدونِ وابستگی به ترتیبِ
+ * قاعده‌ها. پس‌زمینه یک گرادیان است (دو کنترلِ رنگِ مستقل)، نه رنگِ تخت.
  */
 .zig-feature__tab.is-active[aria-selected="true"] {
-	background-color: #7B5CFF;
-	border-color: #7B5CFF;
+	background-color: var(--zig-feature-tab-active-to, #6D3FFF);
+	background-image: linear-gradient(135deg, var(--zig-feature-tab-active-from, #8B5CFF), var(--zig-feature-tab-active-to, #6D3FFF));
+	border-color: transparent;
 	color: #FFFFFF;
+}
+
+/* glow پشتِ تبِ فعال — فقط سایه‌ای نرم، نه هاله‌ای که کل ردیف را مه‌آلود کند */
+.zig-feature:not(.zig-feature--no-glow) .zig-feature__tab.is-active[aria-selected="true"] {
+	box-shadow: 0 6px 24px -4px color-mix(in srgb, var(--zig-feature-glow-color, #7B5CFF) var(--zig-feature-glow-opacity, 55%), transparent);
 }
 
 .zig-feature__nav-arrow {
@@ -3171,7 +3160,12 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 /* ---------------------------------------------------------------------
- * پنل‌ها
+ * پنل — کارتِ شیشه‌ای (Glassmorphism)
+ *
+ * ‎backdrop-filter‎ خودش شیشه‌ای می‌کند؛ گرادیانِ اولِ ‎background‎ فقط یک
+ * هایلایتِ خیلی‌کمِ لبهٔ بالا می‌سازد (لایهٔ دوم، زیرِ رنگِ اصلی) — با
+ * ‎box-shadow‎ رقابت نمی‌کند، پس کنترلِ «سایهٔ پنل» (Group_Control_Box_Shadow)
+ * می‌تواند کاملاً مستقل خودش را بنویسد بدونِ این‌که این هایلایت را پاک کند.
  * ------------------------------------------------------------------- */
 
 .zig-feature__panels {
@@ -3179,6 +3173,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-feature__panel {
+	position: relative;
 	display: grid;
 	/*
 	 * واحدِ ‎fr‎ خودش داخلِ متغیر است (‎1fr‎، نه ‎1‎) — چون ‎var(--x)fr‎
@@ -3196,10 +3191,16 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	grid-template-columns: minmax(0, var(--zig-feature-content-fr, 1.35fr)) minmax(0, var(--zig-feature-media-fr, 1fr));
 	column-gap: 40px;
 	align-items: center;
-	background-color: #121219;
-	border: 1px solid rgba(255, 255, 255, .06);
-	border-radius: 24px;
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, .05), transparent 45%);
+	background-color: var(--zig-feature-panel-bg, rgba(16, 16, 26, .55));
+	background-blend-mode: normal;
+	backdrop-filter: blur(var(--zig-feature-panel-blur, 20px));
+	-webkit-backdrop-filter: blur(var(--zig-feature-panel-blur, 20px));
+	border: 1px solid color-mix(in srgb, var(--zig-feature-panel-border-color, #FFFFFF) var(--zig-feature-panel-border-opacity, 10%), transparent);
+	border-radius: 28px;
 	padding: 32px;
+	box-shadow: 0 24px 60px -16px rgba(0, 0, 0, .55);
+	overflow: hidden;
 }
 
 .zig-feature__panel[hidden] {
@@ -3230,6 +3231,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-feature__media {
+	position: relative;
+	z-index: 1;
 	order: 2;
 	display: flex;
 	align-items: center;
@@ -3251,6 +3254,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-feature__content {
+	position: relative;
+	z-index: 1;
 	order: 1;
 	display: flex;
 	flex-direction: column;
@@ -3280,6 +3285,11 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	unicode-bidi: plaintext;
 }
 
+/* glow پشتِ بجِ شماره — همان رنگ/شدتِ مشترکِ glow، نه کنترلِ جداگانه */
+.zig-feature:not(.zig-feature--no-glow) .zig-feature__index {
+	box-shadow: 0 0 18px 1px color-mix(in srgb, var(--zig-feature-glow-color, #7B5CFF) var(--zig-feature-glow-opacity, 55%), transparent);
+}
+
 .zig-feature__label {
 	display: inline-flex;
 	align-items: center;
@@ -3306,4 +3316,55 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	line-height: 1.8;
 	/* واحدهایِ لاتینِ احتمالی وسطِ متنِ فارسی، مثلِ مقادیرِ فنی، جهتشان خراب نشود */
 	unicode-bidi: plaintext;
+}
+
+/* ---------------------------------------------------------------------
+ * Glow — فقط لکه‌های نرمِ محلی، هر کدام تویِ محدودهٔ خودشان
+ *
+ * دو ‎span‎ی واقعی (نه ‎::before/::after‎) تویِ هر پنل — یکی پشتِ محتوا،
+ * یکی گوشهٔ رسانه — چون JS باید بتواند با WAAPI موقعِ سوییچِ تب محوشان
+ * کند، و پشتیبانیِ ‎element.animate()‎ رویِ pseudo-element هنوز همه‌جا
+ * یکدست نیست. اگر «glow محلی» خاموش باشد، PHP اصلاً این spanها را چاپ
+ * نمی‌کند — نه این‌که با CSS پنهانشان کند.
+ *
+ * فقط ‎opacity‎/‎transform‎ پالس می‌شوند (نه ‎filter‎/‎background‎) تا
+ * pulse رویِ GPU composite شود و مرورگر مجبور به repaintِ پیوسته نباشد.
+ */
+.zig-feature__glow {
+	position: absolute;
+	z-index: 0;
+	border-radius: 50%;
+	pointer-events: none;
+	background: radial-gradient(circle, var(--zig-feature-glow-color, #7B5CFF), transparent 72%);
+	filter: blur(var(--zig-feature-glow-blur, 60px));
+	opacity: var(--zig-feature-glow-opacity, 55%);
+}
+
+.zig-feature__glow--content {
+	width: var(--zig-feature-glow-spread, 140px);
+	height: var(--zig-feature-glow-spread, 140px);
+	top: 8%;
+	inset-inline-end: 6%;
+}
+
+.zig-feature__glow--media {
+	width: calc(var(--zig-feature-glow-spread, 140px) * .65);
+	height: calc(var(--zig-feature-glow-spread, 140px) * .65);
+	bottom: -6%;
+	inset-inline-start: -6%;
+}
+
+@keyframes zig-feature-glow-pulse {
+	0%, 100% { opacity: var(--zig-feature-glow-opacity, 55%); transform: scale(1); }
+	50%      { opacity: calc(var(--zig-feature-glow-opacity, 55%) * .7); transform: scale(1.08); }
+}
+
+/*
+ * پالسِ خیلی‌کند و ملایم («living light») — فقط وقتی هم کاربر حرکتِ
+ * کم را ترجیح نداده، هم گلوی متحرک از استایل خاموش نشده.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	.zig-feature:not(.zig-feature--no-glow-animate) .zig-feature__glow {
+		animation: zig-feature-glow-pulse var(--zig-feature-glow-speed, 5s) ease-in-out infinite;
+	}
 }

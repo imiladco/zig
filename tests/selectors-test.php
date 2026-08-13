@@ -306,6 +306,19 @@ Tests::group('سلکتورها › متغیرهای بی‌مصرف');
 
 $sheet = (string) file_get_contents(dirname(__DIR__) . '/assets/css/zig3d-widgets.css');
 
+/*
+ * چند متغیر عمداً در CSS مصرف نمی‌شوند — جاوااسکریپت با
+ * ‎getComputedStyle().getPropertyValue()‎ مستقیم می‌خواندشان (مثلاً
+ * مدت/easingِ موشنِ سوییچِ تب در نمایشِ قابلیت‌ها، که Web Animations API
+ * اجرا می‌کند، نه یک ‎transition‎ی CSS). این‌ها هم واقعاً «مصرف» می‌شوند،
+ * فقط نه با ‎var()‎ — پس این‌جا صریح مستثنا هستند، نه این‌که سنجه
+ * نادیده‌شان بگیرد.
+ */
+$jsConsumedVars = [
+    '--zig-feature-motion-duration',
+    '--zig-feature-motion-easing',
+];
+
 foreach ($widgets as $label => $class) {
     $orphans = [];
 
@@ -315,6 +328,10 @@ foreach ($widgets as $label => $class) {
         }
 
         foreach ($names[1] as $name) {
+            if (in_array($name, $jsConsumedVars, true)) {
+                continue;
+            }
+
             if (false === strpos($sheet, 'var(' . $name)) {
                 $orphans[] = $control . ' → ' . $name;
             }

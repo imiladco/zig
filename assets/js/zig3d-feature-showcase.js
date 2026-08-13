@@ -12,12 +12,19 @@
  * می‌کند. با Roving Tabindex فقط یک تب — همانِ فعال — در توالیِ Tab است؛
  * تبی که با کلید جابه‌جا شده هنوز «انتخاب» نیست تا وقتی کاربر با
  * Enter/Space تأییدش کند.
+ *
+ * موشن این‌بار Style Control است (برخلافِ آکاردئونِ مشخصاتِ فنی که
+ * زمان‌بندی‌اش کدنویسی‌شده و ثابت است): مدت/easing از رویِ متغیرهایِ
+ * CSSِ همان نمونهٔ ویجت خوانده می‌شود — نه عددِ ثابت این‌جا — پس هر
+ * نمونه‌ای از این ویجت رویِ صفحه می‌تواند زمان‌بندیِ خودش را داشته باشد.
  */
 (function () {
 	'use strict';
 
-	var DURATION = 210;
-	var EASING = 'cubic-bezier(.22, 1, .36, 1)';
+	// ثانیه‌های پیش‌فرض، فقط برایِ وقتی متغیرِ CSS به هر دلیلی خوانده نشد
+	var FALLBACK_DURATION = 260;
+	var FALLBACK_EASING = 'cubic-bezier(.22, 1, .36, 1)';
+	var STAGGER_STEP = 28; // فاصلهٔ خیلی‌کمِ شروعِ هر بخشِ متن نسبت به قبلی
 
 	function reducedMotion() {
 		return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -32,7 +39,28 @@
 		this.panels = this.panelsWrap ? Array.prototype.slice.call(this.panelsWrap.querySelectorAll(':scope > .zig-feature__panel')) : [];
 		this.prevBtn = this.nav ? this.nav.querySelector('[data-zig-feature-prev]') : null;
 		this.nextBtn = this.nav ? this.nav.querySelector('[data-zig-feature-next]') : null;
-		this.currentAnim = null;
+		this.anims = [];
+
+		/*
+		 * ‎data-zig-motion="off"‎ یعنی کنترلِ استایلِ «گذارِ نرمِ سوییچ»
+		 * خاموش است — مستقل از ‎prefers-reduced-motion‎، که همیشه هرچه
+		 * ادمین گذاشته را هم می‌پوشاند.
+		 */
+		this.motionEnabled = 'off' !== root.getAttribute('data-zig-motion');
+
+		var styles = getComputedStyle(root);
+		var durationRaw = parseFloat(styles.getPropertyValue('--zig-feature-motion-duration'));
+		this.duration = isNaN(durationRaw) ? FALLBACK_DURATION : durationRaw;
+		var easingRaw = (styles.getPropertyValue('--zig-feature-motion-easing') || '').trim();
+		this.easing = easingRaw || FALLBACK_EASING;
+
+		/*
+		 * انیمیشنِ ورودِ Glow باید دقیقاً به همان شدتِ تنظیم‌شده در استایل
+		 * برسد، نه به ‎opacity:1‎ِ ثابت — وگرنه لحظهٔ آخرِ گذار، Glow یک
+		 * لحظه روشن‌تر از حالتِ آرامش می‌شود و بعد ناگهان کم‌نور می‌شود.
+		 */
+		var glowOpacityRaw = parseFloat(styles.getPropertyValue('--zig-feature-glow-opacity'));
+		this.glowOpacity = isNaN(glowOpacityRaw) ? .55 : glowOpacityRaw / 100;
 
 		// حالتِ فعالِ اولیه از همان چیزی خوانده می‌شود که PHP رندر کرده —
 		// نه همیشه صفر، چون کنترلِ «قابلیتِ فعالِ اول» می‌تواند آن را عوض کرده باشد
@@ -163,26 +191,90 @@
 		this.playEntrance(this.panels[index]);
 	};
 
+	/**
+	 * گذارِ ورودِ پنلِ تازه‌فعال‌شده: رسانه، محتوا (با یک stagger خیلی‌کم
+	 * بینِ meta/عنوان/توضیح)، و لکه‌هایِ Glow — همه با هم، همان
+	 * مدت/easingِ خوانده‌شده از استایل. کنسل‌کردنِ همهٔ انیمیشن‌هایِ
+	 * قبلی *قبل* از شروعِ دسته‌ی تازه یعنی کلیکِ سریع رویِ چند تب هیچ‌وقت
+	 * انیمیشنِ نیمه‌تمامِ قبلی را رویِ عنصرِ اشتباه تمام نمی‌کند.
+	 */
 	Showcase.prototype.playEntrance = function (panel) {
-		if (this.currentAnim) {
-			this.currentAnim.cancel();
-			this.currentAnim = null;
-		}
+		this.anims.forEach(function (anim) { anim.cancel(); });
+		this.anims = [];
 
-		if (!panel || !('animate' in panel) || reducedMotion()) {
+		if (!panel || !this.motionEnabled || !('animate' in panel) || reducedMotion()) {
 			return;
 		}
 
 		var self = this;
-		this.currentAnim = panel.animate(
-			[
-				{ opacity: 0, transform: 'translateY(3px)' },
-				{ opacity: 1, transform: 'translateY(0)' },
-			],
-			{ duration: DURATION, easing: EASING, fill: 'both' }
+		var duration = this.duration;
+		var easing = this.easing;
+
+		/*
+		 * ‎releaseOnFinish‎ فقط برایِ Glow لازم است: حالتِ «آرام»ِ Glow صرفِ
+		 * ‎opacity:1‎ نیست — یک متغیرِ CSS (‎--zig-feature-glow-opacity‎) و
+		 * احتمالاً یک انیمیشنِ پالسِ بی‌پایان است. اگر انیمیشنِ WAAPI با
+		 * ‎fill:'both'‎ رویِ حالتِ پایانی قفل بماند، آن متغیر و آن پالس
+		 * هیچ‌وقت دوباره میدان‌دار نمی‌شوند. با ‎cancel()‎ کردنِ خودِ
+		 * انیمیشن — نه فقط حذف از فهرستِ ردیابی — کنترل به CSSِ زیرین
+		 * برمی‌گردد. رسانه/متن این مشکل را ندارند چون حالتِ آرامشان
+		 * (opacity:۱، بدونِ transform) دقیقاً همان چیزی است که WAAPI رویش
+		 * نگه می‌دارد.
+		 */
+		function run(el, keyframes, opts, releaseOnFinish) {
+			if (!el) {
+				return;
+			}
+			var anim = el.animate(keyframes, opts);
+			self.anims.push(anim);
+			anim.oncancel = function () {
+				var at = self.anims.indexOf(anim);
+				if (-1 !== at) { self.anims.splice(at, 1); }
+			};
+			anim.onfinish = function () {
+				if (releaseOnFinish) { anim.cancel(); return; }
+				var at = self.anims.indexOf(anim);
+				if (-1 !== at) { self.anims.splice(at, 1); }
+			};
+		}
+
+		var media = panel.querySelector(':scope > .zig-feature__media');
+		var content = panel.querySelector(':scope > .zig-feature__content');
+		var glowContent = panel.querySelector(':scope > .zig-feature__glow--content');
+		var glowMedia = panel.querySelector(':scope > .zig-feature__glow--media');
+
+		// رسانه: fade + یک لغزشِ خیلی‌ملایمِ افقی — «image fade/slide subtle»
+		run(media,
+			[{ opacity: 0, transform: 'translateX(6px)' }, { opacity: 1, transform: 'translateX(0)' }],
+			{ duration: duration, easing: easing, fill: 'both' }
 		);
-		this.currentAnim.onfinish = function () { self.currentAnim = null; };
-		this.currentAnim.oncancel = function () { self.currentAnim = null; };
+
+		// محتوا: هر بخش (شماره/برچسب، عنوان، توضیح) با تأخیرِ خیلی‌کمِ نسبت‌به‌قبلی — stagger بسیار ملایم
+		var textParts = [
+			content && content.querySelector(':scope > .zig-feature__meta'),
+			content && content.querySelector(':scope > .zig-feature__feature-title'),
+			content && content.querySelector(':scope > .zig-feature__feature-desc'),
+		].filter(Boolean);
+
+		textParts.forEach(function (el, i) {
+			run(el,
+				[{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }],
+				{ duration: duration, delay: i * STAGGER_STEP, easing: easing, fill: 'both' }
+			);
+		});
+
+		// Glow: با محتوا/رسانه محو و بزرگ می‌شود — «glow morph/fade»، نه یک هالهٔ ثابت
+		var glowOpacity = this.glowOpacity;
+		run(glowContent,
+			[{ opacity: 0, transform: 'scale(.85)' }, { opacity: glowOpacity, transform: 'scale(1)' }],
+			{ duration: duration + 60, easing: 'ease-out', fill: 'both' },
+			true
+		);
+		run(glowMedia,
+			[{ opacity: 0, transform: 'scale(.85)' }, { opacity: glowOpacity, transform: 'scale(1)' }],
+			{ duration: duration + 60, easing: 'ease-out', fill: 'both' },
+			true
+		);
 	};
 
 	/** ناوبریِ سرریز — فقط اسکرولِ ردیفِ تب‌ها، بدونِ تغییرِ انتخاب */
