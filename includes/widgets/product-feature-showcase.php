@@ -564,10 +564,11 @@ final class Product_Feature_Showcase extends Widget_Base {
         $this->add_control(
             'media_bg',
             [
-                'label'     => __('پس‌زمینه', 'zig3d-widgets'),
-                'type'      => Controls_Manager::COLOR,
-                'default'   => '#F3F3F6',
-                'selectors' => ['{{WRAPPER}} .zig-feature__media' => 'background-color: {{VALUE}};'],
+                'label'       => __('پس‌زمینه', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => 'transparent',
+                'description' => __('پیش‌فرض شفاف است — تصویر مستقیم رویِ پنلِ تیره می‌نشیند، نه داخلِ یک کارتِ روشنِ جدا؛ اگر کارت بخواهید، همین‌جا رنگ بدهید.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-feature__media' => 'background-color: {{VALUE}};'],
             ]
         );
 
@@ -595,7 +596,7 @@ final class Product_Feature_Showcase extends Widget_Base {
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px'],
                 'range'      => ['px' => ['min' => 0, 'max' => 48]],
-                'default'    => ['size' => 20, 'unit' => 'px'],
+                'default'    => ['size' => 0, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-feature__media' => 'border-radius: {{SIZE}}{{UNIT}}; overflow: hidden;'],
             ]
         );
@@ -606,7 +607,7 @@ final class Product_Feature_Showcase extends Widget_Base {
                 'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem'],
-                'default'    => ['top' => '24', 'right' => '24', 'bottom' => '24', 'left' => '24', 'unit' => 'px'],
+                'default'    => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-feature__media' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );

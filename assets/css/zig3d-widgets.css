@@ -3230,6 +3230,12 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	max-width: min(100%, var(--zig-feature-content-max, 720px));
 }
 
+/*
+ * پیش‌فرض بدونِ کارتِ روشن — عکسِ محصول مستقیم رویِ خودِ پنلِ تیره
+ * می‌نشیند (دقیقاً طبقِ Reference)، نه داخلِ یک جعبهٔ سفیدِ جدا. اگر
+ * ادمین کارتِ روشن بخواهد، همان کنترل‌های قبلی (پس‌زمینه/مرز/سایه) هنوز
+ * هستند — فقط پیش‌فرضشان دیگر «کارت» نیست.
+ */
 .zig-feature__media {
 	position: relative;
 	z-index: 1;
@@ -3237,10 +3243,10 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background-color: #F3F3F6;
-	border-radius: 20px;
-	overflow: hidden;
-	padding: 24px;
+	background-color: transparent;
+	border-radius: 0;
+	overflow: visible;
+	padding: 0;
 	min-width: 0;
 }
 
@@ -3347,11 +3353,15 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	inset-inline-end: 6%;
 }
 
+/*
+ * لکهٔ رسانه به‌شکلِ یک بیضیِ پهن و کوتاه است، نه دایره — دقیقاً همان
+ * «نورِ کفِ» زیرِ محصول در Reference، نه یک لکهٔ گوشه‌ایِ کوچک.
+ */
 .zig-feature__glow--media {
-	width: calc(var(--zig-feature-glow-spread, 140px) * .65);
-	height: calc(var(--zig-feature-glow-spread, 140px) * .65);
-	bottom: -6%;
-	inset-inline-start: -6%;
+	width: calc(var(--zig-feature-glow-spread, 140px) * 1.4);
+	height: calc(var(--zig-feature-glow-spread, 140px) * .5);
+	bottom: 2%;
+	inset-inline-start: 6%;
 }
 
 @keyframes zig-feature-glow-pulse {
