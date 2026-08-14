@@ -37,6 +37,7 @@ final class Plugin {
         'product-gallery' => Widgets\Product_Gallery::class,
         'product-specs' => Widgets\Product_Specs::class,
         'product-feature-showcase' => Widgets\Product_Feature_Showcase::class,
+        'product-video-gallery' => Widgets\Product_Video_Gallery::class,
     ];
 
     public static function instance(): self {
@@ -99,7 +100,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
@@ -318,6 +319,19 @@ final class Plugin {
         wp_register_script(
             'zig3d-feature-showcase',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-feature-showcase.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * گالریِ ویدئوی محصول هم بدونِ این فایل کار می‌کند — اولین ویدئو
+         * (کارتِ معرفی) کامل قابل‌پخش است، فقط سوییچِ بینِ کارت‌ها و دکمهٔ
+         * پخشِ سفارشی روی این اسکریپت سوارند.
+         */
+        wp_register_script(
+            'zig3d-product-video',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-product-video.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

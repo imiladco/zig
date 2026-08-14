@@ -50,6 +50,8 @@ require_once $root . '/includes/spec-value.php';
 require_once $root . '/includes/widgets/product-specs.php';
 require_once $root . '/includes/feature-repeater.php';
 require_once $root . '/includes/widgets/product-feature-showcase.php';
+require_once $root . '/includes/video-gallery-field.php';
+require_once $root . '/includes/widgets/product-video-gallery.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -61,14 +63,26 @@ $widgets = [
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
     'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
+    'گالریِ ویدئو'  => \Zig3d_Widgets\Widgets\Product_Video_Gallery::class,
+];
+
+/*
+ * آستانهٔ پیش‌فرض (>۲۰ ثبت) برایِ ویجت‌هایِ این افزونه کالیبره شده که همه
+ * سطحِ کنترلِ نسبتاً غنی دارند. گالریِ ویدئو عمداً مینیمال است — خودِ
+ * درخواست صراحتاً «بدونِ کنترلِ اضافه، فقط همان‌هایی که لیست شده» خواسته
+ * — پس آستانه‌اش پایین‌تر است؛ عددِ کوچک‌تر اینجا نشانهٔ خطا نیست.
+ */
+$minControls = [
+    \Zig3d_Widgets\Widgets\Product_Video_Gallery::class => 10,
 ];
 
 foreach ($widgets as $label => $class) {
     Tests::group('کنترل‌ها › ' . $label);
 
     $entries = zig_collect_controls($class);
+    $min     = $minControls[$class] ?? 20;
 
-    Tests::ok('کنترلی ثبت شده', count($entries) > 20, sprintf('تعداد: %d', count($entries)));
+    Tests::ok('کنترلی ثبت شده', count($entries) > $min, sprintf('تعداد: %d (آستانه: %d)', count($entries), $min));
 
     /* ---------------------- نام‌های تکراری ---------------------- */
 

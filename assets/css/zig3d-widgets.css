@@ -3435,3 +3435,267 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 		animation: zig-feature-glow-orbit calc(var(--zig-feature-glow-speed, 5s) * 3) ease-in-out infinite;
 	}
 }
+
+/* ==========================================================================
+   گالریِ ویدئویِ محصول
+   ========================================================================== */
+
+.zig-product-video__notice {
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}
+
+.zig-product-video {
+	--zig-pv-max-width: 1280px;
+	--zig-pv-sidebar-width: 320px;
+	--zig-pv-gap: 32px;
+	--zig-pv-player-min-h: 500px;
+	--zig-pv-player-min-h-mobile: 300px;
+	--zig-pv-primary: #5B21B6;
+	--zig-pv-active-bg: #F2ECFF;
+	--zig-pv-player-bg-from: #1B1030;
+	--zig-pv-player-bg-to: #050308;
+	display: grid;
+	/*
+	 * ستونِ *اولِ* تعریف‌شده در Gridِ راست‌به‌چپ سمتِ راستِ صفحه می‌نشیند.
+	 * طرحِ مرجع صراحتاً می‌خواهد لیست چپ باشد و پلیر راست، مستقل از جهتِ
+	 * کلیِ RTL؛ پس ستونِ پلیر (‎1fr‎) اول تعریف شده. چون پلیر در DOM هم
+	 * قبل از سایدبار می‌آید، بدونِ نیاز به ‎order‎ همین ترتیب به‌طورِ
+	 * طبیعی برقرار می‌شود — هم در چیدمانِ دوستونهٔ دسکتاپ هم در پشته‌شدنِ
+	 * تک‌ستونهٔ موبایل («اول پلیر، بعد لیست»).
+	 */
+	grid-template-columns: minmax(0, 1fr) var(--zig-pv-sidebar-width);
+	gap: var(--zig-pv-gap);
+	max-width: var(--zig-pv-max-width);
+	margin: 0 auto;
+	direction: rtl;
+}
+
+@media (max-width: 767px) {
+	.zig-product-video {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * پلیر
+ * ------------------------------------------------------------------- */
+
+.zig-product-video__player {
+	position: relative;
+	min-height: var(--zig-pv-player-min-h);
+	border-radius: 18px;
+	overflow: hidden;
+	background-image: linear-gradient(135deg, var(--zig-pv-player-bg-from), var(--zig-pv-player-bg-to));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+@media (max-width: 767px) {
+	.zig-product-video__player {
+		min-height: var(--zig-pv-player-min-h-mobile);
+	}
+}
+
+.zig-product-video__video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/*
+ * اورلیِ بنفش/تیرهٔ کنترل‌شده رویِ ویدئو/پوستر — نه یک لایهٔ سیاهِ تخت،
+ * یک گرادیانِ ملایم که پایینِ قاب کمی تیره‌تر می‌شود، دقیقاً طبقِ طرحِ
+ * مرجع. ‎::after‎، نه یک ‎<span>‎ی جدا: کاملاً تزئینی و ثابت است، برخلافِ
+ * لکه‌هایِ Glowِ ویجتِ قابلیت‌ها که JS با WAAPI رویشان انیمیت می‌کند.
+ */
+.zig-product-video__player::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: linear-gradient(180deg, rgba(27, 16, 48, .12) 0%, rgba(5, 3, 8, .58) 100%);
+	pointer-events: none;
+}
+
+.zig-product-video__play {
+	position: relative;
+	z-index: 1;
+	width: 74px;
+	height: 74px;
+	border-radius: 50%;
+	background-color: #FFFFFF;
+	color: var(--zig-pv-primary);
+	border: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 26px;
+	cursor: pointer;
+	box-shadow: 0 12px 32px -8px rgba(0, 0, 0, .5);
+	transition: opacity .18s ease, transform .18s ease;
+}
+
+.zig-product-video__play svg {
+	/* مثلثِ پخش بصری کمی به چپِ مرکزِ هندسی می‌چسبد؛ این جابه‌جاییِ ظریف واقعاً وسط‌چینش می‌کند */
+	margin-inline-start: 3px;
+}
+
+.zig-product-video__play:hover {
+	transform: scale(1.06);
+}
+
+.zig-product-video__play:focus-visible {
+	outline: 2px solid #FFFFFF;
+	outline-offset: 3px;
+}
+
+.zig-product-video__player.is-playing .zig-product-video__play {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.zig-product-video__duration {
+	position: absolute;
+	z-index: 1;
+	bottom: 16px;
+	/* راستِ فیزیکی در RTL: inset-inline-start، نه inset-inline-end */
+	inset-inline-start: 16px;
+	background-color: rgba(0, 0, 0, .6);
+	color: #FFFFFF;
+	border-radius: 8px;
+	padding: 7px 12px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------
+ * سایدبار — کارتِ معرفی + لیستِ ویدئوها
+ * ------------------------------------------------------------------- */
+
+.zig-product-video__sidebar {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.zig-product-video__list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.zig-product-video__card {
+	appearance: none;
+	-webkit-appearance: none;
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 16px;
+	border-radius: 14px;
+	background-color: #FFFFFF;
+	border: 1px solid #E2E5ED;
+	transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.zig-product-video__card:hover {
+	border-color: color-mix(in srgb, var(--zig-pv-primary) 30%, #E2E5ED);
+	transform: translateY(-1px);
+	box-shadow: 0 8px 20px -12px rgba(17, 10, 40, .25);
+}
+
+.zig-product-video__card:focus-visible {
+	outline: 2px solid var(--zig-pv-primary);
+	outline-offset: 2px;
+}
+
+.zig-product-video__icon {
+	flex: 0 0 auto;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background-color: #F5F3FF;
+	color: var(--zig-pv-primary);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 15px;
+}
+
+.zig-product-video__body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.zig-product-video__title {
+	display: block;
+	color: #4B5563;
+	font-size: 14px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.zig-product-video__meta {
+	color: #4B5563;
+	font-size: 12px;
+}
+
+/* کارتِ فعال (هر کدام، نه فقط معرفی): عنوان رنگِ اصلی می‌گیرد */
+.zig-product-video__card.is-active:not(.zig-product-video__card--intro) .zig-product-video__title {
+	color: var(--zig-pv-primary);
+}
+
+/*
+ * کارتِ معرفی (همیشه آیتمِ اول) — ساختارش وابسته به شمارهٔ آیتم است، نه
+ * به فعال‌بودن: همیشه بدونِ آیکونِ مربعی، همیشه با توضیحِ کامل، همیشه
+ * پس‌زمینه و عنوانِ بنفش. اگر کاربر کارتِ دیگری را کلیک کند، آن کارت
+ * `is-active` می‌گیرد ولی این یکی ساختارش را از دست نمی‌دهد — فقط دیگر
+ * تنها آیتمِ در حالِ پخش نیست.
+ */
+.zig-product-video__card--intro {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	background-color: var(--zig-pv-active-bg);
+	border-color: transparent;
+}
+
+.zig-product-video__card--intro:hover {
+	box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--zig-pv-primary) 35%, transparent);
+}
+
+.zig-product-video__card--intro .zig-product-video__title {
+	color: var(--zig-pv-primary);
+	font-size: 15px;
+	font-weight: 700;
+	white-space: normal;
+}
+
+.zig-product-video__card--intro .zig-product-video__desc {
+	margin: 0;
+	color: #4B5563;
+	font-size: 13px;
+	line-height: 1.7;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}

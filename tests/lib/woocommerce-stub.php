@@ -245,9 +245,29 @@ namespace {
     if (!function_exists('get_post_meta')) {
         function get_post_meta($id, $key = '', $single = false) {
             $product = \WC_Product::$registry[(int) $id] ?? null;
-            $meta    = $product ? $product->zig_meta() : [];
 
-            return $meta[$key] ?? '';
+            if ($product) {
+                $meta = $product->zig_meta();
+
+                return $meta[$key] ?? '';
+            }
+
+            // پیوست (نه محصول): چند کلیدِ شناخته‌شده مستقیم از رجیستریِ
+            // آزمایشیِ پیوست‌ها، بقیه از آرایهٔ ‎meta‎ی دلخواهِ همان پیوست.
+            $att = $GLOBALS['__zig_attachments'][(int) $id] ?? null;
+
+            if ($att) {
+                if ('_wp_attachment_image_alt' === $key) {
+                    return $att['alt'];
+                }
+                if ('_thumbnail_id' === $key) {
+                    return $att['thumbnail_id'];
+                }
+
+                return $att['meta'][$key] ?? '';
+            }
+
+            return '';
         }
     }
 
@@ -324,6 +344,80 @@ namespace {
         }
     }
 
+    /*
+     * ثبت‌نامِ پیوست‌های آزمایشی — برایِ ویجت‌هایی (مثلِ گالریِ ویدئوی
+     * محصول) که مستقیم از فیلدهای خودِ پیوست (Alt/Title/Caption/
+     * Description/متادیتا/URL) می‌خوانند، نه از محصول. جدا از
+     * ‎WC_Product::$registry‎ چون یک پیوست، محصول نیست.
+     *
+     *     zig_register_attachment(12, ['title' => '...', 'alt' => '...']);
+     */
+    if (!isset($GLOBALS['__zig_attachments'])) {
+        $GLOBALS['__zig_attachments'] = [];
+    }
+
+    if (!function_exists('zig_register_attachment')) {
+        function zig_register_attachment(int $id, array $data): void {
+            $GLOBALS['__zig_attachments'][$id] = $data + [
+                'title'        => '',
+                'alt'          => '',
+                'caption'      => '',
+                'description'  => '',
+                'url'          => '',
+                'meta'         => [],
+                'thumbnail_id' => 0,
+            ];
+        }
+    }
+
+    if (!function_exists('get_the_title')) {
+        function get_the_title($id = 0) {
+            return $GLOBALS['__zig_attachments'][(int) $id]['title'] ?? '';
+        }
+    }
+
+    if (!function_exists('wp_get_attachment_caption')) {
+        function wp_get_attachment_caption($id = 0) {
+            return $GLOBALS['__zig_attachments'][(int) $id]['caption'] ?? '';
+        }
+    }
+
+    if (!function_exists('get_post_field')) {
+        function get_post_field($field, $id = 0) {
+            $att = $GLOBALS['__zig_attachments'][(int) $id] ?? null;
+
+            if (!$att) {
+                return '';
+            }
+
+            if ('post_content' === $field) {
+                return $att['description'];
+            }
+            if ('post_excerpt' === $field) {
+                return $att['caption'];
+            }
+            if ('post_title' === $field) {
+                return $att['title'];
+            }
+
+            return '';
+        }
+    }
+
+    if (!function_exists('wp_get_attachment_url')) {
+        function wp_get_attachment_url($id = 0) {
+            $url = $GLOBALS['__zig_attachments'][(int) $id]['url'] ?? '';
+
+            return '' !== $url ? $url : false;
+        }
+    }
+
+    if (!function_exists('wp_get_attachment_metadata')) {
+        function wp_get_attachment_metadata($id = 0) {
+            return $GLOBALS['__zig_attachments'][(int) $id]['meta'] ?? false;
+        }
+    }
+
     if (!class_exists('WP_Term')) {
         class WP_Term {
             public $name;
@@ -343,6 +437,18 @@ namespace {
     }
     if (!function_exists('get_posts')) {
         function get_posts($args = []) { return []; }
+    }
+
+    /**
+     * لیستِ محصولات — فقط برایِ fallbackِ «آخرین محصولِ منتشرشده» در
+     * ادیتور/پیش‌نمایشِ ویجت‌هایِ گالری. آرگومان‌ها عمداً نادیده گرفته
+     * می‌شوند: تستی که از این استاب استفاده می‌کند خودش دقیقاً کنترل
+     * می‌کند چه چیزی برگردد.
+     */
+    if (!function_exists('wc_get_products')) {
+        function wc_get_products($args = []) {
+            return $GLOBALS['__zig_wc_products'] ?? [];
+        }
     }
     if (!function_exists('wc_get_attribute_taxonomy_names')) {
         function wc_get_attribute_taxonomy_names() { return $GLOBALS['__zig_attr_names'] ?? []; }
@@ -387,6 +493,7 @@ namespace {
         $GLOBALS['__zig_post']       = 0;
         $GLOBALS['__zig_options']    = [];
         $GLOBALS['__zig_term_meta']  = [];
-        unset($GLOBALS['product'], $GLOBALS['__zig_visibility']);
+        $GLOBALS['__zig_attachments'] = [];
+        unset($GLOBALS['product'], $GLOBALS['__zig_visibility'], $GLOBALS['__zig_wc_products']);
     }
 }

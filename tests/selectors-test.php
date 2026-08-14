@@ -56,6 +56,8 @@ require_once $root . '/includes/spec-value.php';
 require_once $root . '/includes/widgets/product-specs.php';
 require_once $root . '/includes/feature-repeater.php';
 require_once $root . '/includes/widgets/product-feature-showcase.php';
+require_once $root . '/includes/video-gallery-field.php';
+require_once $root . '/includes/widgets/product-video-gallery.php';
 
 use Zig3d_Widgets\Selector;
 
@@ -69,14 +71,24 @@ $widgets = [
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
     'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
+    'گالریِ ویدئو'  => \Zig3d_Widgets\Widgets\Product_Video_Gallery::class,
+];
+
+/*
+ * همان استثنایِ ‎controls-test.php‎: گالریِ ویدئو عمداً کم‌کنترل است، پس
+ * سقفِ ‎>۱۰‎ سلکتور برایش کالیبره نیست.
+ */
+$minSelectors = [
+    \Zig3d_Widgets\Widgets\Product_Video_Gallery::class => 5,
 ];
 
 foreach ($widgets as $label => $class) {
     Tests::group('سلکتورها › ' . $label);
 
     $selectors = zig_collect_selectors($class);
+    $min       = $minSelectors[$class] ?? 10;
 
-    Tests::ok('سلکتوری ثبت شده', count($selectors) > 10, sprintf('تعداد: %d', count($selectors)));
+    Tests::ok('سلکتوری ثبت شده', count($selectors) > $min, sprintf('تعداد: %d (آستانه: %d)', count($selectors), $min));
 
     $leaked = [];
 
