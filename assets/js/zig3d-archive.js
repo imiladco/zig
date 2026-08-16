@@ -62,6 +62,8 @@
 		this.main = root.querySelector('.zig-archive__main') || root;
 		this.error = root.querySelector('.zig-archive__error');
 		this.retry = root.querySelector('.zig-archive__retry');
+		this.search = root.querySelector('[data-zig-search]');
+		this.filterTrigger = root.querySelector('.zig-download-archive__filter-trigger');
 
 		this.endpoint = root.getAttribute('data-zig-endpoint') || '';
 		this.nonce = root.getAttribute('data-zig-nonce') || '';
@@ -137,8 +139,36 @@
 	Archive.prototype.bind = function () {
 		var self = this;
 
+		/* Keep the explicit state in sync with the native, keyboard-operable details control. */
+		this.root.addEventListener('toggle', function (event) {
+			var facet = event.target;
+
+			if (!facet.matches || !facet.matches('.zig-facet')) {
+				return;
+			}
+
+			var title = facet.querySelector(':scope > .zig-facet__title');
+
+			if (title) {
+				title.setAttribute('aria-expanded', facet.open ? 'true' : 'false');
+			}
+		}, true);
+
 		this.root.addEventListener('click', function (event) {
 			if (event.defaultPrevented || 0 !== event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+				return;
+			}
+
+			var modelsToggle = event.target.closest('.zig-download-card__models-toggle');
+
+			if (modelsToggle && self.root.contains(modelsToggle)) {
+				var card = modelsToggle.closest('.zig-download-card');
+				var expanded = card && !card.classList.contains('is-models-expanded');
+
+				if (card) {
+					card.classList.toggle('is-models-expanded', expanded);
+					modelsToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+				}
 				return;
 			}
 
@@ -163,6 +193,36 @@
 				if (self.lastFailed) {
 					self.go(self.lastFailed.query, self.lastFailed.kind, null, true);
 				}
+			});
+		}
+
+		if (this.search) {
+			this.search.addEventListener('input', function () {
+				var value = self.search.value.trim();
+
+				if (value) {
+					self.params.set('s', value);
+				} else {
+					self.params.delete('s');
+				}
+
+				self.params.delete('paged');
+				self.go(self.params.toString(), 'filter');
+			});
+
+			if (this.search.form) {
+				this.search.form.addEventListener('submit', function (event) {
+					event.preventDefault();
+					self.go(self.params.toString(), 'filter', null, true);
+				});
+			}
+		}
+
+		if (this.filterTrigger) {
+			this.filterTrigger.addEventListener('click', function () {
+				var expanded = !self.root.classList.contains('is-filters-open');
+				self.root.classList.toggle('is-filters-open', expanded);
+				self.filterTrigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
 			});
 		}
 
@@ -826,6 +886,12 @@
 
 		window.elementorFrontend.hooks.addAction(
 			'frontend/element_ready/zig3d-product-archive.default',
+			function ($scope) {
+				scan($scope && $scope[0] ? $scope[0] : null);
+			}
+		);
+		window.elementorFrontend.hooks.addAction(
+			'frontend/element_ready/zig3d-download-archive.default',
 			function ($scope) {
 				scan($scope && $scope[0] ? $scope[0] : null);
 			}

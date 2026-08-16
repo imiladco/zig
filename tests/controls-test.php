@@ -43,6 +43,12 @@ require_once $root . '/includes/seo.php';
 require_once $root . '/includes/card.php';
 require_once $root . '/includes/product-card.php';
 require_once $root . '/includes/widgets/product-archive.php';
+require_once $root . '/includes/download-archive-data.php';
+require_once $root . '/includes/widgets/download-archive.php';
+require_once $root . '/includes/widgets/compatible-operating-systems.php';
+require_once $root . '/includes/widgets/compatible-devices.php';
+require_once $root . '/includes/widgets/software-environment-gallery.php';
+require_once $root . '/includes/widgets/software-info-table.php';
 require_once $root . '/includes/widgets/product-gallery.php';
 require_once $root . '/includes/spec-group.php';
 require_once $root . '/includes/spec-store.php';
@@ -52,6 +58,7 @@ require_once $root . '/includes/feature-repeater.php';
 require_once $root . '/includes/widgets/product-feature-showcase.php';
 require_once $root . '/includes/video-gallery-field.php';
 require_once $root . '/includes/widgets/product-video-gallery.php';
+require_once $root . '/includes/widgets/documents.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -60,10 +67,16 @@ $widgets = [
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
+    'آرشیو دانلود' => \Zig3d_Widgets\Widgets\Download_Archive::class,
+    'سیستم‌عامل‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class,
+    'دستگاه‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Devices::class,
+    'گالری محیط نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class,
+    'جدول مشخصات نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Info_Table::class,
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
     'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
     'گالریِ ویدئو'  => \Zig3d_Widgets\Widgets\Product_Video_Gallery::class,
+    'اسناد دانلود' => \Zig3d_Widgets\Widgets\Documents::class,
 ];
 
 /*
@@ -74,6 +87,10 @@ $widgets = [
  */
 $minControls = [
     \Zig3d_Widgets\Widgets\Product_Video_Gallery::class => 10,
+    \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class => 15,
+    \Zig3d_Widgets\Widgets\Compatible_Devices::class => 20,
+    \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class => 25,
+    \Zig3d_Widgets\Widgets\Software_Info_Table::class => 15,
 ];
 
 foreach ($widgets as $label => $class) {

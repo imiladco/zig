@@ -138,7 +138,7 @@ Tests::same('عنوان: اول Alt Text', Video_Gallery_Field::items(5, 'zig-pr
 zig_vg_reset();
 zig_register_attachment(12, ['alt' => '', 'title' => 'عنوانِ رسانه', 'url' => 'https://zig3d.test/v/12.mp4']);
 new \WC_Product(['id' => 5, 'meta' => ['zig-product-video' => 12]]);
-Tests::same('عنوان: Alt خالی → Media Title', Video_Gallery_Field::items(5, 'zig-product-video')[0]['title'], 'عنوانِ رسانه');
+Tests::same('عنوان: Alt Text خالی → Media Title', Video_Gallery_Field::items(5, 'zig-product-video')[0]['title'], 'عنوانِ رسانه');
 
 zig_vg_reset();
 zig_register_attachment(12, ['description' => 'توضیحِ کامل', 'caption' => 'کپشن', 'url' => 'https://zig3d.test/v/12.mp4']);

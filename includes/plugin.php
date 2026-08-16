@@ -34,10 +34,16 @@ final class Plugin {
         'product-price' => Widgets\Product_Price::class,
         'product-stock' => Widgets\Product_Stock::class,
         'product-archive' => Widgets\Product_Archive::class,
+        'download-archive' => Widgets\Download_Archive::class,
+        'compatible-operating-systems' => Widgets\Compatible_Operating_Systems::class,
+        'compatible-devices' => Widgets\Compatible_Devices::class,
+        'software-environment-gallery' => Widgets\Software_Environment_Gallery::class,
+        'software-info-table' => Widgets\Software_Info_Table::class,
         'product-gallery' => Widgets\Product_Gallery::class,
         'product-specs' => Widgets\Product_Specs::class,
         'product-feature-showcase' => Widgets\Product_Feature_Showcase::class,
         'product-video-gallery' => Widgets\Product_Video_Gallery::class,
+        'documents' => Widgets\Documents::class,
     ];
 
     public static function instance(): self {
@@ -50,7 +56,9 @@ final class Plugin {
 
     private function __construct() {
         add_action('elementor/elements/categories_registered', [$this, 'register_category']);
-        add_action('elementor/widgets/register', [$this, 'register_widgets']);
+        // JetEngine registers its CPT meta-box schema during init; the late
+        // Elementor priority keeps Download Archive controls behind that schema.
+        add_action('elementor/widgets/register', [$this, 'register_widgets'], 100);
 
         // ثبت (نه enqueue): هر ویجت با get_style_depends خودش تصمیم می‌گیرد،
         // پس صفحه‌ای که ویجتی از این افزونه ندارد هیچ فایلی لود نمی‌کند.
@@ -73,6 +81,7 @@ final class Plugin {
         add_action('init', [$this, 'maybe_flush_after_update'], 20);
 
         add_action('init', [$this, 'boot_filters'], 5);
+        add_action('init', [$this, 'boot_download_archive'], 5);
 
         if (is_admin()) {
             add_action('init', [$this, 'boot_admin'], 6);
@@ -128,6 +137,15 @@ final class Plugin {
         if (!is_admin()) {
             Archive_Head::boot();
         }
+    }
+
+    public function boot_download_archive(): void {
+        foreach (['download-archive-data', 'seo', 'archive-response', 'archive-endpoint'] as $file) {
+            require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
+        }
+
+        Download_Archive_Data::boot();
+        Archive_Endpoint::boot();
     }
 
     /**
@@ -266,6 +284,14 @@ final class Plugin {
         wp_register_script(
             'zig3d-archive',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-archive.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        wp_register_script(
+            'zig3d-software-gallery',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-software-gallery.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

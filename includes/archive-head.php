@@ -76,7 +76,7 @@ final class Archive_Head {
      * @param \WP_Query $query
      */
     public static function filter_main_query($query): void {
-        if (!$query instanceof \WP_Query || !$query->is_main_query() || is_admin()) {
+        if (!$query instanceof \WP_Query || !$query->is_main_query() || $query->is_singular() || is_admin()) {
             return;
         }
 
@@ -157,6 +157,15 @@ final class Archive_Head {
             return $vars;
         }
 
+        /*
+         * A named post-type request is a singular candidate. Archive query
+         * controls must not cap or rewrite its request variables before
+         * WordPress has had a chance to resolve that object.
+         */
+        if (is_array($vars) && isset($vars['name']) && '' !== (string) $vars['name']) {
+            return $vars;
+        }
+
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $params = $_GET;
 
@@ -203,6 +212,11 @@ final class Archive_Head {
      * را می‌دانیم) و هم هنوز چیزی چاپ نشده (پس می‌شود هدر فرستاد).
      */
     public static function decide(): void {
+        // Archive SEO/status decisions must never run for a resolved single.
+        if (is_singular()) {
+            return;
+        }
+
         if (!self::applies()) {
             return;
         }
@@ -265,7 +279,7 @@ final class Archive_Head {
             return false;
         }
 
-        if (!is_main_query() || !function_exists('is_shop')) {
+        if (is_singular() || !is_main_query() || !function_exists('is_shop')) {
             return false;
         }
 

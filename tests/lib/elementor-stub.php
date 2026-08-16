@@ -103,13 +103,23 @@ class Widget_Base {
     /** @var array<string,array<string,string[]>> */
     protected array $zig_attributes = [];
 
-    public function add_render_attribute($key, $name = null, $value = null) {
+    /**
+     * رفتارِ پیش‌فرض («افزودن»، نه «جایگزینی») عمداً دقیقاً مثلِ خودِ
+     * المنتور است: ویجتی که در یک حلقه (مثلاً یک کارت به‌ازایِ هر ردیف)
+     * همین یک کلید را دوباره صدا می‌زند، بدونِ ‎overwrite: true‎ باید مقادیرِ
+     * قبلی‌اش را «ببیند» — دقیقاً همان باگی که این تست گرفت.
+     */
+    public function add_render_attribute($key, $name = null, $value = null, $overwrite = false) {
         if (is_array($name)) {
             foreach ($name as $attr => $val) {
-                $this->add_render_attribute($key, $attr, $val);
+                $this->add_render_attribute($key, $attr, $val, $overwrite);
             }
 
             return $this;
+        }
+
+        if ($overwrite) {
+            unset($this->zig_attributes[$key][$name]);
         }
 
         foreach ((array) $value as $single) {
@@ -118,6 +128,25 @@ class Widget_Base {
             }
             $this->zig_attributes[$key][$name][] = (string) $single;
         }
+
+        return $this;
+    }
+
+    /** مطابقِ ‎Element_Base::remove_render_attribute‎ خودِ المنتور. */
+    public function remove_render_attribute($key, $name = null, $value = null) {
+        if (null === $name) {
+            unset($this->zig_attributes[$key]);
+
+            return $this;
+        }
+
+        if (null === $value) {
+            unset($this->zig_attributes[$key][$name]);
+
+            return $this;
+        }
+
+        $this->zig_attributes[$key][$name] = array_values(array_diff($this->zig_attributes[$key][$name] ?? [], (array) $value));
 
         return $this;
     }

@@ -13,34 +13,10 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * گالریِ ویدئویِ محصول — دادهٔ فیلدِ Galleryِ JetEngine روی خودِ محصول
- * (کلیدِ متایِ قابل‌تنظیم، پیش‌فرض ‎zig-product-video‎)، نه چیزی که این
- * ویجت بسازد یا مدیریت کند.
- *
- *     div.zig-product-video
- *       div.zig-product-video__player
- *         video.zig-product-video__video      ‎<source>‎ی آیتمِ فعال
- *         button.zig-product-video__play
- *         span.zig-product-video__duration
- *       div.zig-product-video__sidebar
- *         div.zig-product-video__list
- *           button.zig-product-video__card--intro[is-active]   آیتمِ اول همیشه
- *           button.zig-product-video__card × (تعداد آیتم − ۱)
- *
- * چرا آیتمِ اول «معرفی» است، نه یک ویدئوی معمولی: طبقِ طرحِ مرجع، اولین
- * آیتمِ گالری هم‌زمان ویدئویِ پیش‌فرضِ پلیر *و* کارتِ معرفیِ کناری است —
- * ساختارش (بدونِ آیکونِ play، با توضیحِ کامل) وابسته به «شمارهٔ آیتم»
- * است، نه به «فعال بودن»؛ اگر بعداً کارتِ دیگری کلیک شود، آن کارت هم
- * رنگِ فعال می‌گیرد، ولی کارتِ اول همیشه همان ساختارِ معرفی را دارد — این
- * دو مستقل از هم‌اند.
- *
- * چرا چیدمانِ Grid با ‎player‎ اول در DOM: در Gridِ راست‌به‌چپ، ستونِ *اول*
- * تعریف‌شده در ‎grid-template-columns‎ سمتِ راستِ صفحه می‌نشیند. طرحِ مرجع
- * صراحتاً می‌خواهد لیست چپ باشد و پلیر راست — مستقل از جهتِ کلیِ RTL. با
- * قرار دادنِ پلیر اول در DOM و اولین ستون، بدونِ نیاز به ‎order‎، هم
- * ترتیبِ دیداریِ دسکتاپ درست از آب درمی‌آید هم پشته‌شدنِ موبایل (که طبقِ
- * طرح باید «اول پلیر، بعد لیست» باشد) به‌طورِ طبیعی همان ترتیبِ DOM را
- * می‌گیرد، بدونِ قاعدهٔ اضافه.
+ * گالریِ ویدئویِ محصول از فیلد Galleryِ JetEngine روی محصول. همهٔ آیتم‌ها
+ * ساختار یکسان دارند؛ آیتم نخست فقط حالت فعال اولیه را دریافت می‌کند.
+ * ترتیب DOM عمداً Player، Current Info، Playlist است تا موبایل بدون
+ * جابه‌جایی مصنوعی همین سلسله‌مراتب را داشته باشد.
  */
 final class Product_Video_Gallery extends Widget_Base {
 
@@ -155,7 +131,7 @@ final class Product_Video_Gallery extends Widget_Base {
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px'],
                 'range'      => ['px' => ['min' => 0, 'max' => 80]],
-                'default'    => ['size' => 32, 'unit' => 'px'],
+                'default'    => ['size' => 24, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-product-video' => '--zig-pv-gap: {{SIZE}}{{UNIT}};'],
             ]
         );
@@ -282,11 +258,17 @@ final class Product_Video_Gallery extends Widget_Base {
         }
 
         $first = $items[0];
+        $is_single = (1 === count($items));
 
-        printf('<div class="zig-product-video" data-zig-video-gallery>');
+        printf('<div class="zig-product-video%s" data-zig-video-gallery>', $is_single ? ' zig-product-video--single' : '');
 
-        $this->render_player($first);
-        $this->render_sidebar($items);
+        $this->render_player($first, $items);
+
+        $this->render_current_info($first, $items);
+
+        if (!$is_single) {
+            $this->render_sidebar($items);
+        }
 
         echo '</div>';
     }
@@ -320,26 +302,59 @@ final class Product_Video_Gallery extends Widget_Base {
 
     /**
      * @param array{id:int,url:string,title:string,description:string,duration:string,poster:array{id:int,url:string}} $item
+     * @param array<int,array{id:int,url:string,title:string,description:string,duration:string,poster:array{id:int,url:string}}> $items
      */
-    private function render_player(array $item): void {
+    private function render_player(array $item, array $items): void {
         echo '<div class="zig-product-video__player">';
 
         printf(
-            '<video class="zig-product-video__video" src="%s" preload="metadata" playsinline%s></video>',
+            '<video class="zig-product-video__video" src="%s" preload="none" playsinline controls%s></video>',
             esc_url($item['url']),
             $item['poster']['url'] ? ' poster="' . esc_url($item['poster']['url']) . '"' : ''
         );
 
         printf(
-            '<button type="button" class="zig-product-video__play" aria-label="%s">%s</button>',
+            '<button type="button" class="zig-product-video__play" aria-label="%s"><span class="zig-product-video__play-icon" aria-hidden="true">%s</span><span class="zig-product-video__play-label">%s</span></button>',
             esc_attr__('پخشِ ویدئو', 'zig3d-widgets'),
-            self::play_icon()
+            self::play_icon(),
+            esc_html__('پخشِ ویدئو', 'zig3d-widgets')
         );
 
-        if (Markup::filled($item['duration'])) {
-            printf('<span class="zig-product-video__duration">%s</span>', esc_html($item['duration']));
+        $has_duration = false;
+        foreach ($items as $video) {
+            if (Markup::filled($video['duration'])) {
+                $has_duration = true;
+                break;
+            }
         }
 
+        if ($has_duration) {
+            printf('<span class="zig-product-video__duration"%s>%s</span>', Markup::filled($item['duration']) ? '' : ' hidden', esc_html($item['duration']));
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * @param array{id:int,url:string,title:string,description:string,duration:string,poster:array{id:int,url:string}} $item
+     * @param array<int,array{id:int,url:string,title:string,description:string,duration:string,poster:array{id:int,url:string}}> $items
+     */
+    private function render_current_info(array $item, array $items): void {
+        $has_info = false;
+        foreach ($items as $video) {
+            if (Markup::filled($video['title']) || Markup::filled($video['description'])) {
+                $has_info = true;
+                break;
+            }
+        }
+
+        if (!$has_info) {
+            return;
+        }
+
+        printf('<div class="zig-product-video__current-info" data-zig-video-details%s>', Markup::filled($item['title']) || Markup::filled($item['description']) ? '' : ' hidden');
+        printf('<strong class="zig-product-video__current-title" data-zig-video-title%s>%s</strong>', Markup::filled($item['title']) ? '' : ' hidden', Markup::text($item['title']));
+        printf('<span class="zig-product-video__current-description" data-zig-video-desc%s>%s</span>', Markup::filled($item['description']) ? '' : ' hidden', Markup::text($item['description']));
         echo '</div>';
     }
 
@@ -348,40 +363,29 @@ final class Product_Video_Gallery extends Widget_Base {
      */
     private function render_sidebar(array $items): void {
         echo '<div class="zig-product-video__sidebar">';
-        echo '<div class="zig-product-video__list">';
+        echo '<div class="zig-product-video__list" aria-label="' . esc_attr__('ویدئوها', 'zig3d-widgets') . '">';
 
         foreach ($items as $i => $item) {
-            $is_intro = (0 === $i);
-
+            $is_first = (0 === $i);
             printf(
-                '<button type="button" class="zig-product-video__card%s%s" data-index="%d" data-src="%s" data-poster="%s" data-duration="%s" aria-pressed="%s">',
-                $is_intro ? ' zig-product-video__card--intro' : '',
-                $is_intro ? ' is-active' : '',
+                '<button type="button" class="zig-product-video__card%s" data-index="%d" data-src="%s" data-poster="%s" data-duration="%s"%s>',
+                $is_first ? ' is-active' : '',
                 $i,
                 esc_url($item['url']),
                 esc_url($item['poster']['url']),
                 esc_attr($item['duration']),
-                $is_intro ? 'true' : 'false'
+                $is_first ? ' aria-current="true"' : ''
             );
 
-            if ($is_intro) {
-                if (Markup::filled($item['title'])) {
-                    printf('<span class="zig-product-video__title">%s</span>', Markup::text($item['title']));
-                }
-                if (Markup::filled($item['description'])) {
-                    printf('<span class="zig-product-video__desc">%s</span>', Markup::text($item['description']));
-                }
-            } else {
-                echo '<span class="zig-product-video__icon" aria-hidden="true">' . self::play_icon() . '</span>';
-                echo '<span class="zig-product-video__body">';
-                if (Markup::filled($item['title'])) {
-                    printf('<span class="zig-product-video__title">%s</span>', Markup::text($item['title']));
-                }
-                if (Markup::filled($item['duration'])) {
-                    printf('<span class="zig-product-video__meta">%s</span>', esc_html($item['duration']));
-                }
-                echo '</span>';
+            printf('<span class="zig-product-video__icon" aria-hidden="true">%s</span>', self::video_icon());
+
+            echo '<span class="zig-product-video__body">';
+            printf('<span class="zig-product-video__title"%s>%s</span>', Markup::filled($item['title']) ? '' : ' hidden', Markup::text($item['title']));
+            printf('<span class="zig-product-video__description"%s>%s</span>', Markup::filled($item['description']) ? '' : ' hidden', Markup::text($item['description']));
+            if (Markup::filled($item['duration'])) {
+                printf('<span class="zig-product-video__meta"><span class="zig-product-video__clock" aria-hidden="true">%s</span>%s</span>', self::clock_icon(), esc_html($item['duration']));
             }
+            echo '</span>';
 
             echo '</button>';
         }
@@ -396,6 +400,14 @@ final class Product_Video_Gallery extends Widget_Base {
      */
     private static function play_icon(): string {
         return '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg>';
+    }
+
+    private static function video_icon(): string {
+        return '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3V9z" fill="currentColor" stroke="none"/></svg>';
+    }
+
+    private static function clock_icon(): string {
+        return '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
     }
 
     /**

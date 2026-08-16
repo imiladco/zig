@@ -267,7 +267,9 @@ namespace {
                 return $att['meta'][$key] ?? '';
             }
 
-            return '';
+            // نه محصول، نه پیوست: پستِ عمومی (مثلاً یک CPTِ JetEngine مثلِ
+            // «دانلود»)، رجیستریِ ساده‌ی سوم — ‎zig_register_post_meta()‎.
+            return $GLOBALS['__zig_post_meta'][(int) $id][$key] ?? '';
         }
     }
 
@@ -277,6 +279,93 @@ namespace {
             $terms   = $product ? $product->zig_terms() : [];
 
             return $terms[$taxonomy] ?? false;
+        }
+    }
+
+    /**
+     * متایِ یک پستِ عمومی (نه محصول، نه پیوست) — مثلاً یک CPTِ JetEngine.
+     * ‎get_post_meta()‎ی بالا این رجیستری را به‌عنوانِ آخرین ردهٔ fallback
+     * می‌خواند.
+     */
+    if (!isset($GLOBALS['__zig_post_meta'])) {
+        $GLOBALS['__zig_post_meta'] = [];
+    }
+    if (!function_exists('zig_register_post_meta')) {
+        function zig_register_post_meta(int $post_id, array $meta): void {
+            $GLOBALS['__zig_post_meta'][$post_id] = $meta;
+        }
+    }
+
+    /*
+     * ------------------------------------------------------------------
+     * JetEngine — یک مجموعهٔ کوچکِ استابِ *مشترک*، برایِ هر ویجت/کلاسی که
+     * دادهٔ خودش را از یک CPTِ JetEngine می‌خواند (دانلود، سازگاری، …).
+     *
+     * چرا اینجا و نه در هر فایلِ تستِ جداگانه: چند فایلِ تستِ این افزونه
+     * هر کدام نسخهٔ خودشان را از همین توابع تعریف کرده بودند — با
+     * ‎function_exists()‎ محافظت‌شده، ولی چون ‎tests/run.php‎ همهٔ فایل‌ها
+     * را در *یک* پردازشِ PHP بارگذاری می‌کند، فقط اولین تعریف (به ترتیبِ
+     * الفباییِ glob) واقعاً اثر می‌کند و بقیه بی‌صدا نادیده گرفته می‌شوند —
+     * حتی اگر رفتار/دادهٔ پشتِ‌صحنه‌شان کاملاً فرق داشته باشد. نتیجه: هر
+     * فایل به‌تنهایی سبز بود، ولی در اجرای کاملِ سوییت به‌خاطرِ «نشتِ»
+     * تعریفِ فایلِ دیگر، شکست می‌خورد. یک تعریفِ مشترک، با یک دسته‌گلوبالِ
+     * قابلِ‌reset برایِ هر تست، این کلاس از باگ را کلاً حذف می‌کند.
+     */
+    if (!isset($GLOBALS['__zig_jet_engine'])) {
+        $GLOBALS['__zig_jet_engine'] = null;
+    }
+    if (!isset($GLOBALS['__zig_registered_post_types'])) {
+        $GLOBALS['__zig_registered_post_types'] = [];
+    }
+    if (!isset($GLOBALS['__zig_post_types'])) {
+        $GLOBALS['__zig_post_types'] = [];
+    }
+    if (!isset($GLOBALS['__zig_taxonomies'])) {
+        $GLOBALS['__zig_taxonomies'] = [];
+    }
+    if (!isset($GLOBALS['__zig_taxonomy_calls'])) {
+        $GLOBALS['__zig_taxonomy_calls'] = [];
+    }
+
+    if (!function_exists('jet_engine')) {
+        function jet_engine() { return $GLOBALS['__zig_jet_engine']; }
+    }
+
+    if (!function_exists('post_type_exists')) {
+        function post_type_exists($post_type) {
+            return in_array($post_type, $GLOBALS['__zig_registered_post_types'], true);
+        }
+    }
+
+    if (!function_exists('sanitize_key')) {
+        function sanitize_key($key) {
+            return preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $key));
+        }
+    }
+
+    /**
+     * ‎get_post_type()‎ی واقعیِ وردپرس بدونِ آرگومان روی محصولِ/پستِ جاری
+     * کار می‌کند؛ اینجا معادلش ‎get_queried_object_id()‎ است — همان‌طور که
+     * ‎Download_Archive_Data‎ هم انتظار دارد.
+     */
+    if (!function_exists('get_post_type')) {
+        function get_post_type($post_id = null) {
+            $id = null === $post_id || 0 === $post_id ? (int) get_queried_object_id() : (int) $post_id;
+
+            return $GLOBALS['__zig_post_types'][$id] ?? '';
+        }
+    }
+
+    /**
+     * فراخوانی‌ها هم در ‎__zig_taxonomy_calls‎ ثبت می‌شوند تا تستی که
+     * می‌خواهد بسنجد «با کدام post_type صدا زده شد» بتواند مستقیم آخرین
+     * (یا همهٔ) مقدار را بخواند.
+     */
+    if (!function_exists('get_object_taxonomies')) {
+        function get_object_taxonomies($post_type, $output = 'names') {
+            $GLOBALS['__zig_taxonomy_calls'][] = $post_type;
+
+            return $GLOBALS['__zig_taxonomies'];
         }
     }
 
@@ -495,5 +584,20 @@ namespace {
         $GLOBALS['__zig_term_meta']  = [];
         $GLOBALS['__zig_attachments'] = [];
         unset($GLOBALS['product'], $GLOBALS['__zig_visibility'], $GLOBALS['__zig_wc_products']);
+    }
+
+    /**
+     * پاک‌کردنِ وضعیتِ استابِ JetEngine بینِ فایل‌های تست — جدا از
+     * ‎zig_reset_products()‎ چون این‌ها به محصولِ ووکامرس ربطی ندارند
+     * (یک CPTِ عمومیِ JetEngine مثلِ «دانلود»).
+     */
+    function zig_reset_jetengine(): void {
+        $GLOBALS['__zig_jet_engine']            = null;
+        $GLOBALS['__zig_registered_post_types'] = [];
+        $GLOBALS['__zig_post_types']            = [];
+        $GLOBALS['__zig_taxonomies']            = [];
+        $GLOBALS['__zig_taxonomy_calls']        = [];
+        $GLOBALS['__zig_post_meta']             = [];
+        $GLOBALS['__zig_queried']               = 0;
     }
 }

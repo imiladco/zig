@@ -50,11 +50,12 @@ final class Video_Gallery_Field {
 
         $raw = maybe_unserialize(get_post_meta($product_id, $meta_key, true));
         $entries = self::normalize_list($raw);
+        $product_poster = self::resolve_product_poster($product_id);
 
         $result = [];
 
         foreach ($entries as $entry) {
-            $item = self::build_item($entry, $product_id);
+            $item = self::build_item($entry, $product_poster);
 
             if (null !== $item) {
                 $result[] = $item;
@@ -113,16 +114,16 @@ final class Video_Gallery_Field {
      *
      * @param mixed $raw
      */
-    private static function build_item($raw, int $product_id): ?array {
+    private static function build_item($raw, array $product_poster): ?array {
         $media = self::normalize_media($raw);
         $id    = $media['id'];
 
         /*
-         * منبعِ عنوان: اول Alt Text خودِ پیوست، اگر خالی بود Media Title.
-         * منبعِ توضیح: اول Description (post_content)، اگر خالی بود Caption.
-         * این دو، طبقِ خواستِ صریح، برعکسِ هم نیستند — Alt همیشه اولویتِ
-         * عنوان است، نه توضیح؛ Description همیشه اولویتِ توضیح است، نه
-         * عنوان.
+         * منبعِ عنوان: اول Alt Text خودِ پیوست، اگر خالی بود Media Title —
+         * دقیقاً طبقِ خواستِ صریح. منبعِ توضیح: اول Description
+         * (post_content)، اگر خالی بود Caption. عنوان و توضیح دو زنجیرهٔ
+         * مستقل دارند؛ Media Title فقط fallbackِ عنوان است و Caption فقط
+         * fallbackِ توضیح.
          */
         $alt         = $id > 0 ? trim((string) get_post_meta($id, '_wp_attachment_image_alt', true)) : '';
         $media_title = $id > 0 ? trim((string) get_the_title($id)) : '';
@@ -162,7 +163,7 @@ final class Video_Gallery_Field {
             'title'       => $title,
             'description' => $description,
             'duration'    => $duration,
-            'poster'      => self::resolve_poster($id, $product_id),
+            'poster'      => self::resolve_poster($id, $product_poster),
         ];
     }
 
@@ -178,7 +179,7 @@ final class Video_Gallery_Field {
      *
      * @return array{id:int,url:string}
      */
-    private static function resolve_poster(int $video_id, int $product_id): array {
+    private static function resolve_poster(int $video_id, array $product_poster): array {
         if ($video_id > 0) {
             $poster_id = (int) get_post_meta($video_id, '_thumbnail_id', true);
 
@@ -191,6 +192,16 @@ final class Video_Gallery_Field {
             }
         }
 
+        return $product_poster;
+    }
+
+    /**
+     * Resolve the shared product fallback once per gallery rather than once
+     * for every video item.
+     *
+     * @return array{id:int,url:string}
+     */
+    private static function resolve_product_poster(int $product_id): array {
         $product_thumb = (int) get_post_thumbnail_id($product_id);
 
         if ($product_thumb > 0) {

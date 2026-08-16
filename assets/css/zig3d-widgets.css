@@ -32,6 +32,500 @@
 	box-sizing: border-box;
 }
 
+/* Download Archive ------------------------------------------------------- */
+.zig-archive.zig-download-archive {
+	--zig-download-purple: #6928d9;
+	--zig-download-soft: #f5f1ff;
+	--zig-download-line: #e2e7f0;
+	direction: rtl;
+	color: #171923;
+	display: block;
+}
+
+.zig-download-archive__toolbar {
+	display: grid;
+	grid-template-columns: minmax(132px, auto) minmax(220px, 1fr) auto;
+	align-items: center;
+	gap: 16px;
+	padding: 14px 18px;
+	border: 1px solid var(--zig-download-line);
+	border-radius: 16px;
+	background: #fff;
+}
+
+.zig-download-toolbar__scope { display: grid; gap: 4px; }
+.zig-download-toolbar__scope strong { font-size: 16px; }
+.zig-download-toolbar__scope span { color: #667085; font-size: 13px; }
+.zig-archive.zig-download-archive .zig-download-toolbar__search input[type="search"] {
+	inline-size: 100%; min-block-size: 46px; padding-inline: 16px;
+	border: 1px solid var(--zig-download-line); border-radius: 11px; background: #f8f9fc;
+	box-shadow: none;
+	color: #171923;
+	font: inherit;
+}
+.zig-download-toolbar__sort, .zig-download-toolbar__sort > span { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.zig-download-toolbar__sort-label { color: #667085; font-size: 12px; white-space: nowrap; }
+.zig-download-toolbar__sort-label svg { inline-size: 16px; block-size: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.zig-download-sort {
+	padding: 9px 12px; border-radius: 10px; color: #5f27cf; font-size: 13px; text-decoration: none;
+}
+.zig-download-sort.is-active { background: var(--zig-download-soft); font-weight: 700; }
+
+.zig-download-archive__layout { display: flex; direction: ltr; gap: 24px; align-items: flex-start; }
+.zig-download-archive__main { direction: rtl; flex: 1 1 auto; min-inline-size: 0; gap: 18px; }
+.zig-download-archive__filters { direction: rtl; flex: 0 0 296px; inline-size: 296px; }
+.zig-download-archive__filter-trigger { display: none; }
+.zig-download-list { display: grid; gap: 16px; }
+
+.zig-download-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	direction: rtl;
+	text-align: start;
+	padding: 22px;
+	border: 1px solid var(--zig-download-line);
+	border-radius: 18px;
+	background: #fff;
+	transition: border-color .18s ease, transform .18s ease;
+}
+.zig-download-card:hover { border-color: #cdbaf8; transform: translateY(-1px); }
+.zig-download-card__category,
+.zig-download-card__title,
+.zig-download-card__description,
+.zig-download-card__compatibility {
+	inline-size: 100%;
+	direction: rtl;
+	text-align: start;
+}
+.zig-download-card__category { margin-block-end: 6px; color: var(--zig-download-purple); font-size: 12px; font-weight: 700; }
+.zig-download-card__labels { display: flex; flex-wrap: wrap; gap: 6px; margin-block-end: 7px; }
+.zig-download-card__labels span { padding: 4px 9px; border-radius: 999px; background: var(--zig-download-soft); color: #5f27cf; font-size: 12px; }
+.zig-download-card__title {
+	margin: 0;
+	font-size: 21px;
+	font-weight: 750;
+	line-height: 1.45;
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	unicode-bidi: plaintext;
+}
+.zig-download-card__title a { display: block; inline-size: 100%; direction: rtl; color: inherit; text-align: start; text-decoration: none; }
+.zig-download-card__title bdi { unicode-bidi: isolate; }
+.zig-download-card__description {
+	margin: 8px 0 0;
+	color: #667085;
+	line-height: 1.8;
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+.zig-download-card__compatibility { margin-block-start: 18px; }
+.zig-download-card__compatibility-head {
+	display: inline-flex;
+	align-items: baseline;
+	max-inline-size: 100%;
+	gap: 6px;
+	margin: 0 0 10px;
+	color: #344054;
+	font-size: 14px;
+	font-weight: 700;
+}
+.zig-download-card__compatibility-separator { color: #98a2b3; font-weight: 400; }
+.zig-download-card__models-count { color: #667085; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.zig-download-card__models { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px 10px; direction: rtl; }
+.zig-download-card__model {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 32px;
+	padding: 4px 10px;
+	border: 1px solid #dfe3eb;
+	border-radius: 8px;
+	background: #f7f7fb;
+	color: #303846;
+	font-size: 12px;
+	font-weight: 650;
+	unicode-bidi: isolate;
+}
+.zig-download-card:not(.is-models-expanded) .zig-download-card__model.is-desktop-overflow { display: none; }
+.zig-download-archive .zig-download-card__models-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 5px;
+	inline-size: auto;
+	min-block-size: 32px;
+	margin-block-start: 10px;
+	padding: 3px 0;
+	border: 0;
+	background: transparent;
+	color: var(--zig-download-purple);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.6;
+	opacity: 1;
+	text-shadow: none;
+	-webkit-appearance: none;
+	appearance: none;
+	cursor: pointer;
+	transition: color .2s cubic-bezier(.22, 1, .36, 1);
+}
+.zig-download-archive .zig-download-card__models-toggle:hover { color: #4f18b5; }
+.zig-download-card__toggle-chevron {
+	inline-size: 14px;
+	block-size: 14px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transition: transform .2s cubic-bezier(.22, 1, .36, 1);
+}
+.zig-download-card.is-models-expanded .zig-download-card__toggle-chevron { transform: rotate(180deg); }
+.zig-download-card__toggle-less, .zig-download-card__toggle-more--mobile { display: none; }
+.zig-download-card.is-models-expanded .zig-download-card__toggle-more { display: none; }
+.zig-download-card.is-models-expanded .zig-download-card__toggle-less { display: inline; }
+.zig-download-card__models-toggle.is-desktop-hidden { display: none; }
+.zig-download-card__footer {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 18px;
+	margin-block-start: 20px;
+	padding-block-start: 14px;
+	border-block-start: 1px solid var(--zig-download-line);
+}
+.zig-download-card__meta { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 0; }
+.zig-download-card__meta div { display: grid; gap: 2px; font-size: 13px; }
+.zig-download-card__meta dt { color: #667085; font-size: 11px; }
+.zig-download-card__meta dd { margin: 0; color: #252b37; font-weight: 700; unicode-bidi: isolate; }
+.zig-download-card__meta-values { display: flex; flex-wrap: wrap; gap: 3px 7px; }
+.zig-download-card__meta-values bdi { white-space: nowrap; }
+.zig-download-card__actions { display: flex; flex: none; gap: 8px; }
+.zig-download-card__actions a { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; padding-inline: 17px; border-radius: 11px; text-decoration: none; }
+.zig-download-archive .zig-download-card__download,
+.zig-download-archive .zig-download-card__download:visited { background: var(--zig-download-purple); color: #fff; font-weight: 700; }
+.zig-download-archive .zig-download-card__download:hover { background: #5520b8; color: #fff; }
+.zig-download-archive .zig-download-card__details,
+.zig-download-archive .zig-download-card__details:visited { border: 1px solid #cdbaf8; color: #5f27cf; background: #fff; }
+.zig-download-archive__empty { padding: 48px 24px; border: 1px dashed #cdd3df; border-radius: 18px; text-align: center; color: #667085; }
+
+.zig-download-archive .zig-facet__item.is-selected > a { border-color: #bda2fa; background: var(--zig-download-soft); color: #5420b8; font-weight: 700; }
+.zig-download-archive .zig-filters__title { display: flex; align-items: center; gap: 8px; }
+.zig-download-archive .zig-filters__title svg { inline-size: 18px; block-size: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.zig-download-archive .zig-filters__badge { margin-inline-start: auto; white-space: nowrap; }
+.zig-download-archive .zig-filters__head { padding-block: 12px; }
+.zig-download-archive .zig-facet__title { min-block-size: 52px; padding: 10px 14px; }
+.zig-download-archive .zig-facet__title::marker { content: ""; }
+.zig-download-archive .zig-facet__chevron {
+	display: block;
+	inline-size: 14px;
+	block-size: 14px;
+	min-inline-size: 14px;
+	max-inline-size: 14px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transform-origin: center;
+}
+.zig-download-archive .zig-facet:not([open]) > .zig-facet__list { display: none; }
+.zig-download-archive .zig-facet__list {
+	max-block-size: 288px;
+	margin-block-end: 10px;
+	margin-inline: 12px;
+	padding: 8px;
+	gap: 6px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scroll-padding-block: 8px;
+}
+.zig-download-archive .zig-facet__item > a { min-block-size: 48px; padding: 8px 10px; border-radius: 10px; }
+.zig-download-archive .zig-facet__item > a > bdi { min-inline-size: 0; overflow-wrap: anywhere; }
+.zig-download-archive .zig-facet__count { direction: ltr; unicode-bidi: isolate; }
+.zig-download-card__model bdi, .zig-download-card__meta bdi { unicode-bidi: isolate; }
+.zig-download-archive :where(a, button, input):focus-visible { outline: 3px solid rgba(105, 40, 217, .28); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+	.zig-download-archive__toolbar { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+	.zig-download-toolbar__scope { grid-row: 2; }
+	.zig-download-toolbar__sort { overflow-x: auto; flex-wrap: nowrap; padding-block-end: 2px; }
+	.zig-download-sort { flex: 0 0 auto; }
+	.zig-download-archive__filter-trigger {
+		display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px;
+		margin-block-end: 14px; padding-inline: 18px; border: 1px solid #cdbaf8; border-radius: 12px;
+		background: #fff; color: #5f27cf; font-weight: 700;
+	}
+	.zig-download-archive__layout { display: block; }
+	.zig-download-archive__filters { display: none; inline-size: 100%; margin-block-end: 16px; }
+	.zig-download-archive.is-filters-open .zig-download-archive__filters { display: block; }
+	.zig-download-card { padding: 17px; }
+	.zig-download-card__title { font-size: 19px; }
+	.zig-download-card__compatibility { margin-block-start: 16px; }
+	.zig-download-card:not(.is-models-expanded) .zig-download-card__model.is-mobile-overflow { display: none; }
+	.zig-download-card:not(.is-models-expanded) .zig-download-card__model.is-desktop-overflow:not(.is-mobile-overflow) { display: inline-flex; }
+	.zig-download-card__toggle-more--desktop { display: none; }
+	.zig-download-card__toggle-more--mobile { display: inline; }
+	.zig-download-card__models-toggle.is-desktop-hidden { display: inline-block; }
+	.zig-download-card__models-toggle.is-mobile-hidden { display: none; }
+	.zig-download-card.is-models-expanded .zig-download-card__toggle-more--mobile { display: none; }
+	.zig-download-card__footer { align-items: stretch; flex-direction: column; gap: 13px; margin-block-start: 14px; padding-block-start: 13px; }
+	.zig-download-card__meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+	.zig-download-card__actions { inline-size: 100%; }
+	.zig-download-card__actions a { flex: 1 1 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-download-card, .zig-download-card__models-toggle, .zig-download-card__toggle-chevron { transition: none; }
+}
+
+/* Download compatibility widgets ---------------------------------------- */
+.zig-compatible-os,
+.zig-compatible-devices {
+	--zig-compat-purple: #6928d9;
+	--zig-compat-line: #dfe4ee;
+	direction: rtl;
+	inline-size: 100%;
+	color: #344054;
+	text-align: start;
+	display: flex;
+	align-items: center;
+	column-gap: var(--zig-compat-heading-gap, 32px);
+}
+.zig-compatible-os__heading,
+.zig-compatible-devices__heading {
+	flex: none;
+	margin: 0;
+	color: #667085;
+	font-size: 16px;
+	font-weight: 750;
+	line-height: 1.5;
+}
+.zig-compatible-os__items,
+.zig-compatible-devices__items {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	align-items: center;
+	flex: 1 1 auto;
+	min-inline-size: 0;
+	gap: 10px 14px;
+	direction: rtl;
+}
+.zig-compatible-os__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	min-block-size: 48px;
+	padding: 8px 18px;
+	border: 1px solid var(--zig-compat-line);
+	border-radius: 13px;
+	background: #fff;
+	color: #344054;
+	direction: ltr;
+	font-size: 15px;
+	font-weight: 600;
+}
+.zig-compatible-os__icon {
+	flex: none;
+	inline-size: 24px;
+	block-size: 24px;
+	color: #087ccc;
+}
+.zig-compatible-os__item bdi,
+.zig-compatible-devices__item bdi { unicode-bidi: isolate; }
+.zig-compatible-devices__item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-block-size: 42px;
+	padding: 7px 18px;
+	border: 1px solid var(--zig-compat-line);
+	border-radius: 12px;
+	background: #f8f9fc;
+	color: #344054;
+	font-size: 14px;
+	font-weight: 650;
+}
+.zig-compatible-devices__item.is-desktop-overflow { display: none; }
+.zig-compatible-devices a.zig-compatible-devices__more-link,
+.zig-compatible-devices a.zig-compatible-devices__more-link:visited {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-block-size: 46px;
+	flex: none;
+	margin: 0;
+	margin-inline-start: var(--zig-compat-more-gap, 0px);
+	padding: 8px 20px;
+	border: 1px solid #ddc9ff;
+	border-radius: 13px;
+	background: #fff;
+	color: var(--zig-compat-purple);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 650;
+	line-height: 1.4;
+	text-decoration: none;
+	text-shadow: none;
+	box-shadow: none;
+	transition: color .2s cubic-bezier(.22, 1, .36, 1), background-color .2s cubic-bezier(.22, 1, .36, 1), border-color .2s cubic-bezier(.22, 1, .36, 1);
+}
+.zig-compatible-devices a.zig-compatible-devices__more-link:hover {
+	border-color: #b98cff;
+	background: #f8f3ff;
+	color: #4f18b5;
+	text-decoration: none;
+}
+.zig-compatible-devices a.zig-compatible-devices__more-link:focus-visible { outline: 3px solid rgba(105, 40, 217, .25); outline-offset: 2px; }
+.zig-compatible-devices__chevron {
+	inline-size: 14px;
+	block-size: 14px;
+	fill: none;
+	color: inherit;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+@media (max-width: 767px) {
+	.zig-compatible-os,
+	.zig-compatible-devices {
+		flex-direction: column;
+		align-items: stretch;
+		row-gap: var(--zig-compat-heading-gap, 12px);
+	}
+	.zig-compatible-os__items,
+	.zig-compatible-devices__items { flex: none; gap: 8px; }
+	.zig-compatible-os__item { min-block-size: 44px; padding: 7px 14px; }
+	.zig-compatible-devices__item { min-block-size: 40px; padding-inline: 14px; }
+	.zig-compatible-devices__item.is-mobile-overflow { display: none; }
+	.zig-compatible-devices__item.is-desktop-overflow:not(.is-mobile-overflow) { display: inline-flex; }
+	.zig-compatible-devices a.zig-compatible-devices__more-link {
+		align-self: flex-start;
+		margin-inline-start: 0;
+		margin-block-start: var(--zig-compat-more-gap, 0px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-compatible-devices__more-link { transition: none; }
+}
+
+/* Software environment gallery ----------------------------------------- */
+.zig-software-gallery {
+	direction: rtl;
+	inline-size: 100%;
+	text-align: start;
+}
+.zig-software-gallery__header { inline-size: 100%; }
+.zig-software-gallery__title {
+	margin: 0;
+	color: #273142;
+	font-size: 20px;
+	font-weight: 750;
+	line-height: 1.45;
+}
+.zig-software-gallery__description {
+	margin: 6px 0 0;
+	color: #475467;
+	font-size: 14px;
+	line-height: 1.8;
+	unicode-bidi: plaintext;
+}
+.zig-software-gallery__viewer { margin-block-start: 16px; }
+.zig-software-gallery__stage {
+	position: relative;
+	overflow: hidden;
+	inline-size: 100%;
+	aspect-ratio: 16 / 9;
+	border-radius: 12px;
+	background: #eef1f5;
+}
+.zig-software-gallery__main-image {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	object-fit: cover;
+	opacity: 1;
+	transition: opacity .18s ease;
+}
+.zig-software-gallery__main-image.is-changing { opacity: .72; }
+.zig-software-gallery__arrow {
+	position: absolute;
+	top: 50%;
+	z-index: 2;
+	display: inline-grid;
+	place-items: center;
+	inline-size: 36px;
+	block-size: 36px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(24, 24, 27, .72);
+	color: #fff;
+	cursor: pointer;
+	transform: translateY(-50%);
+	transition: background-color .18s ease;
+}
+.zig-software-gallery__arrow--previous { inset-inline-start: 14px; }
+.zig-software-gallery__arrow--next { inset-inline-end: 14px; }
+.zig-software-gallery__arrow:hover { background: rgba(24, 24, 27, .9); }
+.zig-software-gallery__arrow:focus-visible,
+.zig-software-gallery__thumb:focus-visible { outline: 3px solid rgba(105, 40, 217, .35); outline-offset: 2px; }
+.zig-software-gallery__arrow svg {
+	inline-size: 15px;
+	block-size: 15px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.zig-software-gallery__thumbs {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+	gap: 10px;
+	margin-block-start: 12px;
+}
+.zig-software-gallery__thumb {
+	box-sizing: border-box;
+	overflow: hidden;
+	inline-size: 100%;
+	aspect-ratio: 4 / 3;
+	padding: 5px;
+	border: 1px solid #cfd5df;
+	border-radius: 11px;
+	background: #fff;
+	cursor: pointer;
+}
+.zig-software-gallery__thumb[aria-current="true"] { border: 2px solid #596273; }
+.zig-software-gallery__thumb-image {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	border-radius: 7px;
+	object-fit: cover;
+}
+@media (max-width: 767px) {
+	.zig-software-gallery__title { font-size: 18px; }
+	.zig-software-gallery__description { font-size: 13px; }
+	.zig-software-gallery__viewer { margin-block-start: 14px; }
+	.zig-software-gallery__thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+	.zig-software-gallery__arrow { inline-size: 36px; block-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.zig-software-gallery__main-image,
+	.zig-software-gallery__arrow { transition: none; }
+}
+
 .zig-card *,
 .zig-list *,
 .zig-btn * {
@@ -3453,13 +3947,21 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-product-video {
 	--zig-pv-max-width: 1280px;
 	--zig-pv-sidebar-width: 320px;
-	--zig-pv-gap: 32px;
+	--zig-pv-gap: 24px;
 	--zig-pv-player-min-h: 500px;
 	--zig-pv-player-min-h-mobile: 300px;
+	--zig-pv-player-radius: 16px;
 	--zig-pv-primary: #5B21B6;
+	--zig-pv-primary-soft: #F2ECFF;
 	--zig-pv-active-bg: #F2ECFF;
+	--zig-pv-active-border: #5B21B6;
+	--zig-pv-card-border: #E2E7F0;
+	--zig-pv-card-bg: #FFFFFF;
+	--zig-pv-title: #1F2937;
+	--zig-pv-meta: #6B7280;
 	--zig-pv-player-bg-from: #1B1030;
 	--zig-pv-player-bg-to: #050308;
+	--zig-pv-transition: 180ms;
 	display: grid;
 	/*
 	 * ستونِ *اولِ* تعریف‌شده در Gridِ راست‌به‌چپ سمتِ راستِ صفحه می‌نشیند.
@@ -3479,6 +3981,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 @media (max-width: 767px) {
 	.zig-product-video {
 		grid-template-columns: minmax(0, 1fr);
+		gap: 14px;
 	}
 }
 
@@ -3489,12 +3992,14 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-product-video__player {
 	position: relative;
 	min-height: var(--zig-pv-player-min-h);
-	border-radius: 18px;
+	border-radius: var(--zig-pv-player-radius);
 	overflow: hidden;
 	background-image: linear-gradient(135deg, var(--zig-pv-player-bg-from), var(--zig-pv-player-bg-to));
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	isolation: isolate;
+	box-shadow: 0 24px 60px -34px rgba(17, 10, 40, .72);
 }
 
 @media (max-width: 767px) {
@@ -3508,48 +4013,86 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	object-fit: cover;
+	/*
+	 * ویدئوهایِ عمودی باید بدونِ برشِ مخرب دیده شوند. ‎contain‎ تصویر را
+	 * کامل درونِ قاب نگه می‌دارد و حاشیه‌هایِ اضافه با پس‌زمینهٔ تیرهٔ
+	 * پلیر پر می‌شوند — نه کشیده‌شدن یا برش.
+	 */
+	object-fit: contain;
+	background: #000;
+	direction: ltr;
 }
 
 /*
  * اورلیِ بنفش/تیرهٔ کنترل‌شده رویِ ویدئو/پوستر — نه یک لایهٔ سیاهِ تخت،
  * یک گرادیانِ ملایم که پایینِ قاب کمی تیره‌تر می‌شود، دقیقاً طبقِ طرحِ
- * مرجع. ‎::after‎، نه یک ‎<span>‎ی جدا: کاملاً تزئینی و ثابت است، برخلافِ
- * لکه‌هایِ Glowِ ویجتِ قابلیت‌ها که JS با WAAPI رویشان انیمیت می‌کند.
+ * مرجع. ‎::after‎، نه یک ‎<span>‎ی جدا: کاملاً تزئینی و ثابت است.
  */
 .zig-product-video__player::after {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background-image: linear-gradient(180deg, rgba(27, 16, 48, .12) 0%, rgba(5, 3, 8, .58) 100%);
+	background: rgba(5, 3, 8, .2);
 	pointer-events: none;
+	z-index: 1;
+	transition: opacity var(--zig-pv-transition) ease;
 }
 
 .zig-product-video__play {
 	position: relative;
-	z-index: 1;
-	width: 74px;
-	height: 74px;
+	z-index: 2;
+	width: 68px;
+	height: 68px;
 	border-radius: 50%;
-	background-color: #FFFFFF;
+	background-color: rgba(255, 255, 255, .96);
 	color: var(--zig-pv-primary);
 	border: 0;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 26px;
 	cursor: pointer;
-	box-shadow: 0 12px 32px -8px rgba(0, 0, 0, .5);
-	transition: opacity .18s ease, transform .18s ease;
+	font-size: 24px;
+	box-shadow: 0 10px 30px -6px rgba(0, 0, 0, .55);
+	transition: opacity var(--zig-pv-transition) ease, transform var(--zig-pv-transition) ease, background-color var(--zig-pv-transition) ease;
+	overflow: hidden;
 }
 
-.zig-product-video__play svg {
+.zig-product-video__play-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background-color: var(--zig-pv-primary);
+	color: #FFFFFF;
+	font-size: 16px;
+}
+
+.zig-product-video__play-icon svg {
 	/* مثلثِ پخش بصری کمی به چپِ مرکزِ هندسی می‌چسبد؛ این جابه‌جاییِ ظریف واقعاً وسط‌چینش می‌کند */
-	margin-inline-start: 3px;
+	margin-inline-start: 2px;
+}
+
+.zig-product-video__play-label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
 }
 
 .zig-product-video__play:hover {
-	transform: scale(1.06);
+	transform: scale(1.05);
+	background-color: #FFFFFF;
+}
+
+.zig-product-video__play:hover .zig-product-video__play-icon {
+	background-color: color-mix(in srgb, var(--zig-pv-primary) 85%, #4C1D95);
 }
 
 .zig-product-video__play:focus-visible {
@@ -3557,29 +4100,36 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	outline-offset: 3px;
 }
 
-.zig-product-video__player.is-playing .zig-product-video__play {
+.zig-product-video__player.has-started::after,
+.zig-product-video__player.has-started .zig-product-video__play,
+.zig-product-video__player.has-started .zig-product-video__duration {
 	opacity: 0;
 	pointer-events: none;
 }
 
 .zig-product-video__duration {
 	position: absolute;
-	z-index: 1;
-	bottom: 16px;
+	z-index: 2;
+	top: 14px;
 	/* راستِ فیزیکی در RTL: inset-inline-start، نه inset-inline-end */
-	inset-inline-start: 16px;
-	background-color: rgba(0, 0, 0, .6);
+	inset-inline-end: 14px;
+	background-color: rgba(0, 0, 0, .65);
 	color: #FFFFFF;
 	border-radius: 8px;
-	padding: 7px 12px;
+	padding: 6px 11px;
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 1;
 	pointer-events: none;
+	transition: opacity var(--zig-pv-transition) ease;
+}
+
+.zig-product-video__current-info {
+	display: none;
 }
 
 /* ---------------------------------------------------------------------
- * سایدبار — کارتِ معرفی + لیستِ ویدئوها
+ * سایدبار — لیستِ ویدئوها
  * ------------------------------------------------------------------- */
 
 .zig-product-video__sidebar {
@@ -3591,7 +4141,21 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-product-video__list {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 10px;
+	max-height: var(--zig-pv-player-min-h);
+	overflow-y: auto;
+	padding: 2px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-pv-card-border) transparent;
+}
+
+.zig-product-video__list::-webkit-scrollbar {
+	width: 6px;
+}
+
+.zig-product-video__list::-webkit-scrollbar-thumb {
+	background-color: var(--zig-pv-card-border);
+	border-radius: 3px;
 }
 
 .zig-product-video__card {
@@ -3605,17 +4169,19 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	gap: 12px;
 	width: 100%;
 	box-sizing: border-box;
-	padding: 16px;
-	border-radius: 14px;
-	background-color: #FFFFFF;
-	border: 1px solid #E2E5ED;
-	transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+	padding: 10px;
+	position: relative;
+	border-radius: 13px;
+	background-color: var(--zig-pv-card-bg);
+	border: 1px solid var(--zig-pv-card-border);
+	transition: background-color var(--zig-pv-transition) ease, border-color var(--zig-pv-transition) ease, box-shadow var(--zig-pv-transition) ease, transform var(--zig-pv-transition) ease;
 }
 
 .zig-product-video__card:hover {
-	border-color: color-mix(in srgb, var(--zig-pv-primary) 30%, #E2E5ED);
+	border-color: color-mix(in srgb, var(--zig-pv-primary) 35%, var(--zig-pv-card-border));
+	background-color: color-mix(in srgb, var(--zig-pv-primary-soft) 30%, var(--zig-pv-card-bg));
 	transform: translateY(-1px);
-	box-shadow: 0 8px 20px -12px rgba(17, 10, 40, .25);
+	box-shadow: 0 6px 18px -10px rgba(17, 10, 40, .28);
 }
 
 .zig-product-video__card:focus-visible {
@@ -3623,79 +4189,480 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	outline-offset: 2px;
 }
 
+/*
+ * کارتِ فعال — بلافاصله شناسایی‌پذیر: پس‌زمینهٔ بنفشِ روشن، حاشیهٔ بنفش،
+ * عنوانِ پررنگ، و نشانگرِ کناری در سمتِ منطقیِ آغاز (راست در RTL).
+ * فقط بر رنگ تکیه نمی‌کند: نشانگرِ نواری هم هست.
+ */
+.zig-product-video__card.is-active {
+	background-color: var(--zig-pv-active-bg);
+	border-color: var(--zig-pv-active-border);
+	box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--zig-pv-primary) 50%, transparent);
+}
+
+.zig-product-video__card.is-active::after {
+	content: '';
+	position: absolute;
+	inset-inline-start: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 4px;
+	height: 60%;
+	border-radius: 3px;
+	background-color: var(--zig-pv-primary);
+}
+
+.zig-product-video__card.is-active:hover {
+	transform: none;
+}
+
+/* نشانِ معناییِ ویدئو */
 .zig-product-video__icon {
 	flex: 0 0 auto;
-	width: 40px;
-	height: 40px;
-	border-radius: 10px;
-	background-color: #F5F3FF;
+	width: 48px;
+	height: 48px;
+	border-radius: 11px;
+	background-color: var(--zig-pv-primary-soft);
 	color: var(--zig-pv-primary);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 15px;
+	font-size: 24px;
+	transition: background-color var(--zig-pv-transition) ease, color var(--zig-pv-transition) ease, transform var(--zig-pv-transition) ease;
+}
+
+.zig-product-video__icon svg {
+	display: block;
+}
+
+.zig-product-video__card:hover .zig-product-video__icon,
+.zig-product-video__card.is-active .zig-product-video__icon {
+	background-color: var(--zig-pv-primary);
+	color: #FFFFFF;
 }
 
 .zig-product-video__body {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 3px;
 	min-width: 0;
+	flex: 1 1 auto;
 }
 
 .zig-product-video__title {
 	display: block;
-	color: #4B5563;
+	color: var(--zig-pv-title);
 	font-size: 14px;
-	font-weight: 600;
+	font-weight: 700;
+	line-height: 1.45;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.zig-product-video__meta {
-	color: #4B5563;
-	font-size: 12px;
-}
-
-/* کارتِ فعال (هر کدام، نه فقط معرفی): عنوان رنگِ اصلی می‌گیرد */
-.zig-product-video__card.is-active:not(.zig-product-video__card--intro) .zig-product-video__title {
-	color: var(--zig-pv-primary);
-}
-
-/*
- * کارتِ معرفی (همیشه آیتمِ اول) — ساختارش وابسته به شمارهٔ آیتم است، نه
- * به فعال‌بودن: همیشه بدونِ آیکونِ مربعی، همیشه با توضیحِ کامل، همیشه
- * پس‌زمینه و عنوانِ بنفش. اگر کاربر کارتِ دیگری را کلیک کند، آن کارت
- * `is-active` می‌گیرد ولی این یکی ساختارش را از دست نمی‌دهد — فقط دیگر
- * تنها آیتمِ در حالِ پخش نیست.
- */
-.zig-product-video__card--intro {
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 8px;
-	background-color: var(--zig-pv-active-bg);
-	border-color: transparent;
-}
-
-.zig-product-video__card--intro:hover {
-	box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--zig-pv-primary) 35%, transparent);
-}
-
-.zig-product-video__card--intro .zig-product-video__title {
-	color: var(--zig-pv-primary);
-	font-size: 15px;
-	font-weight: 700;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 	white-space: normal;
 }
 
-.zig-product-video__card--intro .zig-product-video__desc {
-	margin: 0;
-	color: #4B5563;
-	font-size: 13px;
+.zig-product-video__card.is-active .zig-product-video__title {
+	color: var(--zig-pv-primary);
+	font-weight: 700;
+}
+
+.zig-product-video__meta {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	align-self: flex-start;
+	color: var(--zig-pv-meta);
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.zig-product-video__clock {
+	display: inline-flex;
+	font-size: 15px;
+}
+
+.zig-product-video__description {
+	display: none;
+	color: var(--zig-pv-meta);
+	font-size: 12px;
+	font-weight: 400;
 	line-height: 1.7;
+}
+
+.zig-product-video__card.is-active .zig-product-video__description {
 	display: -webkit-box;
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------
+ * موبایل — اطلاعاتِ فعال و فهرستِ عمودیِ فشرده
+ * ------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+	.zig-product-video__current-info {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 16px;
+		border: 1px solid color-mix(in srgb, var(--zig-pv-primary) 16%, transparent);
+		border-radius: 15px;
+		background-color: var(--zig-pv-primary-soft);
+		text-align: start;
+	}
+
+	.zig-product-video__current-info[hidden],
+	.zig-product-video__current-title[hidden],
+	.zig-product-video__current-description[hidden] {
+		display: none;
+	}
+
+	.zig-product-video__current-title {
+		color: var(--zig-pv-primary);
+		font-size: 15px;
+		font-weight: 800;
+		line-height: 1.5;
+	}
+
+	.zig-product-video__current-description {
+		color: var(--zig-pv-meta);
+		font-size: 13px;
+		line-height: 1.7;
+	}
+
+	.zig-product-video__list {
+		flex-direction: column;
+		gap: 10px;
+		max-height: none;
+		overflow: visible;
+		padding: 2px;
+	}
+
+	.zig-product-video__card {
+		width: 100%;
+		min-height: 68px;
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 12px;
+	}
+
+	.zig-product-video__card.is-active::after {
+		inset-inline-start: 0;
+		inset-inline-end: auto;
+		top: 50%;
+		bottom: auto;
+		width: 3px;
+		height: 54%;
+		transform: translateY(-50%);
+	}
+
+	.zig-product-video__icon {
+		width: 46px;
+		height: 46px;
+		border-radius: 11px;
+		font-size: 23px;
+	}
+
+	.zig-product-video__body {
+		gap: 2px;
+	}
+
+	.zig-product-video__card.is-active .zig-product-video__description {
+		display: none;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * تک‌ویدئو — سایدبار حذف می‌شود؛ پلیر تنهایی
+ * ------------------------------------------------------------------- */
+
+.zig-product-video--single .zig-product-video__player {
+	min-height: var(--zig-pv-player-min-h);
+}
+
+@media (max-width: 767px) {
+	.zig-product-video--single .zig-product-video__player {
+		min-height: var(--zig-pv-player-min-h-mobile);
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * حرکتِ کم‌شده
+ * ------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-product-video__play,
+	.zig-product-video__card,
+	.zig-product-video__icon {
+		transition: none;
+	}
+
+	.zig-product-video__play:hover,
+	.zig-product-video__card:hover {
+		transform: none;
+	}
+}
+
+/* ==========================================================================
+   اسناد قابل دانلود
+   ========================================================================== */
+
+.zig-documents {
+	display: grid;
+	grid-template-columns: repeat(var(--zig-documents-cols, 3), minmax(0, 1fr));
+	gap: 24px;
+	max-width: 1280px;
+}
+
+/*
+ * کارت دو ردیف دارد: بالا (آیکون + عنوان + نشان‌ها) و پایین (متادیتا + دانلود).
+ */
+.zig-documents__card {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	box-sizing: border-box;
+	padding: 22px 24px;
+	color: inherit;
+	text-decoration: none;
+	text-align: start;
+	background-color: var(--zig-documents-card-bg, #ffffff);
+	border: 1px solid var(--zig-documents-card-border-color, #e2e7f0);
+	border-radius: var(--zig-documents-card-radius, 16px);
+	box-shadow: var(--zig-documents-card-shadow, 0 18px 45px rgba(16, 24, 40, 0.06));
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: color, background-color, border-color, box-shadow, transform;
+}
+
+.zig-documents__card:hover,
+.zig-documents__card:focus-visible {
+	transform: translateY(-2px);
+	box-shadow: var(--zig-documents-card-shadow-hover, 0 22px 55px rgba(16, 24, 40, 0.09));
+	border-color: var(--zig-documents-card-border-color-hover, #cfc7ff);
+}
+
+/* ردیفِ بالا: آیکون + عنوان + نشان‌ها */
+.zig-documents__top {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+}
+
+/* ردیفِ پایین: متادیتا + دکمهٔ دانلود — در دو طرفِ خط */
+.zig-documents__bottom {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.zig-documents__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background-color: var(--zig-documents-icon-bg, #f3ecff);
+	color: var(--zig-documents-icon-color, #5b21b6);
+}
+
+.zig-documents__icon svg {
+	width: 26px;
+	height: 26px;
+	display: block;
+}
+
+.zig-documents__body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.zig-documents__title {
+	font-weight: 800;
+	font-size: 1rem;
+	line-height: 1.6;
+	color: var(--zig-documents-title-color, #151823);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	transition: color var(--zig-transition, 250ms);
+}
+
+/*
+ * نشان‌های مشخصات (فرمت/زبان/نسخه).
+ */
+.zig-documents__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-documents__meta-item {
+	display: inline-flex;
+	align-items: center;
+	height: 26px;
+	padding: 0 10px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: 8px;
+	background-color: var(--zig-documents-meta-bg, #f6f7fb);
+	border: 1px solid var(--zig-documents-meta-border-color, #e5e7ef);
+	color: var(--zig-documents-meta-color, #667085);
+	overflow-wrap: anywhere;
+}
+
+/* تاریخ و حجم — ردیفِ پایین. */
+.zig-documents__meta-plain {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--zig-documents-meta-plain-color, #7a8190);
+	line-height: 1.4;
+}
+
+/* دکمهٔ دانلود — گرادیانِ بنفش. */
+.zig-documents__download {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	flex: none;
+	height: 42px;
+	min-width: 104px;
+	padding: 0 16px;
+	font-size: 0.875rem;
+	font-weight: 800;
+	border-radius: 10px;
+	background: var(--zig-documents-download-bg, linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%));
+	border: none;
+	color: var(--zig-documents-download-color, #ffffff);
+	box-shadow: var(--zig-documents-download-shadow, 0 10px 24px rgba(91, 33, 182, 0.24));
+	transition: transform var(--zig-transition, 250ms), box-shadow var(--zig-transition, 250ms);
+}
+
+.zig-documents__download:hover {
+	transform: translateY(-1px);
+	box-shadow: var(--zig-documents-download-shadow-hover, 0 14px 30px rgba(91, 33, 182, 0.30));
+}
+
+.zig-documents__download svg {
+	width: 16px;
+	height: 16px;
+}
+
+@media (max-width: 1023px) {
+	.zig-documents {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 639px) {
+	.zig-documents {
+		grid-template-columns: 1fr;
+	}
+}
+/* Software Info Table --------------------------------------------------- */
+.zig-software-info-table {
+    --zig-info-label-width: 220px;
+    --zig-info-row-x: 24px;
+    --zig-info-row-y: 17px;
+    --zig-info-row-min-height: 60px;
+    direction: rtl;
+    inline-size: 100%;
+    min-inline-size: 0;
+}
+
+.zig-software-info-table__list {
+    margin: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e5e7ef;
+    border-radius: 16px;
+}
+
+.zig-software-info-table .zig-software-info-table__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--zig-info-label-width));
+    gap: 0;
+    align-items: center;
+    min-block-size: var(--zig-info-row-min-height);
+    direction: ltr;
+    padding-block: var(--zig-info-row-y);
+    padding-inline: 0;
+    border-block-end: 1px solid #eceff4;
+}
+
+.zig-software-info-table__row:last-child { border-block-end: 0; }
+.zig-software-info-table__row:nth-child(odd) { background-color: #fbfbfc; }
+.zig-software-info-table__label,
+.zig-software-info-table__value {
+    box-sizing: border-box;
+    min-inline-size: 0;
+    padding-inline: var(--zig-info-row-x);
+}
+.zig-software-info-table__label {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    direction: rtl;
+    text-align: right;
+    color: #6f7788;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+.zig-software-info-table .zig-software-info-table__value {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    direction: rtl;
+    text-align: right;
+    justify-self: stretch;
+    inline-size: 100%;
+    margin: 0;
+    color: #252b35;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.zig-software-info-table__value bdi { unicode-bidi: isolate; }
+.zig-software-info-table__separator { white-space: pre-wrap; }
+
+@media (max-width: 767px) {
+    .zig-software-info-table {
+        --zig-info-row-x: 18px;
+        --zig-info-row-y: 15px;
+    }
+    .zig-software-info-table .zig-software-info-table__row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        direction: rtl;
+        align-items: start;
+    }
+    .zig-software-info-table .zig-software-info-table__label,
+    .zig-software-info-table .zig-software-info-table__value {
+        grid-column: 1;
+        direction: rtl;
+        text-align: right;
+    }
+    .zig-software-info-table .zig-software-info-table__label { grid-row: 1; }
+    .zig-software-info-table .zig-software-info-table__value { grid-row: 2; }
 }

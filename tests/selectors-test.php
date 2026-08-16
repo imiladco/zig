@@ -49,6 +49,11 @@ require_once $root . '/includes/seo.php';
 require_once $root . '/includes/card.php';
 require_once $root . '/includes/product-card.php';
 require_once $root . '/includes/widgets/product-archive.php';
+require_once $root . '/includes/download-archive-data.php';
+require_once $root . '/includes/widgets/compatible-operating-systems.php';
+require_once $root . '/includes/widgets/compatible-devices.php';
+require_once $root . '/includes/widgets/software-environment-gallery.php';
+require_once $root . '/includes/widgets/software-info-table.php';
 require_once $root . '/includes/widgets/product-gallery.php';
 require_once $root . '/includes/spec-group.php';
 require_once $root . '/includes/spec-store.php';
@@ -72,6 +77,10 @@ $widgets = [
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
     'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
     'گالریِ ویدئو'  => \Zig3d_Widgets\Widgets\Product_Video_Gallery::class,
+    'سیستم‌عامل‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class,
+    'دستگاه‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Devices::class,
+    'گالری محیط نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class,
+    'جدول مشخصات نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Info_Table::class,
 ];
 
 /*
@@ -80,6 +89,10 @@ $widgets = [
  */
 $minSelectors = [
     \Zig3d_Widgets\Widgets\Product_Video_Gallery::class => 5,
+    \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class => 8,
+    \Zig3d_Widgets\Widgets\Compatible_Devices::class => 10,
+    \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class => 15,
+    \Zig3d_Widgets\Widgets\Software_Info_Table::class => 8,
 ];
 
 foreach ($widgets as $label => $class) {

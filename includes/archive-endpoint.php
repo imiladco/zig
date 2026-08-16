@@ -25,6 +25,7 @@ if (!defined('ABSPATH')) {
  * یک قرارداد، یعنی روزی که یکی‌شان ‎query_type‎ را بفهمد و دیگری نه.
  */
 final class Archive_Endpoint {
+    private static bool $booted = false;
 
     /*
      * یک چیز عمداً از درخواست خوانده *نمی‌شود* و آن آدرس پایه است.
@@ -59,6 +60,10 @@ final class Archive_Endpoint {
     public const MAX_QUERY = 2048;
 
     public static function boot(): void {
+        if (self::$booted) {
+            return;
+        }
+        self::$booted = true;
         add_action('wp_ajax_' . self::ACTION, [self::class, 'handle']);
         add_action('wp_ajax_nopriv_' . self::ACTION, [self::class, 'handle']);
     }
@@ -146,7 +151,7 @@ final class Archive_Endpoint {
      * ویجت *ما* نیست — وگرنه این آدرس تبدیل می‌شد به راهی برای رندرکردن
      * هر عنصر هر صفحه‌ای، از جمله پیش‌نویس‌ها.
      */
-    private static function widget(int $post_id, string $widget_id): ?Widgets\Product_Archive {
+    private static function widget(int $post_id, string $widget_id): ?\Elementor\Widget_Base {
         if ($post_id < 1 || '' === $widget_id || !class_exists('\Elementor\Plugin')) {
             return null;
         }
@@ -174,14 +179,14 @@ final class Archive_Endpoint {
          * تعیین می‌کند و اگر روزی عنصر دیگری همان نام را داشت، این تابع
          * چیزی برمی‌گرداند که متدهای ما را ندارد و خطای مرگ‌بار می‌دهد.
          */
-        return $element instanceof Widgets\Product_Archive ? $element : null;
+        return $element instanceof Widgets\Product_Archive || $element instanceof Widgets\Download_Archive ? $element : null;
     }
 
     /* =====================================================================
      * پاسخ
      * =================================================================== */
 
-    private static function respond(Widgets\Product_Archive $widget, array $params, int $term_id): void {
+    private static function respond(\Elementor\Widget_Base $widget, array $params, int $term_id): void {
         $settings = $widget->get_settings_for_display();
         $context  = $widget->context($settings, $params, $term_id);
 
@@ -214,13 +219,19 @@ final class Archive_Endpoint {
 
         wp_reset_postdata();
 
+        $state = $context['state'];
+        $page = is_object($state) && method_exists($state, 'page') ? $state->page() : (int) ($context['page'] ?? 1);
+        $url = isset($context['url'])
+            ? (string) $context['url']
+            : Seo::url((string) $context['base_url'], $state, $context['operators']);
+
         wp_send_json_success(Archive_Response::envelope(
             $context['page_state'],
             [
-                'page'  => $context['state']->page(),
+                'page'  => $page,
                 'pages' => (int) $query->max_num_pages,
                 'found' => (int) $query->found_posts,
-                'url'   => Seo::url((string) $context['base_url'], $context['state'], $context['operators']),
+                'url'   => $url,
             ],
             $fragments
         ));

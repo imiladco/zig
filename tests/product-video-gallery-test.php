@@ -73,7 +73,7 @@ $GLOBALS['product'] = $noGallery;
 Tests::same('render()ِ کامل هم بدونِ گالری چیزی چاپ نمی‌کند (خارجِ ادیتورِ واقعی)', zig_render(Product_Video_Gallery::class, []), '');
 
 /* ==========================================================================
- * رندرِ واقعی — آیتمِ اول = معرفی، بقیه = کارتِ ویدئو
+ * رندرِ واقعی — همهٔ آیتم‌ها یک ساختار دارند و اولی فعال است
  * ======================================================================= */
 
 Tests::group('گالریِ ویدئو › ساختارِ کارت‌ها');
@@ -105,20 +105,25 @@ $GLOBALS['product'] = $product;
 $html = zig_render(Product_Video_Gallery::class, []);
 
 Tests::ok('ریشهٔ ویجت رندر شده', false !== strpos($html, 'zig-product-video" data-zig-video-gallery'), $html);
-/*
- * شمارشِ ‎data-index="‎، نه ‎zig-product-video__card‎: کارتِ معرفی هم
- * کلاسِ خودش را دارد هم ‎--intro‎ی که با همان رشته شروع می‌شود، پس
- * substr_count رویِ خودِ نامِ کلاس برایِ کارتِ اول دوبار می‌شمارد.
- */
 Tests::ok('سه کارت ساخته شده', 3 === substr_count($html, 'data-index="'), $html);
-Tests::ok('فقط یک کارت کلاسِ intro دارد', 1 === substr_count($html, 'zig-product-video__card--intro'), $html);
-Tests::ok('همان کارتِ اول است که is-active دارد', 1 === preg_match('/zig-product-video__card--intro is-active"/', $html) || 1 === preg_match('/zig-product-video__card is-active zig-product-video__card--intro"/', $html), $html);
-Tests::ok('عنوانِ آیتمِ اول (از Alt) در کارتِ معرفی هست', false !== strpos($html, 'محفظهٔ کاری بزرگ'), $html);
-Tests::ok('توضیحِ آیتمِ اول در کارتِ معرفی هست', false !== strpos($html, 'توضیحِ کاملِ ویدئوی اول'), $html);
+Tests::ok('هر سه آیتم ساختارِ کارتِ یکسان دارند', 3 === substr_count($html, 'class="zig-product-video__card'), $html);
+Tests::ok('هیچ زیرنوعِ intro وجود ندارد', false === strpos($html, 'card--intro'), $html);
+Tests::ok('دقیقاً یک کارت در حالتِ فعال است', 1 === substr_count($html, ' is-active"'), $html);
+Tests::ok('اولین کارت حالتِ فعال و جاریِ اولیه را دارد', false !== strpos($html, 'class="zig-product-video__card is-active" data-index="0"') && false !== strpos($html, 'aria-current="true"'), $html);
+Tests::ok('عنوانِ آیتمِ اول در کارت هست', false !== strpos($html, 'محفظهٔ کاری بزرگ'), $html);
+Tests::ok('توضیحِ آیتمِ اول در کارت هست', false !== strpos($html, 'توضیحِ کاملِ ویدئوی اول'), $html);
 Tests::ok('پلیر با ویدئویِ آیتمِ اول پر شده', false !== strpos($html, 'https://zig3d.test/v/101.mp4'), $html);
 Tests::ok('duration badgeِ پلیر مقدارِ آیتمِ اول را دارد', false !== strpos($html, '12:34'), $html);
-Tests::ok('کارت‌هایِ بعدی آیکونِ play دارند (نه توضیح)', 2 === substr_count($html, 'zig-product-video__icon'), $html);
+Tests::ok('همهٔ کارت‌ها آیکونِ ویدئویِ یکدست دارند', 3 === substr_count($html, 'zig-product-video__icon'), $html);
 Tests::ok('کارت‌هایِ بعدی متادیتایِ مدت‌زمان دارند', false !== strpos($html, 'zig-product-video__meta">8:15') || false !== strpos($html, '8:15'), $html);
+Tests::ok('هر مدت‌زمان آیکونِ ساعت دارد', 3 === substr_count($html, 'zig-product-video__clock'), $html);
+Tests::ok('عنوان و توضیح داخل فریمِ پلیر نیست', false === strpos($html, 'zig-product-video__desc-area'), $html);
+Tests::ok('اطلاعاتِ ویدئویِ جاری بیرون پلیر رندر شده', false !== strpos($html, 'zig-product-video__current-info'), $html);
+Tests::ok('متن در data attribute تکرار نشده', false === strpos($html, 'data-title=') && false === strpos($html, 'data-desc='), $html);
+Tests::ok('دکمه‌های بومی بدون listbox/option رندر شده‌اند', false === strpos($html, 'role="listbox"') && false === strpos($html, 'role="option"'), $html);
+Tests::ok('فقط یک video واقعی وجود دارد', 1 === substr_count($html, '<video '), $html);
+Tests::ok('رسانه در بارگذاریِ اولیه preload نمی‌شود', false !== strpos($html, 'preload="none"'), $html);
+Tests::ok('کارت‌ها تصویر یا poster بندانگشتی ندارند', false === strpos($html, '<img') && false === strpos($html, 'background-image:url'), $html);
 
 /* ==========================================================================
  * فیلدِ خالی — عنوان/توضیح — خروجی را خراب نمی‌کند
@@ -154,3 +159,6 @@ Tests::same('کلیدِ پیش‌فرض روی این محصول چیزی پید
 
 $html = zig_render(Product_Video_Gallery::class, ['meta_field_key' => 'custom-video-field']);
 Tests::ok('کلیدِ سفارشی درست خوانده می‌شود', false !== strpos($html, 'با کلیدِ دیگر'), $html);
+Tests::ok('تک‌ویدئو فهرستِ تکراری ندارد', false === strpos($html, 'zig-product-video__sidebar'), $html);
+Tests::ok('تک‌ویدئو یک player با کنترل‌های بومی دارد', 1 === substr_count($html, '<video ') && false !== strpos($html, ' controls'), $html);
+Tests::ok('تک‌ویدئو current-info را برای نمایشِ موبایل نگه می‌دارد', false !== strpos($html, 'zig-product-video__current-info'), $html);

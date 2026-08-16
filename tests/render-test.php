@@ -27,9 +27,11 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/widgets/documents.php';
 
 use Zig3d_Widgets\Widgets\Bullet_List;
 use Zig3d_Widgets\Widgets\Button;
+use Zig3d_Widgets\Widgets\Documents;
 use Zig3d_Widgets\Widgets\Feature_Card;
 use Zig3d_Widgets\Widgets\Product_Price;
 use Zig3d_Widgets\Widgets\Product_Stock;
@@ -636,3 +638,168 @@ $every_state = zig_render(Product_Stock::class, zig_stock_settings([
 ]));
 
 Tests::keeps('فهرست خالی یعنی همهٔ وضعیت‌ها', $every_state, 'zig-pulse');
+
+/* ==========================================================================
+ * اسناد قابل دانلود
+ * ======================================================================= */
+
+Tests::group('رندر › اسناد قابل دانلود');
+
+/*
+ * یک پست (اینجا: محصولِ استابی) با متایِ ریپیترِ JetEngine. فیلدِ فایل
+ * به‌صورت شناسهٔ پیوست می‌آید تا مسیرِ «wp_get_attachment_url + حجم از
+ * get_attached_file» هم گرفته شود.
+ */
+$GLOBALS['__zig_attachments'][9101] = [
+    'url'  => 'https://example.com/files/catalog.pdf',
+    'file' => '/var/www/wp-content/uploads/catalog.pdf',
+    'alt'  => '',
+];
+
+$GLOBALS['__zig_file'][9101] = '/var/www/wp-content/uploads/catalog.pdf';
+
+new WC_Product([
+    'id'   => 9100,
+    'meta' => [
+        'documents' => [
+            [
+                'document_file'     => 9101,
+                'document_title'    => 'کاتالوگ دستگاه',
+                'document_format'   => '',
+                'document_language' => 'فارسی',
+                'document_version'  => 'نسخهٔ ۲',
+                'document_date'     => '۱۴۰۳/۰۵/۱۰',
+                'document_size'      => '',
+            ],
+        ],
+    ],
+]);
+
+$docs = zig_render(Documents::class, [
+    'meta_key'            => 'documents',
+    'source_post_id'      => 9100,
+    'field_file'          => 'document_file',
+    'field_title'         => 'document_title',
+    'field_format'        => 'document_format',
+    'field_language'      => 'document_language',
+    'field_version'       => 'document_version',
+    'field_date'          => 'document_date',
+    'field_size'          => 'document_size',
+    'show_format'         => 'yes',
+    'show_language'       => 'yes',
+    'show_version'        => 'yes',
+    'show_date'           => 'yes',
+    'show_size'           => 'yes',
+    'show_download_label' => 'yes',
+    'download_label'      => 'دانلود',
+]);
+
+Tests::keeps('گریدِ ریشه رندر می‌شود', $docs, 'class="zig-documents"');
+Tests::keeps('کارت یک <a> است', $docs, '<a ');
+Tests::keeps('href از فایل می‌آید', $docs, 'href="https://example.com/files/catalog.pdf"');
+Tests::keeps('عنوان رندر می‌شود', $docs, 'zig-documents__title');
+Tests::keeps('فرمت از پسوند استخراج می‌شود', $docs, '>PDF<');
+Tests::keeps('زبان رندر می‌شود', $docs, 'فارسی');
+Tests::keeps('نسخه رندر می‌شود', $docs, 'نسخهٔ ۲');
+Tests::keeps('تاریخ همان‌طور که وارد شده', $docs, '۱۴۰۳/۰۵/۱۰');
+Tests::blocks('دکمهٔ تودرتو نیست', $docs, '<button');
+Tests::keeps('برچسب دانلود رندر می‌شود', $docs, 'zig-documents__download');
+Tests::keeps('آیکون ثابت محلی', $docs, 'zig-documents__icon');
+
+Tests::group('رندر › اسناد، حالت‌های مرزی');
+
+/*
+ * سطرِ بدونِ فایل نادیده گرفته می‌شود — قانونِ «بدونِ فایل، کارتِ
+ * قابل‌دانلود‌ای نمی‌سازد».
+ */
+new WC_Product([
+    'id'   => 9103,
+    'meta' => [
+        'documents' => [
+            ['document_title' => 'بدون فایل', 'document_file' => ''],
+            ['document_title' => 'با فایل', 'document_file' => 'https://example.com/x.docx'],
+        ],
+    ],
+]);
+
+$only_valid = zig_render(Documents::class, [
+    'meta_key'       => 'documents',
+    'source_post_id' => 9103,
+    'field_file'     => 'document_file',
+    'field_title'    => 'document_title',
+    'show_download_label' => 'no',
+]);
+
+Tests::blocks('سطرِ بدونِ فایل چاپ نمی‌شود', $only_valid, 'بدون فایل');
+Tests::keeps('سطرِ با فایل چاپ می‌شود', $only_valid, 'با فایل');
+
+/*
+ * متایِ نامعتبر (غیرِآرایه) → خروجیِ خالی، بدونِ خطا.
+ */
+new WC_Product(['id' => 9104, 'meta' => ['documents' => 'not-an-array']]);
+
+$empty = zig_render(Documents::class, [
+    'meta_key'       => 'documents',
+    'source_post_id' => 9104,
+]);
+
+Tests::same('متای غیرآرایه چیزی چاپ نمی‌کند', trim($empty), '');
+
+/*
+ * حجم از فیلدِ دستیِ کاربر می‌آید وقتی کلیدِ آن تنظیم شده باشد — حتی اگر
+ * استخراجِ حجم از فایلِ پیوست ممکن نباشد.
+ */
+new WC_Product([
+    'id'   => 9105,
+    'meta' => [
+        'documents' => [
+            [
+                'document_title' => 'راهنمای نصب',
+                'document_file'  => 'https://example.com/guide.pdf',
+                'document_size'   => '۴٫۲ مگابایت',
+            ],
+        ],
+    ],
+]);
+
+$explicit_size = zig_render(Documents::class, [
+    'meta_key'       => 'documents',
+    'source_post_id' => 9105,
+    'field_file'     => 'document_file',
+    'field_title'    => 'document_title',
+    'field_size'     => 'document_size',
+    'show_size'      => 'yes',
+    'show_download_label' => 'no',
+]);
+
+Tests::keeps('حجمِ دستی چاپ می‌شود', $explicit_size, '۴٫۲ مگابایت');
+
+/*
+ * تاریخ به‌صورت timestamp — JetEngine Date field می‌تواند عدد برگرداند.
+ * باید فرمت شود، نه اینکه عدد خام چاپ شود.
+ */
+new WC_Product([
+    'id'   => 9106,
+    'meta' => [
+        'documents' => [
+            [
+                'document_title' => 'راهنمای کاربر',
+                'document_file'  => 'https://example.com/user-guide.pdf',
+                'document_date'  => 1715472000, // 2024-05-12
+            ],
+        ],
+    ],
+]);
+
+$timestamp_date = zig_render(Documents::class, [
+    'meta_key'       => 'documents',
+    'source_post_id' => 9106,
+    'field_file'     => 'document_file',
+    'field_title'    => 'document_title',
+    'field_date'     => 'document_date',
+    'show_date'      => 'yes',
+    'show_download_label' => 'no',
+]);
+
+Tests::keeps('تاریخِ timestamp فرمت می‌شود', $timestamp_date, '2024/05/12');
+

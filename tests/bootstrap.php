@@ -124,6 +124,27 @@ if (!function_exists('set_transient')) {
         return true;
     }
 }
+if (!function_exists('size_format')) {
+    function size_format($bytes, $decimals = 0) {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i = 0;
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+        return round($bytes, $decimals) . ' ' . $units[$i];
+    }
+}
+if (!function_exists('wp_date')) {
+    function wp_date($format, $timestamp = null) {
+        return date($format, $timestamp ?? time());
+    }
+}
+if (!function_exists('date_i18n')) {
+    function date_i18n($format, $timestamp = false) {
+        return date($format, $timestamp !== false ? $timestamp : time());
+    }
+}
 
 /* --------------------------------------------------------------------------
  * حداقلِ سیستم هوک
