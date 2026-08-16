@@ -138,3 +138,4 @@ Tests::ok('Widget is registered', false !== strpos($plugin_source, "'documents' 
 Tests::ok('Widget has no script dependency — pure <a href> markup as documented', !method_exists($widget, 'get_script_depends'));
 Tests::ok('Card, icon and download-pill classes are styled', false !== strpos($css_source, '.zig-documents__card') && false !== strpos($css_source, '.zig-documents__icon') && false !== strpos($css_source, '.zig-documents__download'));
 Tests::ok('Grid column count is a configurable CSS custom property fallback', false !== strpos($css_source, 'repeat(var(--zig-documents-cols, 3)'));
+Tests::ok('Card hover translate-y/scale controls actually reach the transform (not a fixed translateY)', false !== strpos($css_source, 'transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));') && false === strpos($css_source, 'transform: translateY(-2px);'));

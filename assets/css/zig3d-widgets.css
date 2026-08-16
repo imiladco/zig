@@ -4437,11 +4437,17 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	transition-duration: var(--zig-transition, 250ms);
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 	transition-property: color, background-color, border-color, box-shadow, transform;
+	/*
+	 * ‎--zig-box-translate-y‎/‎--zig-box-scale‎ فقط رویِ حالتِ هاور/فوکوسِ Box
+	 * trait مقدار می‌گیرند (add_box_style_tabs)؛ اینجا همیشه خوانده می‌شوند
+	 * تا آن دو کنترلِ استایل واقعاً اثر داشته باشند — نه یک translateY
+	 * ثابت که کنترل‌ها را بی‌اثر می‌کند.
+	 */
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
 }
 
 .zig-documents__card:hover,
 .zig-documents__card:focus-visible {
-	transform: translateY(-2px);
 	box-shadow: var(--zig-documents-card-shadow-hover, 0 22px 55px rgba(16, 24, 40, 0.09));
 	border-color: var(--zig-documents-card-border-color-hover, #cfc7ff);
 }
@@ -4665,4 +4671,98 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
     }
     .zig-software-info-table .zig-software-info-table__label { grid-row: 1; }
     .zig-software-info-table .zig-software-info-table__value { grid-row: 2; }
+}
+
+/* ==========================================================================
+   توضیحات
+   ========================================================================== */
+
+.zig-description {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: background-color, border-color, box-shadow, transform;
+}
+
+.zig-description__head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-block-end: 16px;
+}
+
+.zig-description__icon {
+	display: block;
+	flex: none;
+	width: 24px;
+	height: 24px;
+	object-fit: contain;
+}
+
+.zig-description__heading {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 800;
+	line-height: 1.4;
+	color: var(--zig-description-heading-color, #151823);
+}
+
+/*
+ * بدنه از ‎the_content‎/فیلدِ سفارشی می‌آید — عمداً استایلِ عمومیِ محتوایِ
+ * HTMLِ اختیاری (پاراگراف، فهرست، لینک، تصویر، نقل‌قول)، نه چیزِ اختصاصی.
+ */
+.zig-description__body {
+	font-size: 1rem;
+	line-height: 1.9;
+	color: var(--zig-description-body-color, #33394a);
+	overflow-wrap: anywhere;
+}
+
+.zig-description__body > * {
+	margin-block: 0;
+}
+
+.zig-description__body > * + * {
+	margin-block-start: var(--zig-description-p-gap, 16px);
+}
+
+.zig-description__body a {
+	color: var(--zig-description-link-color, #5b21b6);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.zig-description__body ul,
+.zig-description__body ol {
+	padding-inline-start: 1.4em;
+	padding-inline-end: 0;
+}
+
+.zig-description__body li + li {
+	margin-block-start: 0.4em;
+}
+
+.zig-description__body img {
+	max-inline-size: 100%;
+	block-size: auto;
+	border-radius: 8px;
+}
+
+.zig-description__body blockquote {
+	margin-inline: 0;
+	padding-inline-start: 16px;
+	padding-inline-end: 0;
+	border-inline-start: 3px solid var(--zig-description-quote-border, #e2e7f0);
+	color: var(--zig-description-quote-color, #667085);
+}
+
+.zig-description__notice {
+	padding: 12px 16px;
+	border: 1px dashed #cdbaf8;
+	border-radius: 10px;
+	color: #5f27cf;
+	font-size: 0.875rem;
 }

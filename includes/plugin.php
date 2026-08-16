@@ -44,6 +44,7 @@ final class Plugin {
         'product-feature-showcase' => Widgets\Product_Feature_Showcase::class,
         'product-video-gallery' => Widgets\Product_Video_Gallery::class,
         'documents' => Widgets\Documents::class,
+        'description' => Widgets\Description::class,
     ];
 
     public static function instance(): self {

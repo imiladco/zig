@@ -47,7 +47,8 @@ namespace {
                     'min'        => '',
                     'max'        => '',
                     // موجودی
-                    'name'      => '',
+                    'name'        => '',
+                    'description' => '',
                     'meta'      => [],
                     'terms'     => [],
                     'attrs'     => [],
@@ -91,6 +92,7 @@ namespace {
             public function variation_is_visible() { return (bool) $this->props['visible']; }
             public function get_price_suffix() { return $this->props['suffix']; }
             public function get_name() { return $this->props['name']; }
+            public function get_description() { return $this->props['description']; }
             public function get_attributes() { return $this->props['attrs']; }
             public function get_image_id() { return (int) $this->props['image']; }
             public function get_gallery_image_ids() { return $this->props['gallery']; }
@@ -459,9 +461,49 @@ namespace {
         }
     }
 
+    /*
+     * پستِ عمومی (نه پیوست، نه محصول) — برایِ ویجت‌هایی که می‌خواهند
+     * عنوان/محتوا/خلاصهٔ *هر* پستی را بخوانند (مثلاً Description). جدا از
+     * ‎__zig_attachments‎ چون یک پیوست، پستِ معمولی نیست؛ جدا از
+     * ‎__zig_post_meta‎ چون این‌ها فیلدِ متا نیستند، خودِ فیلدهایِ پست‌اند.
+     *
+     *     zig_register_post(701, ['title' => '...', 'content' => '...']);
+     */
+    if (!isset($GLOBALS['__zig_posts'])) {
+        $GLOBALS['__zig_posts'] = [];
+    }
+
+    if (!function_exists('zig_register_post')) {
+        function zig_register_post(int $id, array $data): void {
+            $GLOBALS['__zig_posts'][$id] = $data + [
+                'title'   => '',
+                'content' => '',
+                'excerpt' => '',
+            ];
+        }
+    }
+
     if (!function_exists('get_the_title')) {
         function get_the_title($id = 0) {
-            return $GLOBALS['__zig_attachments'][(int) $id]['title'] ?? '';
+            $id = (int) $id;
+
+            if (isset($GLOBALS['__zig_attachments'][$id])) {
+                return $GLOBALS['__zig_attachments'][$id]['title'] ?? '';
+            }
+
+            return $GLOBALS['__zig_posts'][$id]['title'] ?? '';
+        }
+    }
+
+    if (!function_exists('get_the_excerpt')) {
+        function get_the_excerpt($post = null) {
+            $id = is_object($post) ? (int) ($post->ID ?? 0) : (int) $post;
+
+            if (0 === $id && function_exists('get_the_ID')) {
+                $id = (int) get_the_ID();
+            }
+
+            return $GLOBALS['__zig_posts'][$id]['excerpt'] ?? '';
         }
     }
 
@@ -473,20 +515,37 @@ namespace {
 
     if (!function_exists('get_post_field')) {
         function get_post_field($field, $id = 0) {
-            $att = $GLOBALS['__zig_attachments'][(int) $id] ?? null;
+            $id = (int) $id;
+            $att = $GLOBALS['__zig_attachments'][$id] ?? null;
 
-            if (!$att) {
+            if ($att) {
+                if ('post_content' === $field) {
+                    return $att['description'];
+                }
+                if ('post_excerpt' === $field) {
+                    return $att['caption'];
+                }
+                if ('post_title' === $field) {
+                    return $att['title'];
+                }
+
+                return '';
+            }
+
+            $post = $GLOBALS['__zig_posts'][$id] ?? null;
+
+            if (!$post) {
                 return '';
             }
 
             if ('post_content' === $field) {
-                return $att['description'];
+                return $post['content'] ?? '';
             }
             if ('post_excerpt' === $field) {
-                return $att['caption'];
+                return $post['excerpt'] ?? '';
             }
             if ('post_title' === $field) {
-                return $att['title'];
+                return $post['title'] ?? '';
             }
 
             return '';

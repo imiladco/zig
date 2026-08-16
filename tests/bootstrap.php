@@ -135,6 +135,20 @@ if (!function_exists('size_format')) {
         return round($bytes, $decimals) . ' ' . $units[$i];
     }
 }
+if (!function_exists('wpautop')) {
+    /** ساده‌شدهٔ ‎wpautop‎ واقعی: فقط کافی است که با پاراگراف‌بندیِ خودِ ‎the_content‎ فرق کند تا سنجه‌ها بتوانند تشخیص بدهند کدام مسیر اجرا شده. */
+    function wpautop($text) {
+        $text = trim((string) $text);
+
+        if ('' === $text) {
+            return '';
+        }
+
+        $blocks = array_filter(array_map('trim', preg_split('/\n\s*\n/', $text)), 'strlen');
+
+        return implode('', array_map(static fn($block) => '<p>' . $block . "</p>\n", $blocks));
+    }
+}
 if (!function_exists('wp_date')) {
     function wp_date($format, $timestamp = null) {
         return date($format, $timestamp ?? time());
