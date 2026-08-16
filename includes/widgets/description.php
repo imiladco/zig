@@ -184,16 +184,53 @@ final class Description extends Widget_Base {
         $this->end_controls_section();
     }
 
+    /**
+     * متنِ بدنه از ‎the_content‎/فیلدِ سفارشی می‌آید — یعنی هر تگی از ‎<p>‎ تا
+     * ‎<h3>‎ تا ‎<blockquote>‎ ممکن است داخلش باشد. یک ‎body_typography‎ی
+     * تک برایِ همه کافی نیست: تیترهایِ داخلِ متن اندازه/وزنِ پیش‌فرضِ
+     * مرورگر را دارند و پاراگراف/فهرست/نقل‌قول هرکدام معمولاً ظاهرِ
+     * مستقلِ خودشان را می‌خواهند — دقیقاً همان جزئیاتی که در استایلِ
+     * سایتِ الماس‌آرا برایِ این بخش جداگانه تنظیم شده بود.
+     */
     private function register_body_style_section(): void {
         $this->start_controls_section(
             'body_style_section',
             ['label' => __('متن', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
         );
 
-        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'body_typography', 'selector' => '{{WRAPPER}} .zig-description__body']);
-        $this->add_control('body_color', ['label' => __('رنگِ متن', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body' => 'color: {{VALUE}};']]);
-        $this->add_control('link_color', ['label' => __('رنگِ لینک‌هایِ داخلِ متن', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body a' => 'color: {{VALUE}};']]);
+        $this->add_control('body_defaults_heading', ['label' => __('پیش‌فرضِ متن', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING]);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'body_typography', 'label' => __('تایپوگرافیِ پیش‌فرض', 'zig3d-widgets'), 'selector' => '{{WRAPPER}} .zig-description__body']);
+        $this->add_control('body_color', ['label' => __('رنگِ پیش‌فرض', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body' => 'color: {{VALUE}};']]);
+
+        $this->add_control('paragraph_heading', ['label' => __('پاراگراف', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'paragraph_typography', 'selector' => '{{WRAPPER}} .zig-description__body p']);
+        $this->add_control('paragraph_color', ['label' => __('رنگِ پاراگراف', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body p' => 'color: {{VALUE}};']]);
         $this->add_responsive_control('paragraph_spacing', ['label' => __('فاصلهٔ بین پاراگراف‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 48]], 'selectors' => ['{{WRAPPER}} .zig-description__body' => '--zig-description-p-gap: {{SIZE}}{{UNIT}};']]);
+
+        $this->add_control('inner_heading_heading', ['label' => __('تیترهایِ داخلِ متن (h1-h6)', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'inner_heading_typography', 'selector' => '{{WRAPPER}} .zig-description__body h1, {{WRAPPER}} .zig-description__body h2, {{WRAPPER}} .zig-description__body h3, {{WRAPPER}} .zig-description__body h4, {{WRAPPER}} .zig-description__body h5, {{WRAPPER}} .zig-description__body h6']);
+        $this->add_control('inner_heading_color', ['label' => __('رنگِ تیترها', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body h1, {{WRAPPER}} .zig-description__body h2, {{WRAPPER}} .zig-description__body h3, {{WRAPPER}} .zig-description__body h4, {{WRAPPER}} .zig-description__body h5, {{WRAPPER}} .zig-description__body h6' => 'color: {{VALUE}};']]);
+
+        $this->add_control('list_heading', ['label' => __('فهرست‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'list_typography', 'selector' => '{{WRAPPER}} .zig-description__body li']);
+        $this->add_control('list_color', ['label' => __('رنگِ آیتم‌هایِ فهرست', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body li' => 'color: {{VALUE}};']]);
+        $this->add_responsive_control('list_item_spacing', ['label' => __('فاصلهٔ بین آیتم‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 32]], 'selectors' => ['{{WRAPPER}} .zig-description__body' => '--zig-description-li-gap: {{SIZE}}{{UNIT}};']]);
+
+        $this->add_control('link_heading', ['label' => __('لینک‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'link_typography', 'selector' => '{{WRAPPER}} .zig-description__body a']);
+        $this->start_controls_tabs('link_state_tabs');
+        $this->start_controls_tab('link_normal_tab', ['label' => __('عادی', 'zig3d-widgets')]);
+        $this->add_control('link_color', ['label' => __('رنگِ لینک', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body a' => 'color: {{VALUE}};']]);
+        $this->end_controls_tab();
+        $this->start_controls_tab('link_hover_tab', ['label' => __('هاور', 'zig3d-widgets')]);
+        $this->add_control('link_hover_color', ['label' => __('رنگِ هاور', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body a:hover' => 'color: {{VALUE}};']]);
+        $this->end_controls_tab();
+        $this->end_controls_tabs();
+
+        $this->add_control('quote_heading', ['label' => __('نقل‌قول', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'quote_typography', 'selector' => '{{WRAPPER}} .zig-description__body blockquote']);
+        $this->add_control('quote_color', ['label' => __('رنگِ متنِ نقل‌قول', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'color: {{VALUE}};']]);
+        $this->add_control('quote_border_color', ['label' => __('رنگِ خطِ کنارِ نقل‌قول', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'border-inline-start-color: {{VALUE}};']]);
 
         $this->end_controls_section();
     }

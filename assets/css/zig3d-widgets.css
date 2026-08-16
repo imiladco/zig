@@ -4742,7 +4742,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-description__body li + li {
-	margin-block-start: 0.4em;
+	margin-block-start: var(--zig-description-li-gap, 8px);
 }
 
 .zig-description__body img {

@@ -108,7 +108,12 @@ foreach ([
     'show_heading', 'heading_text', 'append_title', 'show_icon', 'heading_icon',
     'TABS:container_box_tabs', 'container_box_padding', 'container_box_transition',
     'group:heading_typography', 'heading_color', 'icon_size', 'heading_gap', 'heading_spacing',
-    'group:body_typography', 'body_color', 'link_color', 'paragraph_spacing',
+    'group:body_typography', 'body_color', 'paragraph_spacing',
+    'group:paragraph_typography', 'paragraph_color',
+    'group:inner_heading_typography', 'inner_heading_color',
+    'group:list_typography', 'list_color', 'list_item_spacing',
+    'group:link_typography', 'TABS:link_state_tabs', 'link_color', 'link_hover_color',
+    'group:quote_typography', 'quote_color', 'quote_border_color',
 ] as $control) {
     Tests::ok('Control exists: ' . $control, in_array($control, $controls, true));
 }
@@ -125,3 +130,5 @@ Tests::ok('Output HTML is sanitized through wp_kses_post', 1 === substr_count($w
 Tests::ok('Body/head/heading/icon classes are styled', false !== strpos($css_source, '.zig-description__body') && false !== strpos($css_source, '.zig-description__head') && false !== strpos($css_source, '.zig-description__heading') && false !== strpos($css_source, '.zig-description__icon'));
 Tests::ok('Body links, lists and images have generic prose styling', false !== strpos($css_source, '.zig-description__body a') && false !== strpos($css_source, '.zig-description__body ul,') && false !== strpos($css_source, '.zig-description__body img'));
 Tests::ok('Container reuses the shared Box trait hover motion, not a fixed transform', false !== strpos($css_source, '.zig-description {') && false !== strpos($css_source, 'transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));'));
+Tests::ok('Paragraph/list/link/inner-heading/quote each have an independently targetable selector', false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body p'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body li'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body h1, {{WRAPPER}} .zig-description__body h2") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body blockquote'"));
+Tests::ok('List item spacing is a configurable custom property with a sane fallback', false !== strpos($widget_source, '--zig-description-li-gap: {{SIZE}}{{UNIT}};') && false !== strpos($css_source, 'margin-block-start: var(--zig-description-li-gap, 8px);'));
