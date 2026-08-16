@@ -108,12 +108,23 @@ foreach ([
     'show_heading', 'heading_text', 'append_title', 'show_icon', 'heading_icon',
     'TABS:container_box_tabs', 'container_box_padding', 'container_box_transition',
     'group:heading_typography', 'heading_color', 'icon_size', 'heading_gap', 'heading_spacing',
-    'group:body_typography', 'body_color', 'paragraph_spacing',
-    'group:paragraph_typography', 'paragraph_color',
+    // متن
+    'group:body_typography', 'paragraph_spacing', 'text_align', 'body_padding',
+    'TABS:body_color_tabs', 'body_color', 'body_hover_color', 'group:body_text_shadow',
+    // عنوان‌هایِ متن
     'group:inner_heading_typography', 'inner_heading_color',
-    'group:list_typography', 'list_color', 'list_item_spacing',
-    'group:link_typography', 'TABS:link_state_tabs', 'link_color', 'link_hover_color',
-    'group:quote_typography', 'quote_color', 'quote_border_color',
+    'h2_margin', 'h3_margin', 'h4_margin', 'h5_margin', 'h6_margin',
+    // لینک‌ها و بولد
+    'group:link_typography', 'TABS:link_state_tabs', 'link_color', 'link_underline', 'link_hover_color', 'link_hover_underline',
+    'bold_color', 'bold_font_weight',
+    // لیست‌ها
+    'list_style_type', 'marker_color', 'marker_size', 'list_indent', 'list_item_spacing', 'list_spacing', 'list_color', 'group:list_typography',
+    // نقل‌قول
+    'group:quote_typography', 'quote_color', 'quote_background', 'quote_border_color', 'quote_border_width', 'quote_padding',
+    // جدول‌ها
+    'table_border_color', 'table_border_width', 'table_radius', 'cell_padding', 'cell_text_align', 'table_spacing',
+    'th_background', 'th_color', 'group:th_typography',
+    'td_background', 'td_zebra_background', 'td_color', 'group:td_typography',
 ] as $control) {
     Tests::ok('Control exists: ' . $control, in_array($control, $controls, true));
 }
@@ -130,5 +141,9 @@ Tests::ok('Output HTML is sanitized through wp_kses_post', 1 === substr_count($w
 Tests::ok('Body/head/heading/icon classes are styled', false !== strpos($css_source, '.zig-description__body') && false !== strpos($css_source, '.zig-description__head') && false !== strpos($css_source, '.zig-description__heading') && false !== strpos($css_source, '.zig-description__icon'));
 Tests::ok('Body links, lists and images have generic prose styling', false !== strpos($css_source, '.zig-description__body a') && false !== strpos($css_source, '.zig-description__body ul,') && false !== strpos($css_source, '.zig-description__body img'));
 Tests::ok('Container reuses the shared Box trait hover motion, not a fixed transform', false !== strpos($css_source, '.zig-description {') && false !== strpos($css_source, 'transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));'));
-Tests::ok('Paragraph/list/link/inner-heading/quote each have an independently targetable selector', false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body p'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body li'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body h1, {{WRAPPER}} .zig-description__body h2") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body blockquote'"));
+Tests::ok('List/link/inner-heading/quote/table each have an independently targetable selector', false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body li::marker'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body a'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body h2, {{WRAPPER}} .zig-description__body h3") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body blockquote'") && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body th'"));
 Tests::ok('List item spacing is a configurable custom property with a sane fallback', false !== strpos($widget_source, '--zig-description-li-gap: {{SIZE}}{{UNIT}};') && false !== strpos($css_source, 'margin-block-start: var(--zig-description-li-gap, 8px);'));
+Tests::ok('Per-heading-level spacing controls default to top:20/rest:0, matching the reference', false !== strpos($widget_source, "'default'    => ['top' => '20', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px']") && false !== strpos($widget_source, "foreach (['h2', 'h3', 'h4', 'h5', 'h6'] as \$tag)"));
+Tests::ok('Tables are styled: borders, radius, header and zebra-striped body rows', false !== strpos($css_source, '.zig-description__body table') && false !== strpos($css_source, '.zig-description__body th') && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body tbody tr:nth-child(even) td'"));
+Tests::ok('Link underline is independently configurable per state (normal vs hover)', false !== strpos($widget_source, "'link_underline'") && false !== strpos($widget_source, "'link_hover_underline'"));
+Tests::ok('Bold text has independent color and font-weight controls', false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body strong, {{WRAPPER}} .zig-description__body b'"));

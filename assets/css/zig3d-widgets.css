@@ -4753,10 +4753,61 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-description__body blockquote {
 	margin-inline: 0;
+	margin-block: 16px;
 	padding-inline-start: 16px;
 	padding-inline-end: 0;
 	border-inline-start: 3px solid var(--zig-description-quote-border, #e2e7f0);
 	color: var(--zig-description-quote-color, #667085);
+}
+
+/*
+ * ‎h2‎ تا ‎h6‎ داخلِ بدنه (نه ‎.zig-description__heading‎ خودِ ویجت که در
+ * DOM بیرونِ بدنه است). فاصلهٔ پیش‌فرضِ هرکدام همان چیزی است که کنترل‌هایِ
+ * استایل هم پیش‌فرض گرفته‌اند (بالا ۲۰px، بقیه صفر) — این‌جا فقط یک
+ * شبکهٔ ایمنی برایِ زمانی است که ویجت بیرونِ المنتورِ واقعی رندر شود.
+ */
+.zig-description__body h2,
+.zig-description__body h3,
+.zig-description__body h4,
+.zig-description__body h5,
+.zig-description__body h6 {
+	margin-block: 20px 0;
+	line-height: 1.4;
+}
+
+/* بولد بدونِ کنترل هم باید از رنگِ متنِ اطرافش قابلِ تمایز بماند */
+.zig-description__body strong,
+.zig-description__body b {
+	font-weight: 700;
+}
+
+.zig-description__body a {
+	transition: color 200ms ease;
+}
+
+/*
+ * جدولی که از ‎the_content‎/شورت‌کد می‌آید — افزونه خودش جدول نمی‌سازد،
+ * فقط قابل‌استایل نگه‌اش می‌دارد. ‎border-collapse: collapse‎ برایِ
+ * خطوطِ تک‌پیکسلیِ تمیز بینِ سلول‌ها، نه دوتایی.
+ */
+.zig-description__body table {
+	inline-size: 100%;
+	border-collapse: collapse;
+	margin-block: 16px;
+	border: 1px solid var(--zig-description-table-border, #e2e7f0);
+}
+
+.zig-description__body th,
+.zig-description__body td {
+	border: 1px solid var(--zig-description-table-border, #e2e7f0);
+	padding: 10px 12px;
+	text-align: start;
+	vertical-align: top;
+}
+
+.zig-description__body th {
+	background-color: var(--zig-description-th-bg, #f6f7fb);
+	font-weight: 700;
 }
 
 .zig-description__notice {

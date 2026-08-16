@@ -2,6 +2,7 @@
 namespace Zig3d_Widgets\Widgets;
 
 use Elementor\Controls_Manager;
+use Elementor\Group_Control_Text_Shadow;
 use Elementor\Group_Control_Typography;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Markup;
@@ -70,7 +71,12 @@ final class Description extends Widget_Base {
         $this->register_heading_section();
         $this->register_container_style_section();
         $this->register_heading_style_section();
-        $this->register_body_style_section();
+        $this->register_text_style_section();
+        $this->register_inner_headings_style_section();
+        $this->register_links_style_section();
+        $this->register_list_style_section();
+        $this->register_quote_style_section();
+        $this->register_table_style_section();
     }
 
     /* =====================================================================
@@ -186,51 +192,201 @@ final class Description extends Widget_Base {
 
     /**
      * متنِ بدنه از ‎the_content‎/فیلدِ سفارشی می‌آید — یعنی هر تگی از ‎<p>‎ تا
-     * ‎<h3>‎ تا ‎<blockquote>‎ ممکن است داخلش باشد. یک ‎body_typography‎ی
-     * تک برایِ همه کافی نیست: تیترهایِ داخلِ متن اندازه/وزنِ پیش‌فرضِ
-     * مرورگر را دارند و پاراگراف/فهرست/نقل‌قول هرکدام معمولاً ظاهرِ
-     * مستقلِ خودشان را می‌خواهند — دقیقاً همان جزئیاتی که در استایلِ
-     * سایتِ الماس‌آرا برایِ این بخش جداگانه تنظیم شده بود.
+     * ‎<h3>‎ تا ‎<table>‎ ممکن است داخلش باشد. این بخش پیش‌فرضِ کلیِ متن و
+     * ظاهرِ خودِ باکسِ متن را نگه می‌دارد؛ تیتر/لینک/فهرست/جدول هرکدام
+     * بخشِ استایلِ اختصاصیِ خودشان را دارند — همان سطحِ جزئیاتی که در
+     * استایلِ سایتِ الماس‌آرا برایِ این بخش جداگانه تنظیم شده بود.
      */
-    private function register_body_style_section(): void {
+    private function register_text_style_section(): void {
         $this->start_controls_section(
-            'body_style_section',
+            'text_style_section',
             ['label' => __('متن', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
         );
 
-        $this->add_control('body_defaults_heading', ['label' => __('پیش‌فرضِ متن', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING]);
-        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'body_typography', 'label' => __('تایپوگرافیِ پیش‌فرض', 'zig3d-widgets'), 'selector' => '{{WRAPPER}} .zig-description__body']);
-        $this->add_control('body_color', ['label' => __('رنگِ پیش‌فرض', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body' => 'color: {{VALUE}};']]);
-
-        $this->add_control('paragraph_heading', ['label' => __('پاراگراف', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
-        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'paragraph_typography', 'selector' => '{{WRAPPER}} .zig-description__body p']);
-        $this->add_control('paragraph_color', ['label' => __('رنگِ پاراگراف', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body p' => 'color: {{VALUE}};']]);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'body_typography', 'selector' => '{{WRAPPER}} .zig-description__body']);
         $this->add_responsive_control('paragraph_spacing', ['label' => __('فاصلهٔ بین پاراگراف‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 48]], 'selectors' => ['{{WRAPPER}} .zig-description__body' => '--zig-description-p-gap: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('text_align', [
+            'label'     => __('چینشِ متن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::CHOOSE,
+            'options'   => [
+                'right'   => ['title' => __('راست', 'zig3d-widgets'), 'icon' => 'eicon-text-align-right'],
+                'center'  => ['title' => __('وسط', 'zig3d-widgets'), 'icon' => 'eicon-text-align-center'],
+                'left'    => ['title' => __('چپ', 'zig3d-widgets'), 'icon' => 'eicon-text-align-left'],
+                'justify' => ['title' => __('بلوکی', 'zig3d-widgets'), 'icon' => 'eicon-text-align-justify'],
+            ],
+            'selectors' => ['{{WRAPPER}} .zig-description__body' => 'text-align: {{VALUE}};'],
+        ]);
+        $this->add_responsive_control('body_padding', ['label' => __('پدینگ', 'zig3d-widgets'), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => ['px', 'em', '%'], 'selectors' => ['{{WRAPPER}} .zig-description__body' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};']]);
 
-        $this->add_control('inner_heading_heading', ['label' => __('تیترهایِ داخلِ متن (h1-h6)', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
-        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'inner_heading_typography', 'selector' => '{{WRAPPER}} .zig-description__body h1, {{WRAPPER}} .zig-description__body h2, {{WRAPPER}} .zig-description__body h3, {{WRAPPER}} .zig-description__body h4, {{WRAPPER}} .zig-description__body h5, {{WRAPPER}} .zig-description__body h6']);
-        $this->add_control('inner_heading_color', ['label' => __('رنگِ تیترها', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body h1, {{WRAPPER}} .zig-description__body h2, {{WRAPPER}} .zig-description__body h3, {{WRAPPER}} .zig-description__body h4, {{WRAPPER}} .zig-description__body h5, {{WRAPPER}} .zig-description__body h6' => 'color: {{VALUE}};']]);
+        $this->start_controls_tabs('body_color_tabs');
+        $this->start_controls_tab('body_color_normal_tab', ['label' => __('عادی', 'zig3d-widgets')]);
+        $this->add_control('body_color', ['label' => __('رنگ', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body' => 'color: {{VALUE}};']]);
+        $this->end_controls_tab();
+        $this->start_controls_tab('body_color_hover_tab', ['label' => __('هاور', 'zig3d-widgets')]);
+        $this->add_control('body_hover_color', ['label' => __('رنگِ هاور', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'description' => __('وقتی موس رویِ کلِ کادر باشد.', 'zig3d-widgets'), 'selectors' => ['{{WRAPPER}}:hover .zig-description__body' => 'color: {{VALUE}};']]);
+        $this->end_controls_tab();
+        $this->end_controls_tabs();
 
-        $this->add_control('list_heading', ['label' => __('فهرست‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
-        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'list_typography', 'selector' => '{{WRAPPER}} .zig-description__body li']);
-        $this->add_control('list_color', ['label' => __('رنگِ آیتم‌هایِ فهرست', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body li' => 'color: {{VALUE}};']]);
-        $this->add_responsive_control('list_item_spacing', ['label' => __('فاصلهٔ بین آیتم‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 32]], 'selectors' => ['{{WRAPPER}} .zig-description__body' => '--zig-description-li-gap: {{SIZE}}{{UNIT}};']]);
+        $this->add_group_control(Group_Control_Text_Shadow::get_type(), ['name' => 'body_text_shadow', 'label' => __('سایهٔ متن', 'zig3d-widgets'), 'selector' => '{{WRAPPER}} .zig-description__body']);
 
-        $this->add_control('link_heading', ['label' => __('لینک‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->end_controls_section();
+    }
+
+    /**
+     * تیترهایِ *داخلِ* بدنه (h2 تا h6 — نه عنوانِ خودِ ویجت که بخشِ جداگانه
+     * دارد). h1 عمداً نیست: داخلِ یک بخشِ توضیحات، h1 معمولاً یعنی خودِ
+     * عنوانِ صفحه تکرار شده. تایپوگرافی/رنگ مشترک‌اند؛ فاصلهٔ بالا/پایین
+     * هرکدام مستقل، چون در محتوایِ واقعی h2 و h4 به‌ندرت فاصلهٔ یکسان
+     * می‌خواهند.
+     */
+    private function register_inner_headings_style_section(): void {
+        $this->start_controls_section(
+            'inner_headings_style_section',
+            ['label' => __('عنوان‌هایِ متن (h2–h6)', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
+        );
+
+        $inner_headings = '{{WRAPPER}} .zig-description__body h2, {{WRAPPER}} .zig-description__body h3, {{WRAPPER}} .zig-description__body h4, {{WRAPPER}} .zig-description__body h5, {{WRAPPER}} .zig-description__body h6';
+
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'inner_heading_typography', 'label' => __('تایپوگرافی (همهٔ عنوان‌ها)', 'zig3d-widgets'), 'selector' => $inner_headings]);
+        $this->add_control('inner_heading_color', ['label' => __('رنگ (همهٔ عنوان‌ها)', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => [$inner_headings => 'color: {{VALUE}};']]);
+
+        $this->add_control('inner_heading_spacing_notice', ['type' => Controls_Manager::RAW_HTML, 'raw' => __('فاصلهٔ بالا و پایینِ هر عنوان را جداگانه تنظیم کنید:', 'zig3d-widgets'), 'content_classes' => 'elementor-panel-alert elementor-panel-alert-info', 'separator' => 'before']);
+
+        foreach (['h2', 'h3', 'h4', 'h5', 'h6'] as $tag) {
+            $this->add_responsive_control(
+                $tag . '_margin',
+                [
+                    'label'      => sprintf(__('فاصلهٔ %s (بالا/پایین)', 'zig3d-widgets'), strtoupper($tag)),
+                    'type'       => Controls_Manager::DIMENSIONS,
+                    'size_units' => ['px', 'em'],
+                    'default'    => ['top' => '20', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px'],
+                    'selectors'  => ['{{WRAPPER}} .zig-description__body ' . $tag => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+                ]
+            );
+        }
+
+        $this->end_controls_section();
+    }
+
+    private function register_links_style_section(): void {
+        $this->start_controls_section(
+            'links_bold_style_section',
+            ['label' => __('لینک‌ها و بولد', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
+        );
+
+        $underline_options = [
+            ''          => __('پیش‌فرض', 'zig3d-widgets'),
+            'none'      => __('بدونِ خط', 'zig3d-widgets'),
+            'underline' => __('همیشه', 'zig3d-widgets'),
+        ];
+
+        $this->add_control('links_heading', ['label' => __('لینک‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING]);
         $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'link_typography', 'selector' => '{{WRAPPER}} .zig-description__body a']);
         $this->start_controls_tabs('link_state_tabs');
         $this->start_controls_tab('link_normal_tab', ['label' => __('عادی', 'zig3d-widgets')]);
         $this->add_control('link_color', ['label' => __('رنگِ لینک', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body a' => 'color: {{VALUE}};']]);
+        $this->add_control('link_underline', ['label' => __('خطِ زیر', 'zig3d-widgets'), 'type' => Controls_Manager::SELECT, 'options' => $underline_options, 'default' => '', 'selectors' => ['{{WRAPPER}} .zig-description__body a' => 'text-decoration-line: {{VALUE}};']]);
         $this->end_controls_tab();
         $this->start_controls_tab('link_hover_tab', ['label' => __('هاور', 'zig3d-widgets')]);
         $this->add_control('link_hover_color', ['label' => __('رنگِ هاور', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body a:hover' => 'color: {{VALUE}};']]);
+        $this->add_control('link_hover_underline', ['label' => __('خطِ زیر در هاور', 'zig3d-widgets'), 'type' => Controls_Manager::SELECT, 'options' => $underline_options, 'default' => '', 'selectors' => ['{{WRAPPER}} .zig-description__body a:hover' => 'text-decoration-line: {{VALUE}};']]);
         $this->end_controls_tab();
         $this->end_controls_tabs();
 
-        $this->add_control('quote_heading', ['label' => __('نقل‌قول', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_control('bold_heading', ['label' => __('متنِ بولد (strong/b)', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_control('bold_color', ['label' => __('رنگ', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body strong, {{WRAPPER}} .zig-description__body b' => 'color: {{VALUE}};']]);
+        $this->add_control('bold_font_weight', ['label' => __('وزنِ فونت', 'zig3d-widgets'), 'type' => Controls_Manager::SELECT, 'options' => ['' => __('پیش‌فرض', 'zig3d-widgets'), '500' => '500', '600' => '600', '700' => '700', '800' => '800', '900' => '900'], 'default' => '', 'selectors' => ['{{WRAPPER}} .zig-description__body strong, {{WRAPPER}} .zig-description__body b' => 'font-weight: {{VALUE}};']]);
+
+        $this->end_controls_section();
+    }
+
+    private function register_list_style_section(): void {
+        $this->start_controls_section(
+            'list_style_section',
+            ['label' => __('لیست‌ها (بولت‌ها)', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
+        );
+
+        $lists = '{{WRAPPER}} .zig-description__body ul, {{WRAPPER}} .zig-description__body ol';
+
+        $this->add_control('list_style_type', [
+            'label'     => __('شکلِ بولت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::SELECT,
+            'options'   => [
+                ''        => __('پیش‌فرض', 'zig3d-widgets'),
+                'disc'    => __('دایرهٔ پر', 'zig3d-widgets'),
+                'circle'  => __('دایرهٔ توخالی', 'zig3d-widgets'),
+                'square'  => __('مربع', 'zig3d-widgets'),
+                'decimal' => __('عدد', 'zig3d-widgets'),
+                'none'    => __('بدونِ بولت', 'zig3d-widgets'),
+            ],
+            'default'   => '',
+            'selectors' => [$lists => 'list-style-type: {{VALUE}};'],
+        ]);
+        $this->add_control('marker_color', ['label' => __('رنگِ بولت/شماره', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body li::marker' => 'color: {{VALUE}};']]);
+        $this->add_responsive_control('marker_size', ['label' => __('اندازهٔ بولت/شماره', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'size_units' => ['px'], 'range' => ['px' => ['min' => 8, 'max' => 32]], 'default' => ['size' => 16, 'unit' => 'px'], 'selectors' => ['{{WRAPPER}} .zig-description__body li::marker' => 'font-size: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('list_indent', ['label' => __('تورفتگیِ لیست', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 60]], 'default' => ['size' => 24, 'unit' => 'px'], 'selectors' => [$lists => 'padding-inline-start: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('list_item_spacing', ['label' => __('فاصلهٔ بین آیتم‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 32]], 'default' => ['size' => 6, 'unit' => 'px'], 'selectors' => ['{{WRAPPER}} .zig-description__body' => '--zig-description-li-gap: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('list_spacing', ['label' => __('فاصلهٔ لیست از متنِ اطراف', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 60]], 'selectors' => [$lists => 'margin-block: {{SIZE}}{{UNIT}};']]);
+        $this->add_control('list_color', ['label' => __('رنگِ متنِ آیتم‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body li' => 'color: {{VALUE}};']]);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'list_typography', 'label' => __('تایپوگرافیِ آیتم‌ها', 'zig3d-widgets'), 'selector' => '{{WRAPPER}} .zig-description__body li']);
+
+        $this->end_controls_section();
+    }
+
+    private function register_quote_style_section(): void {
+        $this->start_controls_section(
+            'quote_style_section',
+            ['label' => __('نقل‌قول', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
+        );
+
         $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'quote_typography', 'selector' => '{{WRAPPER}} .zig-description__body blockquote']);
         $this->add_control('quote_color', ['label' => __('رنگِ متنِ نقل‌قول', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'color: {{VALUE}};']]);
+        $this->add_control('quote_background', ['label' => __('پس‌زمینه', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'background-color: {{VALUE}};']]);
         $this->add_control('quote_border_color', ['label' => __('رنگِ خطِ کنارِ نقل‌قول', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'border-inline-start-color: {{VALUE}};']]);
+        $this->add_responsive_control('quote_border_width', ['label' => __('ضخامتِ خطِ کناره', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 10]], 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'border-inline-start-width: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('quote_padding', ['label' => __('پدینگ', 'zig3d-widgets'), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => ['px', 'em'], 'selectors' => ['{{WRAPPER}} .zig-description__body blockquote' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};']]);
+
+        $this->end_controls_section();
+    }
+
+    /**
+     * جدول ممکن است از یک بلوکِ گوتنبرگ یا شورت‌کد در ‎the_content‎ بیاید —
+     * افزونه خودش هیچ جدولی نمی‌سازد، فقط قابل‌استایل نگه‌اش می‌دارد.
+     */
+    private function register_table_style_section(): void {
+        $this->start_controls_section(
+            'table_style_section',
+            ['label' => __('جدول‌ها', 'zig3d-widgets'), 'tab' => Controls_Manager::TAB_STYLE]
+        );
+
+        $cells = '{{WRAPPER}} .zig-description__body th, {{WRAPPER}} .zig-description__body td';
+
+        $this->add_control('table_border_color', ['label' => __('رنگِ خطوطِ جدول', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body table' => 'border-color: {{VALUE}};', $cells => 'border-color: {{VALUE}};']]);
+        $this->add_responsive_control('table_border_width', ['label' => __('ضخامتِ خطوط', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'size_units' => ['px'], 'range' => ['px' => ['min' => 0, 'max' => 6]], 'selectors' => ['{{WRAPPER}} .zig-description__body table' => 'border-width: {{SIZE}}{{UNIT}};', $cells => 'border-width: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('table_radius', ['label' => __('رادیوسِ جدول', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 24]], 'selectors' => ['{{WRAPPER}} .zig-description__body table' => 'border-radius: {{SIZE}}{{UNIT}};']]);
+        $this->add_responsive_control('cell_padding', ['label' => __('پدینگِ سلول‌ها', 'zig3d-widgets'), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => ['px', 'em'], 'selectors' => [$cells => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};']]);
+        $this->add_responsive_control('cell_text_align', [
+            'label'     => __('چینشِ متنِ سلول‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::CHOOSE,
+            'options'   => [
+                'right'  => ['title' => __('راست', 'zig3d-widgets'), 'icon' => 'eicon-text-align-right'],
+                'center' => ['title' => __('وسط', 'zig3d-widgets'), 'icon' => 'eicon-text-align-center'],
+                'left'   => ['title' => __('چپ', 'zig3d-widgets'), 'icon' => 'eicon-text-align-left'],
+            ],
+            'selectors' => [$cells => 'text-align: {{VALUE}};'],
+        ]);
+        $this->add_responsive_control('table_spacing', ['label' => __('فاصلهٔ جدول از متنِ اطراف', 'zig3d-widgets'), 'type' => Controls_Manager::SLIDER, 'range' => ['px' => ['min' => 0, 'max' => 60]], 'selectors' => ['{{WRAPPER}} .zig-description__body table' => 'margin-block: {{SIZE}}{{UNIT}};']]);
+
+        $this->add_control('thead_heading', ['label' => __('سطرِ عنوان (th)', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_control('th_background', ['label' => __('پس‌زمینه', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body th' => 'background-color: {{VALUE}};']]);
+        $this->add_control('th_color', ['label' => __('رنگِ متن', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body th' => 'color: {{VALUE}};']]);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'th_typography', 'selector' => '{{WRAPPER}} .zig-description__body th']);
+
+        $this->add_control('tbody_heading', ['label' => __('سلول‌ها (td)', 'zig3d-widgets'), 'type' => Controls_Manager::HEADING, 'separator' => 'before']);
+        $this->add_control('td_background', ['label' => __('پس‌زمینه', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body td' => 'background-color: {{VALUE}};']]);
+        $this->add_control('td_zebra_background', ['label' => __('پس‌زمینهٔ سطرهایِ زوج (زبرا)', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'description' => __('برایِ خوانایی جدول‌هایِ بلند، سطرها یکی‌درمیان این رنگ را می‌گیرند.', 'zig3d-widgets'), 'selectors' => ['{{WRAPPER}} .zig-description__body tbody tr:nth-child(even) td' => 'background-color: {{VALUE}};']]);
+        $this->add_control('td_color', ['label' => __('رنگِ متن', 'zig3d-widgets'), 'type' => Controls_Manager::COLOR, 'selectors' => ['{{WRAPPER}} .zig-description__body td' => 'color: {{VALUE}};']]);
+        $this->add_group_control(Group_Control_Typography::get_type(), ['name' => 'td_typography', 'selector' => '{{WRAPPER}} .zig-description__body td']);
 
         $this->end_controls_section();
     }
