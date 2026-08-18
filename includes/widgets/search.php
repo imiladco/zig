@@ -446,11 +446,22 @@ final class Search extends Widget_Base {
             'selectors'  => ['{{WRAPPER}} .zig-search' => '--zig-search-field-height: {{SIZE}}{{UNIT}};'],
         ]);
 
+        /*
+         * دو اندازهٔ جدا، چون در طرح هم جدا هستند: ذره‌بین ۲۲ و ضربدر ۱۶.
+         * یک کنترلِ مشترک، این تفاوت را از بین می‌برد.
+         */
         $this->add_responsive_control('field_icon_size', [
-            'label'     => __('اندازهٔ آیکون‌هایِ فیلد', 'zig3d-widgets'),
+            'label'     => __('اندازهٔ آیکونِ سرچ', 'zig3d-widgets'),
             'type'      => Controls_Manager::SLIDER,
             'range'     => ['px' => ['min' => 8, 'max' => 60]],
             'selectors' => ['{{WRAPPER}} .zig-search__field' => '--zig-search-icon-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('field_clear_size', [
+            'label'     => __('اندازهٔ آیکونِ پاک‌کردن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::SLIDER,
+            'range'     => ['px' => ['min' => 8, 'max' => 60]],
+            'selectors' => ['{{WRAPPER}} .zig-search__field' => '--zig-search-clear-icon-size: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('field_icon_color', [

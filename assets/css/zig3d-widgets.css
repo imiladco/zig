@@ -4858,7 +4858,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	width: var(--zig-search-width, 100%);
 	max-width: 100%;
 	/* فضایِ فیلد را رزرو می‌کند تا بازشدنِ پنلِ اورلی صفحه را نپراند */
-	min-height: var(--zig-search-field-height, 56px);
+	min-height: var(--zig-search-field-height, 46px);
 	box-sizing: border-box;
 }
 
@@ -4886,10 +4886,11 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	inset-block-start: 0;
 	inset-inline: 0;
 	z-index: 60;
-	padding: var(--zig-search-shell-padding, 12px);
+	gap: var(--zig-search-shell-gap, 24px);
+	padding: var(--zig-search-shell-padding, 8px 8px 16px);
 	background-color: var(--zig-search-shell-bg, #ffffff);
 	border-radius: var(--zig-search-shell-radius, 24px);
-	box-shadow: var(--zig-search-shell-shadow, 0 18px 48px rgba(17, 17, 26, 0.12));
+	box-shadow: var(--zig-search-shell-shadow, 0 8px 15px rgba(0, 0, 0, 0.12));
 }
 
 /* ---------------------------- فیلد ---------------------------- */
@@ -4900,10 +4901,10 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	gap: 12px;
 	width: 100%;
 	margin: 0;
-	min-height: var(--zig-search-field-height, 56px);
+	min-height: var(--zig-search-field-height, 46px);
 	padding-block: 0;
-	padding-inline: var(--zig-search-field-padding-inline, 20px);
-	background-color: var(--zig-search-field-bg, #f2f2f5);
+	padding-inline: var(--zig-search-field-padding-inline, 16px);
+	background-color: var(--zig-search-field-bg, #f3f4f6);
 	border: 0;
 	border-radius: var(--zig-search-field-radius, 999px);
 	box-shadow: none;
@@ -4924,7 +4925,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
-	color: var(--zig-search-field-icon-color, #1f1f27);
+	color: var(--zig-search-field-icon-color, #171923);
 	line-height: 0;
 	cursor: pointer;
 	-webkit-appearance: none;
@@ -4950,9 +4951,20 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__field button.zig-search__icon-btn i,
 .zig-search .zig-search__field button.zig-search__clear svg,
 .zig-search .zig-search__field button.zig-search__clear i {
-	width: var(--zig-search-icon-size, 20px);
-	height: var(--zig-search-icon-size, 20px);
-	font-size: var(--zig-search-icon-size, 20px);
+	width: var(--zig-search-icon-size, 22px);
+	height: var(--zig-search-icon-size, 22px);
+	font-size: var(--zig-search-icon-size, 22px);
+}
+
+.zig-search .zig-search__field button.zig-search__clear {
+	color: var(--zig-search-clear-icon-color, #a1a3a8);
+}
+
+.zig-search .zig-search__field button.zig-search__clear svg,
+.zig-search .zig-search__field button.zig-search__clear i {
+	width: var(--zig-search-clear-icon-size, 16px);
+	height: var(--zig-search-clear-icon-size, 16px);
+	font-size: var(--zig-search-clear-icon-size, 16px);
 }
 
 .zig-search .zig-search__field input.zig-search__input {
@@ -4970,8 +4982,9 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	outline: 0;
 	box-shadow: none;
 	font: inherit;
+	font-size: var(--zig-search-text-size, 14px);
 	line-height: normal;
-	color: var(--zig-search-text-color, #1f1f27);
+	color: var(--zig-search-text-color, #171923);
 	-webkit-appearance: none;
 	appearance: none;
 }
@@ -4984,7 +4997,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-search .zig-search__field input.zig-search__input::placeholder {
-	color: var(--zig-search-placeholder-color, #9a9aa5);
+	color: var(--zig-search-placeholder-color, #8d96a8);
 	opacity: 1;
 }
 
@@ -4993,8 +5006,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__panel {
 	display: flex;
 	flex-direction: column;
-	gap: var(--zig-search-panel-gap, 22px);
-	padding: var(--zig-search-panel-padding, 22px 10px 10px);
+	gap: var(--zig-search-panel-gap, 29px);
+	padding: var(--zig-search-panel-padding, 0 8px);
 }
 
 .zig-search .zig-search__panel[hidden] {
@@ -5004,7 +5017,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__section {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: var(--zig-search-section-gap, 12px);
 }
 
 .zig-search .zig-search__section[hidden] {
@@ -5019,8 +5032,10 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-search .zig-search__section-title {
+	font-size: var(--zig-search-heading-size, 14px);
 	font-weight: 700;
-	color: var(--zig-search-heading-color, #1f1f27);
+	line-height: 24px;
+	color: var(--zig-search-heading-color, #171923);
 }
 
 .zig-search .zig-search__section-head button.zig-search__clear-history {
@@ -5031,7 +5046,10 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	border-radius: 0;
 	box-shadow: none;
 	font: inherit;
-	color: var(--zig-search-clear-history-color, #8a8a96);
+	font-size: var(--zig-search-clear-history-size, 12px);
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--zig-search-clear-history-color, #81858b);
 	cursor: pointer;
 	-webkit-appearance: none;
 	appearance: none;
@@ -5042,21 +5060,22 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__chips {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: var(--zig-search-chips-gap, 8px);
 }
 
 .zig-search a.zig-search__chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
-	padding: var(--zig-search-chip-padding, 10px 16px);
-	background-color: var(--zig-search-chip-bg, #ffffff);
-	border: 1px solid var(--zig-search-chip-border, #e8e8ee);
-	border-radius: var(--zig-search-chip-radius, 999px);
-	color: var(--zig-search-chip-color, #3a3a46);
+	gap: var(--zig-search-chip-icon-gap, 4px);
+	padding: var(--zig-search-chip-padding, 4px 12px);
+	background-color: var(--zig-search-chip-bg, transparent);
+	border: 1px solid var(--zig-search-chip-border, #e0e0e2);
+	border-radius: var(--zig-search-chip-radius, 100000px);
+	color: var(--zig-search-chip-color, #344054);
 	text-decoration: none;
 	box-shadow: none;
-	line-height: 1;
+	font-size: var(--zig-search-chip-size, 12px);
+	line-height: 20px;
 }
 
 /*
@@ -5065,10 +5084,11 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  */
 .zig-search a.zig-search__chip svg,
 .zig-search a.zig-search__chip i {
-	width: 1em;
-	height: 1em;
+	width: var(--zig-search-chip-icon-size, 12px);
+	height: var(--zig-search-chip-icon-size, 12px);
+	font-size: var(--zig-search-chip-icon-size, 12px);
 	flex: none;
-	color: var(--zig-search-chip-icon-color, #9a9aa5);
+	color: var(--zig-search-chip-icon-color, #344054);
 }
 
 /* ---------------------------- محصولات ---------------------------- */
@@ -5085,7 +5105,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	gap: 14px;
 	width: 100%;
 	padding: var(--zig-search-product-padding, 10px 14px);
-	background-color: var(--zig-search-product-bg, #f7f7f9);
+	background-color: var(--zig-search-product-bg, #f3f4f6);
 	border: 0;
 	border-radius: var(--zig-search-product-radius, 16px);
 	color: inherit;
@@ -5112,7 +5132,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-search .zig-search__product-title {
 	font-weight: 700;
-	color: var(--zig-search-product-title-color, #1f1f27);
+	color: var(--zig-search-product-title-color, #171923);
 	text-decoration: none;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -5121,7 +5141,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-search .zig-search__product-meta {
 	font-size: 0.85em;
-	color: var(--zig-search-product-meta-color, #a0a0ab);
+	color: var(--zig-search-product-meta-color, #8d96a8);
 	text-decoration: none;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -5132,7 +5152,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex: none;
 	display: inline-flex;
 	line-height: 0;
-	color: var(--zig-search-product-chevron-color, #1f1f27);
+	color: var(--zig-search-product-chevron-color, #171923);
 }
 
 /* ---------------------------- دکمهٔ بیشتر ---------------------------- */
@@ -5177,7 +5197,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__empty-icon {
 	display: inline-flex;
 	line-height: 0;
-	color: var(--zig-search-empty-icon-color, #1f1f27);
+	color: var(--zig-search-empty-icon-color, #171923);
 }
 
 .zig-search .zig-search__empty-icon svg,
@@ -5190,7 +5210,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search p.zig-search__empty-text {
 	margin: 0;
 	font-weight: 600;
-	color: var(--zig-search-empty-text-color, #1f1f27);
+	color: var(--zig-search-empty-text-color, #171923);
 }
 
 /* قالب‌هایِ آیکونِ داینامیک — هیچ‌وقت خودشان دیده نمی‌شوند، فقط clone می‌شوند */
