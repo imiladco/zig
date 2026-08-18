@@ -54,7 +54,7 @@ if (!defined('ABSPATH')) {
  *         form.zig-search__field               فیلد، بالایِ همان shell
  *           button.zig-search__icon-btn        آیکونِ سرچ
  *           input.zig-search__input            role="combobox"
- *           button.zig-search__clear           ضربدر، همیشه حاضر
+ *           button.zig-search__clear           ضربدر (فقط وقتی متن هست)
  *         div.zig-search__panel                زیرِ فیلد، همان shell
  *           div.zig-search__section--recent
  *           div.zig-search__section--products
@@ -924,12 +924,12 @@ final class Search extends Widget_Base {
         );
 
         /*
-         * برخلافِ حدسِ اولیه، در طرحِ تأییدشده این دکمه همیشه حاضر است —
-         * حتی در حالتِ خالیِ پیش‌فرض — نه فقط وقتی متنی تایپ شده. کلیک
-         * رویش وقتی فیلد خالی است هم بی‌خطر است: فقط پنل را می‌بندد.
+         * حالتِ بستهٔ پیش‌فرض (S0) فقط جای‌گزین + آیکونِ سرچ دارد — بدونِ
+         * X. این دکمه فقط وقتی معنا دارد که چیزی برایِ پاک‌کردن باشد؛
+         * جاوااسکریپت با طول‌کشیدنِ متنِ ورودی نمایانش می‌کند.
          */
         printf(
-            '<button type="button" class="zig-search__clear" aria-label="%s">%s</button>',
+            '<button type="button" class="zig-search__clear" hidden aria-label="%s">%s</button>',
             esc_attr__('پاک‌کردن جست‌وجو', 'zig3d-widgets'),
             $this->render_icon($settings, 'clear_icon')
         );

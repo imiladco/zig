@@ -152,6 +152,8 @@
 	Search.prototype.onFocus = function () {
 		var value = this.input.value.trim();
 
+		this.clearBtn.hidden = '' === value;
+
 		if (value.length >= this.minChars) {
 			// فوکوسِ دوباره روی متنی که قبلاً هم بود — همان نتیجه دوباره
 			// بی‌درخواستِ تازه نشان داده می‌شود (S3/S4)، از رویِ کش.
@@ -165,6 +167,8 @@
 
 	Search.prototype.onInput = function () {
 		var trimmed = this.input.value.trim();
+
+		this.clearBtn.hidden = '' === trimmed;
 
 		if (trimmed.length < this.minChars) {
 			window.clearTimeout(this.timer);
@@ -184,6 +188,7 @@
 
 	Search.prototype.clearInput = function () {
 		this.input.value = '';
+		this.clearBtn.hidden = true;
 		window.clearTimeout(this.timer);
 		this.abortInFlight();
 		this.showIdle();
@@ -486,6 +491,7 @@
 
 		if (!preserveValue) {
 			this.input.value = '';
+			this.clearBtn.hidden = true;
 		}
 	};
 
