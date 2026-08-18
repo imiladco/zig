@@ -4902,22 +4902,28 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 /*
- * پنل، به‌طورِ پیش‌فرض بیرون از جریانِ دیده‌شدن — نه با ‎display: none‎ی
- * خامِ اینلاین (که با هر مقدارِ ‎display‎ی دیگری که کاربر بعداً از CSS
- * سفارشی بدهد تداخل می‌کند)، بلکه با خودِ ویژگیِ ‎hidden‎ که جاوااسکریپت
- * برمی‌دارد. طبقِ مشخصات، ‎hidden‎ با هر ‎display‎ای override می‌شود، پس
- * این قانونِ CSS لازم است تا وقتی حاضر است واقعاً گرید بشود.
+ * قانونِ کورکورانه‌ای که کلِ ویجت را زیرِ خودش می‌گیرد: هر عنصری که
+ * ویژگیِ ‎hidden‎ رویش نشسته — فیلد پاک‌کردن، هر بخشِ پنل، دکمهٔ «بیشتر»
+ * — باید واقعاً پنهان بماند، صرف‌نظر از اینکه پایین‌تر چه ‎display‎ی
+ * برایش نوشته‌ایم.
+ *
+ * بدونِ این، دقیقاً همان باگی پیش می‌آید که یک‌بار افتاد: جاوااسکریپت
+ * ‎hidden‎ را درست می‌گذارد، ولی چون قاعدهٔ نویسنده (‎.zig-search__clear
+ * { display: inline-flex; }‎) هر باری بر ‎[hidden] { display: none; }‎ی
+ * کارگزارِ کاربر می‌چربد — نه به‌خاطرِ specificity، بلکه چون قواعدِ
+ * نویسنده همیشه بر قواعدِ UA اولویت دارند — عنصر همچنان دیده می‌شود؛
+ * انگار جاوااسکریپت اصلاً کاری نکرده.
  */
+.zig-search [hidden] {
+	display: none !important;
+}
+
 .zig-search__panel {
-	display: none;
+	display: flex;
 	flex-direction: column;
 	gap: var(--zig-search-panel-gap, 16px);
 	position: relative;
 	z-index: 1;
-}
-
-.zig-search__panel:not([hidden]) {
-	display: flex;
 }
 
 .zig-search__section {
