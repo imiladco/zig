@@ -152,8 +152,6 @@
 	Search.prototype.onFocus = function () {
 		var value = this.input.value.trim();
 
-		this.clearBtn.hidden = '' === value;
-
 		if (value.length >= this.minChars) {
 			// فوکوسِ دوباره روی متنی که قبلاً هم بود — همان نتیجه دوباره
 			// بی‌درخواستِ تازه نشان داده می‌شود (S3/S4)، از رویِ کش.
@@ -167,8 +165,6 @@
 
 	Search.prototype.onInput = function () {
 		var trimmed = this.input.value.trim();
-
-		this.clearBtn.hidden = '' === trimmed;
 
 		if (trimmed.length < this.minChars) {
 			window.clearTimeout(this.timer);
@@ -186,13 +182,15 @@
 		}, this.debounceMs);
 	};
 
+	/*
+	 * ضربدر در طرح «بستنِ اورلی» است، نه «خالی‌کردنِ فیلد» — پس هم متن را
+	 * پاک می‌کند و هم پنل را می‌بندد و به S0 برمی‌گردد.
+	 */
 	Search.prototype.clearInput = function () {
 		this.input.value = '';
-		this.clearBtn.hidden = true;
 		window.clearTimeout(this.timer);
 		this.abortInFlight();
-		this.showIdle();
-		this.input.focus();
+		this.close(false);
 	};
 
 	/* ------------------------------------------------------------------
@@ -470,6 +468,7 @@
 
 	Search.prototype.open = function () {
 		this.panel.hidden = false;
+		this.clearBtn.hidden = false;
 		this.input.setAttribute('aria-expanded', 'true');
 		this.root.classList.add('is-open');
 	};
@@ -483,6 +482,9 @@
 		}
 
 		this.panel.hidden = true;
+		// ضربدر با پنل می‌آید و با پنل می‌رود — حتی در S5 که مقدارِ
+		// تایپ‌شده در فیلد می‌ماند، طرح ضربدری نشان نمی‌دهد.
+		this.clearBtn.hidden = true;
 		this.input.setAttribute('aria-expanded', 'false');
 		this.input.setAttribute('aria-activedescendant', '');
 		this.root.classList.remove('is-open');
@@ -491,7 +493,6 @@
 
 		if (!preserveValue) {
 			this.input.value = '';
-			this.clearBtn.hidden = true;
 		}
 	};
 
@@ -543,6 +544,11 @@
 		row.setAttribute('role', 'option');
 		row.href = item.permalink || '#';
 
+		/*
+		 * جعبهٔ تصویر همیشه ساخته می‌شود، حتی بدونِ تصویر: در طرح، مربعِ
+		 * خاکستری بخشی از ریتمِ ردیف است و نبودنش عنوان را به لبه
+		 * می‌چسباند — یعنی محصولِ بی‌عکس ردیفی با چیدمانِ متفاوت می‌گرفت.
+		 */
 		if (item.thumbnail && item.thumbnail.url) {
 			var img = document.createElement('img');
 
@@ -552,6 +558,12 @@
 			img.loading = 'lazy';
 			img.decoding = 'async';
 			row.appendChild(img);
+		} else {
+			var placeholder = document.createElement('span');
+
+			placeholder.className = 'zig-search__product-image';
+			placeholder.setAttribute('aria-hidden', 'true');
+			row.appendChild(placeholder);
 		}
 
 		var body = document.createElement('span');
@@ -683,12 +695,13 @@
 		chip.className = 'zig-search__chip zig-search__chip--recent';
 		chip.href = this.resultsUrlTemplate ? this.buildResultsUrl(query) : '#';
 
-		this.cloneIconInto(chip, this.recentIconTpl);
-
 		var label = document.createElement('span');
 
 		label.textContent = query;
 		chip.appendChild(label);
+
+		// آیکون بعدِ متن — همان ترتیبی که چیپِ پرطرفدارِ سمتِ سرور دارد
+		this.cloneIconInto(chip, this.recentIconTpl);
 
 		return chip;
 	};

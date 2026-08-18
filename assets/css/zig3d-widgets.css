@@ -4823,18 +4823,25 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
    ========================================================================== */
 
 /*
- * قاعدهٔ ارتفاع، همان‌طور که در بحثِ معماری قفل شد: ارتفاعِ ثابت فقط
- * مالِ حالتِ بستهٔ پیش‌فرض است (خودِ فیلد، با box-sizing عادی). از همان
- * لحظه‌ای که پنل باز می‌شود، هیچ ارتفاعِ ثابتی نوشته نمی‌شود — گرید +
- * gap + padding + خودِ محتوا ارتفاع را می‌سازند. تنها استثنا
- * ‎--panel-max-height‎ است که کاربر از تبِ استایل می‌دهد و آن هم یک
- * شیرِ اطمینانِ سرریز است، نه یک ارتفاعِ طراحی‌شده.
+ * قاعدهٔ ارتفاع، همان‌طور که در بحثِ معماری قفل شد: ارتفاعِ پایه فقط مالِ
+ * حالتِ بستهٔ پیش‌فرض است (و آن هم ‎min-height‎ است نه ‎height‎ی سفت، تا
+ * فونتِ بزرگ‌تر نشکندش). از لحظه‌ای که پنل باز می‌شود هیچ ارتفاعِ ثابتی
+ * نوشته نمی‌شود — گرید + gap + padding + خودِ محتوا ارتفاع را می‌سازند.
+ * تنها استثنا ‎--panel-max-height‎ است که کاربر از تبِ استایل می‌دهد و آن
+ * هم شیرِ اطمینانِ سرریز است، نه ارتفاعِ طراحی‌شده.
+ *
+ * هر مقدارِ دیداری در این بخش از یک ‎--zig-search-*‎ می‌آید که تبِ استایلِ
+ * المنتور رویش می‌نویسد؛ مقدارِ پیش‌فرضِ داخلِ ‎var()‎ همان چیزی است که در
+ * طرح تأیید شده. یعنی ویجت بدونِ هیچ تنظیمی دقیقاً شبیهِ طرح در می‌آید و
+ * هر تکه‌اش هم جداگانه قابلِ تغییر است.
  */
 
 .zig-search {
 	position: relative;
 	width: var(--zig-search-width, 100%);
 	max-width: 100%;
+	/* فضایِ فیلد را رزرو می‌کند تا بازشدنِ پنلِ اورلی صفحه را نپراند */
+	min-height: var(--zig-search-field-height, 56px);
 	box-sizing: border-box;
 }
 
@@ -4843,24 +4850,40 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 /*
- * یک سطحِ سفیدِ واحد: فیلد بالا، پنل درست زیرش، هر دو فرزندِ همین جعبه —
- * نه دو کارتِ مستقل با فاصلهٔ بیرونی. استایلِ پس‌زمینه/حاشیه/سایه/رادیوسِ
- * خودِ shell از تبِ استایل («پوسته و پنل») می‌آید؛ فیلد و پنل به‌طورِ
- * پیش‌فرض شفاف‌اند تا همان سطحِ shell از پشتشان دیده شود.
+ * پوسته دو زندگیِ متفاوت دارد و همین است که «یک سطحِ سفیدِ واحد» را ممکن
+ * می‌کند بدونِ اینکه در حالتِ بسته یک کارتِ سفیدِ بی‌دلیل دورِ فیلد بیفتد:
+ *
+ *   بسته  هیچ ظاهری ندارد — فقط قرصِ خاکستریِ فیلد دیده می‌شود.
+ *   باز   کارتِ سفید می‌شود و *رویِ* محتوایِ صفحه می‌نشیند (اورلی)، با
+ *         فیلد در بالا و پنل بلافاصله زیرش، داخلِ همان یک کارت.
  */
 .zig-search__shell {
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
 }
+
+.zig-search.is-open .zig-search__shell {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline: 0;
+	z-index: 60;
+	padding: var(--zig-search-shell-padding, 12px);
+	background-color: var(--zig-search-shell-bg, #ffffff);
+	border-radius: var(--zig-search-shell-radius, 24px);
+	box-shadow: var(--zig-search-shell-shadow, 0 18px 48px rgba(17, 17, 26, 0.12));
+}
+
+/* ---------------------------- فیلد ---------------------------- */
 
 .zig-search__field {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 12px;
 	width: 100%;
-	position: relative;
-	z-index: 1;
+	min-height: var(--zig-search-field-height, 56px);
+	padding-inline: var(--zig-search-field-padding-inline, 20px);
+	background-color: var(--zig-search-field-bg, #f2f2f5);
+	border-radius: var(--zig-search-field-radius, 999px);
 }
 
 .zig-search__icon-btn,
@@ -4873,7 +4896,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	border: 0;
 	padding: 0;
 	cursor: pointer;
-	color: inherit;
+	color: var(--zig-search-field-icon-color, #1f1f27);
 	line-height: 0;
 }
 
@@ -4881,13 +4904,25 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	cursor: default;
 }
 
+/*
+ * ‎[hidden]‎ به خودِ کلاس چسبیده، نه یک قاعدهٔ سراسری با ‎!important‎:
+ * دو انتخاب‌گر (کلاس + attribute) از یک کلاسِ تنها قوی‌تر است، پس بدونِ
+ * زوردهی برنده می‌شود. بدونِ این، ‎display: inline-flex‎ی بالا رویِ
+ * ‎[hidden] { display: none }‎ی کارگزارِ کاربر می‌چربد — نه به‌خاطرِ وزن،
+ * بلکه چون قواعدِ نویسنده همیشه بر قواعدِ UA اولویت دارند — و عنصری که
+ * جاوااسکریپت پنهانش کرده همچنان دیده می‌شود.
+ */
+.zig-search__clear[hidden] {
+	display: none;
+}
+
 .zig-search__icon-btn svg,
 .zig-search__icon-btn i,
 .zig-search__clear svg,
 .zig-search__clear i {
-	width: var(--zig-search-icon-size, 18px);
-	height: var(--zig-search-icon-size, 18px);
-	font-size: var(--zig-search-icon-size, 18px);
+	width: var(--zig-search-icon-size, 20px);
+	height: var(--zig-search-icon-size, 20px);
+	font-size: var(--zig-search-icon-size, 20px);
 }
 
 .zig-search__input {
@@ -4898,43 +4933,35 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	outline: 0;
 	padding: 0;
 	font: inherit;
-	color: inherit;
+	color: var(--zig-search-text-color, #1f1f27);
 }
 
-/*
- * هر عنصری که این افزونه با جاوااسکریپت ‎hidden‎‌اش می‌کند — فیلد
- * پاک‌کردن، هر بخشِ پنل، دکمهٔ «بیشتر» — این‌جا با یک سلکتورِ مقیدِ
- * ‎[hidden]‎ (نه ‎!important‎؛ سقفِ ‎!important‎ی این فایل یکی است و آن
- * یکی جایِ دیگری مصرف شده) از رویِ ‎display‎ی خودِ همان عنصر رد می‌شود:
- * دو کلاس/اسمِ عنصر به‌اضافهٔ ‎[hidden]‎ specificityاش بالاتر از خودِ
- * قاعدهٔ ‎display‎ است، پس بدونِ نیاز به وزن‌کشی برنده می‌شود.
- *
- * بدونِ این، دقیقاً همان باگی پیش می‌آید که یک‌بار افتاد: جاوااسکریپت
- * ‎hidden‎ را درست می‌گذارد، ولی چون قاعدهٔ ‎display‎ی خودِ عنصر
- * (‎.zig-search__clear { display: inline-flex; }‎) به‌تنهایی هر باری بر
- * ‎[hidden] { display: none; }‎ی کارگزارِ کاربر می‌چربد — نه به‌خاطرِ
- * specificity، بلکه چون قواعدِ نویسنده همیشه بر قواعدِ UA اولویت دارند —
- * عنصر همچنان دیده می‌شود؛ انگار جاوااسکریپت اصلاً کاری نکرده.
- */
-.zig-search__clear[hidden],
-.zig-search__panel[hidden],
-.zig-search__section[hidden],
-.zig-search__more[hidden] {
-	display: none;
+.zig-search__input::placeholder {
+	color: var(--zig-search-placeholder-color, #9a9aa5);
+	opacity: 1;
 }
+
+/* ---------------------------- پنل ---------------------------- */
 
 .zig-search__panel {
 	display: flex;
 	flex-direction: column;
-	gap: var(--zig-search-panel-gap, 16px);
-	position: relative;
-	z-index: 1;
+	gap: var(--zig-search-panel-gap, 22px);
+	padding: var(--zig-search-panel-padding, 22px 10px 10px);
+}
+
+.zig-search__panel[hidden] {
+	display: none;
 }
 
 .zig-search__section {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 14px;
+}
+
+.zig-search__section[hidden] {
+	display: none;
 }
 
 .zig-search__section-head {
@@ -4945,7 +4972,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-search__section-title {
-	font-weight: 600;
+	font-weight: 700;
+	color: var(--zig-search-heading-color, #1f1f27);
 }
 
 .zig-search__clear-history {
@@ -4954,9 +4982,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	padding: 0;
 	cursor: pointer;
 	font: inherit;
-	color: inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
+	color: var(--zig-search-clear-history-color, #8a8a96);
 }
 
 /* ---------------------------- چیپ‌ها ---------------------------- */
@@ -4964,24 +4990,32 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search__chips {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: 10px;
 }
 
 .zig-search__chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
+	gap: 8px;
+	padding: var(--zig-search-chip-padding, 10px 16px);
+	background-color: var(--zig-search-chip-bg, #ffffff);
+	border: 1px solid var(--zig-search-chip-border, #e8e8ee);
+	border-radius: var(--zig-search-chip-radius, 999px);
+	color: var(--zig-search-chip-color, #3a3a46);
 	text-decoration: none;
-	color: inherit;
-	cursor: pointer;
 	line-height: 1;
 }
 
+/*
+ * آیکون بعد از متن می‌آید (هم در مارک‌آپ هم اینجا) — در راست‌به‌چپ یعنی
+ * سمتِ چپِ چیپ، دقیقاً همان‌جایی که در طرح نشسته.
+ */
 .zig-search__chip svg,
 .zig-search__chip i {
 	width: 1em;
 	height: 1em;
 	flex: none;
+	color: var(--zig-search-chip-icon-color, #9a9aa5);
 }
 
 /* ---------------------------- محصولات ---------------------------- */
@@ -4989,13 +5023,16 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search__products {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 10px;
 }
 
 .zig-search__product {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 14px;
+	padding: var(--zig-search-product-padding, 10px 14px);
+	background-color: var(--zig-search-product-bg, #f7f7f9);
+	border-radius: var(--zig-search-product-radius, 16px);
 	text-decoration: none;
 	color: inherit;
 	width: 100%;
@@ -5006,7 +5043,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	width: var(--zig-search-product-image, 56px);
 	height: var(--zig-search-product-image, 56px);
 	object-fit: cover;
-	background-color: #f2f2f5;
+	border-radius: var(--zig-search-product-image-radius, 12px);
+	background-color: #e3e3e9;
 }
 
 .zig-search__product-body {
@@ -5014,16 +5052,20 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: 6px;
 }
 
 .zig-search__product-title {
+	font-weight: 700;
+	color: var(--zig-search-product-title-color, #1f1f27);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
 .zig-search__product-meta {
+	font-size: 0.85em;
+	color: var(--zig-search-product-meta-color, #a0a0ab);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -5033,6 +5075,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex: none;
 	display: inline-flex;
 	line-height: 0;
+	color: var(--zig-search-product-chevron-color, #1f1f27);
 }
 
 /* ---------------------------- دکمهٔ بیشتر ---------------------------- */
@@ -5041,9 +5084,27 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 100%;
-	cursor: pointer;
+	gap: 10px;
+	align-self: center;
+	padding: var(--zig-search-more-padding, 14px 32px);
+	border: 0;
+	border-radius: var(--zig-search-more-radius, 999px);
+	background-image: var(--zig-search-more-bg, linear-gradient(270deg, #6d3ae0 0%, #9a63f0 100%));
+	color: var(--zig-search-more-color, #ffffff);
+	text-decoration: none;
 	font: inherit;
+	cursor: pointer;
+}
+
+.zig-search__more[hidden] {
+	display: none;
+}
+
+.zig-search__more svg,
+.zig-search__more i {
+	width: 1em;
+	height: 1em;
+	flex: none;
 }
 
 /* ---------------------------- بدونِ نتیجه ---------------------------- */
@@ -5051,16 +5112,27 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search__section--empty {
 	align-items: center;
 	text-align: center;
-	gap: 8px;
+	gap: 14px;
+	padding-block: 18px;
 }
 
 .zig-search__empty-icon {
 	display: inline-flex;
 	line-height: 0;
+	color: var(--zig-search-empty-icon-color, #1f1f27);
+}
+
+.zig-search__empty-icon svg,
+.zig-search__empty-icon i {
+	width: var(--zig-search-empty-icon-size, 30px);
+	height: var(--zig-search-empty-icon-size, 30px);
+	font-size: var(--zig-search-empty-icon-size, 30px);
 }
 
 .zig-search__empty-text {
 	margin: 0;
+	font-weight: 600;
+	color: var(--zig-search-empty-text-color, #1f1f27);
 }
 
 /* قالب‌هایِ آیکونِ داینامیک — هیچ‌وقت خودشان دیده نمی‌شوند، فقط clone می‌شوند */

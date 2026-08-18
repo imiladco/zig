@@ -290,6 +290,7 @@ final class Search extends Widget_Base {
             'search_icon'  => [__('آیکونِ سرچ', 'zig3d-widgets'), 'fas fa-search', 'fa-solid'],
             'clear_icon'   => [__('آیکونِ پاک‌کردن (ضربدر)', 'zig3d-widgets'), 'fas fa-times', 'fa-solid'],
             'chevron_icon' => [__('آیکونِ فلشِ ردیفِ محصول', 'zig3d-widgets'), 'fas fa-chevron-left', 'fa-solid'],
+            'more_icon'    => [__('آیکونِ دکمهٔ «نمایشِ بیشتر»', 'zig3d-widgets'), 'fas fa-arrow-left', 'fa-solid'],
             'empty_icon'   => [__('آیکونِ حالتِ بدونِ نتیجه', 'zig3d-widgets'), 'fas fa-search', 'fa-solid'],
             /*
              * پیش‌فرضِ خالی، عمداً: در طرحِ تأییدشده، چیپِ «جستجوهایِ اخیر»
@@ -432,11 +433,23 @@ final class Search extends Widget_Base {
 
         $this->add_box_style_tabs('field', '.zig-search__field', '.zig-search__field');
 
+        /*
+         * ارتفاعِ پایه فقط همین‌جاست — و ‎min-height‎ است نه ‎height‎: در
+         * حالتِ بسته قدِ فیلد را به طرح می‌رساند، ولی اگر کاربر فونت را
+         * بزرگ کند، فیلد به‌جایِ بریدنِ متن رشد می‌کند.
+         */
+        $this->add_responsive_control('field_height', [
+            'label'      => __('ارتفاعِ پایهٔ فیلد', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 32, 'max' => 120]],
+            'selectors'  => ['{{WRAPPER}} .zig-search' => '--zig-search-field-height: {{SIZE}}{{UNIT}};'],
+        ]);
+
         $this->add_responsive_control('field_icon_size', [
             'label'     => __('اندازهٔ آیکون‌هایِ فیلد', 'zig3d-widgets'),
             'type'      => Controls_Manager::SLIDER,
             'range'     => ['px' => ['min' => 8, 'max' => 60]],
-            'default'   => ['size' => 18, 'unit' => 'px'],
             'selectors' => ['{{WRAPPER}} .zig-search__field' => '--zig-search-icon-size: {{SIZE}}{{UNIT}};'],
         ]);
 
@@ -483,16 +496,22 @@ final class Search extends Widget_Base {
             'tab'   => Controls_Manager::TAB_STYLE,
         ]);
 
-        $this->add_box_style_tabs('shell', '.zig-search__shell', '.zig-search__shell');
+        /*
+         * ‎.is-open‎ در انتخاب‌گر عمدی است: کارتِ سفید فقط در حالتِ باز
+         * وجود دارد. در حالتِ بسته پوسته هیچ ظاهری ندارد و فقط قرصِ
+         * خاکستریِ فیلد دیده می‌شود — اگر این قید نبود، یک حلقهٔ سفیدِ
+         * بی‌دلیل دورِ فیلدِ بسته می‌افتاد.
+         */
+        $this->add_box_style_tabs('shell', '.zig-search.is-open .zig-search__shell', '.zig-search.is-open .zig-search__shell');
 
         $this->add_control('shell_width', [
-            'label'      => __('عرضِ پیش‌فرض (حالتِ بسته)', 'zig3d-widgets'),
+            'label'      => __('عرضِ ویجت', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px', '%'],
             'range'      => ['px' => ['min' => 160, 'max' => 800], '%' => ['min' => 10, 'max' => 100]],
             'default'    => ['size' => 100, 'unit' => '%'],
             'selectors'  => ['{{WRAPPER}} .zig-search' => '--zig-search-width: {{SIZE}}{{UNIT}};'],
-            'description' => __('ارتفاعِ حالتِ بسته ثابت است؛ همهٔ حالت‌هایِ باز از رویِ گرید+فاصله+پدینگِ محتوا شکل می‌گیرند، نه ارتفاعِ ثابت.', 'zig3d-widgets'),
+            'description' => __('فقط حالتِ بسته ارتفاعِ پایه دارد؛ همهٔ حالت‌هایِ باز از رویِ گرید+فاصله+پدینگِ محتوا شکل می‌گیرند، نه ارتفاعِ ثابت.', 'zig3d-widgets'),
         ]);
 
         $this->add_responsive_control('panel_gap', [
@@ -500,7 +519,6 @@ final class Search extends Widget_Base {
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px'],
             'range'      => ['px' => ['min' => 0, 'max' => 60]],
-            'default'    => ['size' => 16, 'unit' => 'px'],
             'selectors'  => ['{{WRAPPER}} .zig-search__panel' => '--zig-search-panel-gap: {{SIZE}}{{UNIT}};'],
         ]);
 
@@ -924,9 +942,12 @@ final class Search extends Widget_Base {
         );
 
         /*
-         * حالتِ بستهٔ پیش‌فرض (S0) فقط جای‌گزین + آیکونِ سرچ دارد — بدونِ
-         * X. این دکمه فقط وقتی معنا دارد که چیزی برایِ پاک‌کردن باشد؛
-         * جاوااسکریپت با طول‌کشیدنِ متنِ ورودی نمایانش می‌کند.
+         * X به *باز بودنِ پنل* گره خورده، نه به اینکه متنی تایپ شده باشد:
+         * در طرح، هر چهار حالتِ باز — حتی «پیش فرض» که فیلدش خالی است —
+         * این دکمه را دارند، و هر دو حالتِ بسته (S0 و S5، حتی وقتی مقدارِ
+         * تایپ‌شده در فیلد مانده) ندارند. یعنی نقشش «بستنِ اورلی» است، نه
+         * «پاک‌کردنِ متن». پس اینجا ‎hidden‎ شروع می‌شود و جاوااسکریپت
+         * هم‌زمان با باز/بسته‌شدنِ پنل جابه‌جایش می‌کند.
          */
         printf(
             '<button type="button" class="zig-search__clear" hidden aria-label="%s">%s</button>',
@@ -980,8 +1001,9 @@ final class Search extends Widget_Base {
          * کاری که با چیپ‌ها می‌کند.
          */
         printf(
-            '<a class="zig-search__more" hidden>%s</a>',
-            esc_html((string) ($settings['more_button_text'] ?? ''))
+            '<a class="zig-search__more" hidden><span>%s</span>%s</a>',
+            esc_html((string) ($settings['more_button_text'] ?? '')),
+            $this->render_icon($settings, 'more_icon')
         );
         echo '</div>';
     }
@@ -1008,10 +1030,11 @@ final class Search extends Widget_Base {
 
         foreach ($labels as $label) {
             printf(
-                '<a class="zig-search__chip zig-search__chip--popular" href="%s">%s<span>%s</span></a>',
+                // آیکون *بعدِ* متن — در راست‌به‌چپ یعنی سمتِ چپِ چیپ، همان‌جا که طرح گذاشته
+                '<a class="zig-search__chip zig-search__chip--popular" href="%s"><span>%s</span>%s</a>',
                 esc_url($this->results_url($label)),
-                $this->render_icon($settings, 'popular_icon'),
-                esc_html($label)
+                esc_html($label),
+                $this->render_icon($settings, 'popular_icon')
             );
         }
 

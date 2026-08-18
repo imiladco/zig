@@ -107,6 +107,7 @@ $html = $render([
     'empty_icon'          => ['value' => 'fas fa-search', 'library' => 'fa-solid'],
     'popular_icon'        => ['value' => 'fas fa-arrow-up-right-from-square', 'library' => 'fa-solid'],
     'chevron_icon'        => ['value' => 'fas fa-chevron-left', 'library' => 'fa-solid'],
+    'more_icon'           => ['value' => 'fas fa-arrow-left', 'library' => 'fa-solid'],
     'enable_recent'       => 'yes',
     'popular_searches'    => [['label' => 'میلینگ ماشین'], ['label' => '  ']],
 ]);
@@ -127,14 +128,31 @@ Tests::same(
 );
 
 /*
- * طبقِ طرحِ تأییدشده (مرجعِ «Overlay+Border»)، حالتِ بستهٔ پیش‌فرض هیچ
- * ضربدری ندارد — فقط جای‌گزین + آیکونِ سرچ. دکمه در DOM هست (تا
- * جاوااسکریپت مجبور نباشد بسازدش) ولی با ‎hidden‎ شروع می‌شود؛ فقط با
- * تایپ‌شدنِ متن نمایان می‌شود.
+ * طبقِ طرحِ تأییدشده (مرجعِ «Overlay+Border»)، هر دو حالتِ بسته — چه
+ * خالی، چه با مقدارِ حفظ‌شده — بدونِ ضربدرند؛ و هر چهار حالتِ باز، حتی
+ * «پیش فرض»ی که فیلدش خالی است، ضربدر دارند. یعنی این دکمه به *باز
+ * بودنِ پنل* گره خورده نه به تایپ‌شدنِ متن. رندرِ سمتِ سرور همیشه بسته
+ * است، پس همیشه ‎hidden‎ شروع می‌شود.
  */
 Tests::ok(
     'دکمهٔ پاک‌کردن با ویژگیِ hidden رندر می‌شود — یعنی حالتِ پیش‌فرض بدونِ X است',
     false !== strpos($html, 'zig-search__clear" hidden')
+);
+
+/*
+ * ترتیبِ آیکون نسبت به متن مهم است، نه فقط وجودش: در راست‌به‌چپ، آیکونی
+ * که *بعدِ* متن بیاید سمتِ چپِ چیپ می‌نشیند — همان‌جا که طرح گذاشته. اگر
+ * کسی جایشان را عوض کند، آیکون به سمتِ راست می‌پرد بدونِ اینکه هیچ تستی
+ * بشکند، مگر این.
+ */
+Tests::ok(
+    'در چیپِ پرطرفدار، آیکون بعدِ متن می‌آید (یعنی سمتِ چپ در RTL)',
+    (bool) preg_match('/zig-search__chip--popular[^>]*>\s*<span>[^<]*<\/span>\s*<svg/', $html)
+);
+
+Tests::ok(
+    'دکمهٔ «بیشتر» هم متن‌اول-آیکون‌دوم است',
+    (bool) preg_match('/zig-search__more[^>]*>\s*<span>[^<]*<\/span>\s*<svg/', $html)
 );
 
 /*
@@ -190,9 +208,9 @@ foreach ([
     'min_chars', 'debounce_ms', 'result_limit', 'search_fields', 'enable_shortcut',
     'category_source', 'brand_source',
     'placeholder_text', 'empty_message', 'more_button_text', 'recent_heading_text', 'clear_history_text', 'popular_heading_text',
-    'search_icon', 'clear_icon', 'chevron_icon', 'empty_icon', 'recent_icon', 'popular_icon',
+    'search_icon', 'clear_icon', 'chevron_icon', 'empty_icon', 'recent_icon', 'popular_icon', 'more_icon',
     'popular_searches', 'enable_recent', 'recent_max', 'recent_expiry_days', 'synonym_pairs',
-    'TABS:field_box_tabs', 'field_icon_size', 'field_icon_color', 'group:field_typography',
+    'TABS:field_box_tabs', 'field_height', 'field_icon_size', 'field_icon_color', 'group:field_typography',
     'TABS:shell_box_tabs', 'panel_gap', 'panel_max_height',
     'group:section_title_typography', 'group:clear_history_typography',
     'TABS:product_box_tabs', 'product_image_size', 'group:product_title_typography', 'group:product_meta_typography', 'product_chevron_color',
