@@ -4823,17 +4823,34 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
    ========================================================================== */
 
 /*
- * قاعدهٔ ارتفاع، همان‌طور که در بحثِ معماری قفل شد: ارتفاعِ پایه فقط مالِ
- * حالتِ بستهٔ پیش‌فرض است (و آن هم ‎min-height‎ است نه ‎height‎ی سفت، تا
- * فونتِ بزرگ‌تر نشکندش). از لحظه‌ای که پنل باز می‌شود هیچ ارتفاعِ ثابتی
- * نوشته نمی‌شود — گرید + gap + padding + خودِ محتوا ارتفاع را می‌سازند.
- * تنها استثنا ‎--panel-max-height‎ است که کاربر از تبِ استایل می‌دهد و آن
- * هم شیرِ اطمینانِ سرریز است، نه ارتفاعِ طراحی‌شده.
+ * دربارهٔ وزنِ انتخاب‌گرها — مهم‌ترین تصمیمِ این بخش، و چیزی که یک‌بار
+ * شکست و باعث شد ویجت رویِ سایتِ واقعی شبیهِ طرح در نیاید:
  *
- * هر مقدارِ دیداری در این بخش از یک ‎--zig-search-*‎ می‌آید که تبِ استایلِ
- * المنتور رویش می‌نویسد؛ مقدارِ پیش‌فرضِ داخلِ ‎var()‎ همان چیزی است که در
- * طرح تأیید شده. یعنی ویجت بدونِ هیچ تنظیمی دقیقاً شبیهِ طرح در می‌آید و
- * هر تکه‌اش هم جداگانه قابلِ تغییر است.
+ * قواعدِ اینجا نمی‌توانند تک‌کلاسی باشند. یک ورودیِ ساده در وردپرس هم‌زمان
+ * زیرِ آتشِ چند قاعدهٔ دیگر است — ‎.elementor input[type="text"]‎،
+ * ‎.woocommerce input.input-text‎، استایلِ فرمِ خودِ قالب — که همه
+ * ‎(0,1,1)‎ یا بیشترند و از ‎.zig-search__input‎ی ‎(0,1,0)‎ می‌چربند.
+ * نتیجه‌اش این بود: قرصِ خاکستریِ طرح سر جایش می‌ماند ولی داخلش یک کادرِ
+ * سفیدِ حاشیه‌دارِ قالب می‌نشست، و لینک‌ها آبیِ زیرخط‌دار می‌شدند.
+ *
+ * پس هر قاعده با ریشهٔ ‎.zig-search‎ شروع می‌شود و روی تگ‌هایی که قالب‌ها
+ * واقعاً استایلشان می‌دهند (‎input‎/‎button‎/‎a‎/‎p‎) نامِ تگ هم به کلاس
+ * می‌چسبد. این یعنی ‎(0,2,0)‎ تا ‎(0,2,1)‎:
+ *
+ *   • از قواعدِ قالب ‎(0,1,1)‎ قوی‌تر است → ظاهرِ طرح برنده می‌شود.
+ *   • از کنترل‌هایِ المنتور ضعیف‌تر است — آن‌ها ‎{{WRAPPER}} .x‎ یعنی
+ *     دست‌کم ‎(0,3,0)‎ → تبِ استایل همچنان بر همه‌چیز می‌چربد.
+ *
+ * همین بازه است که هم‌زمان «شبیهِ طرح» و «کاملاً قابلِ شخصی‌سازی» را
+ * ممکن می‌کند؛ یک درجه بالاتر یا پایین‌تر، یکی از این دو می‌شکند.
+ *
+ * قاعدهٔ ارتفاع هم همان‌طور که قفل شد: ارتفاعِ پایه فقط مالِ حالتِ بستهٔ
+ * پیش‌فرض است و آن هم ‎min-height‎ است نه ‎height‎ی سفت. از لحظه‌ای که
+ * پنل باز می‌شود هیچ ارتفاعِ ثابتی نوشته نمی‌شود — گرید + gap + padding +
+ * خودِ محتوا ارتفاع را می‌سازند.
+ *
+ * هر مقدارِ دیداری از یک ‎--zig-search-*‎ می‌آید که تبِ استایل رویش
+ * می‌نویسد و پیش‌فرضِ داخلِ ‎var()‎ همان طرحِ تأییدشده است.
  */
 
 .zig-search {
@@ -4845,19 +4862,21 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	box-sizing: border-box;
 }
 
-.zig-search * {
+.zig-search *,
+.zig-search *::before,
+.zig-search *::after {
 	box-sizing: border-box;
 }
 
 /*
  * پوسته دو زندگیِ متفاوت دارد و همین است که «یک سطحِ سفیدِ واحد» را ممکن
- * می‌کند بدونِ اینکه در حالتِ بسته یک کارتِ سفیدِ بی‌دلیل دورِ فیلد بیفتد:
+ * می‌کند بدونِ اینکه در حالتِ بسته کارتی سفید دورِ فیلد بیفتد:
  *
  *   بسته  هیچ ظاهری ندارد — فقط قرصِ خاکستریِ فیلد دیده می‌شود.
  *   باز   کارتِ سفید می‌شود و *رویِ* محتوایِ صفحه می‌نشیند (اورلی)، با
  *         فیلد در بالا و پنل بلافاصله زیرش، داخلِ همان یک کارت.
  */
-.zig-search__shell {
+.zig-search .zig-search__shell {
 	display: flex;
 	flex-direction: column;
 }
@@ -4875,125 +4894,158 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 /* ---------------------------- فیلد ---------------------------- */
 
-.zig-search__field {
+.zig-search form.zig-search__field {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	width: 100%;
+	margin: 0;
 	min-height: var(--zig-search-field-height, 56px);
+	padding-block: 0;
 	padding-inline: var(--zig-search-field-padding-inline, 20px);
 	background-color: var(--zig-search-field-bg, #f2f2f5);
+	border: 0;
 	border-radius: var(--zig-search-field-radius, 999px);
+	box-shadow: none;
 }
 
-.zig-search__icon-btn,
-.zig-search__clear {
+.zig-search .zig-search__field button.zig-search__icon-btn,
+.zig-search .zig-search__field button.zig-search__clear {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	flex: none;
+	width: auto;
+	min-width: 0;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
 	background: transparent;
 	border: 0;
-	padding: 0;
-	cursor: pointer;
+	border-radius: 0;
+	box-shadow: none;
 	color: var(--zig-search-field-icon-color, #1f1f27);
 	line-height: 0;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
 }
 
-.zig-search__icon-btn {
+.zig-search .zig-search__field button.zig-search__icon-btn {
 	cursor: default;
 }
 
 /*
- * ‎[hidden]‎ به خودِ کلاس چسبیده، نه یک قاعدهٔ سراسری با ‎!important‎:
- * دو انتخاب‌گر (کلاس + attribute) از یک کلاسِ تنها قوی‌تر است، پس بدونِ
- * زوردهی برنده می‌شود. بدونِ این، ‎display: inline-flex‎ی بالا رویِ
- * ‎[hidden] { display: none }‎ی کارگزارِ کاربر می‌چربد — نه به‌خاطرِ وزن،
- * بلکه چون قواعدِ نویسنده همیشه بر قواعدِ UA اولویت دارند — و عنصری که
- * جاوااسکریپت پنهانش کرده همچنان دیده می‌شود.
+ * ‎[hidden]‎ به خودِ کلاس چسبیده تا از قاعدهٔ ‎display‎ی بالا قوی‌تر باشد.
+ * بدونِ این، ‎display: inline-flex‎ رویِ ‎[hidden] { display: none }‎ی
+ * کارگزارِ کاربر می‌چربد — نه به‌خاطرِ وزن، بلکه چون قواعدِ نویسنده همیشه
+ * بر قواعدِ UA اولویت دارند — و عنصری که جاوااسکریپت پنهانش کرده همچنان
+ * دیده می‌شود.
  */
-.zig-search__clear[hidden] {
+.zig-search .zig-search__field button.zig-search__clear[hidden] {
 	display: none;
 }
 
-.zig-search__icon-btn svg,
-.zig-search__icon-btn i,
-.zig-search__clear svg,
-.zig-search__clear i {
+.zig-search .zig-search__field button.zig-search__icon-btn svg,
+.zig-search .zig-search__field button.zig-search__icon-btn i,
+.zig-search .zig-search__field button.zig-search__clear svg,
+.zig-search .zig-search__field button.zig-search__clear i {
 	width: var(--zig-search-icon-size, 20px);
 	height: var(--zig-search-icon-size, 20px);
 	font-size: var(--zig-search-icon-size, 20px);
 }
 
-.zig-search__input {
+.zig-search .zig-search__field input.zig-search__input {
 	flex: 1 1 auto;
+	background-image: none;
+	width: auto;
 	min-width: 0;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	outline: 0;
+	box-shadow: none;
+	font: inherit;
+	line-height: normal;
+	color: var(--zig-search-text-color, #1f1f27);
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.zig-search .zig-search__field input.zig-search__input:focus {
 	background: transparent;
 	border: 0;
 	outline: 0;
-	padding: 0;
-	font: inherit;
-	color: var(--zig-search-text-color, #1f1f27);
+	box-shadow: none;
 }
 
-.zig-search__input::placeholder {
+.zig-search .zig-search__field input.zig-search__input::placeholder {
 	color: var(--zig-search-placeholder-color, #9a9aa5);
 	opacity: 1;
 }
 
 /* ---------------------------- پنل ---------------------------- */
 
-.zig-search__panel {
+.zig-search .zig-search__panel {
 	display: flex;
 	flex-direction: column;
 	gap: var(--zig-search-panel-gap, 22px);
 	padding: var(--zig-search-panel-padding, 22px 10px 10px);
 }
 
-.zig-search__panel[hidden] {
+.zig-search .zig-search__panel[hidden] {
 	display: none;
 }
 
-.zig-search__section {
+.zig-search .zig-search__section {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 }
 
-.zig-search__section[hidden] {
+.zig-search .zig-search__section[hidden] {
 	display: none;
 }
 
-.zig-search__section-head {
+.zig-search .zig-search__section-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
 }
 
-.zig-search__section-title {
+.zig-search .zig-search__section-title {
 	font-weight: 700;
 	color: var(--zig-search-heading-color, #1f1f27);
 }
 
-.zig-search__clear-history {
+.zig-search .zig-search__section-head button.zig-search__clear-history {
+	margin: 0;
+	padding: 0;
 	background: transparent;
 	border: 0;
-	padding: 0;
-	cursor: pointer;
+	border-radius: 0;
+	box-shadow: none;
 	font: inherit;
 	color: var(--zig-search-clear-history-color, #8a8a96);
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
 }
 
 /* ---------------------------- چیپ‌ها ---------------------------- */
 
-.zig-search__chips {
+.zig-search .zig-search__chips {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
 }
 
-.zig-search__chip {
+.zig-search a.zig-search__chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
@@ -5003,6 +5055,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	border-radius: var(--zig-search-chip-radius, 999px);
 	color: var(--zig-search-chip-color, #3a3a46);
 	text-decoration: none;
+	box-shadow: none;
 	line-height: 1;
 }
 
@@ -5010,8 +5063,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  * آیکون بعد از متن می‌آید (هم در مارک‌آپ هم اینجا) — در راست‌به‌چپ یعنی
  * سمتِ چپِ چیپ، دقیقاً همان‌جایی که در طرح نشسته.
  */
-.zig-search__chip svg,
-.zig-search__chip i {
+.zig-search a.zig-search__chip svg,
+.zig-search a.zig-search__chip i {
 	width: 1em;
 	height: 1em;
 	flex: none;
@@ -5020,25 +5073,27 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 /* ---------------------------- محصولات ---------------------------- */
 
-.zig-search__products {
+.zig-search .zig-search__products {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 }
 
-.zig-search__product {
+.zig-search a.zig-search__product {
 	display: flex;
 	align-items: center;
 	gap: 14px;
+	width: 100%;
 	padding: var(--zig-search-product-padding, 10px 14px);
 	background-color: var(--zig-search-product-bg, #f7f7f9);
+	border: 0;
 	border-radius: var(--zig-search-product-radius, 16px);
-	text-decoration: none;
 	color: inherit;
-	width: 100%;
+	text-decoration: none;
+	box-shadow: none;
 }
 
-.zig-search__product-image {
+.zig-search .zig-search__product-image {
 	flex: none;
 	width: var(--zig-search-product-image, 56px);
 	height: var(--zig-search-product-image, 56px);
@@ -5047,7 +5102,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	background-color: #e3e3e9;
 }
 
-.zig-search__product-body {
+.zig-search .zig-search__product-body {
 	flex: 1 1 auto;
 	min-width: 0;
 	display: flex;
@@ -5055,23 +5110,25 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	gap: 6px;
 }
 
-.zig-search__product-title {
+.zig-search .zig-search__product-title {
 	font-weight: 700;
 	color: var(--zig-search-product-title-color, #1f1f27);
+	text-decoration: none;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.zig-search__product-meta {
+.zig-search .zig-search__product-meta {
 	font-size: 0.85em;
 	color: var(--zig-search-product-meta-color, #a0a0ab);
+	text-decoration: none;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.zig-search__product-chevron {
+.zig-search .zig-search__product-chevron {
 	flex: none;
 	display: inline-flex;
 	line-height: 0;
@@ -5080,7 +5137,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 /* ---------------------------- دکمهٔ بیشتر ---------------------------- */
 
-.zig-search__more {
+.zig-search a.zig-search__more {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -5092,16 +5149,17 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	background-image: var(--zig-search-more-bg, linear-gradient(270deg, #6d3ae0 0%, #9a63f0 100%));
 	color: var(--zig-search-more-color, #ffffff);
 	text-decoration: none;
+	box-shadow: none;
 	font: inherit;
 	cursor: pointer;
 }
 
-.zig-search__more[hidden] {
+.zig-search a.zig-search__more[hidden] {
 	display: none;
 }
 
-.zig-search__more svg,
-.zig-search__more i {
+.zig-search a.zig-search__more svg,
+.zig-search a.zig-search__more i {
 	width: 1em;
 	height: 1em;
 	flex: none;
@@ -5109,27 +5167,27 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 /* ---------------------------- بدونِ نتیجه ---------------------------- */
 
-.zig-search__section--empty {
+.zig-search .zig-search__section--empty {
 	align-items: center;
 	text-align: center;
 	gap: 14px;
 	padding-block: 18px;
 }
 
-.zig-search__empty-icon {
+.zig-search .zig-search__empty-icon {
 	display: inline-flex;
 	line-height: 0;
 	color: var(--zig-search-empty-icon-color, #1f1f27);
 }
 
-.zig-search__empty-icon svg,
-.zig-search__empty-icon i {
+.zig-search .zig-search__empty-icon svg,
+.zig-search .zig-search__empty-icon i {
 	width: var(--zig-search-empty-icon-size, 30px);
 	height: var(--zig-search-empty-icon-size, 30px);
 	font-size: var(--zig-search-empty-icon-size, 30px);
 }
 
-.zig-search__empty-text {
+.zig-search p.zig-search__empty-text {
 	margin: 0;
 	font-weight: 600;
 	color: var(--zig-search-empty-text-color, #1f1f27);

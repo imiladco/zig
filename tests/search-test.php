@@ -236,3 +236,64 @@ Tests::group('ویجتِ سرچ › دامنهٔ سلکتورها');
 foreach (zig_collect_selectors(Search::class) as [$control, $selector]) {
     Tests::ok('سلکتورِ ' . $control . ' به {{WRAPPER}} مقید است', false !== strpos($selector, '{{WRAPPER}}'));
 }
+
+/* ==========================================================================
+ * وزنِ انتخاب‌گرهایِ CSS
+ *
+ * این گروه یک باگِ واقعی را نگه می‌دارد که دوبار افتاد و هیچ تستی
+ * نمی‌گرفتش: قواعدِ تک‌کلاسی (‎.zig-search__input‎) از استایلِ فرمِ
+ * قالب/ووکامرس (‎.elementor input[type="text"]‎ و هم‌خانواده‌هایش)
+ * ضعیف‌ترند، پس رویِ سایتِ واقعی ورودی کادرِ سفیدِ قالب را می‌گرفت و
+ * لینک‌ها آبیِ زیرخط‌دار می‌شدند — در حالی که خروجیِ رندر کاملاً درست
+ * بود و همهٔ سنجه‌ها سبز.
+ *
+ * دو شرط، و هر دو لازم‌اند:
+ *   • هر قاعده با ریشهٔ ‎.zig-search‎ شروع شود (وزن را به ‎(0,2,0)‎ می‌برد).
+ *   • رویِ تگ‌هایی که قالب‌ها استایلشان می‌دهند، نامِ تگ هم بیاید.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › وزنِ انتخاب‌گرهایِ CSS');
+
+$css = file_get_contents($root . '/assets/css/zig3d-widgets.css');
+$section = substr($css, strpos($css, "\n   سرچ\n"));
+
+preg_match_all('/(?m)^([^@{}\/\s][^{}]*?)\s*\{/', $section, $matches);
+
+$unscoped = [];
+
+foreach ($matches[1] as $group) {
+    foreach (explode(',', $group) as $selector) {
+        $selector = trim($selector);
+
+        if ('' === $selector || 0 === strpos($selector, '.zig-search')) {
+            continue;
+        }
+
+        $unscoped[] = $selector;
+    }
+}
+
+Tests::same(
+    'هر انتخاب‌گرِ بخشِ سرچ با ریشهٔ .zig-search شروع می‌شود',
+    $unscoped,
+    []
+);
+
+/*
+ * ورودی سخت‌ترین حالت است: ‎[type="text"]‎ در CSS هم‌وزنِ یک کلاس حساب
+ * می‌شود، پس ‎.elementor input[type="text"]‎ خودش ‎(0,2,1)‎ است و با یک
+ * زنجیرهٔ دوکلاسی *مساوی* می‌شود — و در تساوی، هرکدام دیرتر لود شوند
+ * می‌برند. برایِ همین ورودی و دکمه‌هایِ فیلد سه‌کلاسی نوشته شده‌اند.
+ */
+foreach ([
+    '.zig-search .zig-search__field input.zig-search__input',
+    '.zig-search .zig-search__field button.zig-search__icon-btn',
+    '.zig-search .zig-search__field button.zig-search__clear',
+] as $selector) {
+    Tests::keeps('زنجیرهٔ سه‌کلاسیِ ' . $selector . ' حاضر است', $section, $selector);
+}
+
+/* لینک‌ها هم نامِ تگ می‌گیرند، وگرنه رنگ/زیرخطِ قالب رویشان می‌نشیند */
+foreach (['a.zig-search__chip', 'a.zig-search__product', 'a.zig-search__more'] as $selector) {
+    Tests::keeps('انتخاب‌گرِ لینکِ ' . $selector . ' نامِ تگ دارد', $section, $selector);
+}
