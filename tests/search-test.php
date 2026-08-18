@@ -207,10 +207,10 @@ $controls = zig_collect_controls(Search::class);
 foreach ([
     'min_chars', 'debounce_ms', 'result_limit', 'search_fields', 'enable_shortcut',
     'category_source', 'brand_source',
-    'placeholder_text', 'empty_message', 'more_button_text', 'recent_heading_text', 'clear_history_text', 'popular_heading_text',
+    'placeholder_text', 'empty_message', 'products_heading_text', 'more_button_text', 'recent_heading_text', 'clear_history_text', 'popular_heading_text',
     'search_icon', 'clear_icon', 'chevron_icon', 'empty_icon', 'recent_icon', 'popular_icon', 'more_icon',
     'popular_searches', 'enable_recent', 'recent_max', 'recent_expiry_days', 'synonym_pairs',
-    'TABS:field_box_tabs', 'field_height', 'field_icon_size', 'field_icon_color', 'group:field_typography',
+    'TABS:field_box_tabs', 'field_height', 'field_icon_size', 'field_clear_size', 'field_icon_color', 'group:field_typography',
     'TABS:shell_box_tabs', 'panel_gap', 'panel_max_height',
     'group:section_title_typography', 'group:clear_history_typography',
     'TABS:product_box_tabs', 'product_image_size', 'group:product_title_typography', 'group:product_meta_typography', 'product_chevron_color',

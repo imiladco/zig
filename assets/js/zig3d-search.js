@@ -576,13 +576,34 @@
 		title.textContent = item.title || '';
 		body.appendChild(title);
 
-		var metaText = [item.category, item.brand].filter(Boolean).join(' • ');
+		/*
+		 * جداکننده یک دایرهٔ ۵ پیکسلی است، نه نویسهٔ «•» — پس به‌جای یک
+		 * رشتهٔ به‌هم‌چسبیده، هر تکه ‎<span>‎ی خودش را می‌گیرد تا بشود
+		 * جداگانه استایلش داد (و ترتیبِ راست‌به‌چپ هم صریح بماند: دسته
+		 * سمتِ راست، برند سمتِ چپ، دقیقاً مثلِ طرح).
+		 */
+		var parts = [item.category, item.brand].filter(Boolean);
 
-		if (metaText) {
+		if (parts.length) {
 			var meta = document.createElement('span');
 
 			meta.className = 'zig-search__product-meta';
-			meta.textContent = metaText;
+
+			for (var p = 0; p < parts.length; p++) {
+				if (p > 0) {
+					var dot = document.createElement('span');
+
+					dot.className = 'zig-search__product-meta-dot';
+					dot.setAttribute('aria-hidden', 'true');
+					meta.appendChild(dot);
+				}
+
+				var part = document.createElement('span');
+
+				part.textContent = parts[p];
+				meta.appendChild(part);
+			}
+
 			body.appendChild(meta);
 		}
 

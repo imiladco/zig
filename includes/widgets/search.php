@@ -248,6 +248,13 @@ final class Search extends Widget_Base {
             'default' => __('همچین نتیجه‌ای پیدا نکردیم', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('products_heading_text', [
+            'label'   => __('عنوانِ بخشِ محصولات', 'zig3d-widgets'),
+            'type'    => Controls_Manager::TEXT,
+            'dynamic' => ['active' => true],
+            'default' => __('محصولات', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('more_button_text', [
             'label'   => __('متنِ دکمهٔ «نمایشِ بیشتر»', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
@@ -1002,6 +1009,9 @@ final class Search extends Widget_Base {
 
     private function render_products_section_shell(array $settings): void {
         echo '<div class="zig-search__section zig-search__section--products" hidden>';
+        echo '<div class="zig-search__section-head">';
+        printf('<span class="zig-search__section-title">%s</span>', esc_html((string) ($settings['products_heading_text'] ?? '')));
+        echo '</div>';
         echo '<div class="zig-search__products" data-role="products"></div>';
 
         /*

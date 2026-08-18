@@ -4898,7 +4898,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search form.zig-search__field {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: var(--zig-search-field-gap, 16px);
 	width: 100%;
 	margin: 0;
 	min-height: var(--zig-search-field-height, 46px);
@@ -5102,12 +5102,20 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search a.zig-search__product {
 	display: flex;
 	align-items: center;
-	gap: 14px;
+	justify-content: space-between;
+	gap: var(--zig-search-product-gap, 12px);
 	width: 100%;
-	padding: var(--zig-search-product-padding, 10px 14px);
-	background-color: var(--zig-search-product-bg, #f3f4f6);
-	border: 0;
-	border-radius: var(--zig-search-product-radius, 16px);
+	/*
+	 * نامتقارن، دقیقاً مثلِ طرح: سمتِ تصویر ۸ و سمتِ فلش ۱۶. با
+	 * ‎padding-inline-*‎ نوشته شده تا در چیدمانِ چپ‌به‌راست هم خودش
+	 * برعکس شود، نه اینکه دستی وارونه‌اش کنیم.
+	 */
+	padding-block: var(--zig-search-product-padding-block, 8px);
+	padding-inline-start: var(--zig-search-product-padding-start, 8px);
+	padding-inline-end: var(--zig-search-product-padding-end, 16px);
+	background-color: var(--zig-search-product-bg, #f7f8fb);
+	border: 1px solid var(--zig-search-product-border, #eef0f5);
+	border-radius: var(--zig-search-product-radius, 18px);
 	color: inherit;
 	text-decoration: none;
 	box-shadow: none;
@@ -5115,11 +5123,11 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-search .zig-search__product-image {
 	flex: none;
-	width: var(--zig-search-product-image, 56px);
-	height: var(--zig-search-product-image, 56px);
+	width: var(--zig-search-product-image, 48px);
+	height: var(--zig-search-product-image, 48px);
 	object-fit: cover;
 	border-radius: var(--zig-search-product-image-radius, 12px);
-	background-color: #e3e3e9;
+	background-color: var(--zig-search-product-image-bg, #d9d9d9);
 }
 
 .zig-search .zig-search__product-body {
@@ -5127,12 +5135,14 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: var(--zig-search-product-body-gap, 4px);
 }
 
 .zig-search .zig-search__product-title {
-	font-weight: 700;
-	color: var(--zig-search-product-title-color, #171923);
+	font-size: var(--zig-search-product-title-size, 14px);
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--zig-search-product-title-color, #10131a);
 	text-decoration: none;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -5140,12 +5150,29 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 .zig-search .zig-search__product-meta {
-	font-size: 0.85em;
-	color: var(--zig-search-product-meta-color, #8d96a8);
+	display: flex;
+	align-items: center;
+	gap: var(--zig-search-product-meta-gap, 4px);
+	font-size: var(--zig-search-product-meta-size, 12px);
+	line-height: 20px;
+	color: var(--zig-search-product-meta-color, #7a8393);
 	text-decoration: none;
 	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* جداکنندهٔ دسته و برند — در طرح یک دایرهٔ ۵ پیکسلی است، نه نویسهٔ «•» */
+.zig-search .zig-search__product-meta-dot {
+	flex: none;
+	width: var(--zig-search-product-dot-size, 5px);
+	height: var(--zig-search-product-dot-size, 5px);
+	border-radius: 50%;
+	background-color: currentColor;
+}
+
+.zig-search .zig-search__product-meta > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .zig-search .zig-search__product-chevron {
@@ -5161,16 +5188,25 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 10px;
+	gap: var(--zig-search-more-gap, 24px);
 	align-self: center;
-	padding: var(--zig-search-more-padding, 14px 32px);
+	/*
+	 * طرح بینِ فهرستِ محصولات و این دکمه ۱۶ می‌گذارد، ولی فاصلهٔ خودِ
+	 * بخش ۱۲ است (همان که عنوان را از فهرست جدا می‌کند). این ۴ اختلافِ
+	 * همان دو عدد است.
+	 */
+	margin-block-start: var(--zig-search-more-offset, 4px);
+	padding: var(--zig-search-more-padding, 12px 24px);
 	border: 0;
-	border-radius: var(--zig-search-more-radius, 999px);
-	background-image: var(--zig-search-more-bg, linear-gradient(270deg, #6d3ae0 0%, #9a63f0 100%));
+	border-radius: var(--zig-search-more-radius, 10000000px);
+	background-image: var(--zig-search-more-bg, linear-gradient(139.73deg, #7b5cff 33.55%, #5d2ccb 66.45%));
 	color: var(--zig-search-more-color, #ffffff);
 	text-decoration: none;
 	box-shadow: none;
 	font: inherit;
+	font-size: var(--zig-search-more-size, 12px);
+	font-weight: 600;
+	line-height: 20px;
 	cursor: pointer;
 }
 
@@ -5180,8 +5216,9 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-search a.zig-search__more svg,
 .zig-search a.zig-search__more i {
-	width: 1em;
-	height: 1em;
+	width: var(--zig-search-more-icon-size, 16px);
+	height: var(--zig-search-more-icon-size, 16px);
+	font-size: var(--zig-search-more-icon-size, 16px);
 	flex: none;
 }
 
@@ -5190,8 +5227,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__section--empty {
 	align-items: center;
 	text-align: center;
-	gap: 14px;
-	padding-block: 18px;
+	gap: var(--zig-search-empty-gap, 12px);
 }
 
 .zig-search .zig-search__empty-icon {
@@ -5202,15 +5238,17 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 
 .zig-search .zig-search__empty-icon svg,
 .zig-search .zig-search__empty-icon i {
-	width: var(--zig-search-empty-icon-size, 30px);
-	height: var(--zig-search-empty-icon-size, 30px);
-	font-size: var(--zig-search-empty-icon-size, 30px);
+	width: var(--zig-search-empty-icon-size, 22px);
+	height: var(--zig-search-empty-icon-size, 22px);
+	font-size: var(--zig-search-empty-icon-size, 22px);
 }
 
 .zig-search p.zig-search__empty-text {
 	margin: 0;
+	font-size: var(--zig-search-empty-text-size, 14px);
 	font-weight: 600;
-	color: var(--zig-search-empty-text-color, #171923);
+	line-height: 24px;
+	color: var(--zig-search-empty-text-color, #000000);
 }
 
 /* قالب‌هایِ آیکونِ داینامیک — هیچ‌وقت خودشان دیده نمی‌شوند، فقط clone می‌شوند */
