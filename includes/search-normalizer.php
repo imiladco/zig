@@ -1,0 +1,247 @@
+<?php
+namespace Zig3d_Widgets;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * نرمال‌سازیِ متنِ فارسی برایِ سرچ — خالص، بدونِ هیچ وابستگی‌ای به وردپرس.
+ *
+ * مسئله‌ای که حل می‌کند مالِ *ورودیِ کاربر* است، نه مالِ عنوانِ محصول:
+ * ادمین یک‌بار عنوان را تایپ می‌کند (با یک کیبورد، یک عادت)؛ هزاران
+ * مشتری هرکدام با کیبوردِ خودشان («ي» عربی به‌جایِ «ی» فارسی، رقمِ
+ * عربی/فارسی/لاتین، با یا بدونِ ZWNJ) همان چیز را می‌نویسند. پس این
+ * کلاس *کوئری* را به چند شکلِ محتملِ سطحی بسط می‌دهد — نه اینکه بخواهد
+ * دیتابیس را بازنویسی کند (به همین دلیل «ایندکسِ سایه» ساخته نمی‌شود؛
+ * نگاه کنید به داک‌بلاکِ ‎Search_Query‎).
+ *
+ * چهار لایه، هرکدام یک Tier با هزینهٔ false-positive بیشتر:
+ *
+ *   Tier 1  خودِ عبارت، فقط با یکدست‌سازیِ نویسه‌ای (ی/ک/رقم/اعراب)
+ *   Tier 2  نحوهٔ پیوستنِ کلمات فرق دارد (فاصله/ZWNJ/چسبیده)
+ *   Tier 3  رقم↔حرف («3 بعدی» ↔ «سه بعدی» ↔ «3D»)
+ *   Tier 4  مترادفِ دستیِ ادمین («میلینگ» ↔ «فرز»)
+ */
+final class Search_Normalizer {
+
+    /** یکدست‌سازیِ نویسه‌به‌نویسه: عربی→فارسی، رقم‌های عربی/فارسی→لاتین */
+    private const CHAR_MAP = [
+        // عربی → فارسی
+        'ي' => 'ی', 'ك' => 'ک', 'ة' => 'ه',
+        'أ' => 'ا', 'إ' => 'ا', 'آ' => 'ا', 'ٱ' => 'ا',
+        'ؤ' => 'و', 'ئ' => 'ی',
+        // رقمِ فارسی → لاتین
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        // رقمِ عربی (اندیک) → لاتین
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    ];
+
+    /** اعراب/تشدید — حذف می‌شوند چون در تایپِ روزمره تصادفی حاضر/غایب‌اند */
+    private const DIACRITICS_PATTERN = '/[\x{0610}-\x{061A}\x{064B}-\x{065F}\x{0670}\x{06D6}-\x{06DC}\x{06DF}-\x{06E8}\x{06EA}-\x{06ED}\x{08D4}-\x{08E1}\x{08E3}-\x{08FF}]/u';
+
+    private const ZWNJ = "\xE2\x80\x8C"; // U+200C
+
+    /** فقط ۰ تا ۱۰ — دامنه‌ای که واقعاً در نام‌گذاریِ محصول («سه‌بعدی»، «چهار محوره») پیش می‌آید */
+    private const DIGIT_TO_WORD = [
+        0 => 'صفر', 1 => 'یک', 2 => 'دو', 3 => 'سه', 4 => 'چهار', 5 => 'پنج',
+        6 => 'شش', 7 => 'هفت', 8 => 'هشت', 9 => 'نه', 10 => 'ده',
+    ];
+
+    /** پسوندهایی که بعدِ رقم/حرفِ عدد می‌آیند و «این یک عددِ توصیفی است» را نشان می‌دهند */
+    private const NUMERIC_SUFFIXES = ['بعدی', 'بعد', 'محوره', 'محور'];
+
+    /** سقفِ کلِ وریانت‌ها — از انفجارِ WHERE در SQL جلوگیری می‌کند */
+    public const MAX_VARIANTS = 8;
+
+    /**
+     * یکدست‌سازیِ نویسه‌ای — Tier 1. ساختارِ فاصله‌گذاری (ZWNJ در برابرِ
+     * فاصله) عمداً دست‌نخورده می‌ماند؛ آن تفاوت مالِ Tier 2 است.
+     */
+    public static function normalize(string $text): string {
+        $text = strtr($text, self::CHAR_MAP);
+        $text = (string) preg_replace(self::DIACRITICS_PATTERN, '', $text);
+        $text = (string) preg_replace('/[ \t\r\n]+/u', ' ', $text);
+
+        return trim($text);
+    }
+
+    /**
+     * Tier 2 — همان عبارت، با فاصله‌گذاریِ متفاوت. چون نمی‌دانیم عنوانِ
+     * محصول با فاصله نوشته شده یا ZWNJ یا چسبیده، هر سه شکل از رویِ
+     * ورودی ساخته می‌شود.
+     *
+     * @return string[]
+     */
+    public static function joining_variants(string $normalized): array {
+        if ('' === $normalized || false === strpos($normalized, self::ZWNJ) && false === strpos($normalized, ' ')) {
+            return [];
+        }
+
+        $spaced = self::collapse_spaces(str_replace(self::ZWNJ, ' ', $normalized));
+        $joined = str_replace([self::ZWNJ, ' '], '', $normalized);
+        $zwnj_joined = (string) preg_replace('/ +/u', self::ZWNJ, $normalized);
+
+        return self::unique_non_empty([$spaced, $joined, $zwnj_joined], $normalized);
+    }
+
+    /**
+     * Tier 3 — رقم↔حرف، فقط وقتی بلافاصله قبل از یک پسوندِ شناخته‌شده
+     * («بعدی»، «محوره») بیاید؛ وگرنه هر عددی در هر متنی («۱۲۰۰۰۰ تومان»)
+     * تبدیل می‌شد و نتیجه بی‌ربط می‌داد.
+     *
+     * @return string[]
+     */
+    public static function numeric_variants(string $normalized): array {
+        $spaced = self::collapse_spaces(str_replace(self::ZWNJ, ' ', $normalized));
+        $suffix_pattern = implode('|', array_map('preg_quote', self::NUMERIC_SUFFIXES));
+
+        $variants = [];
+
+        // رقم → حرف: «3 بعدی» / «3بعدی» → «سه بعدی»
+        $variants[] = preg_replace_callback(
+            '/(\d+)\s*(' . $suffix_pattern . ')/u',
+            static function (array $m): string {
+                $n = (int) $m[1];
+
+                return isset(self::DIGIT_TO_WORD[$n]) ? self::DIGIT_TO_WORD[$n] . ' ' . $m[2] : $m[0];
+            },
+            $spaced
+        );
+
+        // حرف → رقم: «سه بعدی» / «سه‌بعدی» → «3 بعدی»
+        $word_to_digit = array_flip(self::DIGIT_TO_WORD);
+        $word_pattern = implode('|', array_map('preg_quote', array_keys($word_to_digit)));
+        $variants[] = preg_replace_callback(
+            '/(' . $word_pattern . ')\s*(' . $suffix_pattern . ')/u',
+            static function (array $m) use ($word_to_digit): string {
+                return $word_to_digit[$m[1]] . ' ' . $m[2];
+            },
+            $spaced
+        );
+
+        // نشانه‌گذاریِ لاتین: «3D» → «سه بعدی»
+        $variants[] = preg_replace_callback(
+            '/(\d+)\s*[dD]\b/u',
+            static function (array $m): string {
+                $n = (int) $m[1];
+
+                return isset(self::DIGIT_TO_WORD[$n]) ? self::DIGIT_TO_WORD[$n] . ' بعدی' : $m[0];
+            },
+            $spaced
+        );
+
+        return self::unique_non_empty($variants, $normalized);
+    }
+
+    /**
+     * Tier 4 — مترادفِ دستیِ ادمین. هر جفت دوطرفه است: هرکدام از دو طرف
+     * در عبارت دیده شود، طرفِ دیگر هم به‌عنوانِ وریانت اضافه می‌شود.
+     *
+     * @param array<int,array{0:string,1:string}> $pairs جفت‌های *ازقبل‌نرمال‌شده*
+     * @return string[]
+     */
+    public static function synonym_variants(string $normalized, array $pairs): array {
+        $variants = [];
+
+        foreach ($pairs as $pair) {
+            $a = trim((string) ($pair[0] ?? ''));
+            $b = trim((string) ($pair[1] ?? ''));
+
+            if ('' === $a || '' === $b) {
+                continue;
+            }
+
+            if (false !== mb_stripos($normalized, $a)) {
+                $variants[] = self::collapse_spaces(str_ireplace($a, $b, $normalized));
+            } elseif (false !== mb_stripos($normalized, $b)) {
+                $variants[] = self::collapse_spaces(str_ireplace($b, $a, $normalized));
+            }
+        }
+
+        return self::unique_non_empty($variants, $normalized);
+    }
+
+    /**
+     * هر چهار Tier با هم، مرتب و بدونِ تکرار — چیزی که ‎Search_Query‎
+     * مستقیم برایِ ساختنِ WHERE/ORDER BY مصرف می‌کند.
+     *
+     * @param array<int,array{0:string,1:string}> $synonym_pairs
+     * @return array<int,array{tier:int,text:string}>
+     */
+    public static function variants(string $raw_query, array $synonym_pairs = []): array {
+        $normalized = self::normalize($raw_query);
+
+        if ('' === $normalized) {
+            return [];
+        }
+
+        $by_tier = [1 => [$normalized]];
+
+        $joining = self::joining_variants($normalized);
+        if ($joining) {
+            $by_tier[2] = $joining;
+        }
+
+        $numeric = self::numeric_variants($normalized);
+        if ($numeric) {
+            $by_tier[3] = $numeric;
+        }
+
+        $synonyms = self::synonym_variants($normalized, $synonym_pairs);
+        if ($synonyms) {
+            $by_tier[4] = $synonyms;
+        }
+
+        $seen = [];
+        $result = [];
+
+        foreach ($by_tier as $tier => $texts) {
+            foreach ($texts as $text) {
+                $key = mb_strtolower($text);
+
+                if (isset($seen[$key])) {
+                    continue;
+                }
+
+                $seen[$key] = true;
+                $result[] = ['tier' => $tier, 'text' => $text];
+
+                if (count($result) >= self::MAX_VARIANTS) {
+                    return $result;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    private static function collapse_spaces(string $text): string {
+        return trim((string) preg_replace('/ +/u', ' ', $text));
+    }
+
+    /** @param (string|null)[] $candidates @return string[] */
+    private static function unique_non_empty(array $candidates, string $exclude): array {
+        $out = [];
+        $seen = [];
+
+        foreach ($candidates as $candidate) {
+            if (null === $candidate || '' === $candidate || $candidate === $exclude) {
+                continue;
+            }
+
+            $key = mb_strtolower($candidate);
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $out[] = $candidate;
+        }
+
+        return $out;
+    }
+}

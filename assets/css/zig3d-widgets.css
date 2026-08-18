@@ -4817,3 +4817,260 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	color: #5f27cf;
 	font-size: 0.875rem;
 }
+
+/* ==========================================================================
+   سرچ
+   ========================================================================== */
+
+/*
+ * قاعدهٔ ارتفاع، همان‌طور که در بحثِ معماری قفل شد: ارتفاعِ ثابت فقط
+ * مالِ حالتِ بستهٔ پیش‌فرض است (خودِ فیلد، با box-sizing عادی). از همان
+ * لحظه‌ای که پنل باز می‌شود، هیچ ارتفاعِ ثابتی نوشته نمی‌شود — گرید +
+ * gap + padding + خودِ محتوا ارتفاع را می‌سازند. تنها استثنا
+ * ‎--panel-max-height‎ است که کاربر از تبِ استایل می‌دهد و آن هم یک
+ * شیرِ اطمینانِ سرریز است، نه یک ارتفاعِ طراحی‌شده.
+ */
+
+.zig-search {
+	position: relative;
+	width: var(--zig-search-width, 100%);
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.zig-search * {
+	box-sizing: border-box;
+}
+
+/*
+ * یک سطحِ سفیدِ واحد: فیلد بالا، پنل درست زیرش، هر دو فرزندِ همین جعبه —
+ * نه دو کارتِ مستقل با فاصلهٔ بیرونی. استایلِ پس‌زمینه/حاشیه/سایه/رادیوسِ
+ * خودِ shell از تبِ استایل («پوسته و پنل») می‌آید؛ فیلد و پنل به‌طورِ
+ * پیش‌فرض شفاف‌اند تا همان سطحِ shell از پشتشان دیده شود.
+ */
+.zig-search__shell {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.zig-search__field {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	position: relative;
+	z-index: 1;
+}
+
+.zig-search__icon-btn,
+.zig-search__clear {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	background: transparent;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+	color: inherit;
+	line-height: 0;
+}
+
+.zig-search__icon-btn {
+	cursor: default;
+}
+
+.zig-search__icon-btn svg,
+.zig-search__icon-btn i,
+.zig-search__clear svg,
+.zig-search__clear i {
+	width: var(--zig-search-icon-size, 18px);
+	height: var(--zig-search-icon-size, 18px);
+	font-size: var(--zig-search-icon-size, 18px);
+}
+
+.zig-search__input {
+	flex: 1 1 auto;
+	min-width: 0;
+	background: transparent;
+	border: 0;
+	outline: 0;
+	padding: 0;
+	font: inherit;
+	color: inherit;
+}
+
+/*
+ * پنل، به‌طورِ پیش‌فرض بیرون از جریانِ دیده‌شدن — نه با ‎display: none‎ی
+ * خامِ اینلاین (که با هر مقدارِ ‎display‎ی دیگری که کاربر بعداً از CSS
+ * سفارشی بدهد تداخل می‌کند)، بلکه با خودِ ویژگیِ ‎hidden‎ که جاوااسکریپت
+ * برمی‌دارد. طبقِ مشخصات، ‎hidden‎ با هر ‎display‎ای override می‌شود، پس
+ * این قانونِ CSS لازم است تا وقتی حاضر است واقعاً گرید بشود.
+ */
+.zig-search__panel {
+	display: none;
+	flex-direction: column;
+	gap: var(--zig-search-panel-gap, 16px);
+	position: relative;
+	z-index: 1;
+}
+
+.zig-search__panel:not([hidden]) {
+	display: flex;
+}
+
+.zig-search__section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.zig-search__section-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.zig-search__section-title {
+	font-weight: 600;
+}
+
+.zig-search__clear-history {
+	background: transparent;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+	font: inherit;
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+/* ---------------------------- چیپ‌ها ---------------------------- */
+
+.zig-search__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.zig-search__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+	line-height: 1;
+}
+
+.zig-search__chip svg,
+.zig-search__chip i {
+	width: 1em;
+	height: 1em;
+	flex: none;
+}
+
+.zig-search__chip-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: 0;
+	padding: 0;
+	margin-inline-start: 2px;
+	cursor: pointer;
+	line-height: 0;
+}
+
+.zig-search__chip-remove svg,
+.zig-search__chip-remove i {
+	width: 0.85em;
+	height: 0.85em;
+}
+
+/* ---------------------------- محصولات ---------------------------- */
+
+.zig-search__products {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.zig-search__product {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	text-decoration: none;
+	color: inherit;
+	width: 100%;
+}
+
+.zig-search__product-image {
+	flex: none;
+	width: var(--zig-search-product-image, 56px);
+	height: var(--zig-search-product-image, 56px);
+	object-fit: cover;
+	background-color: #f2f2f5;
+}
+
+.zig-search__product-body {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.zig-search__product-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.zig-search__product-meta {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.zig-search__product-chevron {
+	flex: none;
+	display: inline-flex;
+	line-height: 0;
+}
+
+/* ---------------------------- دکمهٔ بیشتر ---------------------------- */
+
+.zig-search__more {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	cursor: pointer;
+	font: inherit;
+}
+
+/* ---------------------------- بدونِ نتیجه ---------------------------- */
+
+.zig-search__section--empty {
+	align-items: center;
+	text-align: center;
+	gap: 8px;
+}
+
+.zig-search__empty-icon {
+	display: inline-flex;
+	line-height: 0;
+}
+
+.zig-search__empty-text {
+	margin: 0;
+}
+
+/* قالب‌هایِ آیکونِ داینامیک — هیچ‌وقت خودشان دیده نمی‌شوند، فقط clone می‌شوند */
+.zig-search template {
+	display: none;
+}

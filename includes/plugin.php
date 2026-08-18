@@ -45,6 +45,7 @@ final class Plugin {
         'product-video-gallery' => Widgets\Product_Video_Gallery::class,
         'documents' => Widgets\Documents::class,
         'description' => Widgets\Description::class,
+        'search' => Widgets\Search::class,
     ];
 
     public static function instance(): self {
@@ -110,7 +111,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
@@ -130,6 +131,10 @@ final class Plugin {
          * — بدون هیچ خطایی، فقط یک ویجتی که کلیک‌هایش کار نمی‌کنند.
          */
         Archive_Endpoint::boot();
+
+        // همان استدلال: نقطهٔ سرچ هم باید بیرون از شرطِ ادمین ثبت شود،
+        // وگرنه در ‎admin-ajax.php‎ اصلاً حاضر نیست.
+        Search_Endpoint::boot();
 
         /*
          * فقط در سایت. در پنل نه کوئری آرشیوی هست و نه ‎<head>‎ی که این
@@ -200,6 +205,49 @@ final class Plugin {
         foreach (['created_term', 'edited_term', 'delete_term'] as $hook) {
             add_action($hook, [$this, 'flush_facet_cache_for_term'], 20, 3);
         }
+
+        $this->watch_search_cache();
+    }
+
+    /**
+     * باطل‌کردنِ کشِ سطحِ A سرچ (‎Search_Query‎).
+     *
+     * همان اصلِ نسخه‌جلوبردن، نه پاک‌کردنِ کلید — با یک تفاوت نسبت به کشِ
+     * فست: اینجا موجودی هم مستقیماً روی نتیجه اثر می‌گذارد (محصولی که
+     * تمام شد نباید در نتایج بماند)، پس ‎stock‎ی که جدا از ‎save_post‎
+     * تغییر می‌کند (کاهشِ موجودی بعدِ سفارش) هم باید همین کش را بترکاند —
+     * وگرنه محصولِ ناموجود تا انقضایِ TTL در نتایجِ سرچ می‌ماند.
+     */
+    private function watch_search_cache(): void {
+        foreach ([
+            'woocommerce_update_product',
+            'woocommerce_delete_product',
+            'woocommerce_product_set_stock',
+            'woocommerce_variation_set_stock',
+        ] as $hook) {
+            add_action($hook, [$this, 'flush_search_cache'], 20);
+        }
+
+        /*
+         * ‎woocommerce_delete_product‎ فقط برایِ حذفِ قطعی صدا زده می‌شود؛
+         * انتقال به زباله‌دان همان‌قدر باید محصول را از نتایجِ سرچ ببرد.
+         * فیلترِ نوعِ پست اینجا لازم است — این دو هوک سراسری‌اند و برایِ
+         * هر پستی صدا می‌خورند، نه فقط محصول.
+         */
+        foreach (['deleted_post', 'trashed_post'] as $hook) {
+            add_action($hook, [$this, 'flush_search_cache_for_post'], 20);
+        }
+
+        /*
+         * تغییرِ نامِ یک ترم روی رتبه‌بندیِ Pass B اثر می‌گذارد (جست‌وجو در
+         * نامِ ترم زمانِ کوئری انجام می‌شود، نه از رویِ ایندکسی که این
+         * فایل بسازد — نگاه کنید به داک‌بلاکِ ‎Search_Query‎). فیلترکردن
+         * به یک تاکسونومیِ خاص اینجا ممکن نیست، چون ‎match_taxonomies‎ی
+         * هر نمونهٔ ویجت می‌تواند چیزِ دیگری باشد.
+         */
+        foreach (['edited_term', 'delete_term'] as $hook) {
+            add_action($hook, [$this, 'flush_search_cache'], 20);
+        }
     }
 
     /* =====================================================================
@@ -251,7 +299,14 @@ final class Plugin {
              * پنل‌اند که کاربر رویشان کلیک می‌کند و چیزی نمی‌بیند. پس اصلاً
              * ثبت نمی‌شوند.
              */
-            if (0 === strpos($file, 'product-') && !class_exists('WooCommerce')) {
+            /*
+             * ‎search‎ هم به همان قاعده می‌پیوندد — روی ووکامرسِ نصب‌نشده
+             * محصولی برایِ جست‌وجو نیست، پس ثبتِ ویجت فقط یک ورودیِ بی‌فایده
+             * در پنل المنتور می‌شد.
+             */
+            $needs_woocommerce = 0 === strpos($file, 'product-') || 'search' === $file;
+
+            if ($needs_woocommerce && !class_exists('WooCommerce')) {
                 continue;
             }
 
@@ -363,6 +418,19 @@ final class Plugin {
             ZIG3D_WIDGETS_VERSION,
             true
         );
+
+        /*
+         * سرچ هم بدونِ jQuery — فقط ‎fetch‎/‎AbortController‎/‎Map‎ی
+         * بومیِ مرورگر. بدونِ این فایل، ویجت فقط فیلدِ خالی نشان می‌دهد؛
+         * هیچ جست‌وجویی اجرا نمی‌شود، ولی صفحه نمی‌شکند.
+         */
+        wp_register_script(
+            'zig3d-search',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-search.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
     }
 
     public function enqueue_editor_styles(): void {
@@ -455,6 +523,21 @@ final class Plugin {
         $this->flush_facet_cache();
     }
 
+    public function flush_search_cache(): void {
+        require_once ZIG3D_WIDGETS_PATH . 'includes/search-query.php';
+
+        Search_Query::flush();
+    }
+
+    /** @param int $post_id */
+    public function flush_search_cache_for_post($post_id): void {
+        if ('product' !== get_post_type($post_id)) {
+            return;
+        }
+
+        $this->flush_search_cache();
+    }
+
     /* =====================================================================
      * به‌روزرسانی
      * =================================================================== */
@@ -477,6 +560,15 @@ final class Plugin {
         }
 
         update_option(self::VERSION_OPTION, ZIG3D_WIDGETS_VERSION, false);
+
+        /*
+         * کشِ سرچ هم با نسخهٔ افزونه بترکد — یک ریلیز می‌تواند منطقِ
+         * رتبه‌بندی/نرمال‌سازی را عوض کند، و نتیجهٔ کش‌شدهٔ نسخهٔ قبلی دیگر
+         * درست نیست حتی اگر خودِ محصولات دست‌نخورده مانده باشند.
+         */
+        if (class_exists('WooCommerce')) {
+            $this->flush_search_cache();
+        }
 
         if (class_exists('\Elementor\Plugin') && isset(\Elementor\Plugin::$instance->files_manager)) {
             \Elementor\Plugin::$instance->files_manager->clear_cache();
