@@ -54,7 +54,7 @@ if (!defined('ABSPATH')) {
  *         form.zig-search__field               فیلد، بالایِ همان shell
  *           button.zig-search__icon-btn        آیکونِ سرچ
  *           input.zig-search__input            role="combobox"
- *           button.zig-search__clear           ضربدر (فقط وقتی متن هست)
+ *           button.zig-search__clear           ضربدر، همیشه حاضر
  *         div.zig-search__panel                زیرِ فیلد، همان shell
  *           div.zig-search__section--recent
  *           div.zig-search__section--products
@@ -245,14 +245,14 @@ final class Search extends Widget_Base {
             'label'   => __('پیامِ بدونِ نتیجه', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
             'dynamic' => ['active' => true],
-            'default' => __('محصولی با این عبارت پیدا نشد.', 'zig3d-widgets'),
+            'default' => __('همچین نتیجه‌ای پیدا نکردیم', 'zig3d-widgets'),
         ]);
 
         $this->add_control('more_button_text', [
             'label'   => __('متنِ دکمهٔ «نمایشِ بیشتر»', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
             'dynamic' => ['active' => true],
-            'default' => __('مشاهدهٔ محصولاتِ بیشتر', 'zig3d-widgets'),
+            'default' => __('مشاهده نتایج بیشتر', 'zig3d-widgets'),
         ]);
 
         $this->add_control('recent_heading_text', [
@@ -290,10 +290,14 @@ final class Search extends Widget_Base {
             'search_icon'  => [__('آیکونِ سرچ', 'zig3d-widgets'), 'fas fa-search', 'fa-solid'],
             'clear_icon'   => [__('آیکونِ پاک‌کردن (ضربدر)', 'zig3d-widgets'), 'fas fa-times', 'fa-solid'],
             'chevron_icon' => [__('آیکونِ فلشِ ردیفِ محصول', 'zig3d-widgets'), 'fas fa-chevron-left', 'fa-solid'],
-            'empty_icon'   => [__('آیکونِ حالتِ بدونِ نتیجه', 'zig3d-widgets'), 'fas fa-box-open', 'fa-solid'],
-            'recent_icon'  => [__('آیکونِ چیپِ تاریخچه', 'zig3d-widgets'), 'fas fa-history', 'fa-solid'],
-            'remove_icon'  => [__('آیکونِ حذفِ چیپِ تاریخچه', 'zig3d-widgets'), 'fas fa-times', 'fa-solid'],
-            'popular_icon' => [__('آیکونِ چیپِ پرطرفدار', 'zig3d-widgets'), 'fas fa-fire', 'fa-solid'],
+            'empty_icon'   => [__('آیکونِ حالتِ بدونِ نتیجه', 'zig3d-widgets'), 'fas fa-search', 'fa-solid'],
+            /*
+             * پیش‌فرضِ خالی، عمداً: در طرحِ تأییدشده، چیپِ «جستجوهایِ اخیر»
+             * بدونِ آیکون است — فقط متن. کنترل می‌ماند تا مدیر بخواهد
+             * بگذاردش، ولی پیش‌فرض نباید چیزی تحمیل کند.
+             */
+            'recent_icon'  => [__('آیکونِ چیپِ تاریخچه', 'zig3d-widgets'), '', ''],
+            'popular_icon' => [__('آیکونِ چیپِ پرطرفدار', 'zig3d-widgets'), 'fas fa-arrow-up-right-from-square', 'fa-solid'],
         ];
 
         foreach ($icons as $key => [$label, $default_value, $default_library]) {
@@ -657,13 +661,6 @@ final class Search extends Widget_Base {
 
         $this->register_chip_style_controls('recent', '.zig-search__chip--recent');
 
-        $this->add_control('recent_chip_remove_color', [
-            'label'     => __('رنگِ آیکونِ حذف', 'zig3d-widgets'),
-            'type'      => Controls_Manager::COLOR,
-            'separator' => 'before',
-            'selectors' => [Selector::descend('{{WRAPPER}} .zig-search__chip-remove', 'svg, i') => 'fill: {{VALUE}}; color: {{VALUE}};'],
-        ]);
-
         $this->end_controls_section();
     }
 
@@ -926,8 +923,13 @@ final class Search extends Widget_Base {
             esc_attr((string) ($settings['placeholder_text'] ?? ''))
         );
 
+        /*
+         * برخلافِ حدسِ اولیه، در طرحِ تأییدشده این دکمه همیشه حاضر است —
+         * حتی در حالتِ خالیِ پیش‌فرض — نه فقط وقتی متنی تایپ شده. کلیک
+         * رویش وقتی فیلد خالی است هم بی‌خطر است: فقط پنل را می‌بندد.
+         */
         printf(
-            '<button type="button" class="zig-search__clear" hidden aria-label="%s">%s</button>',
+            '<button type="button" class="zig-search__clear" aria-label="%s">%s</button>',
             esc_attr__('پاک‌کردن جست‌وجو', 'zig3d-widgets'),
             $this->render_icon($settings, 'clear_icon')
         );
@@ -1024,9 +1026,8 @@ final class Search extends Widget_Base {
      */
     private function render_icon_templates(array $settings): void {
         $templates = [
-            'recent-icon'    => 'recent_icon',
-            'remove-icon'    => 'remove_icon',
-            'chevron-icon'   => 'chevron_icon',
+            'recent-icon'  => 'recent_icon',
+            'chevron-icon' => 'chevron_icon',
         ];
 
         foreach ($templates as $slot => $key) {

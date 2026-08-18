@@ -4973,24 +4973,6 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex: none;
 }
 
-.zig-search__chip-remove {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	background: transparent;
-	border: 0;
-	padding: 0;
-	margin-inline-start: 2px;
-	cursor: pointer;
-	line-height: 0;
-}
-
-.zig-search__chip-remove svg,
-.zig-search__chip-remove i {
-	width: 0.85em;
-	height: 0.85em;
-}
-
 /* ---------------------------- محصولات ---------------------------- */
 
 .zig-search__products {

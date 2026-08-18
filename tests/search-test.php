@@ -104,10 +104,8 @@ $html = $render([
     'placeholder_text'    => 'جستجوی محصول',
     'search_icon'         => ['value' => 'fas fa-search', 'library' => 'fa-solid'],
     'clear_icon'          => ['value' => 'fas fa-times', 'library' => 'fa-solid'],
-    'empty_icon'          => ['value' => 'fas fa-box-open', 'library' => 'fa-solid'],
-    'popular_icon'        => ['value' => 'fas fa-fire', 'library' => 'fa-solid'],
-    'recent_icon'         => ['value' => 'fas fa-history', 'library' => 'fa-solid'],
-    'remove_icon'         => ['value' => 'fas fa-times', 'library' => 'fa-solid'],
+    'empty_icon'          => ['value' => 'fas fa-search', 'library' => 'fa-solid'],
+    'popular_icon'        => ['value' => 'fas fa-arrow-up-right-from-square', 'library' => 'fa-solid'],
     'chevron_icon'        => ['value' => 'fas fa-chevron-left', 'library' => 'fa-solid'],
     'enable_recent'       => 'yes',
     'popular_searches'    => [['label' => 'میلینگ ماشین'], ['label' => '  ']],
@@ -127,6 +125,23 @@ Tests::same(
     substr_count($html, 'zig-search__chip--popular'),
     1
 );
+
+/*
+ * طبقِ طرحِ تأییدشده، دکمهٔ ضربدر همیشه حاضر است — حتی در حالتِ خالیِ
+ * پیش‌فرض — نه فقط وقتی متنی تایپ شده. حدسِ اولیه (پنهان تا وقتی متن
+ * نیست) اشتباه بود و اینجا رد می‌شود.
+ */
+Tests::ok(
+    'دکمهٔ پاک‌کردن بدونِ ویژگیِ hidden رندر می‌شود',
+    false === strpos($html, 'zig-search__clear" hidden') && false !== strpos($html, 'zig-search__clear"')
+);
+
+/*
+ * چیپِ «جستجویِ اخیر» در طرح هیچ دکمهٔ حذفِ تکی‌ای ندارد — فقط لینکِ
+ * سطحِ‌بخشِ «پاک‌کردن». اگر این کلاس برگردد، یعنی دوباره چیزی اضافه شده
+ * که در طرح نیست.
+ */
+Tests::ok('هیچ دکمهٔ حذفِ تکیِ چیپ رندر نمی‌شود', false === strpos($html, 'zig-search__chip-remove'));
 
 /* ==========================================================================
  * قراردادِ کلیک — چیپِ پرطرفدار به صفحهٔ نتایج می‌رود
@@ -174,18 +189,27 @@ foreach ([
     'min_chars', 'debounce_ms', 'result_limit', 'search_fields', 'enable_shortcut',
     'category_source', 'brand_source',
     'placeholder_text', 'empty_message', 'more_button_text', 'recent_heading_text', 'clear_history_text', 'popular_heading_text',
-    'search_icon', 'clear_icon', 'chevron_icon', 'empty_icon', 'recent_icon', 'remove_icon', 'popular_icon',
+    'search_icon', 'clear_icon', 'chevron_icon', 'empty_icon', 'recent_icon', 'popular_icon',
     'popular_searches', 'enable_recent', 'recent_max', 'recent_expiry_days', 'synonym_pairs',
     'TABS:field_box_tabs', 'field_icon_size', 'field_icon_color', 'group:field_typography',
     'TABS:shell_box_tabs', 'panel_gap', 'panel_max_height',
     'group:section_title_typography', 'group:clear_history_typography',
     'TABS:product_box_tabs', 'product_image_size', 'group:product_title_typography', 'group:product_meta_typography', 'product_chevron_color',
-    'TABS:recent_chip_box_tabs', 'recent_chip_text_color', 'recent_chip_remove_color',
+    'TABS:recent_chip_box_tabs', 'recent_chip_text_color',
     'TABS:popular_chip_box_tabs', 'popular_chip_text_color',
     'TABS:more_button_box_tabs', 'group:more_button_typography',
     'empty_icon_size', 'empty_icon_color', 'group:empty_text_typography',
 ] as $control) {
     Tests::ok('کنترل موجود است: ' . $control, in_array($control, $controls, true));
+}
+
+/*
+ * طرح هیچ دکمهٔ حذفِ تکیِ چیپ ندارد — فقط لینکِ سطحِ‌بخشِ «پاک‌کردن».
+ * این کنترل‌ها نباید برگردند، وگرنه یعنی همان اضافه‌کاریِ قبلی دوباره
+ * تکرار شده.
+ */
+foreach (['remove_icon', 'recent_chip_remove_color'] as $control) {
+    Tests::ok('کنترلِ حذف‌شده برنمی‌گردد: ' . $control, !in_array($control, $controls, true));
 }
 
 Tests::group('ویجتِ سرچ › دامنهٔ سلکتورها');

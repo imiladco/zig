@@ -58,7 +58,6 @@
 
 		this.chevronTpl = root.querySelector('template[data-zig-icon="chevron-icon"]');
 		this.recentIconTpl = root.querySelector('template[data-zig-icon="recent-icon"]');
-		this.removeIconTpl = root.querySelector('template[data-zig-icon="remove-icon"]');
 
 		this.minChars = parseInt(root.getAttribute('data-min-chars'), 10) || 2;
 		this.debounceMs = parseInt(root.getAttribute('data-debounce'), 10) || 300;
@@ -165,11 +164,7 @@
 	};
 
 	Search.prototype.onInput = function () {
-		var value = this.input.value;
-
-		this.clearBtn.hidden = '' === value.trim();
-
-		var trimmed = value.trim();
+		var trimmed = this.input.value.trim();
 
 		if (trimmed.length < this.minChars) {
 			window.clearTimeout(this.timer);
@@ -189,7 +184,6 @@
 
 	Search.prototype.clearInput = function () {
 		this.input.value = '';
-		this.clearBtn.hidden = true;
 		window.clearTimeout(this.timer);
 		this.abortInFlight();
 		this.showIdle();
@@ -492,7 +486,6 @@
 
 		if (!preserveValue) {
 			this.input.value = '';
-			this.clearBtn.hidden = true;
 		}
 	};
 
@@ -653,19 +646,6 @@
 		this.writeRecent(list);
 	};
 
-	Search.prototype.removeRecent = function (query) {
-		var list = this.readRecent().filter(function (entry) {
-			return entry.q !== query;
-		});
-
-		this.writeRecent(list);
-
-		// اگر همین الان بازِ S2 هستیم، بلافاصله رابط را هم به‌روز کن
-		if (this.isOpen() && this.input.value.trim().length < this.minChars) {
-			this.showIdle();
-		}
-	};
-
 	Search.prototype.clearRecent = function () {
 		this.writeRecent([]);
 
@@ -703,23 +683,6 @@
 
 		label.textContent = query;
 		chip.appendChild(label);
-
-		var self = this;
-		var remove = document.createElement('button');
-
-		remove.type = 'button';
-		remove.className = 'zig-search__chip-remove';
-		remove.setAttribute('aria-label', 'حذف از تاریخچه');
-		this.cloneIconInto(remove, this.removeIconTpl);
-
-		remove.addEventListener('click', function (event) {
-			// روی خودِ لینکِ چیپ نشسته؛ بدونِ این، حذف یعنی رفتن به صفحهٔ نتایج
-			event.preventDefault();
-			event.stopPropagation();
-			self.removeRecent(query);
-		});
-
-		chip.appendChild(remove);
 
 		return chip;
 	};
