@@ -4945,7 +4945,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
-	color: var(--zig-search-field-icon-color, #171923);
+	color: var(--zig-search-field-icon-color, #687083);
 	line-height: 0;
 	cursor: pointer;
 	-webkit-appearance: none;
@@ -5108,7 +5108,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	height: var(--zig-search-chip-icon-size, 12px);
 	font-size: var(--zig-search-chip-icon-size, 12px);
 	flex: none;
-	color: var(--zig-search-chip-icon-color, #344054);
+	color: var(--zig-search-chip-icon-color, #756e8d);
 }
 
 /* ---------------------------- محصولات ---------------------------- */
@@ -5187,7 +5187,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	width: var(--zig-search-product-dot-size, 5px);
 	height: var(--zig-search-product-dot-size, 5px);
 	border-radius: 50%;
-	background-color: currentColor;
+	background-color: var(--zig-search-product-dot-color, #d7dce5);
 }
 
 .zig-search .zig-search__product-meta > span {
@@ -5199,7 +5199,21 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex: none;
 	display: inline-flex;
 	line-height: 0;
-	color: var(--zig-search-product-chevron-color, #171923);
+	color: var(--zig-search-product-chevron-color, #111827);
+}
+
+/*
+ * تنها آیکونِ غیرمربعِ طرح همین است (۶٫۸۹ در ۱۲). پس اندازه فقط روی
+ * ارتفاع نوشته می‌شود و عرض خودش از ‎viewBox‎ درمی‌آید؛ اگر مثلِ بقیه
+ * هر دو را می‌نوشتیم، فلش با هر تغییرِ اندازه پهن و کشیده می‌شد.
+ */
+.zig-search .zig-search__product-chevron svg {
+	height: var(--zig-search-chevron-size, 12px);
+	width: auto;
+}
+
+.zig-search .zig-search__product-chevron i {
+	font-size: var(--zig-search-chevron-size, 12px);
 }
 
 /* ---------------------------- دکمهٔ بیشتر ---------------------------- */
@@ -5253,7 +5267,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search .zig-search__empty-icon {
 	display: inline-flex;
 	line-height: 0;
-	color: var(--zig-search-empty-icon-color, #171923);
+	color: var(--zig-search-empty-icon-color, #687083);
 }
 
 .zig-search .zig-search__empty-icon svg,

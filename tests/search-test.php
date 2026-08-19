@@ -21,6 +21,7 @@ require_once __DIR__ . '/lib/woocommerce-stub.php';
 $root = dirname(__DIR__);
 
 require_once $root . '/includes/selector.php';
+require_once $root . '/includes/design-icons.php';
 require_once $root . '/includes/attributes.php';
 require_once $root . '/includes/archive-query.php';
 require_once $root . '/includes/search-normalizer.php';
@@ -382,3 +383,117 @@ Tests::keeps('بستن ناحیهٔ اعلام را خالی می‌کند', $js
 
 $controls_a11y = zig_collect_controls(Search::class);
 Tests::ok('متنِ اعلام قابلِ ترجمه/تنظیم است', in_array('results_announcement', $controls_a11y, true));
+
+/* ==========================================================================
+ * آیکون‌هایِ طرح
+ *
+ * پیش از این، پیش‌فرضِ هر آیکون یک معادلِ Font Awesome بود که «شبیهِ»
+ * آیکونِ فیگما بود نه خودش — و همان باعث می‌شد خروجی با طرح یکی نباشد.
+ * حالا فایل‌هایِ ‎assets/icons/*.svg‎ صادرشدهٔ همان نودها هستند و این
+ * گروه سه چیز را می‌بندد: اینکه واقعاً درج می‌شوند، اینکه انتخابِ مدیر
+ * بر آن‌ها می‌چربد، و اینکه رنگ‌پذیر می‌مانند.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › آیکون‌هایِ طرح');
+
+$icon_files = [
+    'search'      => 'ذره‌بینِ فیلد و حالتِ خالی',
+    'close'       => 'ضربدرِ پاک‌کردن',
+    'chevron'     => 'فلشِ ردیفِ محصول',
+    'arrow-left'  => 'فلشِ دکمهٔ بیشتر',
+    'trending-up' => 'آیکونِ چیپِ پرطرفدار',
+];
+
+foreach ($icon_files as $file => $label) {
+    $path = $root . '/assets/icons/' . $file . '.svg';
+    Tests::ok('فایلِ آیکون وجود دارد: ' . $file . ' — ' . $label, is_file($path));
+
+    $svg = is_file($path) ? (string) file_get_contents($path) : '';
+
+    /*
+     * بدونِ ‎currentColor‎، رنگی که فیگما داخلِ ‎path‎ نوشته سرِ جایش
+     * می‌ماند و کنترلِ رنگِ تبِ استایل هیچ اثری ندارد.
+     */
+    Tests::ok(
+        'رنگش currentColor است نه رنگِ ثابتِ فیگما: ' . $file,
+        false !== strpos($svg, 'currentColor') && !preg_match('/#[0-9a-fA-F]{3,6}/', $svg)
+    );
+
+    // ‎viewBox‎ همان اندازهٔ نودِ فیگماست؛ بدونش مقیاس‌دهیِ CSS می‌شکند.
+    Tests::ok('viewBox دارد: ' . $file, false !== strpos($svg, 'viewBox='));
+}
+
+/* پیش‌فرضِ خالی + سویچِ روشن ⇒ SVGی طرح، نه هیچ */
+$html_design = $render([
+    'placeholder_text' => 'جستجوی محصول',
+    'popular_searches' => [['label' => 'میلینگ ماشین']],
+]);
+
+Tests::keeps(
+    'با تنظیماتِ خالی، ذره‌بینِ طرح درج می‌شود',
+    $html_design,
+    'M8.92723 1.375C4.76282 1.375'
+);
+Tests::keeps('ضربدرِ طرح هم درج می‌شود', $html_design, 'rotate(-45 8 8)');
+Tests::keeps('نمودارِ صعودیِ چیپِ پرطرفدار درج می‌شود', $html_design, 'M1.5 8.5L4.5 5.5L6.5 7.5L10.5 3.5');
+Tests::keeps('فلشِ ردیفِ محصول در قالبِ سمتِ کلاینت می‌رود', $html_design, 'data-zig-icon="chevron-icon"');
+
+/*
+ * چیپِ «جستجوهایِ اخیر» در طرح آیکون ندارد. قالبش باید خالی برود، وگرنه
+ * جاوااسکریپت روی هر چیپِ تاریخچه یک آیکونِ اضافه می‌گذارد.
+ */
+Tests::keeps('قالبِ چیپِ تاریخچه خالی است', $html_design, '<template data-zig-icon="recent-icon"></template>');
+
+/*
+ * انتخابِ مدیر باید بر آیکونِ طرح بچربد. هر دو جایگاهی که از
+ * ‎search.svg‎ استفاده می‌کنند (فیلد و حالتِ خالی) عوض می‌شوند، وگرنه
+ * ماندنِ مسیرِ SVG در خروجی نشانهٔ چیزی نیست.
+ */
+$html_custom = $render([
+    'placeholder_text' => 'جستجوی محصول',
+    'search_icon'      => ['value' => 'fas fa-magnifying-glass', 'library' => 'fa-solid'],
+    'empty_icon'       => ['value' => 'fas fa-magnifying-glass', 'library' => 'fa-solid'],
+]);
+
+Tests::blocks(
+    'انتخابِ مدیر جایِ آیکونِ طرح را می‌گیرد',
+    $html_custom,
+    'M8.92723 1.375C4.76282 1.375'
+);
+
+/* خاموش‌کردنِ سویچ یعنی خالی واقعاً خالی */
+$html_off = $render([
+    'placeholder_text' => 'جستجوی محصول',
+    'design_icons'     => '',
+]);
+
+Tests::blocks('با خاموش‌بودنِ سویچ، آیکونِ طرح درج نمی‌شود', $html_off, 'M8.92723 1.375C4.76282 1.375');
+
+/* نامِ خارج از الگو نباید به فایلی بیرونِ پوشهٔ آیکون‌ها برسد */
+Tests::same('نامِ نامعتبر رشتهٔ خالی می‌دهد', \Zig3d_Widgets\Design_Icons::get('../../wp-config'), '');
+Tests::same('آیکونِ ناموجود هم رشتهٔ خالی می‌دهد', \Zig3d_Widgets\Design_Icons::get('nope'), '');
+
+/* اندازه‌ها و رنگ‌ها باید از تبِ استایل بیایند — از جمله دو موردِ تازه */
+$controls_icons = zig_collect_controls(Search::class);
+
+foreach (['design_icons', 'product_dot_size', 'product_dot_color', 'product_chevron_size'] as $control) {
+    Tests::ok('کنترل موجود است: ' . $control, in_array($control, $controls_icons, true));
+}
+
+/*
+ * فلش تنها آیکونِ غیرمربعِ طرح است. اگر کنترلِ اندازه هم عرض و هم ارتفاع
+ * را بنویسد، با هر تغییرِ اندازه کشیده می‌شود.
+ */
+$chevron_rules = array_filter(
+    zig_collect_selectors(Search::class),
+    static fn(array $entry): bool => 'product_chevron_size' === $entry[0]
+);
+
+Tests::ok('کنترلِ اندازهٔ فلش سلکتور دارد', [] !== $chevron_rules);
+
+foreach ($chevron_rules as $entry) {
+    Tests::ok(
+        'اندازهٔ فلش عرض را سفت نمی‌کند',
+        false === strpos($entry[2], 'width:')
+    );
+}

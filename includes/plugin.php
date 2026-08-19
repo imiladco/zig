@@ -274,6 +274,7 @@ final class Plugin {
      */
     public function register_widgets($manager): void {
         require_once ZIG3D_WIDGETS_PATH . 'includes/svg.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/design-icons.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/markup.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/selector.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';

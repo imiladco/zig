@@ -8,6 +8,7 @@ use Elementor\Repeater;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Archive_Query;
 use Zig3d_Widgets\Attributes;
+use Zig3d_Widgets\Design_Icons;
 use Zig3d_Widgets\Plugin;
 use Zig3d_Widgets\Search_Endpoint;
 use Zig3d_Widgets\Search_Query;
@@ -312,29 +313,73 @@ final class Search extends Widget_Base {
      * محتوا › آیکون‌ها
      * =================================================================== */
 
+    /**
+     * نگاشتِ هر جایگاهِ آیکون به فایلِ صادرشده از فیگما.
+     *
+     * ‎recent_icon‎ عمداً اینجا نیست: چیپِ «جستجوهایِ اخیر» در طرح آیکون
+     * ندارد. نبودنش در این جدول یعنی پیش‌فرضش «هیچ» است، بی‌آنکه لازم
+     * باشد جایی استثنا بنویسیم.
+     */
+    private const DESIGN_ICONS = [
+        'search_icon'  => 'search',
+        'clear_icon'   => 'close',
+        'chevron_icon' => 'chevron',
+        'more_icon'    => 'arrow-left',
+        'empty_icon'   => 'search',
+        'popular_icon' => 'trending-up',
+    ];
+
     private function register_icons_section(): void {
         $this->start_controls_section('icons_section', ['label' => __('آیکون‌ها', 'zig3d-widgets')]);
 
+        /*
+         * چرا این سویچ لازم است:
+         *
+         * کنترلِ ICONSِ المنتور حالتِ «هیچ آیکونی» ندارد — پاک‌کردنِ آیکون
+         * و «اصلاً دست‌نزدن» هر دو یک مقدارِ خالی می‌دهند. اگر خالی همیشه
+         * یعنی «از آیکونِ طرح استفاده کن»، دیگر هیچ راهی برایِ برداشتنِ
+         * آیکون نمی‌ماند؛ اگر همیشه یعنی «هیچ»، آیکونِ طرح از دسترس خارج
+         * می‌شود.
+         *
+         * پس یک سویچ: روشن (پیش‌فرض) یعنی هر جایگاهِ خالی به SVGی فیگما
+         * برمی‌گردد؛ خاموش یعنی خالی واقعاً خالی است و آیکون‌ها فقط از
+         * همین کنترل‌ها می‌آیند.
+         */
+        $this->add_control('design_icons', [
+            'label'        => __('آیکون‌هایِ پیش‌فرضِ طرح', 'zig3d-widgets'),
+            'type'         => Controls_Manager::SWITCHER,
+            'default'      => 'yes',
+            'label_on'     => __('روشن', 'zig3d-widgets'),
+            'label_off'    => __('خاموش', 'zig3d-widgets'),
+            'return_value' => 'yes',
+            'description'  => __('روشن باشد، هر آیکونی که خالی بگذارید همان SVGی طرح را می‌گیرد. خاموشش کنید تا آیکونِ خالی واقعاً حذف شود.', 'zig3d-widgets'),
+        ]);
+
+        /*
+         * پیش‌فرضِ همهٔ کنترل‌ها خالی است، نه یک گلیفِ Font Awesome.
+         *
+         * قبلاً هر کدام یک معادلِ «شبیه» داشتند و همان باعث شد خروجی با
+         * طرح یکی نباشد. حالا پیش‌فرضِ دیداری از ‎DESIGN_ICONS‎ می‌آید و
+         * این کنترل‌ها فقط برایِ جایگزینی‌اند.
+         */
         $icons = [
-            'search_icon'  => [__('آیکونِ سرچ', 'zig3d-widgets'), 'fas fa-search', 'fa-solid'],
-            'clear_icon'   => [__('آیکونِ پاک‌کردن (ضربدر)', 'zig3d-widgets'), 'fas fa-times', 'fa-solid'],
-            'chevron_icon' => [__('آیکونِ فلشِ ردیفِ محصول', 'zig3d-widgets'), 'fas fa-chevron-left', 'fa-solid'],
-            'more_icon'    => [__('آیکونِ دکمهٔ «نمایشِ بیشتر»', 'zig3d-widgets'), 'fas fa-arrow-left', 'fa-solid'],
-            'empty_icon'   => [__('آیکونِ حالتِ بدونِ نتیجه', 'zig3d-widgets'), 'fas fa-search', 'fa-solid'],
-            /*
-             * پیش‌فرضِ خالی، عمداً: در طرحِ تأییدشده، چیپِ «جستجوهایِ اخیر»
-             * بدونِ آیکون است — فقط متن. کنترل می‌ماند تا مدیر بخواهد
-             * بگذاردش، ولی پیش‌فرض نباید چیزی تحمیل کند.
-             */
-            'recent_icon'  => [__('آیکونِ چیپِ تاریخچه', 'zig3d-widgets'), '', ''],
-            'popular_icon' => [__('آیکونِ چیپِ پرطرفدار', 'zig3d-widgets'), 'fas fa-arrow-up-right-from-square', 'fa-solid'],
+            'search_icon'  => __('آیکونِ سرچ', 'zig3d-widgets'),
+            'clear_icon'   => __('آیکونِ پاک‌کردن (ضربدر)', 'zig3d-widgets'),
+            'chevron_icon' => __('آیکونِ فلشِ ردیفِ محصول', 'zig3d-widgets'),
+            'more_icon'    => __('آیکونِ دکمهٔ «نمایشِ بیشتر»', 'zig3d-widgets'),
+            'empty_icon'   => __('آیکونِ حالتِ بدونِ نتیجه', 'zig3d-widgets'),
+            'recent_icon'  => __('آیکونِ چیپِ تاریخچه', 'zig3d-widgets'),
+            'popular_icon' => __('آیکونِ چیپِ پرطرفدار', 'zig3d-widgets'),
         ];
 
-        foreach ($icons as $key => [$label, $default_value, $default_library]) {
+        foreach ($icons as $key => $label) {
             $this->add_control($key, [
-                'label'   => $label,
-                'type'    => Controls_Manager::ICONS,
-                'default' => ['value' => $default_value, 'library' => $default_library],
+                'label'       => $label,
+                'type'        => Controls_Manager::ICONS,
+                'default'     => ['value' => '', 'library' => ''],
+                'description' => isset(self::DESIGN_ICONS[$key])
+                    ? __('خالی یعنی آیکونِ خودِ طرح.', 'zig3d-widgets')
+                    : __('در طرح این چیپ آیکون ندارد؛ خالی یعنی بدونِ آیکون.', 'zig3d-widgets'),
             ]);
         }
 
@@ -676,12 +721,31 @@ final class Search extends Widget_Base {
             'selectors' => ['{{WRAPPER}} .zig-search__product-meta' => 'color: {{VALUE}};'],
         ]);
 
+        $this->add_control('product_dot_size', [
+            'label'     => __('اندازهٔ نقطهٔ جداکننده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::SLIDER,
+            'range'     => ['px' => ['min' => 2, 'max' => 16]],
+            'default'   => ['size' => 5, 'unit' => 'px'],
+            'selectors' => ['{{WRAPPER}} .zig-search__product-meta' => '--zig-search-product-dot-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('product_dot_color', [
+            'label'     => __('رنگِ نقطهٔ جداکننده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}} .zig-search__product-meta' => '--zig-search-product-dot-color: {{VALUE}};'],
+        ]);
+
+        /*
+         * اندازه فقط ارتفاع را می‌نویسد، نه عرض را: فلشِ طرح مربع نیست
+         * (۶٫۸۹ در ۱۲) و نوشتنِ هر دو، کشیده‌اش می‌کرد. عرض را CSS از
+         * روی ‎viewBox‎ درمی‌آورد.
+         */
         $this->add_control('product_chevron_size', [
             'label'     => __('اندازهٔ فلش', 'zig3d-widgets'),
             'type'      => Controls_Manager::SLIDER,
             'range'     => ['px' => ['min' => 6, 'max' => 40]],
-            'default'   => ['size' => 14, 'unit' => 'px'],
-            'selectors' => [Selector::descend('{{WRAPPER}} .zig-search__product-chevron', 'svg, i') => 'font-size: {{SIZE}}{{UNIT}}; width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};'],
+            'default'   => ['size' => 12, 'unit' => 'px'],
+            'selectors' => ['{{WRAPPER}} .zig-search__product-chevron' => '--zig-search-chevron-size: {{SIZE}}{{UNIT}};'],
         ]);
 
         $this->add_control('product_chevron_color', [
@@ -810,7 +874,9 @@ final class Search extends Widget_Base {
             'label'     => __('اندازهٔ آیکون', 'zig3d-widgets'),
             'type'      => Controls_Manager::SLIDER,
             'range'     => ['px' => ['min' => 16, 'max' => 120]],
-            'default'   => ['size' => 40, 'unit' => 'px'],
+            // ۲۲ همان اندازه‌ای است که در طرح دارد — همان ذره‌بینِ فیلد،
+            // نه یک آیکونِ بزرگ‌ترِ حالتِ خالی.
+            'default'   => ['size' => 22, 'unit' => 'px'],
             'selectors' => [Selector::descend('{{WRAPPER}} .zig-search__empty-icon', 'svg, i') => 'font-size: {{SIZE}}{{UNIT}}; width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};'],
         ]);
 
@@ -1155,17 +1221,30 @@ final class Search extends Widget_Base {
         }
     }
 
+    /**
+     * آیکونِ یک جایگاه: انتخابِ مدیر اگر چیزی انتخاب کرده، وگرنه SVGی
+     * خودِ طرح.
+     *
+     * ترتیب عمداً همین است. آیکونِ طرح «پیش‌فرض» است نه «اجبار»؛ لحظه‌ای
+     * که مدیر چیزی از کتابخانه انتخاب کند، همان می‌نشیند.
+     */
     private function render_icon(array $settings, string $key): string {
         $icon = $settings[$key] ?? [];
 
-        if (empty($icon['value'])) {
+        if (!empty($icon['value'])) {
+            ob_start();
+            Icons_Manager::render_icon($icon, ['aria-hidden' => 'true']);
+
+            return (string) ob_get_clean();
+        }
+
+        if ('yes' !== ($settings['design_icons'] ?? 'yes')) {
             return '';
         }
 
-        ob_start();
-        Icons_Manager::render_icon($icon, ['aria-hidden' => 'true']);
-
-        return (string) ob_get_clean();
+        return isset(self::DESIGN_ICONS[$key])
+            ? Design_Icons::get(self::DESIGN_ICONS[$key])
+            : '';
     }
 
     /**
