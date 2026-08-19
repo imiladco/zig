@@ -594,3 +594,71 @@ foreach ($chevron_rules as $entry) {
         false === strpos($entry[2], 'width:')
     );
 }
+
+/* ==========================================================================
+ * باز و بسته شدنِ اورلی
+ *
+ * مرجع، ضبطِ واقعیِ همان تعاملی است که تأیید شد. اندازه‌گیریِ فریم‌به‌فریمِ
+ * آن ضبط دو چیز را نشان داد و هر دو اینجا قفل می‌شوند:
+ *
+ *   ۱. هیچ‌چیز جابه‌جا نمی‌شود. لبه‌هایِ بالا و پایینِ فیلد در حالتِ بسته و
+ *      باز دقیقاً یکی بودند؛ فقط قابِ سفید ظاهر می‌شد و لبه‌اش *بالایِ*
+ *      فیلد در می‌آمد. یعنی گذار فقط شفافیت است، نه ارتفاع و نه لغزش.
+ *   ۲. کارت از همان فریمِ اول در اندازهٔ نهایی است.
+ *
+ * پس پدینگِ بالا هم — مثلِ پدینگ‌هایِ کناری — بیرون اضافه می‌شود، وگرنه
+ * فیلد لحظهٔ باز شدن ۸ پیکسل می‌پرید و همان چیزی می‌شد که نباید.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › انیمیشنِ باز/بسته');
+
+Tests::keeps(
+    'لبهٔ بالا هم به‌اندازهٔ پدینگ بیرون کشیده می‌شود، پس فیلد نمی‌پرد',
+    $section,
+    'inset-block-start: calc(var(--zig-search-shell-pad-top, 8px) * -1);'
+);
+
+/*
+ * مقدارِ شروع باید رویِ خودِ پوستهٔ بسته نوشته شده باشد؛ اگر فقط حالتِ
+ * باز مقدار داشته باشد، مرورگر چیزی برایِ درون‌یابی ندارد و کارت
+ * بی‌انیمیشن ظاهر می‌شود.
+ */
+Tests::keeps('پوستهٔ بسته پس‌زمینهٔ شفافِ صریح دارد', $section, 'background-color: transparent;');
+Tests::keeps('و سایهٔ صریحِ none', $section, "\tbox-shadow: none;\n\ttransition:");
+Tests::keeps('پنل از شفافیتِ صفر شروع می‌کند', $section, "\topacity: 0;\n\ttransition: opacity var(--zig-search-anim, 150ms) ease-out;");
+Tests::keeps('و در حالتِ باز کاملاً مات می‌شود', $section, ".zig-search.is-open .zig-search__panel {\n\topacity: 1;\n}");
+Tests::keeps('لایهٔ تیره هم همراهش محو می‌شود', $section, ".zig-search.is-open .zig-search__backdrop {\n\topacity: 1;\n}");
+
+/*
+ * در حالتِ کاهشِ حرکت، *مدت* صفر می‌شود نه اینکه گذار حذف شود: جاوااسکریپت
+ * همین مدت را از مرورگر می‌پرسد تا بداند کِی پنل را پنهان کند. با
+ * ‎transition: none‎ آن عدد وجود نداشت و پنل باز می‌ماند.
+ */
+Tests::keeps('کاهشِ حرکت فقط مدت را صفر می‌کند', $section, "\t\ttransition-duration: 0s;\n\t}");
+
+$search_js = file_get_contents($root . '/assets/js/zig3d-search.js');
+
+/*
+ * بدونِ وادار کردنِ مرورگر به محاسبهٔ چیدمان، برداشتنِ ‎hidden‎ و افزودنِ
+ * کلاس در یک فریم جمع می‌شوند و مرورگر مستقیم به حالتِ پایانی می‌پرد —
+ * یعنی انیمیشن هست ولی هیچ‌وقت دیده نمی‌شود.
+ */
+Tests::keeps('باز شدن مقدارِ شروع را تثبیت می‌کند', $search_js, 'void this.root.offsetWidth;');
+
+/* و بستن، پنل را قبلِ پایانِ محوشدن از چیدمان بیرون نمی‌برد */
+Tests::keeps('مدتِ گذار از خودِ مرورگر پرسیده می‌شود', $search_js, 'Search.prototype.transitionMs');
+Tests::keeps('پنهان‌کردنِ پنل به بعدِ گذار موکول می‌شود', $search_js, 'this.closeTimer = window.setTimeout(settle, duration);');
+Tests::ok(
+    'و دیگر بلافاصله پنهان نمی‌شود',
+    false === strpos($search_js, "this.panel.hidden = true;\n\t\t// ضربدر")
+);
+
+$controls_anim = zig_collect_controls(Search::class);
+Tests::ok('مدتِ انیمیشن از تبِ استایل قابلِ تنظیم است', in_array('overlay_transition', $controls_anim, true));
+
+foreach ($padding_rules as $entry) {
+    Tests::ok(
+        'کنترلِ پدینگ، متغیرِ لبهٔ بالا را هم می‌نویسد',
+        false !== strpos($entry[2], '--zig-search-shell-pad-top')
+    );
+}

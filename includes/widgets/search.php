@@ -598,8 +598,24 @@ final class Search extends Widget_Base {
             'shell',
             '.zig-search.is-open .zig-search__shell',
             '.zig-search.is-open .zig-search__shell',
-            '--zig-search-shell-pad-left: {{LEFT}}{{UNIT}}; --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}};'
+            '--zig-search-shell-pad-top: {{TOP}}{{UNIT}}; --zig-search-shell-pad-left: {{LEFT}}{{UNIT}}; --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}};'
         );
+
+        /*
+         * باز و بستهٔ اورلی یک محوشدنِ ساده است و هیچ چیزی جابه‌جا
+         * نمی‌شود: فیلد در هر دو حالت دقیقاً سرِ جای خودش است و فقط
+         * قابِ سفید و پنل ظاهر/ناپدید می‌شوند. مقدارِ صفر یعنی بدونِ
+         * انیمیشن — همان چیزی که جاوااسکریپت هم از مرورگر می‌خواند و
+         * بلافاصله پنل را می‌بندد.
+         */
+        $this->add_control('overlay_transition', [
+            'label'      => __('مدتِ باز و بسته شدن', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['ms'],
+            'range'      => ['ms' => ['min' => 0, 'max' => 600, 'step' => 10]],
+            'default'    => ['size' => 150, 'unit' => 'ms'],
+            'selectors'  => ['{{WRAPPER}} .zig-search' => '--zig-search-anim: {{SIZE}}ms;'],
+        ]);
 
         $this->add_control('shell_width', [
             'label'      => __('عرضِ ویجت', 'zig3d-widgets'),

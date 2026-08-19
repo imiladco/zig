@@ -81,6 +81,8 @@
 		this.controller = null;
 		this.ticket = 0;
 		this.timer = null;
+		// تایمرِ پنهان‌کردنِ پنل بعدِ پایانِ محوشدن؛ صفر یعنی بستنی در جریان نیست
+		this.closeTimer = 0;
 		this.useFallback = false;
 		this.options = []; // ردیف‌ها/چیپ‌هایِ قابلِ ناوبری با کیبورد در پنلِ باز
 
@@ -559,7 +561,54 @@
 		this.open();
 	};
 
+	/**
+	 * بلندترین مدتِ گذارِ یک عنصر، برحسبِ میلی‌ثانیه.
+	 *
+	 * از خودِ ‎transition-duration‎ی محاسبه‌شده خوانده می‌شود نه از متغیرِ
+	 * سفارشی: این‌طور هرچه رویش اثر بگذارد — تبِ استایل، رسانه‌کوئریِ
+	 * ‎prefers-reduced-motion‎، یا هر قاعدهٔ دیگری — خودبه‌خود لحاظ
+	 * می‌شود، و لازم نیست جاوااسکریپت هیچ‌کدامشان را بشناسد.
+	 */
+	Search.prototype.transitionMs = function (element) {
+		if (!element || typeof window.getComputedStyle !== 'function') {
+			return 0;
+		}
+
+		var declared = window.getComputedStyle(element).transitionDuration || '';
+		var longest  = 0;
+
+		declared.split(',').forEach(function (value) {
+			value = value.trim();
+
+			var amount = parseFloat(value);
+
+			if (isNaN(amount)) {
+				return;
+			}
+
+			// ‎s‎ و ‎ms‎ هر دو ممکن‌اند؛ مرورگرها هر دو را برمی‌گردانند.
+			if (value.indexOf('ms') === -1) {
+				amount *= 1000;
+			}
+
+			if (amount > longest) {
+				longest = amount;
+			}
+		});
+
+		return longest;
+	};
+
 	Search.prototype.open = function () {
+		/*
+		 * اگر بستنی در جریان است، تایمرش لغو می‌شود؛ وگرنه چند لحظه بعد
+		 * پنلی را پنهان می‌کند که همین حالا دوباره باز شده.
+		 */
+		if (this.closeTimer) {
+			window.clearTimeout(this.closeTimer);
+			this.closeTimer = 0;
+		}
+
 		this.panel.hidden = false;
 		this.clearBtn.hidden = false;
 
@@ -568,6 +617,22 @@
 		}
 
 		this.input.setAttribute('aria-expanded', 'true');
+
+		if (this.root.classList.contains('is-open')) {
+			return;
+		}
+
+		/*
+		 * خواندنِ ‎offsetWidth‎ مرورگر را وادار می‌کند چیدمان و سبک را
+		 * همین‌جا حساب کند.
+		 *
+		 * بدونش گذار اصلاً اجرا نمی‌شود: پنل تا یک خط بالاتر ‎display:
+		 * none‎ بود، و اگر برداشتنِ ‎hidden‎ و افزودنِ کلاس در یک فریم
+		 * جمع شوند، مرورگر فقط حالتِ *پایانی* را می‌بیند و مستقیم به آن
+		 * می‌پرد. این خط همان مقدارِ شروع را تثبیت می‌کند.
+		 */
+		void this.root.offsetWidth;
+
 		this.root.classList.add('is-open');
 	};
 
@@ -575,7 +640,12 @@
 	 * @param {boolean} preserveValue بستنِ S5 (Esc/کلیکِ بیرون) در برابرِ بازگشتِ کاملِ S0
 	 */
 	Search.prototype.close = function (preserveValue) {
-		if (this.panel.hidden) {
+		/*
+		 * «بسته» یعنی کلاس رفته باشد، نه اینکه پنل هنوز ‎hidden‎ شده
+		 * باشد: در فاصلهٔ محوشدن، پنل هنوز در چیدمان است ولی بستن قبلاً
+		 * انجام شده و تکرارش فقط تایمر را از نو می‌ریزد.
+		 */
+		if (this.panel.hidden || !this.root.classList.contains('is-open')) {
 			return;
 		}
 
@@ -593,16 +663,46 @@
 		++this.ticket;
 		this.setLoading(false);
 
-		this.panel.hidden = true;
 		// ضربدر با پنل می‌آید و با پنل می‌رود — حتی در S5 که مقدارِ
 		// تایپ‌شده در فیلد می‌ماند، طرح ضربدری نشان نمی‌دهد.
 		this.clearBtn.hidden = true;
 		this.input.setAttribute('aria-expanded', 'false');
 		this.input.setAttribute('aria-activedescendant', '');
+
+		/*
+		 * ترتیب مهم است: اول کلاس برداشته می‌شود تا محوشدن شروع شود، و
+		 * ‎hidden‎ فقط *بعدِ* پایانِ گذار می‌نشیند.
+		 *
+		 * ‎aria-expanded‎ ولی همین حالا صفر می‌شود، نه بعدِ انیمیشن:
+		 * صفحه‌خوان نباید منتظرِ تمام‌شدنِ یک جلوهٔ دیداری بماند.
+		 *
+		 * چرا تایمر و نه ‎transitionend‎: اگر مدت صفر باشد (حالتِ
+		 * ‎prefers-reduced-motion‎) آن رویداد هیچ‌وقت شلیک نمی‌شود و پنل
+		 * برایِ همیشه باز می‌ماند.
+		 */
 		this.root.classList.remove('is-open');
 
-		if (this.backdrop) {
-			this.backdrop.hidden = true;
+		var self     = this;
+		var duration = this.transitionMs(this.panel);
+		var settle   = function () {
+			self.panel.hidden = true;
+
+			if (self.backdrop) {
+				self.backdrop.hidden = true;
+			}
+
+			self.closeTimer = 0;
+		};
+
+		if (this.closeTimer) {
+			window.clearTimeout(this.closeTimer);
+		}
+
+		if (duration > 0) {
+			this.closeTimer = window.setTimeout(settle, duration);
+		} else {
+			this.closeTimer = 0;
+			settle();
 		}
 
 		this.options = [];

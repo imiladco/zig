@@ -4902,6 +4902,12 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	inset: 0;
 	z-index: 59;
 	background-color: var(--zig-search-backdrop-bg, rgba(16, 19, 26, 0.35));
+	opacity: 0;
+	transition: opacity var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search.is-open .zig-search__backdrop {
+	opacity: 1;
 }
 
 .zig-search .zig-search__backdrop[hidden] {
@@ -4916,9 +4922,18 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  *   باز   کارتِ سفید می‌شود و *رویِ* محتوایِ صفحه می‌نشیند (اورلی)، با
  *         فیلد در بالا و پنل بلافاصله زیرش، داخلِ همان یک کارت.
  */
+/*
+ * پوسته در حالتِ بسته هیچ ظاهری ندارد، ولی *همان* دو ویژگی‌ای که در
+ * حالتِ باز می‌گیرد اینجا هم صریح نوشته شده‌اند: بدونِ مقدارِ شروع،
+ * مرورگر چیزی برایِ درون‌یابی ندارد و گذار اصلاً اجرا نمی‌شود.
+ */
 .zig-search .zig-search__shell {
 	display: flex;
 	flex-direction: column;
+	background-color: transparent;
+	box-shadow: none;
+	transition: background-color var(--zig-search-anim, 150ms) ease-out,
+		box-shadow var(--zig-search-anim, 150ms) ease-out;
 }
 
 /*
@@ -4940,7 +4955,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  */
 .zig-search.is-open .zig-search__shell {
 	position: absolute;
-	inset-block-start: 0;
+	inset-block-start: calc(var(--zig-search-shell-pad-top, 8px) * -1);
 	left: calc(var(--zig-search-shell-pad-left, 8px) * -1);
 	right: calc(var(--zig-search-shell-pad-right, 8px) * -1);
 	z-index: 60;
@@ -5080,6 +5095,12 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex-direction: column;
 	gap: var(--zig-search-panel-gap, 29px);
 	padding: var(--zig-search-panel-padding, 0 8px);
+	opacity: 0;
+	transition: opacity var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search.is-open .zig-search__panel {
+	opacity: 1;
 }
 
 .zig-search .zig-search__panel[hidden] {
@@ -5371,6 +5392,18 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	.zig-search.is-loading .zig-search__icon-btn {
 		animation: none;
 		opacity: 0.5;
+	}
+
+	/*
+	 * صفر شدنِ *مدت* است نه حذفِ گذار، و این عمدی است: جاوااسکریپت برایِ
+	 * اینکه بداند کِی پنل را پنهان کند همین مدت را از مرورگر می‌پرسد. با
+	 * ‎transition: none‎ آن عدد اصلاً وجود نمی‌داشت؛ با صفر، هم حرکتی
+	 * دیده نمی‌شود و هم بستن بلافاصله انجام می‌شود.
+	 */
+	.zig-search .zig-search__shell,
+	.zig-search .zig-search__panel,
+	.zig-search .zig-search__backdrop {
+		transition-duration: 0s;
 	}
 }
 
