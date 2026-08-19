@@ -5642,6 +5642,31 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 	}
+
+	/*
+	 * نشانهٔ بارگذاری در شیت، خودِ متنِ جست‌وجوست.
+	 *
+	 * در دسکتاپ ذره‌بین می‌تپد، ولی اینجا ذره‌بینی وجود ندارد و جایش
+	 * فلشِ بازگشت نشسته — تپاندنِ آن یعنی «دارد برمی‌گردد»، که پیامِ
+	 * غلطی است. متن هم همان‌جایی است که چشمِ کاربر بعدِ تایپ روی آن
+	 * است، پس نشانه دقیقاً جایی می‌افتد که نگاه هست.
+	 */
+	.zig-search.is-loading .zig-search__input {
+		animation: zig-search-pulse 900ms ease-in-out infinite;
+	}
+}
+
+/*
+ * جدا از بلوکِ بالا و نه داخلِ ‎prefers-reduced-motion‎ی مشترک: آن یکی
+ * روی همهٔ عرض‌ها اثر می‌گذارد و در دسکتاپ متنِ ورودی اصلاً نمی‌تپد،
+ * پس کم‌رنگ کردنش آنجا فقط یک تیرگیِ بی‌دلیل بود.
+ */
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+
+	.zig-search.is-loading .zig-search__input {
+		animation: none;
+		opacity: 0.5;
+	}
 }
 
 /*

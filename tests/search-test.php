@@ -887,3 +887,26 @@ foreach (['zig-search__trigger', 'zig-search__back'] as $button) {
         (bool) preg_match('/<button[^>]*class="' . preg_quote($button, '/') . '"[^>]*aria-label="[^"]+"/', $html_no_labels)
     );
 }
+
+/*
+ * نشانهٔ بارگذاری در شیت، خودِ متنِ جست‌وجوست.
+ *
+ * در دسکتاپ ذره‌بین می‌تپد، ولی در موبایل ذره‌بینی نیست و جایش فلشِ
+ * بازگشت نشسته — تپاندنِ آن یعنی «دارد برمی‌گردد»، که پیامِ غلطی است.
+ */
+Tests::keeps(
+    'در شیت، متنِ جست‌وجو می‌تپد',
+    $section,
+    ".zig-search.is-loading .zig-search__input {\n\t\tanimation: zig-search-pulse 900ms ease-in-out infinite;\n\t}"
+);
+
+/*
+ * و کم‌رنگ‌شدنِ حالتِ «کاهشِ حرکت» هم فقط مالِ موبایل است. اگر داخلِ
+ * بلوکِ مشترک می‌رفت، در دسکتاپ هم متنِ ورودی تیره می‌شد — جایی که
+ * اصلاً نمی‌تپد.
+ */
+Tests::keeps(
+    'کاهشِ حرکتِ این تپش فقط زیرِ بریک‌پوینت است',
+    $section,
+    '@media (max-width: 767px) and (prefers-reduced-motion: reduce) {'
+);
