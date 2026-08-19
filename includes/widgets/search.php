@@ -248,6 +248,13 @@ final class Search extends Widget_Base {
             'default' => __('همچین نتیجه‌ای پیدا نکردیم', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('results_announcement', [
+            'label'       => __('اعلامِ تعدادِ نتیجه (برایِ صفحه‌خوان)', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => __('%s نتیجه پیدا شد', 'zig3d-widgets'),
+            'description' => __('‎%s‎ جایِ تعداد می‌نشیند. این متن دیده نمی‌شود؛ فقط صفحه‌خوان می‌خوانَدش.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('error_message', [
             'label'   => __('پیامِ خطایِ فنی', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
@@ -927,6 +934,22 @@ final class Search extends Widget_Base {
          * وقتی ویجت داخلِ یک هدرِ باریک نشسته باشد.
          */
         echo '<div class="zig-search__backdrop" hidden></div>';
+
+        /*
+         * تنها چیزی که به صفحه‌خوان می‌گوید «نتیجه‌ها عوض شدند».
+         *
+         * در الگویِ combobox، جابه‌جاییِ ‎aria-activedescendant‎ فقط گزینهٔ
+         * *فعال* را اعلام می‌کند؛ اینکه اصلاً چند نتیجه آمد یا اینکه
+         * فهرست تازه شد، هیچ‌جا گفته نمی‌شود. کاربرِ نابینا تایپ می‌کرد و
+         * سکوت می‌شنید تا وقتی خودش فلش بزند.
+         *
+         * ‎polite‎ نه ‎assertive‎: با هر کاراکتر عوض می‌شود و قطعِ مکررِ
+         * کلامِ صفحه‌خوان از سکوت بدتر است.
+         */
+        printf(
+            '<div class="zig-search__status" role="status" aria-live="polite" data-template="%s"></div>',
+            esc_attr((string) ($settings['results_announcement'] ?? ''))
+        );
 
         echo '<div class="zig-search__shell">';
 

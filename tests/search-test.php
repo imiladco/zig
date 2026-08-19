@@ -348,3 +348,37 @@ $controls_all = zig_collect_controls(Search::class);
 foreach (['error_message', 'rate_limit_message', 'more_button_width'] as $control) {
     Tests::ok('کنترل موجود است: ' . $control, in_array($control, $controls_all, true));
 }
+
+/* ==========================================================================
+ * دسترسی‌پذیری — چیزهایی که در الگویِ combobox جا افتاده بودند
+ *
+ * ‎role="option"‎ آگاهانه ماند (نگاه کنید به کامنتِ ‎buildProductRow()‎)،
+ * ولی دو حفره‌اش ربطی به آن تصمیم نداشت و پر شد.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › دسترسی‌پذیری');
+
+/*
+ * ‎aria-activedescendant‎ فقط گزینهٔ *فعال* را اعلام می‌کند؛ خودِ «سه
+ * نتیجه آمد» هیچ‌جا گفته نمی‌شد و کاربرِ نابینا بعدِ تایپ سکوت می‌شنید.
+ */
+Tests::keeps('ناحیهٔ اعلامِ زنده رندر می‌شود', $html, 'zig-search__status');
+Tests::keeps('و polite است نه assertive', $html, 'aria-live="polite"');
+Tests::keeps('role=status دارد', $html, 'role="status"');
+Tests::keeps('قالبِ متنِ اعلام همراهش می‌رود', $html, 'data-template=');
+
+$js = file_get_contents($root . '/assets/js/zig3d-search.js');
+
+/*
+ * جایگاهِ گزینه باید صریح باشد: صفحه‌خوان در یک listboxِ ساخته‌شده با
+ * جاوااسکریپت — که بخش‌هایِ پنهانِ کناری هم دارد — نمی‌تواند «۱ از ۳» را
+ * از رویِ DOM قابلِ‌اتکا حدس بزند.
+ */
+Tests::keeps('جایگاهِ هر گزینه صریح اعلام می‌شود', $js, 'aria-posinset');
+Tests::keeps('و اندازهٔ مجموعه هم', $js, 'aria-setsize');
+
+/* بستن باید اعلامِ کهنه را هم پاک کند، وگرنه دوباره خوانده می‌شود */
+Tests::keeps('بستن ناحیهٔ اعلام را خالی می‌کند', $js, "this.status.textContent = '';");
+
+$controls_a11y = zig_collect_controls(Search::class);
+Tests::ok('متنِ اعلام قابلِ ترجمه/تنظیم است', in_array('results_announcement', $controls_a11y, true));

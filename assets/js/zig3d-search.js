@@ -58,6 +58,7 @@
 		this.errorSection = root.querySelector('.zig-search__section--error');
 		this.errorText = root.querySelector('.zig-search__error-text');
 		this.backdrop = root.querySelector('.zig-search__backdrop');
+		this.status = root.querySelector('.zig-search__status');
 
 		this.chevronTpl = root.querySelector('template[data-zig-icon="chevron-icon"]');
 		this.recentIconTpl = root.querySelector('template[data-zig-icon="recent-icon"]');
@@ -484,7 +485,34 @@
 		this.hideSection(this.recentSection);
 		this.hideSection(this.productsSection);
 		this.showSection(this.emptySection);
+		this.announce(0);
 		this.open();
+	};
+
+	/**
+	 * تنها چیزی که به صفحه‌خوان می‌گوید فهرست عوض شد.
+	 *
+	 * ‎aria-activedescendant‎ فقط گزینهٔ *فعال* را اعلام می‌کند؛ خودِ
+	 * «سه نتیجه آمد» هیچ‌جا گفته نمی‌شد و کاربرِ نابینا بعدِ تایپ سکوت
+	 * می‌شنید. برایِ صفر هم پیامِ خودِ «بدونِ نتیجه» خوانده می‌شود، نه
+	 * «۰ نتیجه» که بی‌معنا است.
+	 */
+	Search.prototype.announce = function (count) {
+		if (!this.status) {
+			return;
+		}
+
+		if (0 === count) {
+			var emptyText = this.root.querySelector('.zig-search__empty-text');
+
+			this.status.textContent = emptyText ? emptyText.textContent : '';
+
+			return;
+		}
+
+		var template = this.status.getAttribute('data-template') || '';
+
+		this.status.textContent = template ? template.replace('%s', String(count)) : String(count);
 	};
 
 	/**
@@ -526,6 +554,7 @@
 		this.hideSection(this.recentSection);
 		this.hideSection(this.emptySection);
 		this.renderProducts(payload.results, Boolean(payload.has_more), query);
+		this.announce(payload.results.length);
 		this.showSection(this.productsSection);
 		this.open();
 	};
@@ -579,6 +608,10 @@
 		this.options = [];
 		this.activeIndex = -1;
 
+		if (this.status) {
+			this.status.textContent = '';
+		}
+
 		if (!preserveValue) {
 			this.input.value = '';
 		}
@@ -606,7 +639,7 @@
 
 		for (var i = 0; i < results.length; i++) {
 			var item = results[i];
-			var row = this.buildProductRow(item, i);
+			var row = this.buildProductRow(item, i, results.length);
 
 			this.productsList.appendChild(row);
 			this.options.push({ el: row, href: item.permalink || '#' });
@@ -629,7 +662,7 @@
 		this.setActive(-1);
 	};
 
-	Search.prototype.buildProductRow = function (item, index) {
+	Search.prototype.buildProductRow = function (item, index, total) {
 		var row = document.createElement('a');
 
 		row.className = 'zig-search__product';
@@ -655,6 +688,14 @@
 		 * این خط.
 		 */
 		row.setAttribute('role', 'option');
+		/*
+		 * در یک ‎listbox‎ که فرزندانش با جاوااسکریپت ساخته می‌شوند،
+		 * صفحه‌خوان جایگاه را از خودِ DOM حدس می‌زند و آن حدس با
+		 * بخش‌هایِ پنهانِ کناری قابلِ‌اتکا نیست. این دو صفت جایگاه را
+		 * صریح می‌کنند: «گزینهٔ ۱ از ۳».
+		 */
+		row.setAttribute('aria-posinset', String(index + 1));
+		row.setAttribute('aria-setsize', String(total));
 		row.href = item.permalink || '#';
 
 		var self = this;

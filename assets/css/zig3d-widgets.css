@@ -5308,6 +5308,26 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	}
 }
 
+/*
+ * ناحیهٔ اعلام: دیده نمی‌شود ولی خوانده می‌شود.
+ *
+ * ‎display: none‎ یا ‎visibility: hidden‎ اینجا کار نمی‌کند — صفحه‌خوان‌ها
+ * چنین عنصری را از درختِ دسترسی‌پذیری بیرون می‌گذارند و اعلام هیچ‌وقت
+ * شنیده نمی‌شود. الگویِ زیر همان چیزی است که برایِ همین کار جا افتاده.
+ */
+.zig-search .zig-search__status {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
 /* عنوان و متایِ محصول ترکیبِ فارسی/لاتین‌اند — ایزوله لازم دارند */
 .zig-search bdi {
 	unicode-bidi: isolate;
