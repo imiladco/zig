@@ -598,7 +598,7 @@ final class Search extends Widget_Base {
             'shell',
             '.zig-search.is-open .zig-search__shell',
             '.zig-search.is-open .zig-search__shell',
-            '--zig-search-shell-pad-top: {{TOP}}{{UNIT}}; --zig-search-shell-pad-left: {{LEFT}}{{UNIT}}; --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}};'
+            '--zig-search-shell-pad-top: {{TOP}}{{UNIT}}; --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}}; --zig-search-shell-pad-bottom: {{BOTTOM}}{{UNIT}}; --zig-search-shell-pad-left: {{LEFT}}{{UNIT}};'
         );
 
         /*

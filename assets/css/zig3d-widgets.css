@@ -4953,16 +4953,41 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  * عمداً ‎left/right‎ی فیزیکی است نه منطقی: چیزی که جبران می‌شود
  * ‎padding-left/right‎ی فیزیکی است.
  */
-.zig-search.is-open .zig-search__shell {
+/*
+ * جعبهٔ اورلی در حالتِ بسته‌شدن هم می‌ماند، نه فقط در حالتِ باز — و این
+ * همان چیزی است که یک‌بار شکست:
+ *
+ * لحظه‌ای که کلاسِ ‎is-open‎ برداشته می‌شد، پوسته در همان فریم
+ * ‎position: absolute‎ و ‎z-index: 60‎ را از دست می‌داد، در حالی که
+ * لایهٔ تیره هنوز کاملاً مات بود و تازه داشت محو می‌شد. نتیجه این بود که
+ * کلِ ویجت — فیلد و چیپ‌ها و کارت — برایِ چند فریم *زیرِ* آن لایه
+ * می‌افتاد و خاکستری می‌شد؛ چیزی که در چشم، پرشِ فیلد دیده می‌شد نه
+ * محوشدن.
+ *
+ * پس هندسه و ترتیبِ لایه به هر دو حالت داده می‌شود و فقط *ظاهرِ* کارت
+ * (پس‌زمینه و سایه) به ‎is-open‎ گره می‌خورد — چون دقیقاً همان است که
+ * باید محو شود.
+ *
+ * پدینگ هم از همان چهار متغیری خوانده می‌شود که جبرانِ لبه‌ها از آن
+ * می‌خوانَد. یک منبعِ حقیقت یعنی این دو هیچ‌وقت نمی‌توانند از هم جدا
+ * بیفتند — اگر پدینگ از یک جا و جبران از جایی دیگر می‌آمد، هر اختلافی
+ * بینشان مستقیماً فیلد را جابه‌جا می‌کرد.
+ */
+.zig-search.is-open .zig-search__shell,
+.zig-search.is-closing .zig-search__shell {
 	position: absolute;
 	inset-block-start: calc(var(--zig-search-shell-pad-top, 8px) * -1);
 	left: calc(var(--zig-search-shell-pad-left, 8px) * -1);
 	right: calc(var(--zig-search-shell-pad-right, 8px) * -1);
 	z-index: 60;
 	gap: var(--zig-search-shell-gap, 24px);
-	padding: var(--zig-search-shell-padding, 8px 8px 16px);
-	background-color: var(--zig-search-shell-bg, #ffffff);
+	padding: var(--zig-search-shell-pad-top, 8px) var(--zig-search-shell-pad-right, 8px)
+		var(--zig-search-shell-pad-bottom, 16px) var(--zig-search-shell-pad-left, 8px);
 	border-radius: var(--zig-search-shell-radius, 24px);
+}
+
+.zig-search.is-open .zig-search__shell {
+	background-color: var(--zig-search-shell-bg, #ffffff);
 	box-shadow: var(--zig-search-shell-shadow, 0 8px 15px rgba(0, 0, 0, 0.12));
 }
 

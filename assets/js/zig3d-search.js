@@ -619,6 +619,8 @@
 		this.input.setAttribute('aria-expanded', 'true');
 
 		if (this.root.classList.contains('is-open')) {
+			this.root.classList.remove('is-closing');
+
 			return;
 		}
 
@@ -633,6 +635,12 @@
 		 */
 		void this.root.offsetWidth;
 
+		/*
+		 * ‎is-closing‎ در همین فریم برداشته می‌شود، نه زودتر: اگر کاربر
+		 * وسطِ محوشدن دوباره فوکوس کند، پنل از همان شفافیتی که در آن
+		 * لحظه دارد به یک برمی‌گردد و پرشی دیده نمی‌شود.
+		 */
+		this.root.classList.remove('is-closing');
 		this.root.classList.add('is-open');
 	};
 
@@ -680,11 +688,19 @@
 		 * ‎prefers-reduced-motion‎) آن رویداد هیچ‌وقت شلیک نمی‌شود و پنل
 		 * برایِ همیشه باز می‌ماند.
 		 */
+		/*
+		 * ‎is-closing‎ جای ‎is-open‎ را می‌گیرد تا جعبهٔ اورلی — موقعیت،
+		 * لبه‌ها، پدینگ و ترتیبِ لایه — تا پایانِ محوشدن سرِ جایش بماند.
+		 * بدونش پوسته در همان فریم زیرِ لایهٔ تیره‌ای می‌افتاد که هنوز
+		 * مات بود و کلِ ویجت چند فریم خاکستری می‌شد.
+		 */
 		this.root.classList.remove('is-open');
+		this.root.classList.add('is-closing');
 
 		var self     = this;
 		var duration = this.transitionMs(this.panel);
 		var settle   = function () {
+			self.root.classList.remove('is-closing');
 			self.panel.hidden = true;
 
 			if (self.backdrop) {

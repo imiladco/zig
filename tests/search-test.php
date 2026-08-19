@@ -662,3 +662,56 @@ foreach ($padding_rules as $entry) {
         false !== strpos($entry[2], '--zig-search-shell-pad-top')
     );
 }
+
+/* ==========================================================================
+ * بسته‌شدن — پرشِ فیلد
+ *
+ * ضبطِ دومی که رسید، لبه‌هایِ قرصِ فیلد را در حالتِ باز و بسته دقیقاً یکی
+ * نشان داد (x از ۳۴ تا ۶۵۲، y از ۲۵). یعنی فیلد اصلاً جابه‌جا نمی‌شد؛ آنچه
+ * پرش دیده می‌شد چیزِ دیگری بود: در فریمِ ۱٫۵۲۵ کلِ نوارِ بالا یک‌دست
+ * تیره‌تر شده بود — قرص ۲۰۹ و صفحه ۲۱۹ — یعنی *خودِ ویجت* زیرِ لایهٔ
+ * تیره‌ای رفته بود که هنوز مات بود.
+ *
+ * علت: با برداشتنِ ‎is-open‎، پوسته در همان فریم ‎position‎ و ‎z-index‎ی
+ * اورلی را از دست می‌داد، در حالی که محوشدن تازه شروع شده بود.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › بسته‌شدن بدونِ پرش');
+
+Tests::keeps(
+    'جعبهٔ اورلی در حالتِ بسته‌شدن هم می‌ماند',
+    $section,
+    ".zig-search.is-open .zig-search__shell,\n.zig-search.is-closing .zig-search__shell {"
+);
+
+/*
+ * و فقط *ظاهرِ* کارت به ‎is-open‎ گره خورده — چون همان است که باید محو
+ * شود. اگر پس‌زمینه هم به هر دو حالت داده شود، کارت هیچ‌وقت محو نمی‌شود.
+ */
+Tests::keeps(
+    'پس‌زمینه و سایه فقط مالِ حالتِ باز است تا محو شوند',
+    $section,
+    ".zig-search.is-open .zig-search__shell {\n\tbackground-color: var(--zig-search-shell-bg, #ffffff);"
+);
+
+/*
+ * پدینگ و جبرانِ لبه‌ها باید از یک منبع بیایند. اگر پدینگ از یک متغیر و
+ * جبران از متغیری دیگر خوانده شود، هر اختلافی بینشان مستقیماً فیلد را
+ * جابه‌جا می‌کند — و این دقیقاً همان چیزی است که در حالتِ بسته‌شدن،
+ * جایی که کنترلِ المنتور دیگر اعمال نمی‌شود، خودش را نشان می‌دهد.
+ */
+Tests::keeps('پدینگِ پوسته از همان متغیرهایِ جبران ساخته می‌شود', $section, 'padding: var(--zig-search-shell-pad-top, 8px) var(--zig-search-shell-pad-right, 8px)');
+Tests::blocks('و متغیرِ جدا افتادهٔ قبلی دیگر نیست', $section, '--zig-search-shell-padding');
+
+foreach ($padding_rules as $entry) {
+    foreach (['top', 'right', 'bottom', 'left'] as $side) {
+        Tests::ok(
+            'کنترلِ پدینگ متغیرِ ' . $side . ' را می‌نویسد',
+            false !== strpos($entry[2], '--zig-search-shell-pad-' . $side)
+        );
+    }
+}
+
+Tests::keeps('بستن، حالتِ گذار را می‌گذارد', $search_js, "this.root.classList.add('is-closing');");
+Tests::keeps('و بعدِ پایانِ محوشدن برش می‌دارد', $search_js, "self.root.classList.remove('is-closing');");
+Tests::keeps('باز شدنِ دوباره وسطِ محوشدن هم پاکش می‌کند', $search_js, "this.root.classList.remove('is-closing');\n\t\tthis.root.classList.add('is-open');");
