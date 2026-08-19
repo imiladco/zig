@@ -4906,7 +4906,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	transition: opacity var(--zig-search-anim, 150ms) ease-out;
 }
 
-.zig-search.is-open .zig-search__backdrop {
+.zig-search.is-open:not(.is-closing) .zig-search__backdrop {
 	opacity: 1;
 }
 
@@ -4923,17 +4923,35 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  *         فیلد در بالا و پنل بلافاصله زیرش، داخلِ همان یک کارت.
  */
 /*
- * پوسته در حالتِ بسته هیچ ظاهری ندارد، ولی *همان* دو ویژگی‌ای که در
- * حالتِ باز می‌گیرد اینجا هم صریح نوشته شده‌اند: بدونِ مقدارِ شروع،
- * مرورگر چیزی برایِ درون‌یابی ندارد و گذار اصلاً اجرا نمی‌شود.
+ * پوسته فقط جعبه است؛ هیچ‌وقت خودش چیزی نمی‌کشد.
+ *
+ * پوستِ کارت رویِ ‎__surface‎ است — یک لایهٔ ‎inset: 0‎ی بی‌محتوا که
+ * شفافیتش محو می‌شود. جدا بودنشان کلِ ماجرا را ممکن می‌کند: کلاسِ حالت
+ * تا آخرِ گذار سرِ جایش می‌ماند، پس پدینگ و لبه‌هایی که تبِ استایل نوشته
+ * هیچ‌وقت وسطِ انیمیشن نمی‌پرند.
+ *
+ * سطح اولین فرزند است و فیلد/پنل ‎position: relative‎ دارند، پس بدونِ
+ * هیچ ‎z-index‎ی زیرشان می‌ماند — عنصرهایِ جای‌گرفته به ترتیبِ سند کشیده
+ * می‌شوند.
  */
 .zig-search .zig-search__shell {
 	display: flex;
 	flex-direction: column;
-	background-color: transparent;
-	box-shadow: none;
-	transition: background-color var(--zig-search-anim, 150ms) ease-out,
-		box-shadow var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search .zig-search__surface {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	pointer-events: none;
+	background-color: var(--zig-search-shell-bg, #ffffff);
+	border-radius: var(--zig-search-shell-radius, 24px);
+	box-shadow: var(--zig-search-shell-shadow, 0 8px 15px rgba(0, 0, 0, 0.12));
+	transition: opacity var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search.is-open:not(.is-closing) .zig-search__surface {
+	opacity: 1;
 }
 
 /*
@@ -4973,8 +4991,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  * بیفتند — اگر پدینگ از یک جا و جبران از جایی دیگر می‌آمد، هر اختلافی
  * بینشان مستقیماً فیلد را جابه‌جا می‌کرد.
  */
-.zig-search.is-open .zig-search__shell,
-.zig-search.is-closing .zig-search__shell {
+.zig-search.is-open .zig-search__shell {
 	position: absolute;
 	inset-block-start: calc(var(--zig-search-shell-pad-top, 8px) * -1);
 	left: calc(var(--zig-search-shell-pad-left, 8px) * -1);
@@ -4983,17 +5000,12 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	gap: var(--zig-search-shell-gap, 24px);
 	padding: var(--zig-search-shell-pad-top, 8px) var(--zig-search-shell-pad-right, 8px)
 		var(--zig-search-shell-pad-bottom, 16px) var(--zig-search-shell-pad-left, 8px);
-	border-radius: var(--zig-search-shell-radius, 24px);
-}
-
-.zig-search.is-open .zig-search__shell {
-	background-color: var(--zig-search-shell-bg, #ffffff);
-	box-shadow: var(--zig-search-shell-shadow, 0 8px 15px rgba(0, 0, 0, 0.12));
 }
 
 /* ---------------------------- فیلد ---------------------------- */
 
 .zig-search form.zig-search__field {
+	position: relative;
 	display: flex;
 	align-items: center;
 	gap: var(--zig-search-field-gap, 16px);
@@ -5116,6 +5128,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 /* ---------------------------- پنل ---------------------------- */
 
 .zig-search .zig-search__panel {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: var(--zig-search-panel-gap, 29px);
@@ -5124,7 +5137,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	transition: opacity var(--zig-search-anim, 150ms) ease-out;
 }
 
-.zig-search.is-open .zig-search__panel {
+.zig-search.is-open:not(.is-closing) .zig-search__panel {
 	opacity: 1;
 }
 
@@ -5425,7 +5438,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	 * ‎transition: none‎ آن عدد اصلاً وجود نمی‌داشت؛ با صفر، هم حرکتی
 	 * دیده نمی‌شود و هم بستن بلافاصله انجام می‌شود.
 	 */
-	.zig-search .zig-search__shell,
+	.zig-search .zig-search__surface,
 	.zig-search .zig-search__panel,
 	.zig-search .zig-search__backdrop {
 		transition-duration: 0s;

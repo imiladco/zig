@@ -618,6 +618,10 @@
 
 		this.input.setAttribute('aria-expanded', 'true');
 
+		/*
+		 * باز شدنِ دوباره وسطِ محوشدن: کلاسِ گذار برداشته می‌شود و هر سه
+		 * لایه از همان شفافیتی که در آن لحظه دارند به یک برمی‌گردند.
+		 */
 		if (this.root.classList.contains('is-open')) {
 			this.root.classList.remove('is-closing');
 
@@ -635,11 +639,6 @@
 		 */
 		void this.root.offsetWidth;
 
-		/*
-		 * ‎is-closing‎ در همین فریم برداشته می‌شود، نه زودتر: اگر کاربر
-		 * وسطِ محوشدن دوباره فوکوس کند، پنل از همان شفافیتی که در آن
-		 * لحظه دارد به یک برمی‌گردد و پرشی دیده نمی‌شود.
-		 */
 		this.root.classList.remove('is-closing');
 		this.root.classList.add('is-open');
 	};
@@ -649,11 +648,12 @@
 	 */
 	Search.prototype.close = function (preserveValue) {
 		/*
-		 * «بسته» یعنی کلاس رفته باشد، نه اینکه پنل هنوز ‎hidden‎ شده
-		 * باشد: در فاصلهٔ محوشدن، پنل هنوز در چیدمان است ولی بستن قبلاً
-		 * انجام شده و تکرارش فقط تایمر را از نو می‌ریزد.
+		 * در فاصلهٔ محوشدن، پنل هنوز در چیدمان است و ‎is-open‎ هم هنوز
+		 * هست — پس هیچ‌کدام نمی‌گویند «بسته شده». نشانهٔ درست خودِ
+		 * ‎is-closing‎ است؛ بدونش هر Escِ دوباره تایمر را از نو می‌ریخت و
+		 * پنل تا ابد باز می‌ماند.
 		 */
-		if (this.panel.hidden || !this.root.classList.contains('is-open')) {
+		if (this.panel.hidden || this.root.classList.contains('is-closing')) {
 			return;
 		}
 
@@ -689,17 +689,22 @@
 		 * برایِ همیشه باز می‌ماند.
 		 */
 		/*
-		 * ‎is-closing‎ جای ‎is-open‎ را می‌گیرد تا جعبهٔ اورلی — موقعیت،
-		 * لبه‌ها، پدینگ و ترتیبِ لایه — تا پایانِ محوشدن سرِ جایش بماند.
-		 * بدونش پوسته در همان فریم زیرِ لایهٔ تیره‌ای می‌افتاد که هنوز
-		 * مات بود و کلِ ویجت چند فریم خاکستری می‌شد.
+		 * ‎is-open‎ عمداً می‌مانَد و فقط ‎is-closing‎ اضافه می‌شود.
+		 *
+		 * هرچه تبِ استایل نوشته — پدینگ، حاشیه، گردی، لبه‌ها — سلکتورش
+		 * ‎is-open‎ دارد. اگر آن کلاس همین‌جا برداشته شود، همهٔ آن‌ها در
+		 * همان فریمِ اول می‌پرند و کارت جمع می‌شود؛ چیزی که در چشم،
+		 * کشیده‌شدنِ پنل و فیلد دیده می‌شود نه محوشدن.
+		 *
+		 * پس جعبه تا آخر دست‌نخورده می‌ماند و ‎is-closing‎ فقط شفافیتِ
+		 * سه لایهٔ محوشونده را صفر می‌کند.
 		 */
-		this.root.classList.remove('is-open');
 		this.root.classList.add('is-closing');
 
 		var self     = this;
 		var duration = this.transitionMs(this.panel);
 		var settle   = function () {
+			self.root.classList.remove('is-open');
 			self.root.classList.remove('is-closing');
 			self.panel.hidden = true;
 

@@ -588,17 +588,36 @@ final class Search extends Widget_Base {
          * بی‌دلیل دورِ فیلدِ بسته می‌افتاد.
          */
         /*
-         * پدینگِ افقیِ پوسته را CSS برایِ کشیدنِ لبه‌ها به بیرون هم لازم
-         * دارد — همان چیزی که باعث می‌شود عرضِ فیلد با باز شدن تغییر
-         * نکند. پس همان کنترل، علاوه بر ‎padding‎، عددش را در دو متغیر
-         * هم می‌گذارد؛ وگرنه تغییرِ پدینگ از تبِ استایل، جبرانِ بیرونی را
-         * رویِ عددِ قدیمی جا می‌گذاشت و قاب نامتقارن می‌شد.
+         * «پوسته» و «سطح» عمداً دو عنصرِ جدا هستند و این تقسیم از یک باگِ
+         * واقعی درآمد:
+         *
+         * قاب باید موقعِ بسته‌شدن محو شود، ولی *جعبه*ش نباید تکان بخورد.
+         * وقتی هر دو رویِ یک عنصر بودند، تنها راهِ محو کردن این بود که
+         * کلاسِ حالت برداشته شود — و با برداشتنش، پدینگ و لبه‌هایی که
+         * تبِ استایل نوشته بود هم می‌پریدند، چون سلکتورشان همان کلاس را
+         * داشت. نتیجه: کارت در همان فریمِ اول جمع می‌شد و پنل و فیلد
+         * کشیده می‌شدند.
+         *
+         * حالا پس‌زمینه/حاشیه/گردی/سایه رویِ ‎__surface‎ می‌نشینند که فقط
+         * یک لایهٔ ‎inset: 0‎ی بی‌محتواست و شفافیتش محو می‌شود؛ و پدینگ
+         * رویِ خودِ پوسته می‌ماند که تا آخرِ گذار دست‌نخورده است.
+         *
+         * پدینگ علاوه بر خودش در چهار متغیر هم نوشته می‌شود، چون CSS همان
+         * عددها را برایِ کشیدنِ لبه‌ها به بیرون لازم دارد. یک منبعِ حقیقت
+         * یعنی این دو هیچ‌وقت نمی‌توانند از هم جدا بیفتند.
          */
         $this->add_box_style_tabs(
             'shell',
-            '.zig-search.is-open .zig-search__shell',
-            '.zig-search.is-open .zig-search__shell',
-            '--zig-search-shell-pad-top: {{TOP}}{{UNIT}}; --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}}; --zig-search-shell-pad-bottom: {{BOTTOM}}{{UNIT}}; --zig-search-shell-pad-left: {{LEFT}}{{UNIT}};'
+            '.zig-search__surface',
+            '.zig-search__surface',
+            [
+                '{{WRAPPER}} .zig-search.is-open .zig-search__shell' =>
+                    'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'
+                    . ' --zig-search-shell-pad-top: {{TOP}}{{UNIT}};'
+                    . ' --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}};'
+                    . ' --zig-search-shell-pad-bottom: {{BOTTOM}}{{UNIT}};'
+                    . ' --zig-search-shell-pad-left: {{LEFT}}{{UNIT}};',
+            ]
         );
 
         /*
@@ -1046,6 +1065,9 @@ final class Search extends Widget_Base {
         );
 
         echo '<div class="zig-search__shell">';
+        // پوستِ کارت: یک لایهٔ تزئینیِ محض که فقط شفافیتش محو می‌شود،
+        // تا جعبهٔ پوسته موقعِ بسته‌شدن دست‌نخورده بماند.
+        echo '<span class="zig-search__surface" aria-hidden="true"></span>';
 
         $this->render_field($settings, $panel_id);
         $this->render_panel($settings, $panel_id);

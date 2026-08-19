@@ -623,11 +623,21 @@ Tests::keeps(
  * باز مقدار داشته باشد، مرورگر چیزی برایِ درون‌یابی ندارد و کارت
  * بی‌انیمیشن ظاهر می‌شود.
  */
-Tests::keeps('پوستهٔ بسته پس‌زمینهٔ شفافِ صریح دارد', $section, 'background-color: transparent;');
-Tests::keeps('و سایهٔ صریحِ none', $section, "\tbox-shadow: none;\n\ttransition:");
+Tests::keeps('پوستِ کارت یک لایهٔ جداست', $section, ".zig-search .zig-search__surface {\n\tposition: absolute;\n\tinset: 0;\n\topacity: 0;");
 Tests::keeps('پنل از شفافیتِ صفر شروع می‌کند', $section, "\topacity: 0;\n\ttransition: opacity var(--zig-search-anim, 150ms) ease-out;");
-Tests::keeps('و در حالتِ باز کاملاً مات می‌شود', $section, ".zig-search.is-open .zig-search__panel {\n\topacity: 1;\n}");
-Tests::keeps('لایهٔ تیره هم همراهش محو می‌شود', $section, ".zig-search.is-open .zig-search__backdrop {\n\topacity: 1;\n}");
+
+/*
+ * هر سه لایهٔ محوشونده به «باز، و در حالِ بسته‌شدن نبودن» گره می‌خورند.
+ * اگر شرط فقط ‎is-open‎ بود، محوشدن تنها با برداشتنِ همان کلاس ممکن
+ * می‌شد — و برداشتنش یعنی پریدنِ هرچه تبِ استایل نوشته.
+ */
+foreach (['__surface', '__panel', '__backdrop'] as $layer) {
+    Tests::keeps(
+        'لایهٔ ' . $layer . ' با حالتِ گذار محو می‌شود',
+        $section,
+        '.zig-search.is-open:not(.is-closing) .zig-search' . $layer . " {\n\topacity: 1;\n}"
+    );
+}
 
 /*
  * در حالتِ کاهشِ حرکت، *مدت* صفر می‌شود نه اینکه گذار حذف شود: جاوااسکریپت
@@ -678,21 +688,18 @@ foreach ($padding_rules as $entry) {
 
 Tests::group('ویجتِ سرچ › بسته‌شدن بدونِ پرش');
 
-Tests::keeps(
-    'جعبهٔ اورلی در حالتِ بسته‌شدن هم می‌ماند',
-    $section,
-    ".zig-search.is-open .zig-search__shell,\n.zig-search.is-closing .zig-search__shell {"
-);
-
 /*
- * و فقط *ظاهرِ* کارت به ‎is-open‎ گره خورده — چون همان است که باید محو
- * شود. اگر پس‌زمینه هم به هر دو حالت داده شود، کارت هیچ‌وقت محو نمی‌شود.
+ * جعبهٔ اورلی به ‎is-open‎ گره خورده و آن کلاس تا پایانِ گذار برداشته
+ * نمی‌شود؛ همین است که نمی‌گذارد پدینگ و لبه‌ها وسطِ محوشدن بپرند.
  */
 Tests::keeps(
-    'پس‌زمینه و سایه فقط مالِ حالتِ باز است تا محو شوند',
+    'جعبهٔ اورلی همچنان به is-open گره خورده است',
     $section,
-    ".zig-search.is-open .zig-search__shell {\n\tbackground-color: var(--zig-search-shell-bg, #ffffff);"
+    ".zig-search.is-open .zig-search__shell {\n\tposition: absolute;"
 );
+
+/* و خودِ پوسته هیچ ظاهری نمی‌کشد — هرچه دیده می‌شود مالِ لایهٔ پوست است */
+Tests::blocks('پوسته خودش پس‌زمینه نمی‌کشد', $section, ".zig-search__shell {\n\tbackground");
 
 /*
  * پدینگ و جبرانِ لبه‌ها باید از یک منبع بیایند. اگر پدینگ از یک متغیر و
@@ -713,5 +720,15 @@ foreach ($padding_rules as $entry) {
 }
 
 Tests::keeps('بستن، حالتِ گذار را می‌گذارد', $search_js, "this.root.classList.add('is-closing');");
-Tests::keeps('و بعدِ پایانِ محوشدن برش می‌دارد', $search_js, "self.root.classList.remove('is-closing');");
+Tests::keeps('و بعدِ پایانِ محوشدن هر دو کلاس برداشته می‌شوند', $search_js, "self.root.classList.remove('is-open');\n\t\t\tself.root.classList.remove('is-closing');");
 Tests::keeps('باز شدنِ دوباره وسطِ محوشدن هم پاکش می‌کند', $search_js, "this.root.classList.remove('is-closing');\n\t\tthis.root.classList.add('is-open');");
+
+/*
+ * ‎is-open‎ نباید در شروعِ بستن برداشته شود — همان کاری که کارت را وسطِ
+ * گذار جمع می‌کرد، چون سلکتورِ همهٔ کنترل‌هایِ تبِ استایل همان کلاس را
+ * دارد.
+ */
+Tests::blocks('بستن، is-open را زود برنمی‌دارد', $search_js, "this.root.classList.remove('is-open');\n\t\tthis.root.classList.add('is-closing');");
+
+/* و نشانهٔ «قبلاً بسته شده» خودِ حالتِ گذار است، نه نبودِ is-open */
+Tests::keeps('تکرارِ بستن از روی حالتِ گذار تشخیص داده می‌شود', $search_js, "this.root.classList.contains('is-closing')");
