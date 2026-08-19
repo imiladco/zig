@@ -910,3 +910,46 @@ Tests::keeps(
     $section,
     '@media (max-width: 767px) and (prefers-reduced-motion: reduce) {'
 );
+
+/* ==========================================================================
+ * پوششِ کنترل‌ها برایِ شیتِ موبایل
+ *
+ * قیدِ ثابتِ این ویجت: هر مقدارِ دیداری باید از تبِ استایل تنظیم‌شدنی
+ * باشد. برایِ بخش‌هایِ دسکتاپ این را جدا جدا سنجیده‌ایم، ولی شیت تازه
+ * است و راهِ مطمئن‌تر، سنجهٔ خودکار است: هر متغیری که CSS در حالتِ شیت
+ * *می‌خواند*، باید کنترلی داشته باشد که بنویسدش.
+ *
+ * این سنجه از آن دسته است که با اضافه‌شدنِ یک متغیرِ تازه خودش می‌شکند —
+ * که دقیقاً همان چیزی است که ازش می‌خواهیم.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › پوششِ کنترل‌هایِ شیت');
+
+preg_match_all('/var\(\s*(--zig-search-(?:trigger|handle|sheet|back)-[a-z-]+)/', $section, $used);
+
+$consumed = array_values(array_unique($used[1]));
+
+/*
+ * تنها استثنا: جابه‌جاییِ لحظه‌ایِ کشیدن را جاوااسکریپت می‌نویسد، نه
+ * مدیر. کنترل داشتنش بی‌معنی است چون هر بار با انگشت عوض می‌شود.
+ */
+$js_written = ['--zig-search-sheet-drag'];
+
+$written = '';
+
+foreach (zig_collect_selectors(Search::class) as $entry) {
+    $written .= $entry[2];
+}
+
+Tests::ok('متغیرهایِ شیت در CSS پیدا شدند', count($consumed) > 8, 'یافت‌شده: ' . count($consumed));
+
+foreach ($consumed as $variable) {
+    if (in_array($variable, $js_written, true)) {
+        continue;
+    }
+
+    Tests::ok(
+        'کنترل دارد: ' . $variable,
+        false !== strpos($written, $variable)
+    );
+}

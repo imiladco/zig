@@ -115,6 +115,170 @@ final class Search extends Widget_Base {
         $this->register_popular_chip_style_section();
         $this->register_more_button_style_section();
         $this->register_empty_style_section();
+        $this->register_sheet_style_section();
+    }
+
+
+    /* =====================================================================
+     * استایل › شیتِ موبایل
+     *
+     * هر مقداری که CSS برایِ حالتِ شیت می‌شناسد، اینجا یک کنترل دارد.
+     *
+     * چند تا از این عددها از خودِ طرحِ دسکتاپ آمده‌اند و حدس نیستند —
+     * رنگِ آیکون‌ها همان ‎#687083‎ی ذره‌بینِ فیگماست، اندازه‌شان همان ۲۲،
+     * و گردیِ بالایِ شیت همان ۲۴ی پوسته. ولی ابعادِ دستگیره و اندازهٔ
+     * دکمهٔ موبایل هنوز از فیگما خوانده نشده‌اند؛ تا آن‌وقت، این کنترل‌ها
+     * تنها راهِ درست‌کردنشان بدونِ دست‌زدن به کدند.
+     * =================================================================== */
+
+    private function register_sheet_style_section(): void {
+        $this->start_controls_section('sheet_style_section', [
+            'label' => __('نسخهٔ موبایل (شیت)', 'zig3d-widgets'),
+            'tab'   => Controls_Manager::TAB_STYLE,
+        ]);
+
+        $root = '{{WRAPPER}} .zig-search';
+
+        $this->add_control('sheet_trigger_heading', [
+            'label' => __('دکمهٔ باز کردن', 'zig3d-widgets'),
+            'type'  => Controls_Manager::HEADING,
+        ]);
+
+        $this->add_responsive_control('trigger_size', [
+            'label'      => __('اندازهٔ دکمه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 24, 'max' => 96]],
+            'selectors'  => [$root => '--zig-search-trigger-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('trigger_icon_size', [
+            'label'      => __('اندازهٔ آیکون', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 8, 'max' => 60]],
+            'selectors'  => [$root => '--zig-search-trigger-icon-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('trigger_color', [
+            'label'     => __('رنگِ آیکون', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-search-trigger-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('trigger_bg', [
+            'label'     => __('پس‌زمینهٔ دکمه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-search-trigger-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('trigger_radius', [
+            'label'      => __('گردیِ گوشهٔ دکمه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', '%'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => [$root => '--zig-search-trigger-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_box_heading', [
+            'label'     => __('خودِ شیت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        /*
+         * ‎dvh‎ اول می‌آید چون در موبایل تنها واحدی است که نوارِ آدرسِ
+         * جمع‌وجورشونده را درست حساب می‌کند؛ ‎vh‎ی ثابت باعث می‌شود ته
+         * شیت زیرِ نوار بماند.
+         */
+        $this->add_responsive_control('sheet_height', [
+            'label'      => __('ارتفاعِ شیت', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['%', 'px', 'vh'],
+            'range'      => ['%' => ['min' => 30, 'max' => 100], 'vh' => ['min' => 30, 'max' => 100]],
+            'selectors'  => [$root => '--zig-search-sheet-height: {{SIZE}}{{UNIT}};'],
+            'description' => __('خالی بگذارید تا تمام‌ارتفاع بماند (۱۰۰dvh) — همان چیزی که در طرح است.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('sheet_radius', [
+            'label'      => __('گردیِ گوشه‌هایِ بالا', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => [$root => '--zig-search-sheet-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_handle_heading', [
+            'label'     => __('دستگیرهٔ کشیدن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('handle_width', [
+            'label'      => __('عرض', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 16, 'max' => 160]],
+            'selectors'  => [$root => '--zig-search-handle-width: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('handle_height', [
+            'label'      => __('ضخامت', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 1, 'max' => 16]],
+            'selectors'  => [$root => '--zig-search-handle-height: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('handle_color', [
+            'label'     => __('رنگ', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-search-handle-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('handle_gap', [
+            'label'      => __('فاصله تا فیلد', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => [$root => '--zig-search-handle-gap: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        /*
+         * ناحیهٔ گرفتن دیده نمی‌شود ولی تنظیم‌شدنی است: یک خطِ چهار
+         * پیکسلی با انگشت عملاً قابلِ گرفتن نیست، و اندازهٔ درستش به
+         * ارتفاعِ همان خط بستگی دارد.
+         */
+        $this->add_control('handle_hit', [
+            'label'       => __('ارتفاعِ ناحیهٔ گرفتن', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'size_units'  => ['px'],
+            'range'       => ['px' => ['min' => 16, 'max' => 80]],
+            'selectors'   => [$root => '--zig-search-handle-hit: {{SIZE}}{{UNIT}};'],
+            'description' => __('دیده نمی‌شود؛ فقط تعیین می‌کند انگشت از چه فاصله‌ای بالایِ خط، شیت را می‌گیرد.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('sheet_back_heading', [
+            'label'     => __('دکمهٔ بازگشت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('back_size', [
+            'label'      => __('اندازهٔ آیکون', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 8, 'max' => 60]],
+            'selectors'  => [$root => '--zig-search-back-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('back_color', [
+            'label'     => __('رنگِ آیکون', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-search-back-color: {{VALUE}};'],
+        ]);
+
+        $this->end_controls_section();
     }
 
     /* =====================================================================
