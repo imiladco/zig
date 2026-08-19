@@ -115,31 +115,31 @@ $tables = [
 $title_only = Search_Query::match_sql(
     [1 => ["'%فرز%'"]],
     [],
-    false,
+    ['title'],
     $tables
 );
 
-Tests::keeps('عنوان در WHERE هست', $title_only['where'], 'wp_posts.post_title LIKE');
+Tests::keeps('عنوان در WHERE هست', $title_only['where'], 'wp_posts.post_title');
 Tests::blocks('بدونِ sku، JOINی ساخته نمی‌شود', $title_only['join'], 'wp_postmeta');
 Tests::blocks('بدونِ تاکسونومی، زیرکوئریِ ترم نیست', $title_only['where'], 'wp_term_relationships');
 Tests::keeps('ORDER BY یک CASE است', $title_only['orderby'], 'CASE');
-Tests::keeps('و Tier ۱ به عددِ ۱ می‌رسد', $title_only['orderby'], 'THEN 1');
+Tests::keeps('و Tier ۱ + وزنِ عنوان به امتیازِ ۱۰ می‌رسد', $title_only['orderby'], 'THEN 10');
 
 $with_sku = Search_Query::match_sql(
     [1 => ["'%فرز%'"]],
     [],
-    true,
+    ['title', 'sku'],
     $tables
 );
 
 Tests::keeps('با sku، JOIN ساخته می‌شود', $with_sku['join'], 'wp_postmeta');
-Tests::keeps('و meta_value هم در WHERE هست', $with_sku['where'], 'zig_search_sku.meta_value LIKE');
+Tests::keeps('و meta_value هم در WHERE هست', $with_sku['where'], 'zig_search_sku.meta_value');
 Tests::keeps('JOIN روی _sku است', $with_sku['join'], "meta_key = '_sku'");
 
 $with_terms = Search_Query::match_sql(
     [1 => ["'%فرز%'"]],
     ["'product_cat'", "'product_brand'"],
-    false,
+    ['title'],
     $tables
 );
 
@@ -149,12 +149,12 @@ Tests::keeps('و هر دو تاکسونومی در IN هست', $with_terms['wher
 $multi_tier = Search_Query::match_sql(
     [1 => ["'%الف%'"], 3 => ["'%ب%'"]],
     [],
-    false,
+    ['title'],
     $tables
 );
 
-Tests::keeps('Tier ۳ هم در CASE هست', $multi_tier['orderby'], 'THEN 3');
-Tests::same('بدونِ هیچ Tierی، همه‌چیز خالی است', Search_Query::match_sql([], [], false, $tables), ['where' => '', 'orderby' => '', 'join' => '']);
+Tests::keeps('Tier ۳ هم در CASE هست', $multi_tier['orderby'], 'THEN 30');
+Tests::same('بدونِ هیچ Tierی، همه‌چیز خالی است', Search_Query::match_sql([], [], ['title'], $tables), ['where' => '', 'orderby' => '', 'join' => '']);
 
 /* ==========================================================================
  * cache_key
@@ -265,3 +265,63 @@ Tests::same('فهرستِ خالی چیزی برنمی‌گرداند', Search_Q
  */
 Tests::keeps('لینک از get_permalink می‌آید', $result_3[0]['permalink'], (string) 101);
 Tests::ok('بدونِ بندانگشتی، thumbnail خالی است', null === $result_3[0]['thumbnail']);
+
+/* ==========================================================================
+ * نرمال‌سازیِ دوطرفه و وزنِ ثانویه
+ *
+ * دو باگی که هیچ‌کدام خطا نمی‌دادند و فقط «نتیجه کم می‌آمد»:
+ *
+ *   ۱. ستون نرمال نمی‌شد. عنوانی که ادمین با «ي»ِ عربی ذخیره کرده بود،
+ *      با کوئریِ canonicalشدهٔ «ی»دار هیچ‌وقت مچ نمی‌شد.
+ *   ۲. کنترلِ «جستجو در» کامل اطاعت نمی‌شد: حتی وقتی فقط SKU انتخاب
+ *      شده بود، ‎post_title‎ باز هم به WHERE اضافه می‌شد.
+ * ======================================================================= */
+
+Tests::group('کوئریِ سرچ › نرمال‌سازیِ دوطرفه');
+
+$normalized_sql = Search_Query::match_sql([1 => ["'%ماشین%'"]], ["'product_cat'"], ['title', 'sku'], $tables);
+
+foreach ([
+    'عنوان'      => 'wp_posts.post_title',
+    'کدِ محصول'  => 'zig_search_sku.meta_value',
+    'نامِ ترم'   => 't.name',
+] as $label => $column) {
+    Tests::keeps(
+        'ستونِ ' . $label . ' هم نرمال می‌شود، نه فقط کوئری',
+        $normalized_sql['where'],
+        "REPLACE(" . $column
+    );
+}
+
+Tests::keeps('یِ عربی در نگاشتِ ستون هست', $normalized_sql['where'], "'ي', 'ی'");
+Tests::keeps('کافِ عربی هم', $normalized_sql['where'], "'ك', 'ک'");
+Tests::keeps('رقمِ فارسی هم', $normalized_sql['where'], "'۳', '3'");
+
+Tests::group('کوئریِ سرچ › احترام به «جستجو در»');
+
+$sku_only = Search_Query::match_sql([1 => ["'%X1%'"]], [], ['sku'], $tables);
+
+Tests::ok(
+    'با انتخابِ فقط SKU، هیچ شرطی رویِ post_title ساخته نمی‌شود',
+    false === strpos($sku_only['where'], 'post_title')
+);
+Tests::keeps('و در عوض meta_value هست', $sku_only['where'], 'zig_search_sku.meta_value');
+
+Tests::group('کوئریِ سرچ › وزنِ ثانویه (عنوان > SKU > ترم)');
+
+$weighted = Search_Query::match_sql([1 => ["'%فرز%'"]], ["'product_cat'"], ['title', 'sku'], $tables);
+
+/*
+ * امتیاز = Tier×۱۰ + وزنِ فیلد. پس در Tier 1: عنوان ۱۰، SKU ۱۱، ترم ۱۲.
+ * ترتیبِ ظاهرشدنشان در CASE هم باید همین باشد، چون ‎CASE‎ اولین شرطِ
+ * درست را برمی‌دارد.
+ */
+Tests::keeps('عنوان امتیازِ ۱۰ می‌گیرد', $weighted['orderby'], 'THEN 10');
+Tests::keeps('SKU امتیازِ ۱۱', $weighted['orderby'], 'THEN 11');
+Tests::keeps('نامِ ترم امتیازِ ۱۲', $weighted['orderby'], 'THEN 12');
+
+Tests::ok(
+    'و در CASE به همین ترتیب می‌آیند — عنوان قبل از SKU، SKU قبل از ترم',
+    strpos($weighted['orderby'], 'THEN 10') < strpos($weighted['orderby'], 'THEN 11')
+        && strpos($weighted['orderby'], 'THEN 11') < strpos($weighted['orderby'], 'THEN 12')
+);

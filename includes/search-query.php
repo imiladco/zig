@@ -36,9 +36,13 @@ if (!defined('ABSPATH')) {
  *           تغییرِ نامِ ترم کهنه بماند. به همین دلیل، فازِ یک هیچ
  *           ایندکسِ دنرمال‌شده‌ای نمی‌سازد؛ فقط زمانِ کوئری بسط می‌دهد.
  *
- * رتبه‌بندی از همان چهار Tierِ ‎Search_Normalizer‎ می‌آید: هر محصولی که
- * از راهِ یک وریانتِ Tier پایین‌تر (عددِ کوچک‌تر) مچ شود، بالاتر می‌نشیند
- * — چه از راهِ عنوان، چه SKU، چه نامِ ترم.
+ * رتبه‌بندی دو لایه دارد و امتیازش ‎Tier×۱۰ + وزنِ فیلد‎ است:
+ *
+ *   لایهٔ اول  همان چهار Tierِ ‎Search_Normalizer‎ — هرچه Tier کوچک‌تر،
+ *             بالاتر (تطابقِ دقیق بالاتر از بسطِ مترادف).
+ *   لایهٔ دوم  در *همان* Tier: عنوان > کدِ محصول > نامِ ترم. بدونِ این،
+ *             محصولی که نامش دقیقاً همان عبارت است می‌تواند زیرِ
+ *             محصولی بیفتد که فقط دسته‌اش آن اسم را دارد.
  *
  * عملکرد یک هدف است، نه یک ترفندِ منجمد — به‌جایِ ‎fields => 'ids'‎ که
  * بدونِ batch-priming می‌توانست N+1 بسازد:
@@ -63,7 +67,8 @@ if (!defined('ABSPATH')) {
  */
 final class Search_Query {
 
-    public const DEFAULT_LIMIT = 6;
+    /** سه‌تا، همان تعدادی که قابِ «حاوی نتیجه» نشان می‌دهد */
+    public const DEFAULT_LIMIT = 3;
     public const MAX_LIMIT     = 40;
 
     /** فرارِ کش تا وقتی نسخه جلو نرفته — شبکهٔ ایمنی، نه ضامنِ اصلیِ تازگی */
@@ -205,8 +210,11 @@ final class Search_Query {
      * @param array<string,string> $tables              {posts,postmeta,term_relationships,term_taxonomy,terms}
      * @return array{where:string,orderby:string,join:string}
      */
-    public static function match_sql(array $tier_groups_quoted, array $taxonomies_quoted, bool $match_sku, array $tables): array {
+    public static function match_sql(array $tier_groups_quoted, array $taxonomies_quoted, array $search_fields, array $tables): array {
         $posts = $tables['posts'] ?? 'wp_posts';
+
+        $match_title = in_array('title', $search_fields, true);
+        $match_sku   = in_array('sku', $search_fields, true);
 
         $join = '';
 
@@ -214,6 +222,15 @@ final class Search_Query {
             $join = " LEFT JOIN {$tables['postmeta']} AS zig_search_sku"
                 . " ON zig_search_sku.post_id = {$posts}.ID AND zig_search_sku.meta_key = '_sku'";
         }
+
+        /*
+         * هر دو طرفِ مقایسه نرمال می‌شوند، نه فقط کوئری — وگرنه عنوانی
+         * که ادمین با «ي»ِ عربی ذخیره کرده هیچ‌وقت با کوئریِ canonical
+         * پیدا نمی‌شود. نگاه کنید به داک‌بلاکِ ‎Search_Normalizer::sql_expr()‎.
+         */
+        $title_expr = Search_Normalizer::sql_expr("{$posts}.post_title");
+        $sku_expr   = Search_Normalizer::sql_expr('zig_search_sku.meta_value');
+        $term_expr  = Search_Normalizer::sql_expr('t.name');
 
         $term_source = '';
 
@@ -224,53 +241,69 @@ final class Search_Query {
                 . ' WHERE tt.taxonomy IN (' . implode(',', $taxonomies_quoted) . ')';
         }
 
-        $tier_sql = [];
+        /*
+         * امتیاز = Tier×۱۰ + وزنِ فیلد. وزنِ فیلد همان ترتیبی است که
+         * قفل شد: عنوان > کدِ محصول > نامِ ترم. بدونِ این، سه محصولی که
+         * همگی در Tier 1 مچ شده‌اند به ترتیبِ دلخواهِ دیتابیس می‌آیند و
+         * محصولی که *نامش* دقیقاً همان عبارت است می‌تواند زیرِ محصولی
+         * بیفتد که فقط دسته‌اش آن اسم را دارد.
+         */
+        $ranked = [];
+        $all    = [];
 
         foreach ($tier_groups_quoted as $tier => $patterns) {
             if (!$patterns) {
                 continue;
             }
 
-            $parts = ['(' . implode(' OR ', array_map(
-                static fn(string $p): string => "{$posts}.post_title LIKE {$p}",
-                $patterns
-            )) . ')'];
+            $tier      = (int) $tier;
+            $per_field = [];
+
+            if ($match_title) {
+                $per_field[0] = '(' . implode(' OR ', array_map(
+                    static fn(string $p): string => "{$title_expr} LIKE {$p}",
+                    $patterns
+                )) . ')';
+            }
 
             if ($match_sku) {
-                $parts[] = '(' . implode(' OR ', array_map(
-                    static fn(string $p): string => "zig_search_sku.meta_value LIKE {$p}",
+                $per_field[1] = '(' . implode(' OR ', array_map(
+                    static fn(string $p): string => "{$sku_expr} LIKE {$p}",
                     $patterns
                 )) . ')';
             }
 
             if ('' !== $term_source) {
                 $name_or = implode(' OR ', array_map(
-                    static fn(string $p): string => "t.name LIKE {$p}",
+                    static fn(string $p): string => "{$term_expr} LIKE {$p}",
                     $patterns
                 ));
 
-                $parts[] = "{$posts}.ID IN ({$term_source} AND ({$name_or}))";
+                $per_field[2] = "{$posts}.ID IN ({$term_source} AND ({$name_or}))";
             }
 
-            $tier_sql[(int) $tier] = '(' . implode(' OR ', $parts) . ')';
+            foreach ($per_field as $weight => $sql) {
+                $ranked[$tier * 10 + $weight] = $sql;
+                $all[] = $sql;
+            }
         }
 
-        if (!$tier_sql) {
+        if (!$all) {
             return ['where' => '', 'orderby' => '', 'join' => ''];
         }
 
-        ksort($tier_sql);
+        ksort($ranked);
 
         $case = 'CASE ';
 
-        foreach ($tier_sql as $tier => $sql) {
-            $case .= "WHEN {$sql} THEN {$tier} ";
+        foreach ($ranked as $score => $sql) {
+            $case .= "WHEN {$sql} THEN {$score} ";
         }
 
-        $case .= 'ELSE 99 END';
+        $case .= 'ELSE 9999 END';
 
         return [
-            'where'   => '(' . implode(' OR ', $tier_sql) . ')',
+            'where'   => '(' . implode(' OR ', $all) . ')',
             'orderby' => $case . ' ASC',
             'join'    => $join,
         ];
@@ -335,7 +368,7 @@ final class Search_Query {
             'terms'              => $wpdb->terms,
         ];
 
-        $sql = self::match_sql($quoted_by_tier, $taxonomies_quoted, in_array('sku', $args['search_fields'], true), $tables);
+        $sql = self::match_sql($quoted_by_tier, $taxonomies_quoted, $args['search_fields'], $tables);
 
         if ('' === $sql['where']) {
             return ['ids' => [], 'has_more' => false];

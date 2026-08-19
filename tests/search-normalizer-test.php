@@ -152,3 +152,43 @@ Tests::ok('تعداد وریانت‌ها هیچ‌وقت از سقف بیشتر
 $texts = array_column(N::variants('3D'), 'text');
 $lowered = array_map('mb_strtolower', $texts);
 Tests::same('هیچ دو ردیفِ هم‌معنایی هم‌زمان در خروجی نیست', count($lowered), count(array_unique($lowered)));
+
+/* ==========================================================================
+ * جفتِ SQLیِ نرمال‌ساز
+ *
+ * ‎normalize()‎ و ‎sql_expr()‎ باید *همان* نگاشت را اعمال کنند. اگر یکی
+ * عوض شود و دیگری نه، دو طرفِ مقایسه از هم واگرا می‌شوند و سرچ بی‌صدا
+ * نتیجه گم می‌کند — بدونِ هیچ خطایی.
+ * ======================================================================= */
+
+Tests::group('نرمالایز › عبارتِ SQL');
+
+$expr = N::sql_expr('wp_posts.post_title');
+
+Tests::keeps('نامِ ستون دست‌نخورده در مرکزِ عبارت است', $expr, 'wp_posts.post_title');
+Tests::keeps('یِ عربی نگاشت می‌شود', $expr, "'ي', 'ی'");
+Tests::keeps('کافِ عربی هم', $expr, "'ك', 'ک'");
+Tests::keeps('تای گردِ عربی هم', $expr, "'ة', 'ه'");
+Tests::keeps('رقمِ فارسی هم', $expr, "'۵', '5'");
+Tests::keeps('رقمِ عربیِ اندیک هم', $expr, "'٥', '5'");
+
+/*
+ * تعدادِ ‎REPLACE‎ باید دقیقاً به‌اندازهٔ نگاشت باشد — نه کمتر (یعنی
+ * نویسه‌ای جا افتاده) و نه بیشتر (یعنی چیزی دوبار اعمال شده).
+ */
+$map = (new ReflectionClass(N::class))->getConstant('CHAR_MAP');
+Tests::same('به‌ازایِ هر نویسهٔ نگاشت یک REPLACE ساخته می‌شود', substr_count($expr, 'REPLACE('), count($map));
+
+/*
+ * و مهم‌ترین سنجه: هر نویسه‌ای که ‎normalize()‎ عوض می‌کند، باید در
+ * عبارتِ SQL هم عوض شود.
+ */
+$missing = [];
+
+foreach ($map as $from => $to) {
+    if (false === strpos($expr, "'" . $from . "', '" . $to . "'")) {
+        $missing[] = $from;
+    }
+}
+
+Tests::same('هیچ نویسه‌ای بینِ PHP و SQL جا نمی‌افتد', $missing, []);

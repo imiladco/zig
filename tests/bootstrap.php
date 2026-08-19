@@ -56,6 +56,22 @@ if (!function_exists('esc_attr')) {
 if (!function_exists('esc_url')) {
     function esc_url($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }
+/**
+ * ‎add_query_arg‎ی کافی برایِ چیزی که این افزونه ازش می‌خواهد: چسباندنِ
+ * چند پارامتر به یک آدرس. تعریفش این‌جاست نه در یک فایلِ تست، چون بیش
+ * از یک سنجه به آن نیاز دارد و تعریفِ پراکنده همان چیزی است که یک‌بار
+ * در اجرایِ کاملِ سوییت به «تعریفِ دوباره» ختم شد.
+ */
+if (!function_exists('add_query_arg')) {
+    function add_query_arg($args, $url = '') {
+        if (!is_array($args)) {
+            $args = [$args => $url];
+            $url  = func_num_args() > 2 ? func_get_arg(2) : '';
+        }
+
+        return $url . (false === strpos((string) $url, '?') ? '?' : '&') . http_build_query($args);
+    }
+}
 if (!function_exists('esc_url_raw')) {
     function esc_url_raw($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }

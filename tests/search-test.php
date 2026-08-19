@@ -147,8 +147,15 @@ Tests::ok(
  */
 Tests::ok(
     'در چیپِ پرطرفدار، آیکون بعدِ متن می‌آید (یعنی سمتِ چپ در RTL)',
-    (bool) preg_match('/zig-search__chip--popular[^>]*>\s*<span>[^<]*<\/span>\s*<svg/', $html)
+    (bool) preg_match('/zig-search__chip--popular[^>]*>\s*<bdi>[^<]*<\/bdi>\s*<svg/', $html)
 );
+
+/*
+ * ‎<bdi>‎ نه تزئین است: برچسبِ چیپ می‌تواند ترکیبِ فارسی و لاتین باشد
+ * («UP3D میلینگ») و بدونِ ایزوله، الگوریتمِ دوجهته تکهٔ لاتین را جابه‌جا
+ * نشان می‌دهد.
+ */
+Tests::keeps('برچسبِ چیپ داخلِ bdi است', $html, '<bdi>میلینگ ماشین</bdi>');
 
 Tests::ok(
     'دکمهٔ «بیشتر» هم متن‌اول-آیکون‌دوم است',
@@ -171,8 +178,17 @@ Tests::group('ویجتِ سرچ › قراردادِ کلیک (چیپ)');
 Tests::keeps(
     'چیپِ پرطرفدار یک لینکِ واقعی به صفحهٔ نتایج است، نه یک دکمهٔ بدونِ href',
     $html,
-    '<a class="zig-search__chip zig-search__chip--popular" href="https://zig3d.test/?s=' . rawurlencode('میلینگ ماشین') . '"'
+    '<a class="zig-search__chip zig-search__chip--popular" href="https://zig3d.test/?s=' . rawurlencode('میلینگ ماشین')
 );
+
+/*
+ * دامنهٔ صفحهٔ نتایج باید همان دامنهٔ اورلی باشد. بدونِ ‎post_type=product‎
+ * کاربر از فهرستی از محصولات به سرچِ عمومیِ وردپرس می‌رسد که نوشته و
+ * برگه هم دارد — همان ناهماهنگی‌ای که هیچ خطایی نمی‌دهد و فقط نتیجه را
+ * بی‌ربط می‌کند.
+ */
+Tests::keeps('و دامنه‌اش هم مثلِ خودِ اورلی فقط محصول است', $html, 'post_type=product');
+Tests::keeps('قالبِ آدرسِ سمتِ کلاینت هم همان دامنه را دارد', $html, 'data-results-url-template="https://zig3d.test/?s=zzzZIGQUERYzzz&amp;post_type=product"');
 
 /* ==========================================================================
  * تنظیماتِ رفتار در data-* — چیزی که جاوااسکریپت می‌خواند
@@ -296,4 +312,39 @@ foreach ([
 /* لینک‌ها هم نامِ تگ می‌گیرند، وگرنه رنگ/زیرخطِ قالب رویشان می‌نشیند */
 foreach (['a.zig-search__chip', 'a.zig-search__product', 'a.zig-search__more'] as $selector) {
     Tests::keeps('انتخاب‌گرِ لینکِ ' . $selector . ' نامِ تگ دارد', $section, $selector);
+}
+
+/* ==========================================================================
+ * اورلی، خطا، و پیش‌فرض‌هایِ قفل‌شده
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › اورلی و خطا');
+
+/*
+ * بدونِ این لایه، پنلِ بازشده رویِ محتوا می‌نشیند ولی هیچ چیزی پشتش را
+ * جدا نمی‌کند — نه بصری و نه برایِ کلیک.
+ */
+Tests::keeps('لایهٔ تیره رندر می‌شود', $html, 'zig-search__backdrop');
+Tests::ok(
+    'و در حالتِ بسته پنهان است',
+    (bool) preg_match('/zig-search__backdrop"[^>]*\bhidden\b/', $html)
+);
+
+/*
+ * «خطای فنی» و «نتیجه‌ای نبود» دو چیزند. یکی‌کردنشان یعنی کاربری که
+ * شبکه‌اش قطع شده خیال می‌کند محصولی وجود ندارد.
+ */
+Tests::keeps('بخشِ خطا جدا از بخشِ بدونِ نتیجه است', $html, 'zig-search__section--error');
+Tests::keeps('و role=alert دارد', $html, 'role="alert"');
+Tests::keeps('پیامِ ۴۲۹ جدا از پیامِ خطایِ عمومی حمل می‌شود', $html, 'data-rate-limit-message=');
+
+Tests::group('ویجتِ سرچ › پیش‌فرض‌ها');
+
+Tests::same('سقفِ نتیجه سه است — همان تعدادی که قابِ طرح نشان می‌دهد', \Zig3d_Widgets\Search_Query::DEFAULT_LIMIT, 3);
+Tests::keeps('و پیش‌فرضِ تاریخچه چهار است', $html, 'data-recent-max="4"');
+
+$controls_all = zig_collect_controls(Search::class);
+
+foreach (['error_message', 'rate_limit_message', 'more_button_width'] as $control) {
+    Tests::ok('کنترل موجود است: ' . $control, in_array($control, $controls_all, true));
 }

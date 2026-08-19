@@ -17,12 +17,6 @@ require_once $root . '/includes/seo.php';
 use Zig3d_Widgets\Query_State;
 use Zig3d_Widgets\Seo;
 
-if (!function_exists('add_query_arg')) {
-    function add_query_arg($args, $url = '') {
-        return $url . (false === strpos($url, '?') ? '?' : '&') . http_build_query($args);
-    }
-}
-
 $clean    = Query_State::create();
 $sorted   = Query_State::create([], 'price', 1);
 $paged    = Query_State::create([], '', 3);

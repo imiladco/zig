@@ -55,6 +55,9 @@
 		this.moreLink = root.querySelector('.zig-search__more');
 
 		this.emptySection = root.querySelector('.zig-search__section--empty');
+		this.errorSection = root.querySelector('.zig-search__section--error');
+		this.errorText = root.querySelector('.zig-search__error-text');
+		this.backdrop = root.querySelector('.zig-search__backdrop');
 
 		this.chevronTpl = root.querySelector('template[data-zig-icon="chevron-icon"]');
 		this.recentIconTpl = root.querySelector('template[data-zig-icon="recent-icon"]');
@@ -67,7 +70,7 @@
 		this.ajaxUrl = root.getAttribute('data-ajax-url') || '';
 		this.ajaxAction = root.getAttribute('data-ajax-action') || 'zig3d_search';
 		this.recentEnabled = '1' === root.getAttribute('data-recent-enabled');
-		this.recentMax = parseInt(root.getAttribute('data-recent-max'), 10) || 5;
+		this.recentMax = parseInt(root.getAttribute('data-recent-max'), 10) || 4;
 		this.recentExpiryMs = (parseInt(root.getAttribute('data-recent-expiry-days'), 10) || 30) * 86400000;
 		this.recentKey = root.getAttribute('data-recent-storage-key') || 'zig3d_search_recent';
 		this.resultsUrlTemplate = root.getAttribute('data-results-url-template') || '';
@@ -228,8 +231,10 @@
 			event.preventDefault();
 
 			var target = this.options[this.activeIndex] || this.options[0];
+			var typed = this.input.value.trim();
 
 			if (target) {
+				this.remember(typed);
 				window.location.href = target.href;
 
 				return;
@@ -237,10 +242,9 @@
 
 			// هیچ محصولی برایِ رفتن نیست (S1/S2/S4) — Enter همان کاری را
 			// می‌کند که در یک باکسِ سرچِ معمولی می‌کرد: برو صفحهٔ نتایج.
-			var query = this.input.value.trim();
-
-			if (query.length >= this.minChars && this.resultsUrlTemplate) {
-				window.location.href = this.buildResultsUrl(query);
+			if (typed.length >= this.minChars && this.resultsUrlTemplate) {
+				this.remember(typed);
+				window.location.href = this.buildResultsUrl(typed);
 			}
 		}
 	};
@@ -292,23 +296,31 @@
 
 		this.controller = 'undefined' !== typeof window.AbortController ? new window.AbortController() : null;
 
+		this.setLoading(true);
+
 		this.request(query, false)
 			.then(function (payload) {
 				if (ticket !== self.ticket) {
 					return;
 				}
 
+				self.setLoading(false);
 				self.cache.set(query, payload);
 				self.render(payload, query);
-				self.remember(query);
 			})
 			.catch(function (error) {
 				if (ticket !== self.ticket) {
 					return;
 				}
 
+				self.setLoading(false);
 				self.onFetchError(error, query, ticket);
 			});
+	};
+
+	Search.prototype.setLoading = function (on) {
+		this.root.classList.toggle('is-loading', Boolean(on));
+		this.input.setAttribute('aria-busy', on ? 'true' : 'false');
 	};
 
 	/**
@@ -321,6 +333,18 @@
 	 */
 	Search.prototype.onFetchError = function (error, query, ticket) {
 		var self = this;
+
+		/*
+		 * لغوِ عمدی خطا نیست. بدونِ این تشخیص، هر بار که کاربر یک
+		 * کاراکتر دیگر تایپ می‌کند (یا فیلد را پاک می‌کند، یا Esc
+		 * می‌زند) ‎AbortError‎ی بدونِ ‎status‎ بالا می‌آید و — چون
+		 * «بدونِ status» را «خطایِ شبکه» می‌خواندیم — بی‌دلیل کلاینت را
+		 * برایِ همیشه رویِ مسیرِ admin-ajax قفل می‌کرد.
+		 */
+		if (error && 'AbortError' === error.name) {
+			return;
+		}
+
 		var status = error && error.status;
 		var isFallbackWorthy = !this.useFallback && (
 			!status || FALLBACK_STATUSES.indexOf(status) > -1
@@ -335,20 +359,26 @@
 						return;
 					}
 
+					self.setLoading(false);
 					self.cache.set(query, payload);
 					self.render(payload, query);
-					self.remember(query);
 				})
-				.catch(function () {
-					if (ticket === self.ticket) {
-						self.showError();
+				.catch(function (fallbackError) {
+					if (ticket !== self.ticket) {
+						return;
+					}
+
+					self.setLoading(false);
+
+					if (!fallbackError || 'AbortError' !== fallbackError.name) {
+						self.showError(fallbackError);
 					}
 				});
 
 			return;
 		}
 
-		this.showError();
+		this.showError(error);
 	};
 
 	Search.prototype.request = function (query, useAjax) {
@@ -420,6 +450,8 @@
 
 	/** S1/S2 — پنل باز، بدونِ نتیجه/بدونِ خطا، فقط تاریخچه (اگر باشد) + پرطرفدار */
 	Search.prototype.showIdle = function () {
+		this.root.classList.remove('is-error');
+		this.hideSection(this.errorSection);
 		this.hideSection(this.productsSection);
 		this.hideSection(this.emptySection);
 
@@ -442,16 +474,35 @@
 		this.open();
 	};
 
-	/** خطایِ فنیِ واقعی — پنل را دست‌نخورده می‌گذارد، چیزی جایگزین نمی‌کند */
-	Search.prototype.showError = function () {
-		// عمداً بی‌صدا نسبت به رابط: حالتِ «بدونِ نتیجه» نیست، و ادعای
-		// نتیجه‌دار بودنِ یک جست‌وجویی که اصلاً اجرا نشده بدتر از هیچ‌چیز
-		// نشان‌ندادن است. پنل باز می‌ماند با آخرین چیزی که داشت.
+	/**
+	 * خطایِ فنی — بخشِ خودش را دارد، نه «نتیجه‌ای پیدا نشد».
+	 *
+	 * یکی‌کردنِ این دو یعنی کاربری که شبکه‌اش قطع شده خیال می‌کند محصولی
+	 * وجود ندارد. ‎429‎ هم پیامِ آرامِ خودش را می‌گیرد: آن یک خرابی نیست،
+	 * فقط «کمی تندتر از حد» است.
+	 */
+	Search.prototype.showError = function (error) {
 		this.root.classList.add('is-error');
+		this.hideSection(this.recentSection);
+		this.hideSection(this.productsSection);
+		this.hideSection(this.emptySection);
+
+		if (this.errorText) {
+			var rateLimited = error && 429 === error.status;
+			var message = rateLimited
+				? this.errorText.getAttribute('data-rate-limit-message')
+				: this.errorText.getAttribute('data-message');
+
+			this.errorText.textContent = message || this.errorText.textContent;
+		}
+
+		this.showSection(this.errorSection);
+		this.open();
 	};
 
 	Search.prototype.render = function (payload, query) {
 		this.root.classList.remove('is-error');
+		this.hideSection(this.errorSection);
 
 		if (!payload.results.length) {
 			this.showEmpty();
@@ -469,6 +520,11 @@
 	Search.prototype.open = function () {
 		this.panel.hidden = false;
 		this.clearBtn.hidden = false;
+
+		if (this.backdrop) {
+			this.backdrop.hidden = false;
+		}
+
 		this.input.setAttribute('aria-expanded', 'true');
 		this.root.classList.add('is-open');
 	};
@@ -481,6 +537,20 @@
 			return;
 		}
 
+		/*
+		 * بستن باید درخواستِ در پرواز را هم ببندد، وگرنه S5 می‌شکند:
+		 * کاربر Esc می‌زند، پنل بسته می‌شود، و چند لحظه بعد پاسخِ همان
+		 * درخواست می‌رسد و ‎render()‎ دوباره ‎open()‎ صدا می‌زند — پنل
+		 * خودبه‌خود باز می‌شود، انگار Esc اصلاً زده نشده.
+		 *
+		 * هم ‎abort‎ لازم است هم بالابردنِ بلیت: اولی درخواست را قطع
+		 * می‌کند، دومی پاسخی را که شاید همین حالا در راه است بی‌اعتبار
+		 * می‌کند.
+		 */
+		this.abortInFlight();
+		++this.ticket;
+		this.setLoading(false);
+
 		this.panel.hidden = true;
 		// ضربدر با پنل می‌آید و با پنل می‌رود — حتی در S5 که مقدارِ
 		// تایپ‌شده در فیلد می‌ماند، طرح ضربدری نشان نمی‌دهد.
@@ -488,6 +558,11 @@
 		this.input.setAttribute('aria-expanded', 'false');
 		this.input.setAttribute('aria-activedescendant', '');
 		this.root.classList.remove('is-open');
+
+		if (this.backdrop) {
+			this.backdrop.hidden = true;
+		}
+
 		this.options = [];
 		this.activeIndex = -1;
 
@@ -528,6 +603,11 @@
 			if (hasMore && this.resultsUrlTemplate) {
 				this.moreLink.href = this.buildResultsUrl(query);
 				this.moreLink.hidden = false;
+				this.moreLink.onclick = (function (self, q) {
+					return function () {
+						self.remember(q);
+					};
+				})(this, query);
 			} else {
 				this.moreLink.hidden = true;
 			}
@@ -543,6 +623,15 @@
 		row.id = this.widgetId + '-product-' + index;
 		row.setAttribute('role', 'option');
 		row.href = item.permalink || '#';
+
+		var self = this;
+
+		// انتخابِ یک نتیجه یعنی این جست‌وجو به مقصد رسید — همان چیزی که
+		// ارزشِ ماندن در تاریخچه را دارد. ‎localStorage‎ همگام است، پس
+		// قبل از پیمایش نوشته می‌شود.
+		row.addEventListener('click', function () {
+			self.remember(self.input.value.trim());
+		});
 
 		/*
 		 * جعبهٔ تصویر همیشه ساخته می‌شود، حتی بدونِ تصویر: در طرح، مربعِ
@@ -570,7 +659,13 @@
 
 		body.className = 'zig-search__product-body';
 
-		var title = document.createElement('span');
+		/*
+		 * ‎<bdi>‎ نه تزئین است نه احتیاطِ اضافه: «میلینگ ماشین Elosdent E52»
+		 * ترکیبِ فارسی و لاتین است و بدونِ ایزوله، الگوریتمِ دوجهتهٔ مرورگر
+		 * تکهٔ لاتین را نسبت به متنِ اطرافش جابه‌جا می‌کند — عنوان درست
+		 * ذخیره شده ولی غلط دیده می‌شود.
+		 */
+		var title = document.createElement('bdi');
 
 		title.className = 'zig-search__product-title';
 		title.textContent = item.title || '';
@@ -598,7 +693,7 @@
 					meta.appendChild(dot);
 				}
 
-				var part = document.createElement('span');
+				var part = document.createElement('bdi');
 
 				part.textContent = parts[p];
 				meta.appendChild(part);
@@ -668,8 +763,16 @@
 		}
 	};
 
+	/**
+	 * تاریخچه فقط با یک intentِ واقعی نوشته می‌شود — Enter، انتخابِ یک
+	 * نتیجه، یا «مشاهدهٔ نتایجِ بیشتر».
+	 *
+	 * قبلاً بعدِ *هر* پاسخِ موفق صدا زده می‌شد، یعنی تایپِ «می» → «میل» →
+	 * «میلی» سه ردیفِ نیم‌کاره در تاریخچه می‌گذاشت و چیزی را که کاربر
+	 * واقعاً جست‌وجو کرده بود بیرون می‌راند.
+	 */
 	Search.prototype.remember = function (query) {
-		if (!this.recentEnabled) {
+		if (!this.recentEnabled || !query || query.length < this.minChars) {
 			return;
 		}
 
@@ -716,7 +819,7 @@
 		chip.className = 'zig-search__chip zig-search__chip--recent';
 		chip.href = this.resultsUrlTemplate ? this.buildResultsUrl(query) : '#';
 
-		var label = document.createElement('span');
+		var label = document.createElement('bdi');
 
 		label.textContent = query;
 		chip.appendChild(label);

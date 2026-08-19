@@ -4869,6 +4869,26 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 /*
+ * لایهٔ تیره پشتِ اورلی.
+ *
+ * ‎fixed‎ است نه ‎absolute‎، و همین نکته‌اش است: ویجت معمولاً داخلِ یک
+ * هدرِ باریک می‌نشیند و یک لایهٔ ‎absolute‎ فقط به‌اندازهٔ همان هدر تیره
+ * می‌شد. ‎fixed‎ کلِ ویوپورت را می‌گیرد، مستقل از اینکه ویجت کجا باشد.
+ *
+ * ‎z-index‎ش یک پله زیرِ پوسته است تا پوسته رویش بماند.
+ */
+.zig-search .zig-search__backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 59;
+	background-color: var(--zig-search-backdrop-bg, rgba(16, 19, 26, 0.35));
+}
+
+.zig-search .zig-search__backdrop[hidden] {
+	display: none;
+}
+
+/*
  * پوسته دو زندگیِ متفاوت دارد و همین است که «یک سطحِ سفیدِ واحد» را ممکن
  * می‌کند بدونِ اینکه در حالتِ بسته کارتی سفید دورِ فیلد بیفتد:
  *
@@ -5249,6 +5269,48 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	font-weight: 600;
 	line-height: 24px;
 	color: var(--zig-search-empty-text-color, #000000);
+}
+
+/* ---------------------------- خطا و بارگذاری ---------------------------- */
+
+.zig-search .zig-search__section--error {
+	align-items: center;
+	text-align: center;
+	gap: var(--zig-search-empty-gap, 12px);
+}
+
+.zig-search p.zig-search__error-text {
+	margin: 0;
+	font-size: var(--zig-search-error-text-size, 14px);
+	font-weight: 600;
+	line-height: 24px;
+	color: var(--zig-search-error-text-color, #b42318);
+}
+
+/*
+ * بارگذاری فقط یک نشانهٔ آرام رویِ خودِ آیکونِ سرچ است، نه یک اسپینرِ
+ * تمام‌صفحه: پنل در این لحظه هنوز نتیجهٔ قبلی را نشان می‌دهد و پاک‌کردنش
+ * یعنی هر کاراکترِ تازه محتوا را می‌پراند.
+ */
+.zig-search.is-loading .zig-search__icon-btn {
+	animation: zig-search-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes zig-search-pulse {
+	0%, 100% { opacity: 1; }
+	50%      { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-search.is-loading .zig-search__icon-btn {
+		animation: none;
+		opacity: 0.5;
+	}
+}
+
+/* عنوان و متایِ محصول ترکیبِ فارسی/لاتین‌اند — ایزوله لازم دارند */
+.zig-search bdi {
+	unicode-bidi: isolate;
 }
 
 /* قالب‌هایِ آیکونِ داینامیک — هیچ‌وقت خودشان دیده نمی‌شوند، فقط clone می‌شوند */

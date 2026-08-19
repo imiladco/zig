@@ -248,6 +248,21 @@ final class Search extends Widget_Base {
             'default' => __('همچین نتیجه‌ای پیدا نکردیم', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('error_message', [
+            'label'   => __('پیامِ خطایِ فنی', 'zig3d-widgets'),
+            'type'    => Controls_Manager::TEXT,
+            'dynamic' => ['active' => true],
+            'default' => __('جست‌وجو انجام نشد. دوباره تلاش کنید.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('rate_limit_message', [
+            'label'       => __('پیامِ درخواستِ بیش‌ازحد', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'dynamic'     => ['active' => true],
+            'default'     => __('کمی آرام‌تر — چند لحظه دیگر دوباره تلاش کنید.', 'zig3d-widgets'),
+            'description' => __('وقتی نشان داده می‌شود که تعدادِ جست‌وجوها در بازهٔ کوتاه از حد گذشته باشد.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('products_heading_text', [
             'label'   => __('عنوانِ بخشِ محصولات', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
@@ -372,7 +387,7 @@ final class Search extends Widget_Base {
             'type'      => Controls_Manager::NUMBER,
             'min'       => 1,
             'max'       => 20,
-            'default'   => 5,
+            'default'   => 4,
             'condition' => ['enable_recent' => 'yes'],
         ]);
 
@@ -745,6 +760,15 @@ final class Search extends Widget_Base {
 
         $this->add_box_style_tabs('more_button', '.zig-search__more', '.zig-search__more');
 
+        $this->add_responsive_control('more_button_width', [
+            'label'      => __('عرضِ دکمه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', '%'],
+            'range'      => ['px' => ['min' => 80, 'max' => 600], '%' => ['min' => 10, 'max' => 100]],
+            'selectors'  => ['{{WRAPPER}} .zig-search__more' => 'width: {{SIZE}}{{UNIT}};'],
+            'description' => __('خالی بگذارید تا دکمه به‌اندازهٔ متنش جمع‌وجور بماند — همان چیزی که در طرح است.', 'zig3d-widgets'),
+        ]);
+
         $this->add_group_control(Group_Control_Typography::get_type(), [
             'name'     => 'more_button_typography',
             'selector' => '{{WRAPPER}} .zig-search__more',
@@ -895,6 +919,15 @@ final class Search extends Widget_Base {
             $this->config_attributes($settings)
         );
 
+        /*
+         * لایهٔ تیره، *بیرون* از پوسته و زیرِ آن: پوسته در حالتِ باز
+         * ‎position: absolute‎ می‌شود و رویِ محتوا می‌نشیند، ولی بدونِ این
+         * لایه هیچ چیزی پشتش را از بقیهٔ صفحه جدا نمی‌کند — نه بصری، نه
+         * برایِ کلیک. ‎position: fixed‎ است تا کلِ ویوپورت را بگیرد، حتی
+         * وقتی ویجت داخلِ یک هدرِ باریک نشسته باشد.
+         */
+        echo '<div class="zig-search__backdrop" hidden></div>';
+
         echo '<div class="zig-search__shell">';
 
         $this->render_field($settings, $panel_id);
@@ -929,7 +962,7 @@ final class Search extends Widget_Base {
             'data-ajax-url'             => esc_url(admin_url('admin-ajax.php')),
             'data-ajax-action'          => Search_Endpoint::ACTION,
             'data-recent-enabled'       => 'yes' === ($settings['enable_recent'] ?? 'yes') ? '1' : '0',
-            'data-recent-max'           => (int) ($settings['recent_max'] ?? 5),
+            'data-recent-max'           => (int) ($settings['recent_max'] ?? 4),
             'data-recent-expiry-days'   => (int) ($settings['recent_expiry_days'] ?? 30),
             'data-recent-storage-key'   => 'zig3d_search_recent_' . $this->get_id(),
             'data-results-url-template' => esc_url($this->results_url(self::RESULTS_URL_PLACEHOLDER)),
@@ -983,6 +1016,7 @@ final class Search extends Widget_Base {
         $this->render_recent_section_shell($settings);
         $this->render_products_section_shell($settings);
         $this->render_empty_section_shell($settings);
+        $this->render_error_section_shell($settings);
 
         // تنها بخشِ کاملاً سمتِ سرور، چون دادهٔ ثابتِ مدیریتی است
         $this->render_popular_section($settings);
@@ -1036,6 +1070,25 @@ final class Search extends Widget_Base {
         echo '</div>';
     }
 
+    /**
+     * خطایِ فنی جایِ خودش را دارد، نه جایِ «نتیجه‌ای نبود».
+     *
+     * این تفکیک همان چیزی است که در قراردادِ آرشیو هم هست: «چیزی پیدا
+     * نشد» یک وضعیتِ عادیِ محتواست، ولی «درخواست به سرور نرسید» یک خطای
+     * فنی است. یکی‌کردنشان یعنی کاربری که شبکه‌اش قطع شده، خیال می‌کند
+     * محصولی وجود ندارد.
+     */
+    private function render_error_section_shell(array $settings): void {
+        echo '<div class="zig-search__section zig-search__section--error" hidden role="alert">';
+        printf(
+            '<p class="zig-search__error-text" data-message="%s" data-rate-limit-message="%s">%s</p>',
+            esc_attr((string) ($settings['error_message'] ?? '')),
+            esc_attr((string) ($settings['rate_limit_message'] ?? '')),
+            esc_html((string) ($settings['error_message'] ?? ''))
+        );
+        echo '</div>';
+    }
+
     private function render_popular_section(array $settings): void {
         $labels = $this->popular_labels($settings);
 
@@ -1052,7 +1105,7 @@ final class Search extends Widget_Base {
         foreach ($labels as $label) {
             printf(
                 // آیکون *بعدِ* متن — در راست‌به‌چپ یعنی سمتِ چپِ چیپ، همان‌جا که طرح گذاشته
-                '<a class="zig-search__chip zig-search__chip--popular" href="%s"><span>%s</span>%s</a>',
+                '<a class="zig-search__chip zig-search__chip--popular" href="%s"><bdi>%s</bdi>%s</a>',
                 esc_url($this->results_url($label)),
                 esc_html($label),
                 $this->render_icon($settings, 'popular_icon')
@@ -1092,8 +1145,20 @@ final class Search extends Widget_Base {
         return (string) ob_get_clean();
     }
 
-    /** آدرسِ واقعیِ صفحهٔ نتایجِ سرچِ سایت — همان چیزی که چیپ‌ها (تاریخچه/پرطرفدار) به آن لینک می‌شوند */
+    /**
+     * آدرسِ صفحهٔ نتایج — با همان دامنه‌ای که خودِ اورلی دارد.
+     *
+     * ‎get_search_link()‎ به‌تنهایی سرچِ عمومیِ وردپرس را می‌دهد: نوشته و
+     * برگه هم می‌آیند. ولی این ویجت فقط محصول جست‌وجو می‌کند؛ اگر «مشاهدهٔ
+     * نتایجِ بیشتر» به سرچِ عمومی برود، کاربر از فهرستی از محصولات به
+     * فهرستی می‌رسد که نصفش برگهٔ «تماس با ما» است. پس ‎post_type=product‎
+     * روی آدرس می‌ماند تا دو طرف یک چیز را بگویند.
+     */
     private function results_url(string $query): string {
-        return function_exists('get_search_link') ? get_search_link($query) : add_query_arg('s', rawurlencode($query), home_url('/'));
+        $url = function_exists('get_search_link')
+            ? get_search_link($query)
+            : add_query_arg('s', rawurlencode($query), home_url('/'));
+
+        return add_query_arg('post_type', 'product', $url);
     }
 }

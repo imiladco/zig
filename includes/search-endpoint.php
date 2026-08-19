@@ -63,7 +63,7 @@ final class Search_Endpoint {
      * کاراکتر را در یک ثانیه به این نقطه شلیک می‌کند. عددش عمداً سخاوتمند
      * است — کاربرِ واقعی که تند تایپ می‌کند نباید هیچ‌وقت به آن برسد.
      */
-    private const RATE_LIMIT_WINDOW = 60;
+    public const RATE_LIMIT_WINDOW = 60;
     private const RATE_LIMIT_MAX    = 40;
 
     public static function boot(): void {
@@ -129,9 +129,16 @@ final class Search_Endpoint {
         ], self::client_ip());
 
         if (is_wp_error($result)) {
-            $data = $result->get_error_data();
+            $data   = $result->get_error_data();
+            $status = (int) (is_array($data) ? ($data['status'] ?? 500) : 500);
 
-            wp_send_json_error(['code' => $result->get_error_code()], (int) (is_array($data) ? ($data['status'] ?? 500) : 500));
+            foreach ((is_array($data) ? ($data['headers'] ?? []) : []) as $header => $value) {
+                if (!headers_sent()) {
+                    header($header . ': ' . $value);
+                }
+            }
+
+            wp_send_json_error(['code' => $result->get_error_code()], $status);
 
             return;
         }
@@ -149,7 +156,19 @@ final class Search_Endpoint {
      */
     public static function process(array $params, string $ip) {
         if (self::rate_limited($ip)) {
-            return new \WP_Error('zig3d_rate_limited', 'Too many search requests.', ['status' => 429]);
+            /*
+             * ‎Retry-After‎ همراهِ پاسخ می‌رود، نه فقط کدِ ۴۲۹: بدونِ آن،
+             * کلاینت (و هر پراکسی/باتِ خوش‌رفتاری) نمی‌داند چقدر صبر کند
+             * و همان الگویِ درخواستِ پشت‌سرهم را ادامه می‌دهد.
+             */
+            return new \WP_Error(
+                'zig3d_rate_limited',
+                'Too many search requests.',
+                [
+                    'status'  => 429,
+                    'headers' => ['Retry-After' => (string) self::RATE_LIMIT_WINDOW],
+                ]
+            );
         }
 
         $q = trim((string) ($params['q'] ?? ''));
