@@ -249,6 +249,13 @@ final class Search extends Widget_Base {
             'description' => __('در حالتِ موبایل، دکمه فقط یک آیکون است و هیچ متنی ندارد؛ بدونِ این توضیح، صفحه‌خوان چیزی برایِ خواندن ندارد.', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('back_label', [
+            'label'       => __('توضیحِ دکمهٔ بازگشت برایِ صفحه‌خوان', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => __('بستنِ جست‌وجو', 'zig3d-widgets'),
+            'description' => __('در نسخهٔ موبایل، این دکمه شیت را می‌بندد. متنی ندارد، پس بدونِ این توضیح صفحه‌خوان چیزی برایِ خواندن ندارد.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('empty_message', [
             'label'   => __('پیامِ بدونِ نتیجه', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
@@ -332,6 +339,7 @@ final class Search extends Widget_Base {
         'clear_icon'   => 'close',
         'chevron_icon' => 'chevron',
         'more_icon'    => 'arrow-left',
+        'back_icon'    => 'arrow-right',
         'empty_icon'   => 'search',
         'popular_icon' => 'trending-up',
     ];
@@ -374,6 +382,7 @@ final class Search extends Widget_Base {
             'clear_icon'   => __('آیکونِ پاک‌کردن (ضربدر)', 'zig3d-widgets'),
             'chevron_icon' => __('آیکونِ فلشِ ردیفِ محصول', 'zig3d-widgets'),
             'more_icon'    => __('آیکونِ دکمهٔ «نمایشِ بیشتر»', 'zig3d-widgets'),
+            'back_icon'    => __('آیکونِ بازگشتِ نسخهٔ موبایل', 'zig3d-widgets'),
             'empty_icon'   => __('آیکونِ حالتِ بدونِ نتیجه', 'zig3d-widgets'),
             'recent_icon'  => __('آیکونِ چیپِ تاریخچه', 'zig3d-widgets'),
             'popular_icon' => __('آیکونِ چیپِ پرطرفدار', 'zig3d-widgets'),
@@ -1064,7 +1073,7 @@ final class Search extends Widget_Base {
         printf(
             '<button type="button" class="zig-search__trigger" aria-expanded="false" aria-controls="%s" aria-label="%s">%s</button>',
             esc_attr($panel_id),
-            esc_attr((string) ($settings['trigger_label'] ?? '')),
+            esc_attr($this->icon_label($settings, 'trigger_label', __('باز کردنِ جست‌وجو', 'zig3d-widgets'))),
             $this->render_icon($settings, 'search_icon')
         );
 
@@ -1150,9 +1159,25 @@ final class Search extends Widget_Base {
     private function render_field(array $settings, string $panel_id): void {
         printf('<form class="zig-search__field" role="search" action="%s" method="get">', esc_url(home_url('/')));
 
+        /*
+         * دو دکمه در یک جایگاه، و فقط یکی‌شان هر بار دیده می‌شود:
+         *
+         *   • ذره‌بین — تزئینی، مالِ اورلیِ دسکتاپ.
+         *   • بازگشت — کارآمد، مالِ شیتِ موبایل؛ شیت را می‌بندد.
+         *
+         * در طرحِ موبایل ذره‌بینی وجود ندارد؛ جایش همین فلشِ بازگشت
+         * نشسته. هر دو رندر می‌شوند و CSS انتخاب می‌کند، چون تشخیصِ
+         * دستگاه سمتِ سرور یعنی کشِ صفحه برایِ یک عرضِ اشتباه.
+         */
         printf(
             '<button type="button" class="zig-search__icon-btn" tabindex="-1" aria-hidden="true">%s</button>',
             $this->render_icon($settings, 'search_icon')
+        );
+
+        printf(
+            '<button type="button" class="zig-search__back" aria-label="%s">%s</button>',
+            esc_attr($this->icon_label($settings, 'back_label', __('بستنِ جست‌وجو', 'zig3d-widgets'))),
+            $this->render_icon($settings, 'back_icon')
         );
 
         printf(
@@ -1309,6 +1334,20 @@ final class Search extends Widget_Base {
      * ترتیب عمداً همین است. آیکونِ طرح «پیش‌فرض» است نه «اجبار»؛ لحظه‌ای
      * که مدیر چیزی از کتابخانه انتخاب کند، همان می‌نشیند.
      */
+    /**
+     * نامِ دکمه‌ای که فقط آیکون دارد.
+     *
+     * خالی‌گذاشتنش گزینه نیست: چنین دکمه‌ای هیچ متنِ دیگری ندارد و
+     * صفحه‌خوان فقط «دکمه» می‌گوید. تنظیم اگر خالی یا اصلاً غایب باشد —
+     * که برایِ نمونه‌هایِ ذخیره‌شده پیش از افزوده‌شدنِ این کنترل پیش
+     * می‌آید — پیش‌فرضِ ترجمه‌شده جایش می‌نشیند.
+     */
+    private function icon_label(array $settings, string $key, string $fallback): string {
+        $label = trim((string) ($settings[$key] ?? ''));
+
+        return '' !== $label ? $label : $fallback;
+    }
+
     private function render_icon(array $settings, string $key): string {
         $icon = $settings[$key] ?? [];
 

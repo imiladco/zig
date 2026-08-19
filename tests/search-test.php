@@ -817,3 +817,73 @@ Tests::keeps('جابه‌جاییِ دستی بعدِ رها شدن پاک می�
  */
 Tests::keeps('حالتِ شیت از روی CSS خوانده می‌شود', $search_js, "'none' !== window.getComputedStyle(this.trigger).display");
 Tests::blocks('و عددِ بریک‌پوینت در JS تکرار نشده', $search_js, '767');
+
+/* ==========================================================================
+ * موبایل — دو نقشِ متفاوت در یک فیلد
+ *
+ * در طرحِ موبایل، فیلد ذره‌بین ندارد؛ جایش فلشِ بازگشت نشسته که شیت را
+ * می‌بندد. و ضربدر آنجا معنیِ دیگری دارد: فقط متنِ تایپ‌شده را پاک
+ * می‌کند و شیت باز می‌ماند.
+ *
+ * در اورلیِ دسکتاپ همان ضربدر نقشِ «بستن» را دارد — قیدی که قبلاً قفل
+ * شد و این گروه هر دو را کنارِ هم نگه می‌دارد تا یکی به نامِ دیگری خراب
+ * نشود.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › بازگشت و پاک‌کردنِ موبایل');
+
+Tests::keeps('دکمهٔ بازگشت رندر می‌شود', $html, 'zig-search__back');
+Tests::ok(
+    'و برایِ صفحه‌خوان نام دارد',
+    (bool) preg_match('/<button[^>]*class="zig-search__back"[^>]*aria-label="[^"]+"/', $html)
+);
+Tests::ok('توضیحش قابلِ تنظیم است', in_array('back_label', $controls_sheet, true));
+Tests::ok('آیکونش هم قابلِ تنظیم است', in_array('back_icon', $controls_sheet, true));
+
+/* فلشِ بازگشت همان فلشِ فیگماست، آینه‌شده برایِ راست‌به‌چپ */
+$arrow_right = $root . '/assets/icons/arrow-right.svg';
+Tests::ok('فایلِ فلشِ بازگشت هست', is_file($arrow_right));
+
+$arrow_svg = is_file($arrow_right) ? (string) file_get_contents($arrow_right) : '';
+Tests::keeps('و همان مسیرِ فلشِ فیگماست', $arrow_svg, 'M4.51642 0C4.76955 0 4.97875 0.188103');
+Tests::keeps('فقط آینه شده', $arrow_svg, 'matrix(-1 0 0 1 16 0)');
+Tests::ok(
+    'رنگش currentColor است',
+    false !== strpos($arrow_svg, 'currentColor') && !preg_match('/#[0-9a-fA-F]{3,6}/', $arrow_svg)
+);
+
+/* ---- CSS: ذره‌بین و بازگشت جای هم را می‌گیرند، نه اینکه کنارِ هم بنشینند ---- */
+
+Tests::keeps('بازگشت در دسکتاپ دیده نمی‌شود', $section, ".zig-search .zig-search__back {\n\tdisplay: none;\n}");
+Tests::keeps('در شیت ذره‌بین می‌رود', $section, ".zig-search form.zig-search__field button.zig-search__icon-btn {\n\t\tdisplay: none;\n\t}");
+Tests::keeps('و بازگشت می‌آید', $section, ".zig-search form.zig-search__field button.zig-search__back {\n\t\tdisplay: inline-flex;");
+
+/* ---- JS: نقشِ ضربدر به حالت بستگی دارد ---- */
+
+Tests::keeps('ضربدر در شیت فقط متن را پاک می‌کند', $search_js, "if (this.isSheet()) {\n\t\t\tthis.showIdle();");
+
+/*
+ * و فوکوس برمی‌گردد؛ بدونش کیبوردِ موبایل بسته می‌شود و کاربر برایِ
+ * ادامهٔ تایپ باید دوباره روی فیلد بزند.
+ */
+Tests::keeps('و فوکوس را نگه می‌دارد', $search_js, "this.input.focus();\n\n\t\t\treturn;");
+
+/* نقشِ دسکتاپ دست‌نخورده: همان ضربدر، اورلی را می‌بندد */
+Tests::keeps('در دسکتاپ همچنان می‌بندد', $search_js, "this.close(false);\n\t};");
+
+/* و بازگشت، برعکسِ ضربدر، متن را نگه می‌دارد */
+Tests::keeps('بازگشت مقدار را حفظ می‌کند', $search_js, "// مقدارِ تایپ‌شده می‌ماند — بازگشت، پاک‌کردن نیست\n\t\t\t\tself.close(true);");
+
+/*
+ * دکمه‌ای که فقط آیکون دارد هیچ‌وقت نباید نامِ خالی بگیرد — صفحه‌خوان
+ * آن‌وقت فقط «دکمه» می‌گوید. این برایِ نمونه‌هایِ ذخیره‌شده پیش از
+ * افزوده‌شدنِ این کنترل‌ها واقعی است، نه فرضی.
+ */
+$html_no_labels = $render(['placeholder_text' => 'جستجوی محصول']);
+
+foreach (['zig-search__trigger', 'zig-search__back'] as $button) {
+    Tests::ok(
+        'بدونِ تنظیم هم نام دارد: ' . $button,
+        (bool) preg_match('/<button[^>]*class="' . preg_quote($button, '/') . '"[^>]*aria-label="[^"]+"/', $html_no_labels)
+    );
+}

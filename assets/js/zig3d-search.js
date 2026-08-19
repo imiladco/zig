@@ -58,6 +58,7 @@
 		this.shell = root.querySelector('.zig-search__shell');
 		this.trigger = root.querySelector('.zig-search__trigger');
 		this.handle = root.querySelector('.zig-search__handle');
+		this.back = root.querySelector('.zig-search__back');
 
 		this.recentSection = root.querySelector('.zig-search__section--recent');
 		this.recentChips = root.querySelector('[data-role="recent-chips"]');
@@ -224,6 +225,25 @@
 		this.input.value = '';
 		window.clearTimeout(this.timer);
 		this.abortInFlight();
+
+		/*
+		 * نقشِ ضربدر در دو حالت فرق می‌کند، و این از خودِ طرح می‌آید:
+		 *
+		 *   • اورلیِ دسکتاپ — ضربدر «بستن» است. طرح در هر دو حالتِ بسته
+		 *     ضربدری نشان نمی‌دهد و در هر چهار حالتِ باز نشان می‌دهد،
+		 *     حتی وقتی فیلد خالی است؛ یعنی به *باز بودنِ پنل* گره خورده
+		 *     نه به وجودِ متن.
+		 *   • شیتِ موبایل — ضربدر فقط «پاک‌کردنِ متن» است و شیت باز
+		 *     می‌ماند؛ بستن کارِ فلشِ بازگشت است.
+		 */
+		if (this.isSheet()) {
+			this.showIdle();
+			// فوکوس برمی‌گردد تا کیبورد بسته نشود و کاربر بتواند ادامه بدهد
+			this.input.focus();
+
+			return;
+		}
+
 		this.close(false);
 	};
 
@@ -633,6 +653,13 @@
 				 */
 				self.input.focus();
 				self.open();
+			});
+		}
+
+		if (this.back) {
+			this.back.addEventListener('click', function () {
+				// مقدارِ تایپ‌شده می‌ماند — بازگشت، پاک‌کردن نیست
+				self.close(true);
 			});
 		}
 

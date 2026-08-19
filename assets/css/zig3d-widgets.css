@@ -5453,7 +5453,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  * صفحه برایِ یک عرضِ اشتباه ذخیره می‌شود.
  */
 .zig-search .zig-search__trigger,
-.zig-search .zig-search__handle {
+.zig-search .zig-search__handle,
+.zig-search .zig-search__back {
 	display: none;
 }
 
@@ -5595,6 +5596,43 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 		inset-inline: 0;
 		inset-block-start: 0;
 		height: var(--zig-search-handle-hit, 32px);
+	}
+
+	/*
+	 * در طرحِ موبایل ذره‌بینی در فیلد نیست؛ جایش فلشِ بازگشت نشسته که
+	 * شیت را می‌بندد. پس این دو با هم عوض می‌شوند، نه اینکه کنارِ هم
+	 * بنشینند.
+	 */
+	.zig-search form.zig-search__field button.zig-search__icon-btn {
+		display: none;
+	}
+
+	.zig-search form.zig-search__field button.zig-search__back {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		width: auto;
+		min-width: 0;
+		min-height: 0;
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		color: var(--zig-search-back-color, #687083);
+		line-height: 0;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-search form.zig-search__field button.zig-search__back svg,
+	.zig-search form.zig-search__field button.zig-search__back i {
+		width: var(--zig-search-back-size, 22px);
+		height: var(--zig-search-back-size, 22px);
+		font-size: var(--zig-search-back-size, 22px);
 	}
 
 	/* محتوا اسکرول می‌شود، نه خودِ شیت — وگرنه دستگیره هم بالا می‌رود */
