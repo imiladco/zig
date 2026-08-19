@@ -4921,10 +4921,28 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	flex-direction: column;
 }
 
+/*
+ * پدینگِ افقیِ پوسته *بیرون* اضافه می‌شود، نه اینکه از عرضِ فیلد کم شود.
+ *
+ * قبلاً ‎inset-inline: 0‎ بود، یعنی پوسته دقیقاً هم‌عرضِ ریشه می‌شد و
+ * پدینگ از داخل می‌خورد: با عرضِ ۵۰۰، فیلدِ باز ۴۸۴ می‌شد و لحظهٔ باز
+ * شدن آب می‌رفت. در طرح برعکس است — فیلد در هر دو حالت ۵۰۰ است و
+ * قابِ سفید ۵۱۶.
+ *
+ * پس دو لبه به‌اندازهٔ پدینگِ همان سمت به بیرون کشیده می‌شوند. با
+ * ‎left/right‎ی منفی و ‎width: auto‎، عرضِ محتوا خودش دقیقاً برابرِ
+ * عرضِ ریشه در می‌آید و هیچ عددی دوبار نوشته نمی‌شود.
+ *
+ * متغیرها را همان کنترلِ «فاصلهٔ داخلی»ِ تبِ استایل هم می‌نویسد، پس اگر
+ * مدیر پدینگ را عوض کند، جبرانِ بیرونی خودبه‌خود با آن جلو می‌رود.
+ * عمداً ‎left/right‎ی فیزیکی است نه منطقی: چیزی که جبران می‌شود
+ * ‎padding-left/right‎ی فیزیکی است.
+ */
 .zig-search.is-open .zig-search__shell {
 	position: absolute;
 	inset-block-start: 0;
-	inset-inline: 0;
+	left: calc(var(--zig-search-shell-pad-left, 8px) * -1);
+	right: calc(var(--zig-search-shell-pad-right, 8px) * -1);
 	z-index: 60;
 	gap: var(--zig-search-shell-gap, 24px);
 	padding: var(--zig-search-shell-padding, 8px 8px 16px);

@@ -27,8 +27,19 @@ trait Box {
      * @param string $selector    سلکتور جعبه، نسبت به ‎{{WRAPPER}}‎.
      * @param string $hover_scope سلکتوری که هاور روی آن حالت هاور را فعال می‌کند؛
      *                            برای کارت یعنی «هاور روی هر جای کارت»، نه فقط خود جعبه.
+     * @param string $padding_extra اعلان‌های اضافی که کنار خودِ ‎padding‎ نوشته
+     *                            می‌شوند. برای جعبه‌ای لازم است که چیدمانش به
+     *                            مقدارِ پدینگ وابسته است و باید همان عدد را در
+     *                            یک متغیر هم داشته باشد — وگرنه با تغییرِ پدینگ
+     *                            از تبِ استایل، آن چیدمان روی مقدارِ قدیمی
+     *                            جا می‌ماند.
      */
-    protected function add_box_style_tabs(string $prefix, string $selector, string $hover_scope): void {
+    protected function add_box_style_tabs(
+        string $prefix,
+        string $selector,
+        string $hover_scope,
+        string $padding_extra = ''
+    ): void {
         $box = '{{WRAPPER}} ' . $selector;
 
         /*
@@ -88,7 +99,9 @@ trait Box {
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem', '%'],
                 'separator'  => 'before',
-                'selectors'  => [$box => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+                'selectors'  => [
+                    $box => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' . $padding_extra,
+                ],
             ]
         );
 

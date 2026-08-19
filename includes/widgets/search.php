@@ -587,7 +587,19 @@ final class Search extends Widget_Base {
          * خاکستریِ فیلد دیده می‌شود — اگر این قید نبود، یک حلقهٔ سفیدِ
          * بی‌دلیل دورِ فیلدِ بسته می‌افتاد.
          */
-        $this->add_box_style_tabs('shell', '.zig-search.is-open .zig-search__shell', '.zig-search.is-open .zig-search__shell');
+        /*
+         * پدینگِ افقیِ پوسته را CSS برایِ کشیدنِ لبه‌ها به بیرون هم لازم
+         * دارد — همان چیزی که باعث می‌شود عرضِ فیلد با باز شدن تغییر
+         * نکند. پس همان کنترل، علاوه بر ‎padding‎، عددش را در دو متغیر
+         * هم می‌گذارد؛ وگرنه تغییرِ پدینگ از تبِ استایل، جبرانِ بیرونی را
+         * رویِ عددِ قدیمی جا می‌گذاشت و قاب نامتقارن می‌شد.
+         */
+        $this->add_box_style_tabs(
+            'shell',
+            '.zig-search.is-open .zig-search__shell',
+            '.zig-search.is-open .zig-search__shell',
+            '--zig-search-shell-pad-left: {{LEFT}}{{UNIT}}; --zig-search-shell-pad-right: {{RIGHT}}{{UNIT}};'
+        );
 
         $this->add_control('shell_width', [
             'label'      => __('عرضِ ویجت', 'zig3d-widgets'),

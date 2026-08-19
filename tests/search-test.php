@@ -375,6 +375,38 @@ foreach ($matches[1] as $group) {
     }
 }
 
+/*
+ * عرضِ فیلد نباید با باز شدن تغییر کند.
+ *
+ * پوسته در حالتِ باز ‎absolute‎ است؛ اگر لبه‌هایش صفر باشند، هم‌عرضِ
+ * ریشه می‌شود و پدینگِ افقی از *داخل* می‌خورد — یعنی فیلدِ ۵۰۰ پیکسلی
+ * لحظهٔ باز شدن ۴۸۴ می‌شود. در طرح برعکس است: فیلد ۵۰۰ می‌ماند و قاب
+ * ۵۱۶ می‌شود. جبران با لبه‌هایِ منفی انجام می‌شود.
+ */
+Tests::keeps('لبهٔ چپِ پوسته به‌اندازهٔ پدینگ بیرون کشیده می‌شود', $section, 'left: calc(var(--zig-search-shell-pad-left, 8px) * -1);');
+Tests::keeps('لبهٔ راستِ پوسته هم همین‌طور', $section, 'right: calc(var(--zig-search-shell-pad-right, 8px) * -1);');
+Tests::blocks('لبه‌هایِ پوسته دیگر صفر نیستند', $section, 'inset-inline: 0;');
+
+/*
+ * و همان کنترلِ پدینگ باید این دو متغیر را هم بنویسد، وگرنه تغییرِ
+ * پدینگ از تبِ استایل، جبران را رویِ عددِ قدیمی جا می‌گذارد و قاب
+ * نامتقارن می‌شود — چیزی که در رندر هیچ نشانه‌ای ندارد.
+ */
+$padding_rules = array_values(array_filter(
+    zig_collect_selectors(Search::class),
+    static fn(array $entry): bool => 'shell_box_padding' === $entry[0]
+));
+
+Tests::ok('کنترلِ پدینگِ پوسته وجود دارد', [] !== $padding_rules);
+
+foreach ($padding_rules as $entry) {
+    Tests::ok(
+        'کنترلِ پدینگ، متغیرهایِ جبرانِ لبه را هم می‌نویسد',
+        false !== strpos($entry[2], '--zig-search-shell-pad-left')
+            && false !== strpos($entry[2], '--zig-search-shell-pad-right')
+    );
+}
+
 /* لینک‌ها هم نامِ تگ می‌گیرند، وگرنه رنگ/زیرخطِ قالب رویشان می‌نشیند */
 foreach (['a.zig-search__chip', 'a.zig-search__product', 'a.zig-search__more'] as $selector) {
     Tests::keeps('انتخاب‌گرِ لینکِ ' . $selector . ' نامِ تگ دارد', $section, $selector);
