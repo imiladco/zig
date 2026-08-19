@@ -39,8 +39,27 @@ final class Search_Normalizer {
         '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
     ];
 
-    /** اعراب/تشدید — حذف می‌شوند چون در تایپِ روزمره تصادفی حاضر/غایب‌اند */
-    private const DIACRITICS_PATTERN = '/[\x{0610}-\x{061A}\x{064B}-\x{065F}\x{0670}\x{06D6}-\x{06DC}\x{06DF}-\x{06E8}\x{06EA}-\x{06ED}\x{08D4}-\x{08E1}\x{08E3}-\x{08FF}]/u';
+    /**
+     * اعراب/تشدید و کشیدگی — حذف می‌شوند چون در تایپِ روزمره تصادفی
+     * حاضر/غایب‌اند.
+     *
+     * فهرستِ صریح است نه دامنهٔ رجکس، و این عمدی است: ‎sql_expr()‎ باید
+     * *همین* نویسه‌ها را از ستون هم حذف کند و ‎REPLACE‎ی SQL دامنه
+     * نمی‌فهمد. با یک دامنهٔ گشادِ رجکس در PHP و یک فهرستِ محدود در SQL،
+     * نرمال‌سازی نامتقارن می‌شد — دقیقاً همان حفره‌ای که این فهرست می‌بندد.
+     *
+     * پوشش: حرکاتِ ‎U+064B..U+0658‎، الفِ خنجریِ ‎U+0670‎، و تطویلِ
+     * ‎U+0640‎. اینها همان چیزهایی‌اند که در متنِ فارسی/عربیِ واقعی دیده
+     * می‌شوند؛ نشانه‌هایِ قرآنیِ کمیاب‌تر عمداً بیرون‌اند تا هر دو طرف
+     * دقیقاً یک فهرست را بشناسند.
+     */
+    private const DIACRITICS = [
+        "\xD9\x8B", "\xD9\x8C", "\xD9\x8D", "\xD9\x8E", "\xD9\x8F",
+        "\xD9\x90", "\xD9\x91", "\xD9\x92", "\xD9\x93", "\xD9\x94",
+        "\xD9\x95", "\xD9\x96", "\xD9\x97", "\xD9\x98",
+        "\xD9\xB0",
+        "\xD9\x80",
+    ];
 
     private const ZWNJ = "\xE2\x80\x8C"; // U+200C
 
@@ -86,6 +105,12 @@ final class Search_Normalizer {
             $expr = "REPLACE({$expr}, '{$from}', '{$to}')";
         }
 
+        // همان اعرابی که ‎normalize()‎ از کوئری برمی‌دارد، از ستون هم
+        // برداشته می‌شود — وگرنه تقارن فقط تا نیمهٔ راه بود.
+        foreach (self::DIACRITICS as $mark) {
+            $expr = "REPLACE({$expr}, '{$mark}', '')";
+        }
+
         return $expr;
     }
 
@@ -99,7 +124,7 @@ final class Search_Normalizer {
      */
     public static function normalize(string $text): string {
         $text = strtr($text, self::CHAR_MAP);
-        $text = (string) preg_replace(self::DIACRITICS_PATTERN, '', $text);
+        $text = str_replace(self::DIACRITICS, '', $text);
         $text = (string) preg_replace('/[ \t\r\n]+/u', ' ', $text);
 
         return trim($text);
@@ -191,9 +216,9 @@ final class Search_Normalizer {
                 continue;
             }
 
-            if (false !== mb_stripos($normalized, $a)) {
+            if (self::contains($normalized, $a)) {
                 $variants[] = self::collapse_spaces(str_ireplace($a, $b, $normalized));
-            } elseif (false !== mb_stripos($normalized, $b)) {
+            } elseif (self::contains($normalized, $b)) {
                 $variants[] = self::collapse_spaces(str_ireplace($b, $a, $normalized));
             }
         }
@@ -237,7 +262,7 @@ final class Search_Normalizer {
 
         foreach ($by_tier as $tier => $texts) {
             foreach ($texts as $text) {
-                $key = mb_strtolower($text);
+                $key = self::lower($text);
 
                 if (isset($seen[$key])) {
                     continue;
@@ -255,6 +280,41 @@ final class Search_Normalizer {
         return $result;
     }
 
+    /* =====================================================================
+     * mbstring، اگر بود
+     *
+     * افزونه نباید رویِ میزبانی که ‎mbstring‎ ندارد کشنده شود. هر سه
+     * کاربردِ اینجا جایگزینِ امن دارند:
+     *
+     *   • کوچک‌کردن فقط برایِ کلیدِ یکتاسازی است و تنها رویِ حروفِ لاتین
+     *     اثر دارد — ‎strtolower‎ی بایتی همان کار را می‌کند و به بایت‌هایِ
+     *     UTF-8ی فارسی (که همه ≥ 0x80 اند) دست نمی‌زند.
+     *   • جست‌وجویِ زیررشته رویِ UTF-8 بایتی هم درست است، چون کدگذاری
+     *     خودهمگام است و یک دنبالهٔ معتبر نمی‌تواند وسطِ دنبالهٔ دیگری
+     *     تصادفاً پیدا شود.
+     *   • شمارشِ طول باید نویسه‌ای بماند، نه بایتی — وگرنه یک عبارتِ
+     *     کوتاهِ فارسی الکی از سقف رد می‌شود. ‎preg_match_all‎ با پرچمِ
+     *     ‎u‎ همان شمارشِ نویسه‌ای را بدونِ ‎mbstring‎ می‌دهد.
+     * =================================================================== */
+
+    public static function lower(string $text): string {
+        return function_exists('mb_strtolower') ? mb_strtolower($text) : strtolower($text);
+    }
+
+    public static function contains(string $haystack, string $needle): bool {
+        return function_exists('mb_stripos')
+            ? false !== mb_stripos($haystack, $needle)
+            : false !== stripos($haystack, $needle);
+    }
+
+    public static function length(string $text): int {
+        if (function_exists('mb_strlen')) {
+            return (int) mb_strlen($text);
+        }
+
+        return (int) preg_match_all('/./u', $text);
+    }
+
     private static function collapse_spaces(string $text): string {
         return trim((string) preg_replace('/ +/u', ' ', $text));
     }
@@ -269,7 +329,7 @@ final class Search_Normalizer {
                 continue;
             }
 
-            $key = mb_strtolower($candidate);
+            $key = self::lower($candidate);
 
             if (isset($seen[$key])) {
                 continue;

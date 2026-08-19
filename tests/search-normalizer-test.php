@@ -150,7 +150,7 @@ Tests::ok('تعداد وریانت‌ها هیچ‌وقت از سقف بیشتر
  * است بدونِ هیچ نتیجهٔ جدید.
  */
 $texts = array_column(N::variants('3D'), 'text');
-$lowered = array_map('mb_strtolower', $texts);
+$lowered = array_map([N::class, 'lower'], $texts);
 Tests::same('هیچ دو ردیفِ هم‌معنایی هم‌زمان در خروجی نیست', count($lowered), count(array_unique($lowered)));
 
 /* ==========================================================================
@@ -173,11 +173,18 @@ Tests::keeps('رقمِ فارسی هم', $expr, "'۵', '5'");
 Tests::keeps('رقمِ عربیِ اندیک هم', $expr, "'٥', '5'");
 
 /*
- * تعدادِ ‎REPLACE‎ باید دقیقاً به‌اندازهٔ نگاشت باشد — نه کمتر (یعنی
- * نویسه‌ای جا افتاده) و نه بیشتر (یعنی چیزی دوبار اعمال شده).
+ * تعدادِ ‎REPLACE‎ باید دقیقاً به‌اندازهٔ نگاشت به‌علاوهٔ اعراب باشد — نه
+ * کمتر (یعنی نویسه‌ای جا افتاده) و نه بیشتر (یعنی چیزی دوبار اعمال شده).
  */
-$map = (new ReflectionClass(N::class))->getConstant('CHAR_MAP');
-Tests::same('به‌ازایِ هر نویسهٔ نگاشت یک REPLACE ساخته می‌شود', substr_count($expr, 'REPLACE('), count($map));
+$reflection  = new ReflectionClass(N::class);
+$map         = $reflection->getConstant('CHAR_MAP');
+$diacritics  = $reflection->getConstant('DIACRITICS');
+
+Tests::same(
+    'به‌ازایِ هر نویسهٔ نگاشت و هر اعراب یک REPLACE ساخته می‌شود',
+    substr_count($expr, 'REPLACE('),
+    count($map) + count($diacritics)
+);
 
 /*
  * و مهم‌ترین سنجه: هر نویسه‌ای که ‎normalize()‎ عوض می‌کند، باید در
@@ -191,4 +198,44 @@ foreach ($map as $from => $to) {
     }
 }
 
-Tests::same('هیچ نویسه‌ای بینِ PHP و SQL جا نمی‌افتد', $missing, []);
+Tests::same('هیچ نویسهٔ نگاشت بینِ PHP و SQL جا نمی‌افتد', $missing, []);
+
+/*
+ * اعراب همان حفره‌ای بود که یک‌بار باز ماند: ‎normalize()‎ از کوئری
+ * برشان می‌داشت ولی ستون دست‌نخورده می‌ماند، پس عنوانی که با اعراب
+ * ذخیره شده بود هیچ‌وقت پیدا نمی‌شد.
+ */
+$missing_marks = [];
+
+foreach ($diacritics as $mark) {
+    if (false === strpos($expr, "'" . $mark . "', ''")) {
+        $missing_marks[] = bin2hex($mark);
+    }
+}
+
+Tests::same('هیچ اعرابی بینِ PHP و SQL جا نمی‌افتد', $missing_marks, []);
+
+/* و تقارن به‌صورتِ رفتاری، نه فقط شمارشی */
+foreach ($diacritics as $mark) {
+    Tests::same(
+        'اعرابِ ' . bin2hex($mark) . ' از کوئری هم حذف می‌شود',
+        N::normalize('ما' . $mark . 'شین'),
+        'ماشین'
+    );
+}
+
+/* ==========================================================================
+ * بدونِ mbstring
+ *
+ * افزونه نباید رویِ میزبانی که ‎mbstring‎ ندارد کشنده شود. این سنجه‌ها
+ * فقط قرارداد را نگه می‌دارند؛ خودِ مسیرِ fallback با ‎function_exists‎
+ * انتخاب می‌شود و در محیطی که ‎mbstring‎ هست اجرا نمی‌شود.
+ * ======================================================================= */
+
+Tests::group('نرمالایز › استقلال از mbstring');
+
+Tests::same('شمارشِ طول نویسه‌ای است نه بایتی', N::length('میلینگ'), 6);
+Tests::same('و رویِ لاتین هم درست', N::length('UP3D'), 4);
+Tests::ok('جست‌وجویِ زیررشتهٔ فارسی', N::contains('میلینگ ماشین', 'ماشین'));
+Tests::ok('و بدونِ تطابق، منفی', !N::contains('میلینگ', 'روتر'));
+Tests::same('کوچک‌کردن فقط رویِ لاتین اثر دارد', N::lower('UP3D میلینگ'), 'up3d میلینگ');

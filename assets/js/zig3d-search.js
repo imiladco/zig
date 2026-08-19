@@ -123,6 +123,19 @@
 			});
 		}
 
+		/*
+		 * لایهٔ تیره *داخلِ* ریشه است، پس ‎root.contains()‎ برایش درست
+		 * برمی‌گرداند و شرطِ «کلیکِ بیرون» هیچ‌وقت به آن نمی‌رسد. و چون
+		 * همان لایه کلِ صفحه را پوشانده، کلیکِ رویِ عناصرِ پشتش هم اصلاً
+		 * اتفاق نمی‌افتد — یعنی بدونِ این شاخه، «کلیکِ بیرون» عملاً از
+		 * کار می‌افتاد و تنها راهِ بستن Esc می‌ماند.
+		 */
+		if (this.backdrop) {
+			this.backdrop.addEventListener('click', function () {
+				self.close(true);
+			});
+		}
+
 		document.addEventListener('click', function (event) {
 			if (!self.root.contains(event.target)) {
 				self.close(true);

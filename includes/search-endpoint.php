@@ -98,7 +98,29 @@ final class Search_Endpoint {
         ], self::client_ip());
 
         if (is_wp_error($result)) {
-            return $result;
+            /*
+             * ‎WP_Error‎ی که مستقیم برگردانده شود، هدرهایِ داخلِ دادهٔ
+             * خطایش را با خودش حمل نمی‌کند — وردپرس فقط ‎status‎ را
+             * می‌خواند. پس پاسخ این‌جا صریح ساخته می‌شود تا قراردادِ
+             * «۴۲۹ به‌همراهِ ‎Retry-After‎» در هر دو در یکی باشد، نه فقط
+             * در admin-ajax.
+             */
+            $data     = $result->get_error_data();
+            $status   = (int) (is_array($data) ? ($data['status'] ?? 500) : 500);
+            $response = new \WP_REST_Response(
+                [
+                    'code'    => $result->get_error_code(),
+                    'message' => $result->get_error_message(),
+                    'data'    => ['status' => $status],
+                ],
+                $status
+            );
+
+            foreach ((is_array($data) ? ($data['headers'] ?? []) : []) as $header => $value) {
+                $response->header($header, $value);
+            }
+
+            return $response;
         }
 
         $response = rest_ensure_response($result);
@@ -173,7 +195,7 @@ final class Search_Endpoint {
 
         $q = trim((string) ($params['q'] ?? ''));
 
-        if ('' === $q || mb_strlen($q) > self::MAX_QUERY) {
+        if ('' === $q || Search_Normalizer::length($q) > self::MAX_QUERY) {
             return new \WP_Error('zig3d_invalid_query', 'Invalid search query.', ['status' => 400]);
         }
 
