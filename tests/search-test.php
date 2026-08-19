@@ -297,17 +297,82 @@ Tests::same(
 );
 
 /*
- * ورودی سخت‌ترین حالت است: ‎[type="text"]‎ در CSS هم‌وزنِ یک کلاس حساب
- * می‌شود، پس ‎.elementor input[type="text"]‎ خودش ‎(0,2,1)‎ است و با یک
- * زنجیرهٔ دوکلاسی *مساوی* می‌شود — و در تساوی، هرکدام دیرتر لود شوند
- * می‌برند. برایِ همین ورودی و دکمه‌هایِ فیلد سه‌کلاسی نوشته شده‌اند.
+ * ورودی سخت‌ترین حالت است و دوبار شکست، هر بار یک پله بالاتر:
+ *
+ *   ۱) ‎[type="text"]‎ در CSS هم‌وزنِ یک کلاس است، پس
+ *      ‎.elementor input[type="text"]‎ خودش ‎(0,2,1)‎ می‌شود و زنجیرهٔ
+ *      دوکلاسی را *مساوی* می‌کند.
+ *   ۲) «استایلِ سراسری»ِ المنتور یک پله جلوتر است:
+ *      ‎.elementor-kit-N input:not([type="button"]):not([type="submit"])‎
+ *      — چون ‎:not()‎ وزنِ آرگومانش را می‌گیرد، این ‎(0,3,1)‎ است و با
+ *      زنجیرهٔ سه‌کلاسیِ ما مساوی می‌شود. شیتِ کیت دیرتر لود می‌شود، پس
+ *      سایه و حاشیه و پدینگش رویِ ورودی می‌نشست.
+ *
+ * جوابِ هر دو یکی است: یک عنصرِ بیشتر، نه یک کلاسِ بیشتر — کلاسِ بیشتر
+ * تبِ استایل را (که ‎(0,4,0)‎ است) می‌کشت.
  */
 foreach ([
-    '.zig-search .zig-search__field input.zig-search__input',
-    '.zig-search .zig-search__field button.zig-search__icon-btn',
-    '.zig-search .zig-search__field button.zig-search__clear',
+    '.zig-search form.zig-search__field input.zig-search__input',
+    '.zig-search form.zig-search__field button.zig-search__icon-btn',
+    '.zig-search form.zig-search__field button.zig-search__clear',
+    '.zig-search div.zig-search__section-head button.zig-search__clear-history',
 ] as $selector) {
-    Tests::keeps('زنجیرهٔ سه‌کلاسیِ ' . $selector . ' حاضر است', $section, $selector);
+    Tests::keeps('زنجیرهٔ ' . $selector . ' نامِ تگِ والد را هم دارد', $section, $selector);
+}
+
+/*
+ * و هیچ‌کدام از فرزندانِ فیلد نباید به شکلِ ضعیف‌ترِ قبلی برگردند —
+ * همان چیزی که باگ را ساخت و از رندر معلوم نمی‌شد.
+ *
+ * سنجه رویِ انتخاب‌گرهایِ پارس‌شده اجرا می‌شود نه رویِ متنِ خام، وگرنه
+ * همین توضیحاتِ بالا هم «تطبیق» حساب می‌شدند.
+ */
+$parsed = [];
+
+foreach ($matches[1] as $group) {
+    foreach (explode(',', $group) as $selector) {
+        $selector = trim($selector);
+
+        if ('' !== $selector) {
+            $parsed[] = $selector;
+        }
+    }
+}
+
+foreach ([
+    '.zig-search .zig-search__field ',
+    '.zig-search .zig-search__section-head button',
+] as $weak) {
+    Tests::same(
+        'وزنِ ضعیفِ قبلی برنمی‌گردد: ' . $weak,
+        array_values(array_filter($parsed, static fn(string $s): bool => 0 === strpos($s, $weak))),
+        []
+    );
+}
+
+/*
+ * سقفِ بازه هم باید بماند: اگر روزی کسی یک کلاسِ چهارم به این زنجیره‌ها
+ * اضافه کند، به ‎(0,4,x)‎ می‌رسیم و تبِ استایل بی‌اثر می‌شود.
+ */
+foreach ($matches[1] as $group) {
+    foreach (explode(',', $group) as $selector) {
+        $selector = trim($selector);
+
+        if ('' === $selector) {
+            continue;
+        }
+
+        // ‎:hover‎/‎:focus‎ و شبه‌کلاس‌ها عمداً شمرده نمی‌شوند: قاعدهٔ
+        // حالت طبیعتاً یک پله بالاتر است و کنترلِ همان حالت هم هست.
+        $base    = preg_replace('/:[a-z-]+(\([^)]*\))?/', '', $selector) ?? $selector;
+        $classes = preg_match_all('/\.[a-zA-Z_-][\w-]*/', $base);
+
+        if ($classes <= 3) {
+            continue;
+        }
+
+        Tests::ok('انتخاب‌گر بیش از سه کلاس ندارد: ' . $selector, false);
+    }
 }
 
 /* لینک‌ها هم نامِ تگ می‌گیرند، وگرنه رنگ/زیرخطِ قالب رویشان می‌نشیند */

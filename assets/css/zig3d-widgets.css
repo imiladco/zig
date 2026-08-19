@@ -4835,14 +4835,34 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  *
  * پس هر قاعده با ریشهٔ ‎.zig-search‎ شروع می‌شود و روی تگ‌هایی که قالب‌ها
  * واقعاً استایلشان می‌دهند (‎input‎/‎button‎/‎a‎/‎p‎) نامِ تگ هم به کلاس
- * می‌چسبد. این یعنی ‎(0,2,0)‎ تا ‎(0,2,1)‎:
+ * می‌چسبد.
  *
- *   • از قواعدِ قالب ‎(0,1,1)‎ قوی‌تر است → ظاهرِ طرح برنده می‌شود.
+ * سقفِ این بازه ‎(0,3,2)‎ است و این عدد از یک شکستِ واقعی درآمده، نه از
+ * حدس. «استایلِ سراسریِ» المنتور (Theme Style) برایِ فیلدهایِ فرم این را
+ * تولید می‌کند:
+ *
+ *   .elementor-kit-8 input:not([type="button"]):not([type="submit"])
+ *
+ * که ‎:not()‎ وزنِ آرگومانش را می‌گیرد، پس می‌شود ‎(0,3,1)‎ — دقیقاً
+ * برابرِ ‎.zig-search .zig-search__field input.zig-search__input‎. در
+ * تساوی، ترتیبِ بارگذاری تصمیم می‌گیرد و شیتِ کیت بعد از ما می‌آید؛
+ * یعنی نه‌فقط ‎box-shadow‎، که پس‌زمینه و حاشیه و پدینگِ کیت هم رویِ
+ * ورودی می‌نشست. برایِ همین ‎.zig-search__field‎ نامِ تگش (‎form‎) را
+ * گرفت: یک عنصرِ بیشتر، ‎(0,3,2)‎، و تساوی شکست.
+ *
+ * پس بازهٔ کاری ‎(0,2,0)‎ تا ‎(0,3,2)‎ است:
+ *
+ *   • از قواعدِ قالب و کیت (تا ‎(0,3,1)‎) قوی‌تر است → ظاهرِ طرح برنده
+ *     می‌شود.
  *   • از کنترل‌هایِ المنتور ضعیف‌تر است — آن‌ها ‎{{WRAPPER}} .x‎ یعنی
- *     دست‌کم ‎(0,3,0)‎ → تبِ استایل همچنان بر همه‌چیز می‌چربد.
+ *     ‎(0,4,0)‎، و در مقایسه اول تعدادِ کلاس‌ها شمرده می‌شود نه عنصرها →
+ *     تبِ استایل همچنان بر همه‌چیز می‌چربد.
  *
  * همین بازه است که هم‌زمان «شبیهِ طرح» و «کاملاً قابلِ شخصی‌سازی» را
- * ممکن می‌کند؛ یک درجه بالاتر یا پایین‌تر، یکی از این دو می‌شکند.
+ * ممکن می‌کند؛ یک درجه بالاتر یا پایین‌تر، یکی از این دو می‌شکند. اگر
+ * روزی قالبی از این هم بالاتر رفت، راهِ درست بالا بردنِ کلاس نیست —
+ * چون آن‌وقت تبِ استایل می‌میرد — بلکه افزودنِ نامِ تگ به همان زنجیره‌ای
+ * است که هنوز نگرفته.
  *
  * قاعدهٔ ارتفاع هم همان‌طور که قفل شد: ارتفاعِ پایه فقط مالِ حالتِ بستهٔ
  * پیش‌فرض است و آن هم ‎min-height‎ است نه ‎height‎ی سفت. از لحظه‌ای که
@@ -4930,8 +4950,8 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	box-shadow: none;
 }
 
-.zig-search .zig-search__field button.zig-search__icon-btn,
-.zig-search .zig-search__field button.zig-search__clear {
+.zig-search form.zig-search__field button.zig-search__icon-btn,
+.zig-search form.zig-search__field button.zig-search__clear {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -4952,7 +4972,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	appearance: none;
 }
 
-.zig-search .zig-search__field button.zig-search__icon-btn {
+.zig-search form.zig-search__field button.zig-search__icon-btn {
 	cursor: default;
 }
 
@@ -4963,32 +4983,46 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
  * بر قواعدِ UA اولویت دارند — و عنصری که جاوااسکریپت پنهانش کرده همچنان
  * دیده می‌شود.
  */
-.zig-search .zig-search__field button.zig-search__clear[hidden] {
+.zig-search form.zig-search__field button.zig-search__clear[hidden] {
 	display: none;
 }
 
-.zig-search .zig-search__field button.zig-search__icon-btn svg,
-.zig-search .zig-search__field button.zig-search__icon-btn i,
-.zig-search .zig-search__field button.zig-search__clear svg,
-.zig-search .zig-search__field button.zig-search__clear i {
+.zig-search form.zig-search__field button.zig-search__icon-btn svg,
+.zig-search form.zig-search__field button.zig-search__icon-btn i,
+.zig-search form.zig-search__field button.zig-search__clear svg,
+.zig-search form.zig-search__field button.zig-search__clear i {
 	width: var(--zig-search-icon-size, 22px);
 	height: var(--zig-search-icon-size, 22px);
 	font-size: var(--zig-search-icon-size, 22px);
 }
 
-.zig-search .zig-search__field button.zig-search__clear {
+.zig-search form.zig-search__field button.zig-search__clear {
 	color: var(--zig-search-clear-icon-color, #a1a3a8);
 }
 
-.zig-search .zig-search__field button.zig-search__clear svg,
-.zig-search .zig-search__field button.zig-search__clear i {
+.zig-search form.zig-search__field button.zig-search__clear svg,
+.zig-search form.zig-search__field button.zig-search__clear i {
 	width: var(--zig-search-clear-icon-size, 16px);
 	height: var(--zig-search-clear-icon-size, 16px);
 	font-size: var(--zig-search-clear-icon-size, 16px);
 }
 
-.zig-search .zig-search__field input.zig-search__input {
+/*
+ * ورودی کلِ ارتفاعِ قرص را می‌گیرد، نه یک جعبهٔ کوتاه‌ترِ وسط‌چین.
+ *
+ * ‎align-self: stretch‎ جلوی ‎align-items: center‎ی ظرف را می‌گیرد؛
+ * بدونش ورودی فقط به‌اندازهٔ خطِ متنش بلند بود و باقیِ ۴۶ پیکسل ناحیهٔ
+ * غیرِقابلِ‌کلیک می‌ماند — یعنی کلیک نزدیکِ لبهٔ بالا/پایینِ قرص اصلاً
+ * فوکوس نمی‌داد. ارتفاعِ خودش ‎auto‎ می‌ماند تا کشش را همان
+ * ‎stretch‎ بدهد نه یک عددِ ثابت.
+ *
+ * وسط‌چینیِ عمودیِ متن دستی نیست: خودِ ‎input‎ متنش را در ارتفاعش وسط
+ * می‌گذارد، پس ‎padding: 0‎ سرِ جایش می‌ماند و لازم نیست ارتفاع را با
+ * پدینگ بسازیم.
+ */
+.zig-search form.zig-search__field input.zig-search__input {
 	flex: 1 1 auto;
+	align-self: stretch;
 	background-image: none;
 	width: auto;
 	min-width: 0;
@@ -5009,14 +5043,14 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	appearance: none;
 }
 
-.zig-search .zig-search__field input.zig-search__input:focus {
+.zig-search form.zig-search__field input.zig-search__input:focus {
 	background: transparent;
 	border: 0;
 	outline: 0;
 	box-shadow: none;
 }
 
-.zig-search .zig-search__field input.zig-search__input::placeholder {
+.zig-search form.zig-search__field input.zig-search__input::placeholder {
 	color: var(--zig-search-placeholder-color, #8d96a8);
 	opacity: 1;
 }
@@ -5058,7 +5092,7 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	color: var(--zig-search-heading-color, #171923);
 }
 
-.zig-search .zig-search__section-head button.zig-search__clear-history {
+.zig-search div.zig-search__section-head button.zig-search__clear-history {
 	margin: 0;
 	padding: 0;
 	background: transparent;
