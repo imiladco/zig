@@ -385,7 +385,17 @@ foreach ($matches[1] as $group) {
  */
 Tests::keeps('لبهٔ چپِ پوسته به‌اندازهٔ پدینگ بیرون کشیده می‌شود', $section, 'left: calc(var(--zig-search-shell-pad-left, 8px) * -1);');
 Tests::keeps('لبهٔ راستِ پوسته هم همین‌طور', $section, 'right: calc(var(--zig-search-shell-pad-right, 8px) * -1);');
-Tests::blocks('لبه‌هایِ پوسته دیگر صفر نیستند', $section, 'inset-inline: 0;');
+/*
+ * سنجه فقط داخلِ بلوکِ خودِ پوسته را می‌بیند، نه کلِ بخش را: عنصرهایِ
+ * دیگر (مثلِ دستگیرهٔ شیت) حق دارند لبهٔ صفر داشته باشند.
+ */
+preg_match('/\.zig-search\.is-open \.zig-search__shell \{([^}]*)\}/', $section, $shell_block);
+
+Tests::ok('بلوکِ پوسته پیدا شد', isset($shell_block[1]));
+Tests::ok(
+    'لبه‌هایِ پوسته دیگر صفر نیستند',
+    isset($shell_block[1]) && false === strpos($shell_block[1], 'inset-inline: 0;')
+);
 
 /*
  * و همان کنترلِ پدینگ باید این دو متغیر را هم بنویسد، وگرنه تغییرِ
@@ -732,3 +742,78 @@ Tests::blocks('بستن، is-open را زود برنمی‌دارد', $search_js
 
 /* و نشانهٔ «قبلاً بسته شده» خودِ حالتِ گذار است، نه نبودِ is-open */
 Tests::keeps('تکرارِ بستن از روی حالتِ گذار تشخیص داده می‌شود', $search_js, "this.root.classList.contains('is-closing')");
+
+/* ==========================================================================
+ * موبایل — شیتِ پایین
+ *
+ * رفتار همان است که خواسته شد: در موبایل فقط یک آیکون؛ با کلیک، شیتِ
+ * تمام‌عرض از پایین می‌آید و تمام‌ارتفاع می‌شود؛ کشیدنِ دستگیره به پایین
+ * با منطقِ درست می‌بنددش.
+ *
+ * مقادیرِ دیداری (اندازه‌ها، رنگ‌ها، شعاعِ گوشه) هنوز از فیگما نیامده‌اند
+ * و همه پشتِ ‎var()‎ با پیش‌فرضِ موقت‌اند — این گروه رفتار و ساختار را
+ * می‌سنجد، نه ظاهر را.
+ * ======================================================================= */
+
+Tests::group('ویجتِ سرچ › شیتِ موبایل');
+
+Tests::keeps('دکمهٔ موبایل رندر می‌شود', $html, 'zig-search__trigger');
+Tests::keeps('و همان پنل را اعلام می‌کند', $html, 'aria-controls="zig-search-panel-testid"');
+Tests::ok(
+    'دکمه در حالتِ بسته aria-expanded=false دارد',
+    (bool) preg_match('/<button[^>]*class="zig-search__trigger"[^>]*aria-expanded="false"/', $html)
+);
+Tests::keeps('دستگیرهٔ کشیدن رندر می‌شود', $html, 'zig-search__handle');
+
+/*
+ * دستگیره فقط یک میان‌برِ لمسی است، نه تنها راهِ بستن؛ پس از درختِ
+ * دسترسی‌پذیری بیرون می‌ماند و فوکوس نمی‌گیرد. Esc و ضربدر و لایهٔ تیره
+ * همچنان کار می‌کنند.
+ */
+Tests::ok(
+    'دستگیره برایِ صفحه‌خوان نویز نمی‌سازد',
+    (bool) preg_match('/<span class="zig-search__handle" aria-hidden="true">/', $html)
+);
+
+$controls_sheet = zig_collect_controls(Search::class);
+Tests::ok('توضیحِ دکمهٔ موبایل قابلِ تنظیم است', in_array('trigger_label', $controls_sheet, true));
+
+/* --- CSS --- */
+
+Tests::keeps('شیت زیرِ بریک‌پوینتِ موبایلِ المنتور فعال می‌شود', $section, '@media (max-width: 767px) {');
+Tests::keeps('در حالتِ بسته بیرونِ صفحه می‌ماند', $section, 'transform: translateY(100%);');
+Tests::keeps('و باز شدن یعنی لغزش به بالا', $section, 'transform: translateY(var(--zig-search-sheet-drag, 0px));');
+
+/*
+ * ‎display: none‎ی حالتِ بسته، مقدارِ شروعِ ‎transform‎ را از مرورگر
+ * می‌گرفت و لغزش اصلاً اجرا نمی‌شد. پس شیت با ‎visibility‎ پنهان می‌شود،
+ * و تأخیرش هم‌اندازهٔ مدتِ گذار است تا موقعِ بستن تا آخر دیده شود.
+ */
+Tests::keeps('پنهان‌شدن با visibility است نه display', $section, 'visibility 0s linear var(--zig-search-anim, 150ms)');
+
+/*
+ * بدونِ ‎touch-action: none‎ مرورگر کشیدنِ عمودی را اسکرولِ صفحه می‌فهمد
+ * و رویداد را از ما می‌گیرد؛ آن‌وقت شیت فقط گاهی حرکت می‌کند.
+ */
+Tests::keeps('دستگیره اشاره‌گر را از مرورگر پس می‌گیرد', $section, 'touch-action: none;');
+
+/* حینِ کشیدن گذار خاموش است، وگرنه انگشت و شیت روی هم نمی‌افتند */
+Tests::keeps('کشیدن بدونِ تأخیر است', $section, ".zig-search.is-dragging .zig-search__shell {\n\t\ttransition: none;\n\t}");
+
+Tests::keeps('صفحهٔ پشت قفل می‌شود', $section, '.zig-search-sheet-open,');
+
+/* --- JS --- */
+
+Tests::keeps('آستانهٔ مسافت تعریف شده', $search_js, 'SHEET_DISMISS_RATIO');
+Tests::keeps('آستانهٔ سرعت هم', $search_js, 'SHEET_FLING_SPEED');
+Tests::keeps('کشیدن فقط رو به پایین است', $search_js, 'Math.max(0, event.clientY - startY)');
+Tests::keeps('اشاره‌گر گرفته می‌شود تا بیرونِ دستگیره هم دنبال شود', $search_js, 'setPointerCapture');
+Tests::keeps('جابه‌جاییِ دستی بعدِ رها شدن پاک می‌شود', $search_js, "removeProperty('--zig-search-sheet-drag')");
+
+/*
+ * مرزِ موبایل نباید دوبار نوشته شود. اگر جاوااسکریپت عددِ بریک‌پوینت را
+ * جدا نگه دارد، روزی که یکی‌شان عوض شود رفتار و ظاهر از هم جدا می‌افتند
+ * بدونِ اینکه چیزی خطا بدهد. پس حالت از رویِ خودِ CSS خوانده می‌شود.
+ */
+Tests::keeps('حالتِ شیت از روی CSS خوانده می‌شود', $search_js, "'none' !== window.getComputedStyle(this.trigger).display");
+Tests::blocks('و عددِ بریک‌پوینت در JS تکرار نشده', $search_js, '767');

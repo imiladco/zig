@@ -5445,6 +5445,176 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 	}
 }
 
+/* ---------------------------- موبایل: شیتِ پایین ---------------------------- */
+
+/*
+ * دکمهٔ موبایل و دستگیره همیشه رندر می‌شوند و اینجا پنهانند؛ فقط زیرِ
+ * بریک‌پوینت دیده می‌شوند. برعکسش — رندرِ شرطی سمتِ سرور — یعنی کشِ
+ * صفحه برایِ یک عرضِ اشتباه ذخیره می‌شود.
+ */
+.zig-search .zig-search__trigger,
+.zig-search .zig-search__handle {
+	display: none;
+}
+
+/*
+ * ۷۶۷ همان مرزی است که خودِ المنتور «موبایل» می‌داند. عدد اینجا ثابت
+ * نوشته شده و نه از یک متغیر، چون رسانه‌کوئری نمی‌تواند مقدارش را از
+ * ‎var()‎ بگیرد — تا وقتی که پشتیبانیِ ‎@custom-media‎ بیاید، هر راهِ
+ * دیگری یعنی تشخیصِ عرض با جاوااسکریپت و یک پرشِ دیداری تا وقتی که
+ * اسکریپت برسد.
+ */
+@media (max-width: 767px) {
+
+	.zig-search {
+		min-height: 0;
+		width: auto;
+	}
+
+	.zig-search .zig-search__trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: var(--zig-search-trigger-size, 40px);
+		height: var(--zig-search-trigger-size, 40px);
+		margin: 0;
+		padding: 0;
+		background: var(--zig-search-trigger-bg, transparent);
+		border: 0;
+		border-radius: var(--zig-search-trigger-radius, 999px);
+		box-shadow: none;
+		color: var(--zig-search-trigger-color, #687083);
+		line-height: 0;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-search .zig-search__trigger svg,
+	.zig-search .zig-search__trigger i {
+		width: var(--zig-search-trigger-icon-size, 22px);
+		height: var(--zig-search-trigger-icon-size, 22px);
+		font-size: var(--zig-search-trigger-icon-size, 22px);
+	}
+
+	/*
+	 * شیت همیشه ‎fixed‎ است، نه فقط وقتی باز است.
+	 *
+	 * اگر در حالتِ بسته ‎display: none‎ می‌بود، مرورگر مقدارِ شروعِ
+	 * ‎transform‎ را نمی‌داشت و لغزش اصلاً اجرا نمی‌شد. پس به‌جایش با
+	 * ‎translateY(100%)‎ بیرونِ صفحه می‌ماند و ‎visibility‎ از دسترسِ
+	 * فوکوس و کلیک درش می‌آورد.
+	 *
+	 * تأخیرِ ‎visibility‎ عمدی است: موقعِ بستن باید تا آخرِ لغزش دیده
+	 * شود، ولی موقعِ باز شدن همان لحظه.
+	 */
+	.zig-search .zig-search__shell {
+		position: fixed;
+		inset: auto 0 0 0;
+		z-index: 60;
+		height: var(--zig-search-sheet-height, 100dvh);
+		max-height: 100%;
+		transform: translateY(100%);
+		visibility: hidden;
+		transition: transform var(--zig-search-anim, 150ms) ease-out,
+			visibility 0s linear var(--zig-search-anim, 150ms);
+	}
+
+	.zig-search.is-open .zig-search__shell {
+		position: fixed;
+		inset: auto 0 0 0;
+		/*
+		 * ‎--zig-search-sheet-drag‎ را جاوااسکریپت هنگامِ کشیدن می‌نویسد؛
+		 * بقیهٔ وقت‌ها صفر است و شیت سرِ جایش می‌ماند.
+		 */
+		transform: translateY(var(--zig-search-sheet-drag, 0px));
+		visibility: visible;
+		transition: transform var(--zig-search-anim, 150ms) ease-out, visibility 0s;
+		border-radius: var(--zig-search-sheet-radius, 24px) var(--zig-search-sheet-radius, 24px) 0 0;
+	}
+
+	/* بسته‌شدن: همان لغزش، برعکس */
+	.zig-search.is-open.is-closing .zig-search__shell {
+		transform: translateY(100%);
+		transition: transform var(--zig-search-anim, 150ms) ease-in, visibility 0s linear var(--zig-search-anim, 150ms);
+	}
+
+	/*
+	 * انگشت باید بدونِ تأخیر زیرِ شیت باشد. با گذارِ فعال، هر جابه‌جایی
+	 * ‎150ms‎ عقب می‌افتاد و کشیدن چسبناک حس می‌شد.
+	 */
+	.zig-search.is-dragging .zig-search__shell {
+		transition: none;
+	}
+
+	/*
+	 * در شیت، قاب و پنل محو نمی‌شوند — خودِ لغزش کارِ ورود و خروج را
+	 * می‌کند و محوشدنِ هم‌زمان، حرکت را گِل‌آلود نشان می‌دهد. لایهٔ تیره
+	 * ولی همچنان محو می‌شود.
+	 */
+	.zig-search .zig-search__surface,
+	.zig-search .zig-search__panel {
+		opacity: 1;
+		transition: none;
+	}
+
+	.zig-search .zig-search__surface {
+		border-radius: var(--zig-search-sheet-radius, 24px) var(--zig-search-sheet-radius, 24px) 0 0;
+	}
+
+	.zig-search .zig-search__handle {
+		position: relative;
+		display: block;
+		flex: none;
+		align-self: center;
+		width: var(--zig-search-handle-width, 44px);
+		height: var(--zig-search-handle-height, 4px);
+		margin-block-end: var(--zig-search-handle-gap, 8px);
+		border-radius: 999px;
+		background-color: var(--zig-search-handle-color, #d7dce5);
+		/*
+		 * بدونِ این، مرورگر کشیدنِ عمودی را اسکرولِ صفحه می‌فهمد و رویداد
+		 * را از ما می‌گیرد؛ آن‌وقت شیت فقط گاهی حرکت می‌کند.
+		 */
+		touch-action: none;
+		cursor: grab;
+	}
+
+	.zig-search.is-dragging .zig-search__handle {
+		cursor: grabbing;
+	}
+
+	/*
+	 * ناحیهٔ گرفتن از خودِ خط بزرگ‌تر است: یک نوارِ چهار برابرِ ارتفاع،
+	 * بدونِ اینکه چیزی دیده شود. خطِ ۴ پیکسلی با انگشت عملاً قابلِ گرفتن
+	 * نیست.
+	 */
+	.zig-search .zig-search__handle::before {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		inset-block-start: 0;
+		height: var(--zig-search-handle-hit, 32px);
+	}
+
+	/* محتوا اسکرول می‌شود، نه خودِ شیت — وگرنه دستگیره هم بالا می‌رود */
+	.zig-search .zig-search__panel {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+/*
+ * صفحه پشتِ شیت نباید اسکرول شود. کلاس رویِ ‎<html>‎ می‌نشیند نه ‎<body>‎،
+ * چون بعضی قالب‌ها خودشان رویِ بادی ‎overflow‎ می‌نویسند.
+ */
+.zig-search-sheet-open,
+.zig-search-sheet-open body {
+	overflow: hidden;
+}
+
 /*
  * ناحیهٔ اعلام: دیده نمی‌شود ولی خوانده می‌شود.
  *

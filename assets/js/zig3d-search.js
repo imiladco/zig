@@ -27,6 +27,16 @@
 
 	var FALLBACK_STATUSES = [404, 401, 403];
 
+	/*
+	 * کشیدنِ شیت به پایین، دو راهِ بستن دارد و هر دو لازم‌اند:
+	 *
+	 *   • مسافت — یک‌چهارمِ ارتفاعِ شیت. کمتر از این یعنی «نظرم عوض شد».
+	 *   • سرعت — پرتابِ کوتاه و تند هم باید ببندد، وگرنه کاربر مجبور است
+	 *     نصفِ صفحه را با انگشت پایین بکشد تا باور کنیم.
+	 */
+	var SHEET_DISMISS_RATIO = 0.25;
+	var SHEET_FLING_SPEED = 0.5; // پیکسل بر میلی‌ثانیه
+
 	function boot(root) {
 		if (root.zigSearch) {
 			return;
@@ -45,6 +55,9 @@
 		this.input = root.querySelector('.zig-search__input');
 		this.clearBtn = root.querySelector('.zig-search__clear');
 		this.panel = root.querySelector('.zig-search__panel');
+		this.shell = root.querySelector('.zig-search__shell');
+		this.trigger = root.querySelector('.zig-search__trigger');
+		this.handle = root.querySelector('.zig-search__handle');
 
 		this.recentSection = root.querySelector('.zig-search__section--recent');
 		this.recentChips = root.querySelector('[data-role="recent-chips"]');
@@ -150,6 +163,8 @@
 				self.close(true);
 			}
 		});
+
+		this.bindSheet();
 
 		if (this.shortcut) {
 			document.addEventListener('keydown', function (event) {
@@ -569,6 +584,146 @@
 	 * ‎prefers-reduced-motion‎، یا هر قاعدهٔ دیگری — خودبه‌خود لحاظ
 	 * می‌شود، و لازم نیست جاوااسکریپت هیچ‌کدامشان را بشناسد.
 	 */
+	/* ------------------------------------------------------------------
+	 * شیتِ موبایل
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * «الان شیتیم یا اورلی؟» — از رویِ خودِ CSS خوانده می‌شود، نه از یک
+	 * عددِ بریک‌پوینت که در جاوااسکریپت تکرار شده باشد.
+	 *
+	 * دو جا نوشتنِ یک مرز یعنی روزی که یکی‌شان عوض شود، رفتار و ظاهر از هم
+	 * جدا می‌افتند بی‌آنکه چیزی خطا بدهد. دکمهٔ موبایل فقط در حالتِ شیت
+	 * نمایش دارد، پس خودش دقیق‌ترین نشانه است.
+	 */
+	Search.prototype.isSheet = function () {
+		if (!this.trigger || typeof window.getComputedStyle !== 'function') {
+			return false;
+		}
+
+		return 'none' !== window.getComputedStyle(this.trigger).display;
+	};
+
+	/** قفلِ اسکرولِ صفحه پشتِ شیت؛ در حالتِ اورلی اصلاً اعمال نمی‌شود */
+	Search.prototype.lockScroll = function (locked) {
+		var root = document.documentElement;
+
+		if (!root) {
+			return;
+		}
+
+		if (locked && this.isSheet()) {
+			root.classList.add('zig-search-sheet-open');
+
+			return;
+		}
+
+		root.classList.remove('zig-search-sheet-open');
+	};
+
+	Search.prototype.bindSheet = function () {
+		var self = this;
+
+		if (this.trigger) {
+			this.trigger.addEventListener('click', function () {
+				/*
+				 * فوکوس خودش ‎open()‎ را صدا می‌زند، ولی صریح هم صدایش
+				 * می‌زنیم: در بعضی مرورگرهایِ موبایل ‎focus()‎ی برنامه‌ای
+				 * رویدادِ ‎focus‎ را نمی‌دهد و شیت بسته می‌ماند.
+				 */
+				self.input.focus();
+				self.open();
+			});
+		}
+
+		if (!this.handle || typeof window.PointerEvent !== 'function') {
+			return;
+		}
+
+		var startY = 0;
+		var lastY = 0;
+		var lastTime = 0;
+		var speed = 0;
+		var active = false;
+
+		var offset = function (event) {
+			// فقط پایین؛ کشیدن به بالا هیچ کاری نمی‌کند
+			return Math.max(0, event.clientY - startY);
+		};
+
+		var begin = function (event) {
+			if (!self.isOpen() || !self.isSheet() || event.isPrimary === false) {
+				return;
+			}
+
+			active = true;
+			startY = event.clientY;
+			lastY = event.clientY;
+			lastTime = event.timeStamp;
+			speed = 0;
+
+			self.root.classList.add('is-dragging');
+
+			/*
+			 * گرفتنِ اشاره‌گر یعنی حرکت و رها شدن حتی وقتی انگشت از رویِ
+			 * دستگیره بیرون رفته هم به ما می‌رسد — که در کشیدنِ به پایین
+			 * تقریباً همیشه اتفاق می‌افتد.
+			 */
+			if (self.handle.setPointerCapture) {
+				self.handle.setPointerCapture(event.pointerId);
+			}
+		};
+
+		var move = function (event) {
+			if (!active) {
+				return;
+			}
+
+			var elapsed = event.timeStamp - lastTime;
+
+			if (elapsed > 0) {
+				speed = (event.clientY - lastY) / elapsed;
+				lastY = event.clientY;
+				lastTime = event.timeStamp;
+			}
+
+			self.root.style.setProperty('--zig-search-sheet-drag', offset(event) + 'px');
+		};
+
+		var end = function (event) {
+			if (!active) {
+				return;
+			}
+
+			active = false;
+			self.root.classList.remove('is-dragging');
+
+			var dragged = offset(event);
+			var height = self.shell ? self.shell.offsetHeight : 0;
+			var farEnough = height > 0 && dragged > height * SHEET_DISMISS_RATIO;
+			var fastEnough = speed > SHEET_FLING_SPEED;
+
+			/*
+			 * جابه‌جاییِ دستی همیشه پاک می‌شود — چه ببندیم چه نه.
+			 *
+			 * اگر بسته شود، خودِ ‎is-closing‎ شیت را تا ته پایین می‌برد و
+			 * ماندنِ این مقدار یعنی جمعِ دو جابه‌جایی. اگر نبندیم، صفر شدنش
+			 * همان بازگشتِ نرم به بالاست، چون گذار دوباره فعال شده.
+			 */
+			self.root.style.removeProperty('--zig-search-sheet-drag');
+
+			if (farEnough || fastEnough) {
+				// مقدارِ تایپ‌شده می‌ماند — بستن با کشیدن، پاک‌کردن نیست
+				self.close(true);
+			}
+		};
+
+		this.handle.addEventListener('pointerdown', begin);
+		this.handle.addEventListener('pointermove', move);
+		this.handle.addEventListener('pointerup', end);
+		this.handle.addEventListener('pointercancel', end);
+	};
+
 	Search.prototype.transitionMs = function (element) {
 		if (!element || typeof window.getComputedStyle !== 'function') {
 			return 0;
@@ -617,6 +772,12 @@
 		}
 
 		this.input.setAttribute('aria-expanded', 'true');
+
+		if (this.trigger) {
+			this.trigger.setAttribute('aria-expanded', 'true');
+		}
+
+		this.lockScroll(true);
 
 		/*
 		 * باز شدنِ دوباره وسطِ محوشدن: کلاسِ گذار برداشته می‌شود و هر سه
@@ -676,6 +837,18 @@
 		this.clearBtn.hidden = true;
 		this.input.setAttribute('aria-expanded', 'false');
 		this.input.setAttribute('aria-activedescendant', '');
+
+		if (this.trigger) {
+			this.trigger.setAttribute('aria-expanded', 'false');
+		}
+
+		/*
+		 * قفلِ اسکرول همین‌جا برداشته می‌شود نه در ‎settle‎: تا آخرِ لغزش
+		 * صبر کردن یعنی صفحه چند صد میلی‌ثانیه بعد از تصمیمِ کاربر آزاد
+		 * می‌شود، و اسکرولی که همان لحظه شروع کرده بی‌جواب می‌ماند.
+		 */
+		this.lockScroll(false);
+		this.root.style.removeProperty('--zig-search-sheet-drag');
 
 		/*
 		 * ترتیب مهم است: اول کلاس برداشته می‌شود تا محوشدن شروع شود، و

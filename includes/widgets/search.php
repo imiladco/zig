@@ -242,6 +242,13 @@ final class Search extends Widget_Base {
             'default' => __('جست‌وجویِ محصول…', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('trigger_label', [
+            'label'       => __('توضیحِ دکمهٔ موبایل برایِ صفحه‌خوان', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => __('باز کردنِ جست‌وجو', 'zig3d-widgets'),
+            'description' => __('در حالتِ موبایل، دکمه فقط یک آیکون است و هیچ متنی ندارد؛ بدونِ این توضیح، صفحه‌خوان چیزی برایِ خواندن ندارد.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('empty_message', [
             'label'   => __('پیامِ بدونِ نتیجه', 'zig3d-widgets'),
             'type'    => Controls_Manager::TEXT,
@@ -1046,6 +1053,21 @@ final class Search extends Widget_Base {
          * برایِ کلیک. ‎position: fixed‎ است تا کلِ ویوپورت را بگیرد، حتی
          * وقتی ویجت داخلِ یک هدرِ باریک نشسته باشد.
          */
+        /*
+         * دکمهٔ موبایل: در حالتِ شیت، تنها چیزی است که دیده می‌شود.
+         *
+         * همیشه رندر می‌شود و CSS پنهانش می‌کند، نه برعکس — تشخیصِ
+         * دستگاه سمتِ سرور یعنی کشِ صفحه برایِ یک عرضِ اشتباه ذخیره
+         * می‌شود. ‎aria-expanded‎ دارد چون همان پنلی را باز می‌کند که
+         * ورودی هم بازش می‌کند.
+         */
+        printf(
+            '<button type="button" class="zig-search__trigger" aria-expanded="false" aria-controls="%s" aria-label="%s">%s</button>',
+            esc_attr($panel_id),
+            esc_attr((string) ($settings['trigger_label'] ?? '')),
+            $this->render_icon($settings, 'search_icon')
+        );
+
         echo '<div class="zig-search__backdrop" hidden></div>';
 
         /*
@@ -1068,6 +1090,15 @@ final class Search extends Widget_Base {
         // پوستِ کارت: یک لایهٔ تزئینیِ محض که فقط شفافیتش محو می‌شود،
         // تا جعبهٔ پوسته موقعِ بسته‌شدن دست‌نخورده بماند.
         echo '<span class="zig-search__surface" aria-hidden="true"></span>';
+
+        /*
+         * دستگیرهٔ کشیدن. در دسکتاپ دیده نمی‌شود.
+         *
+         * ‎aria-hidden‎ است و فوکوس نمی‌گیرد چون هیچ کاری نمی‌کند که از
+         * راهِ دیگری ممکن نباشد: بستن با Esc، با دکمهٔ ضربدر، و با کلیک
+         * رویِ لایهٔ تیره هم هست. کشیدن یک میان‌برِ لمسی است، نه تنها راه.
+         */
+        echo '<span class="zig-search__handle" aria-hidden="true"></span>';
 
         $this->render_field($settings, $panel_id);
         $this->render_panel($settings, $panel_id);
