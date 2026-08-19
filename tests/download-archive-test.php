@@ -151,7 +151,22 @@ Tests::ok('Compatibility uses individual semantic model tokens', false !== strpo
 Tests::ok('Compatibility expansion is an accessible local button', false !== strpos($widget_source, 'zig-download-card__models-toggle') && false !== strpos($widget_source, 'aria-expanded="false" aria-controls="%s"'));
 Tests::ok('Compatibility uses one heading with its dynamic total', false !== strpos($widget_source, 'zig-download-card__compatibility-separator') && false !== strpos($widget_source, 'zig-download-card__models-count') && false === strpos($widget_source, 'zig-download-card__compatibility-title'));
 Tests::ok('Compatibility heading cannot distribute its count to another edge', false !== strpos($css_source, '.zig-download-card__compatibility-head') && false === strpos($css_source, '.zig-download-card__compatibility-head { display: flex'));
-Tests::ok('Frontend asset version was advanced for the current widget assets', false !== strpos(file_get_contents($root . '/zig3d-elementor-widgets.php'), "define('ZIG3D_WIDGETS_VERSION', '1.24.0')"));
+/*
+ * The point of this check is cache busting: the version that ships these
+ * assets must not be older than the one they were written for. It used to
+ * pin the literal '1.24.0', which meant every later release broke a test
+ * about a widget it had not touched. A floor keeps the guarantee and drops
+ * the false alarm.
+ */
+preg_match(
+    "/define\('ZIG3D_WIDGETS_VERSION', '([^']+)'\)/",
+    (string) file_get_contents($root . '/zig3d-elementor-widgets.php'),
+    $version_match
+);
+Tests::ok(
+    'Frontend asset version was advanced for the current widget assets',
+    isset($version_match[1]) && version_compare($version_match[1], '1.24.0', '>=')
+);
 Tests::ok('Header regions explicitly own the RTL start edge', false !== strpos($css_source, '.zig-download-card__category,') && false !== strpos($css_source, 'direction: rtl;') && false !== strpos($css_source, 'text-align: start;'));
 Tests::ok('Compatibility chips use RTL start wrapping without distribution', false !== strpos($css_source, '.zig-download-card__models { display: flex; flex-wrap: wrap; justify-content: flex-start;') && false === strpos($css_source, '.zig-download-card__models { display: flex; flex-wrap: wrap; justify-content: space-between;'));
 Tests::ok('Every expandable region includes widget and post identity', false !== strpos($widget_source, "sanitize_html_class(\$this->get_id() . '-' . \$id)"));
