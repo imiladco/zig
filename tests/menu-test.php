@@ -99,7 +99,18 @@ if (!function_exists('wp_count_posts')) {
  * کش هم مسیرِ واقعیِ محصول است، نه یک درِ پشتی.
  */
 if (!function_exists('get_the_post_thumbnail')) {
-    function get_the_post_thumbnail($id = 0, $size = '', $attr = []) { return ''; }
+    /*
+     * پیش‌فرض خالی است — همان چیزی که بیشترِ سنجه‌ها فرض می‌کنند — ولی
+     * شناسه‌ای که در ‎__zig_thumbs‎ ثبت شده باشد یک ‎<img>‎ی واقعی می‌گیرد.
+     * برایِ سنجیدنِ افتادنِ کارت به عکسِ محصول، وقتی خودِ دسته عکس ندارد.
+     */
+    function get_the_post_thumbnail($id = 0, $size = '', $attr = []) {
+        if (empty($GLOBALS['__zig_thumbs'][$id])) {
+            return '';
+        }
+
+        return '<img src="https://zig3d.test/product-thumb/' . (int) $id . '.jpg" />';
+    }
 }
 
 /** کلیدِ کشِ پرفروش‌ترین‌ها، همان‌طور که ‎Menu_Tree‎ می‌سازدش */
@@ -485,7 +496,10 @@ Tests::keeps('نامِ دستی بر نامِ دسته می‌چربد', $html_c
 Tests::keeps('تصویرِ دستی بر تصویرِ دسته می‌چربد', $html_cards_cat, 'src="https://zig3d.test/custom.png"');
 Tests::keeps('پیوندِ دستی هم همین‌طور', $html_cards_cat, 'href="https://zig3d.test/custom-link"');
 
-/* دسته‌ای بی‌تصویر — کارت بدونِ ‎<img>‎، نه یک تگِ شکسته */
+/*
+ * دسته‌ای بی‌تصویر و بی‌محصولِ پرفروشِ کش‌شده — کارت بدونِ ‎<img>‎، نه
+ * یک تگِ شکسته.
+ */
 $html_no_thumb = $render([
     'menu_id'         => 7,
     'mega_item'       => '1',
@@ -495,6 +509,34 @@ $html_no_thumb = $render([
 
 Tests::keeps('کارتِ دستهٔ بی‌تصویر همچنان رندر می‌شود', $html_no_thumb, '<bdi>زیردستهٔ دو</bdi>');
 Tests::blocks('ولی تگِ تصویر نمی‌سازد', $html_no_thumb, '<img');
+
+/*
+ * همان دسته، این‌بار با یک محصولِ پرفروشِ کش‌شده — دسته خودش عکس ندارد
+ * ولی کارت آن را از رویِ اولین محصولش قرض می‌گیرد. بدونِ این، کارت فقط
+ * متن می‌شد در حالی که در طرح همهٔ کارت‌ها عکس دارند.
+ */
+set_transient(zig_popular_key(102, 1), [777], 0);
+$GLOBALS['__zig_thumbs'][777] = true;
+
+$html_product_fallback = $render([
+    'menu_id'         => 7,
+    'mega_item'       => '1',
+    'mega_cards'      => 1,
+    'mega_card_items' => [['_id' => 'g4b', 'card_category' => '102']],
+]);
+
+Tests::keeps(
+    'بی‌تصویرِ دسته، عکسِ پرفروش‌ترین محصولش را قرض می‌گیرد',
+    $html_product_fallback,
+    'src="https://zig3d.test/product-thumb/777.jpg"'
+);
+
+/* و اگر دسته خودش عکس داشته باشد، این افتادن به محصول اصلاً لازم نمی‌شود */
+Tests::blocks(
+    'دسته‌ای که عکسِ خودش را دارد، سراغِ محصول نمی‌رود',
+    $html_cards_cat,
+    'product-thumb'
+);
 
 /* ردیفی که فقط دسته دارد و نه نام، دیگر کارتِ خالی حساب نمی‌شود */
 $html_category_only = $render([

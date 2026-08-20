@@ -381,7 +381,7 @@ final class Menu extends Widget_Base {
         $card->add_control('card_image', [
             'label'       => __('تصویر', 'zig3d-widgets'),
             'type'        => Controls_Manager::MEDIA,
-            'description' => __('خالی یعنی تصویرِ ووکامرسِ دسته، اگر دسته‌ای انتخاب شده باشد.', 'zig3d-widgets'),
+            'description' => __('خالی یعنی تصویرِ ووکامرسِ دسته، اگر دسته‌ای انتخاب شده باشد؛ آن هم نبود، تصویرِ پرفروش‌ترین محصولِ همان دسته می‌آید.', 'zig3d-widgets'),
         ]);
 
         $card->add_control('card_link', [
@@ -1888,16 +1888,37 @@ final class Menu extends Widget_Base {
 
         $attachment_id = Menu_Tree::category_image_id($term_id);
 
-        if ($attachment_id <= 0) {
+        if ($attachment_id > 0) {
+            $image = wp_get_attachment_image($attachment_id, 'medium', false, [
+                'class'   => 'zig-menu__card-image',
+                'loading' => 'lazy',
+            ]);
+
+            if ('' !== (string) $image) {
+                return '<span class="zig-menu__card-media">' . $image . '</span>';
+            }
+        }
+
+        /*
+         * دسته‌ای که خودش تصویر ندارد — که در ووکامرس معمول است، چون
+         * آن فیلد اختیاری و کم‌دیده‌شده است — تصویرِ پرفروش‌ترین
+         * محصولش را قرض می‌گیرد؛ همان تابعی که ستونِ «محبوب‌ترین‌ها» هم
+         * استفاده می‌کند، پس کش و اولویتِ فروش را رایگان به ارث می‌برد.
+         * بدونِ این، کارت فقط متن می‌شد، در حالی که در طرح همهٔ کارت‌ها
+         * عکس دارند.
+         */
+        $fallback = Menu_Tree::popular_products($term_id, 1);
+
+        if ([] === $fallback) {
             return '';
         }
 
-        $image = wp_get_attachment_image($attachment_id, 'medium', false, [
+        $thumb = get_the_post_thumbnail($fallback[0], 'medium', [
             'class'   => 'zig-menu__card-image',
             'loading' => 'lazy',
         ]);
 
-        return '' !== (string) $image ? '<span class="zig-menu__card-media">' . $image . '</span>' : '';
+        return '' !== (string) $thumb ? '<span class="zig-menu__card-media">' . $thumb . '</span>' : '';
     }
 
     /** اولین مقدارِ ناخالیِ تنظیمات، وگرنه پیش‌فرض */
