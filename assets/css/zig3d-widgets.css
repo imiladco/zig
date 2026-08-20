@@ -6657,16 +6657,46 @@ nav.zig-menu {
    کانفیگ محصول
    ========================================================================== */
 
+/*
+ * رنگ‌ها/جعبه‌ها همان دیزاین‌اند — نه چون این فایل قرار است تصمیمِ نهایی
+ * بگیرد، بلکه چون هر کنترلِ استایلِ متناظر در پنل با {{WRAPPER}} می‌آید و
+ * طبقِ توضیحِ بالای فایل همیشه بر این‌ها می‌چربد؛ این‌ها فقط پیش‌فرضِ
+ * جعبه‌بازنشده‌اند تا ویجت بدونِ دست‌زدن به هیچ کنترلی شبیهِ طرح باشد.
+ */
 .zig-configurator {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
+	background: #12151d;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 20px;
+	padding: 28px;
 }
 
 .zig-configurator__header {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
+}
+
+.zig-configurator__title {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	color: #f5f5f7;
+}
+
+.zig-configurator__subtitle {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.6;
+	color: #9aa1b1;
+}
+
+.zig-configurator__label {
+	font-size: 13px;
+	color: #9aa1b1;
 }
 
 .zig-configurator__fields {
@@ -6695,6 +6725,9 @@ nav.zig-menu {
 .zig-configurator__select-wrap {
 	position: relative;
 	display: block;
+	background: #181c27;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 12px;
 }
 
 /*
@@ -6709,9 +6742,15 @@ nav.zig-menu {
 	display: block;
 	width: 100%;
 	font: inherit;
-	color: inherit;
+	font-size: 15px;
+	color: #f5f5f7;
 	background: transparent;
 	cursor: pointer;
+}
+
+.zig-configurator__select:invalid,
+.zig-configurator__select option[value=""] {
+	color: #7c8494;
 }
 
 .zig-configurator__select::-ms-expand {
@@ -6727,6 +6766,7 @@ nav.zig-menu {
 	display: inline-flex;
 	pointer-events: none;
 	line-height: 0;
+	color: #9aa1b1;
 }
 
 .zig-configurator__chevron svg {
@@ -6742,10 +6782,15 @@ nav.zig-menu {
 	display: inline-flex;
 	align-items: baseline;
 	gap: var(--zig-unit-gap, 0.25em);
+	font-size: 34px;
+	font-weight: 800;
+	color: #f5f5f7;
 }
 
 .zig-configurator__unit {
 	font-size: 0.6em;
+	font-weight: 400;
+	color: #9aa1b1;
 	white-space: nowrap;
 }
 
@@ -6755,10 +6800,31 @@ nav.zig-menu {
 	align-self: flex-start;
 	white-space: nowrap;
 	line-height: 1;
+	padding: 5px 14px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.zig-configurator__stock--instock {
+	background: rgba(27, 138, 75, 0.15);
+	border-color: rgba(27, 138, 75, 0.4);
+}
+
+.zig-configurator__stock--preorder {
+	background: rgba(43, 108, 176, 0.15);
+	border-color: rgba(43, 108, 176, 0.4);
+}
+
+.zig-configurator__stock--outofstock {
+	background: rgba(176, 42, 42, 0.15);
+	border-color: rgba(176, 42, 42, 0.4);
 }
 
 .zig-configurator__updated {
 	font-size: 0.85em;
+	color: #9aa1b1;
 	opacity: 0.75;
 }
 
@@ -6786,13 +6852,30 @@ nav.zig-menu {
 	text-decoration: none;
 	cursor: pointer;
 	font: inherit;
-	color: inherit;
+	font-size: 15px;
+	font-weight: 600;
+	color: #f5f5f7;
 	background: transparent;
 	border: 1px solid currentColor;
+	border-radius: 12px;
+	padding: 14px 22px;
+	transition: background-color 0.15s ease;
+}
+
+.zig-configurator__btn--secondary:hover,
+.zig-configurator__btn--secondary:focus-visible {
+	background: rgba(255, 255, 255, 0.06);
 }
 
 .zig-configurator__btn--primary {
+	color: #fff;
+	background: #6928d9;
 	border-color: transparent;
+}
+
+.zig-configurator__btn--primary:hover,
+.zig-configurator__btn--primary:focus-visible {
+	background: #5a21c4;
 }
 
 /* پیامِ راهنما در ‎product-configurator.php‎ عمداً کلاسِ ‎.zig-price__notice‎ی موجود را دوباره استفاده می‌کند */
