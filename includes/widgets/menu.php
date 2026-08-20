@@ -270,6 +270,50 @@ final class Menu extends Widget_Base {
             'description' => __('مگامنو سه‌ستونه است با شمارشِ محصول و کارت — همان چیزی که برایِ «محصولات» طراحی شده. بقیهٔ آیتم‌ها فهرستِ ساده می‌گیرند.', 'zig3d-widgets'),
         ]);
 
+        /*
+         * ستون‌هایِ دسته: ردیف‌هایشان از فهرستِ وردپرس می‌آیند (چون
+         * پیوندِ واقعیِ دسته‌ها آنجاست) ولی *متنِ* دکمه و سرتیتر دستی
+         * است. در طرح این دو با هم فرق دارند — «دسته بندی قطعات یدکی» در
+         * برابرِ «انواع قطعات» — و هیچ فیلدی در فهرستِ وردپرس نیست که
+         * این تفاوت را طبیعی نگه دارد.
+         *
+         * تطبیق ترتیبی است: ردیفِ اول همان ستونِ اول. این‌طور پیش‌فرض‌ها
+         * بدونِ دانستنِ شناسهٔ آیتم‌ها همان لحظه کار می‌کنند.
+         */
+        $column = new Repeater();
+
+        $column->add_control('column_title', [
+            'label'       => __('عنوانِ ستون', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'label_block' => true,
+            'description' => __('خالی یعنی همان عنوانِ آیتم در فهرستِ وردپرس.', 'zig3d-widgets'),
+        ]);
+
+        $column->add_control('column_cta', [
+            'label'       => __('متنِ دکمه', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'label_block' => true,
+        ]);
+
+        $this->add_control('mega_columns', [
+            'label'       => __('ستون‌هایِ مگامنو', 'zig3d-widgets'),
+            'type'        => Controls_Manager::REPEATER,
+            'fields'      => $column->get_controls(),
+            'title_field' => '{{{ column_title || column_cta }}}',
+            'condition'   => ['mega_item!' => ''],
+            'default'     => [
+                [
+                    'column_title' => __('انواع قطعات', 'zig3d-widgets'),
+                    'column_cta'   => __('دسته بندی قطعات یدکی', 'zig3d-widgets'),
+                ],
+                [
+                    'column_title' => __('انواع مواد و متریال', 'zig3d-widgets'),
+                    'column_cta'   => __('دسته بندی مواد و متریال دندانسازی', 'zig3d-widgets'),
+                ],
+            ],
+            'description' => __('ردیفِ اول ستونِ اول است، ردیفِ دوم ستونِ دوم. ردیف‌هایِ زیرِ هر ستون از خودِ فهرستِ وردپرس می‌آیند.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('mega_cards', [
             'label'       => __('تعدادِ کارتِ محصول در مگامنو', 'zig3d-widgets'),
             'type'        => Controls_Manager::NUMBER,
@@ -277,7 +321,8 @@ final class Menu extends Widget_Base {
             'max'         => 6,
             'default'     => 3,
             'condition'   => ['mega_item!' => ''],
-            'description' => __('کارت‌ها یک ستونِ جداگانه در انتهایِ مگامنو می‌سازند — پرفروش‌ترین‌هایِ فروشگاه، خودکار از ووکامرس. صفر یعنی این ستون اصلاً نباشد.', 'zig3d-widgets'),
+            'separator'   => 'before',
+            'description' => __('کارت‌ها یک ستونِ جداگانه در انتهایِ مگامنو می‌سازند. اگر فهرستِ زیر پر باشد همان‌ها می‌آیند؛ خالی که باشد، پرفروش‌ترین‌هایِ ووکامرس خودکار پر می‌شوند. صفر یعنی این ستون اصلاً نباشد.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('popular_title', [
@@ -293,6 +338,44 @@ final class Menu extends Widget_Base {
             'default'     => __('مشاهده تمام محصولات', 'zig3d-widgets'),
             'condition'   => ['mega_item!' => '', 'mega_cards!' => '0'],
             'description' => __('پیوندش همان پیوندِ خودِ آیتمِ مگامنو در فهرستِ وردپرس است.', 'zig3d-widgets'),
+        ]);
+
+        /*
+         * کارت‌هایِ دستی. پر بودنِ این فهرست بر کوئریِ خودکار می‌چربد،
+         * چون انتخابِ صریحِ مدیر است — ولی خالی گذاشتنش هنوز همان رفتارِ
+         * «خودکار از ووکامرس، با کش» را می‌دهد.
+         */
+        $card = new Repeater();
+
+        $card->add_control('card_title', [
+            'label'       => __('نام', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'label_block' => true,
+        ]);
+
+        $card->add_control('card_image', [
+            'label' => __('تصویر', 'zig3d-widgets'),
+            'type'  => Controls_Manager::MEDIA,
+        ]);
+
+        $card->add_control('card_link', [
+            'label'       => __('پیوند', 'zig3d-widgets'),
+            'type'        => Controls_Manager::URL,
+            'label_block' => true,
+        ]);
+
+        $this->add_control('mega_card_items', [
+            'label'       => __('کارت‌هایِ دستی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::REPEATER,
+            'fields'      => $card->get_controls(),
+            'title_field' => '{{{ card_title }}}',
+            'condition'   => ['mega_item!' => '', 'mega_cards!' => '0'],
+            'default'     => [
+                ['card_title' => __('کوره سینتر زیرکونیا', 'zig3d-widgets')],
+                ['card_title' => __('اسکنر سه بعدی', 'zig3d-widgets')],
+                ['card_title' => __('میلینگ ماشین', 'zig3d-widgets')],
+            ],
+            'description' => __('خالی‌شان کنید تا به‌جایشان پرفروش‌ترین‌هایِ ووکامرس بیایند.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('show_counts', [
@@ -1551,7 +1634,24 @@ final class Menu extends Widget_Base {
          * هر دستهٔ فرزند یک ستونِ فهرستی می‌شود، به ترتیبِ خودِ فهرستِ
          * وردپرس. مدیر با کشیدن‌ورهاکردن جایشان را عوض می‌کند.
          */
-        foreach ($node['children'] as $column) {
+        $overrides = array_values((array) ($settings['mega_columns'] ?? []));
+
+        foreach ($node['children'] as $index => $column) {
+            /*
+             * تطبیقِ ترتیبی: ردیفِ n اُمِ تنظیمات، ستونِ n اُم. ستونی که
+             * ردیفی نداشته باشد دست‌نخورده از فهرستِ وردپرس می‌آید، پس
+             * افزودنِ یک دستهٔ تازه چیزی را نمی‌شکند.
+             */
+            $override = $overrides[$index] ?? [];
+
+            $column['title'] = $this->pick($override, 'column_title', $column['title']);
+
+            /*
+             * متنِ دکمه سه جا را به ترتیب می‌گردد: تنظیماتِ همین ستون،
+             * فیلدِ توضیحِ آیتم در فهرستِ وردپرس، و آخر عنوانِ خودش.
+             */
+            $column['description'] = $this->pick($override, 'column_cta', (string) ($column['description'] ?? ''));
+
             echo '<div class="zig-menu__col">';
 
             $this->render_cta($column, $settings);
@@ -1589,9 +1689,10 @@ final class Menu extends Widget_Base {
             return;
         }
 
-        $ids = Menu_Tree::popular_products(0, $limit);
+        $manual = $this->manual_cards($settings, $limit);
+        $ids    = [] === $manual ? Menu_Tree::popular_products(0, $limit) : [];
 
-        if ([] === $ids) {
+        if ([] === $manual && [] === $ids) {
             return;
         }
 
@@ -1609,9 +1710,87 @@ final class Menu extends Widget_Base {
             $settings
         );
 
-        $this->render_cards($ids);
+        if ([] !== $manual) {
+            $this->render_manual_cards($manual);
+        } else {
+            $this->render_cards($ids);
+        }
 
         echo '</div>';
+    }
+
+    /**
+     * کارت‌هایی که مدیر دستی نوشته — فقط ردیف‌هایی که واقعاً نامی دارند.
+     *
+     * ردیفِ بی‌نام یعنی مدیر ردیف را اضافه کرده و هنوز پرش نکرده؛ رندرش
+     * یک کارتِ خالی می‌ساخت.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function manual_cards(array $settings, int $limit): array {
+        $rows = [];
+
+        foreach ((array) ($settings['mega_card_items'] ?? []) as $row) {
+            if ('' === trim((string) ($row['card_title'] ?? ''))) {
+                continue;
+            }
+
+            $rows[] = $row;
+
+            if (count($rows) >= $limit) {
+                break;
+            }
+        }
+
+        return $rows;
+    }
+
+    /** @param array<int,array<string,mixed>> $rows */
+    private function render_manual_cards(array $rows): void {
+        echo '<div class="zig-menu__cards">';
+
+        foreach ($rows as $index => $row) {
+            $url   = trim((string) ($row['card_link']['url'] ?? ''));
+            $image = (string) ($row['card_image']['url'] ?? '');
+
+            /*
+             * بی‌پیوند، کارت یک ‎span‎ است نه ‎a‎ی بی‌مقصد — همان قراردادِ
+             * ویجتِ اطلاعاتِ تماس. لینکی که جایی نمی‌برد، برایِ صفحه‌خوان
+             * و کیبورد یک ایستگاهِ بی‌فایده است.
+             */
+            if ('' !== $url) {
+                $key = 'card_' . $index;
+                $this->add_render_attribute($key, 'class', 'zig-menu__card');
+                $this->add_link_attributes($key, $row['card_link']);
+
+                printf('<a %s>', $this->get_render_attribute_string($key));
+            } else {
+                echo '<span class="zig-menu__card">';
+            }
+
+            if ('' !== $image) {
+                printf(
+                    '<span class="zig-menu__card-media"><img class="zig-menu__card-image" src="%s" alt="" loading="lazy" /></span>',
+                    esc_url($image)
+                );
+            }
+
+            printf(
+                '<span class="zig-menu__card-title"><bdi>%s</bdi></span>',
+                esc_html((string) $row['card_title'])
+            );
+
+            echo '' !== $url ? '</a>' : '</span>';
+        }
+
+        echo '</div>';
+    }
+
+    /** اولین مقدارِ ناخالیِ تنظیمات، وگرنه پیش‌فرض */
+    private function pick(array $row, string $key, string $fallback): string {
+        $value = trim((string) ($row[$key] ?? ''));
+
+        return '' !== $value ? $value : $fallback;
     }
 
     /**

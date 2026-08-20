@@ -5865,14 +5865,21 @@ nav.zig-menu {
 	white-space: nowrap;
 }
 
+/*
+ * پیش‌فرضِ رنگِ هاور و فعال، *همان رنگِ پایه* است نه سفید.
+ *
+ * سفیدِ ثابت فقط رویِ هدرِ تیرهٔ این طرح درست بود؛ رویِ هر هدرِ روشنی
+ * آیتم در لحظهٔ هاور کاملاً ناپدید می‌شد — سفید رویِ سفید. چون در طرح
+ * رنگِ پایه هم سفید است، ظاهرِ خودِ طرح ذره‌ای عوض نمی‌شود.
+ */
 .zig-menu li.zig-menu__item:hover > a.zig-menu__link,
 .zig-menu li.zig-menu__item:focus-within > a.zig-menu__link {
 	background-color: var(--zig-menu-item-bg-hover, transparent);
-	color: var(--zig-menu-color-hover, #ffffff);
+	color: var(--zig-menu-color-hover, var(--zig-menu-color, #ffffff));
 }
 
 .zig-menu li.zig-menu__item--current > a.zig-menu__link {
-	color: var(--zig-menu-color-active, #ffffff);
+	color: var(--zig-menu-color-active, var(--zig-menu-color, #ffffff));
 }
 
 /*
@@ -5889,7 +5896,8 @@ nav.zig-menu {
 	inset-block-end: calc(var(--zig-menu-item-pad-block, 24px) * -1 + 2px);
 	height: var(--zig-menu-underline-height, 4px);
 	border-radius: 999px;
-	background: var(--zig-menu-underline-color, #ffffff);
+	/* پیش‌فرض از رنگِ خودِ متن می‌آید، به همان دلیلِ بالا */
+	background: var(--zig-menu-underline-color, currentColor);
 	opacity: 0;
 	transform: scaleX(var(--zig-menu-underline-grow, 0.4));
 	transform-origin: center;
@@ -5987,13 +5995,26 @@ nav.zig-menu {
  * هاورِ *هر* آیتمِ پنل‌دار واکنش بدهد. اگر مرورگری ‎:has()‎ نداشته باشد
  * فقط پرده نمی‌آید و بقیهٔ منو دست‌نخورده کار می‌کند.
  *
- * ‎pointer-events: none‎ حتمی است: پرده تمامِ ویوپورت را می‌گیرد و بدونِ
+ * ‎pointer-events: none‎ حتمی است: پرده تمامِ عرضِ صفحه را می‌گیرد و بدونِ
  * آن، همان لحظه که ظاهر می‌شود جلویِ هاورِ خودِ منو را می‌گرفت و منو
  * بی‌وقفه باز و بسته می‌شد.
+ *
+ * پرده از *زیرِ* نوار شروع می‌شود، نه از بالایِ صفحه. همان ترفندِ پنلِ
+ * مگا: در ‎fixed‎، ‎inset-block-start: auto‎ یعنی «همان جایِ طبیعیِ خودت
+ * در جریان» — و چون پرده بلافاصله بعد از نوار می‌آید، آن جا دقیقاً لبهٔ
+ * پایینِ نوار است. با ‎inset: 0‎ی قبلی، پرده کلِ هدر را هم می‌گرفت و
+ * ردیف‌هایِ بالایِ منو تیره می‌شدند.
+ *
+ * ارتفاعِ ‎100vh‎ از همان‌جا به پایین کافی است و چون عنصر ‎fixed‎ است،
+ * بیرون‌زدنش هیچ اسکرولی به صفحه اضافه نمی‌کند.
  */
 .zig-menu .zig-menu__scrim {
 	position: fixed;
-	inset: 0;
+	inset-block-start: auto;
+	inset-inline: auto;
+	left: 0;
+	right: 0;
+	height: 100vh;
 	z-index: 50;
 	background-color: var(--zig-menu-scrim, rgba(16, 24, 40, 0.5));
 	opacity: 0;
@@ -6227,7 +6248,12 @@ nav.zig-menu {
 	gap: var(--zig-menu-card-gap, 16px);
 }
 
-.zig-menu a.zig-menu__card {
+/*
+ * کارتِ بی‌پیوند ‎span‎ است، پس هر دو تگ باید یک شکل باشند — همان
+ * قراردادِ ویجتِ اطلاعاتِ تماس.
+ */
+.zig-menu a.zig-menu__card,
+.zig-menu span.zig-menu__card {
 	display: flex;
 	flex-direction: column;
 	align-items: center;

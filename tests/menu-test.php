@@ -254,6 +254,86 @@ Tests::ok(
     strrpos($html_cards, 'zig-menu__col-body') < strpos($html_cards, 'zig-menu__col--cards')
 );
 
+/* --------------------------------------------------------------------------
+ * محتوایِ دستیِ مگامنو
+ *
+ * ردیف‌هایِ هر ستون باید از فهرستِ وردپرس بیایند (پیوندِ واقعیِ دسته‌ها
+ * آنجاست) ولی متنِ دکمه و سرتیتر از تنظیمات — چون در طرح این دو با هم
+ * فرق دارند و هیچ فیلدی در فهرستِ وردپرس این تفاوت را طبیعی نگه نمی‌دارد.
+ * ----------------------------------------------------------------------- */
+
+$html_manual = $render([
+    'menu_id'      => 7,
+    'mega_item'    => '1',
+    'mega_cards'   => 0,
+    'mega_columns' => [
+        ['_id' => 'a', 'column_title' => 'قطعاتِ دستی', 'column_cta' => 'دسته بندی قطعات یدکی'],
+        ['_id' => 'b', 'column_title' => 'متریالِ دستی', 'column_cta' => 'دسته بندی مواد و متریال'],
+    ],
+]);
+
+Tests::keeps('عنوانِ ستون از تنظیمات می‌آید', $html_manual, '<bdi>قطعاتِ دستی</bdi>');
+Tests::keeps('متنِ دکمه هم', $html_manual, '<bdi>دسته بندی قطعات یدکی</bdi>');
+Tests::keeps('ستونِ دوم هم جدا تنظیم می‌شود', $html_manual, '<bdi>متریالِ دستی</bdi>');
+
+/* ردیف‌ها همچنان از فهرستِ وردپرس‌اند، با پیوندِ واقعیِ خودشان */
+Tests::keeps('ردیف‌ها از فهرست می‌آیند', $html_manual, 'href="https://zig3d.test/111"');
+
+/*
+ * ستونی که ردیفی در تنظیمات ندارد باید دست‌نخورده بماند. وگرنه افزودنِ
+ * یک دستهٔ تازه به فهرستِ وردپرس، ستونِ بی‌عنوان می‌ساخت.
+ */
+$html_partial = $render([
+    'menu_id'      => 7,
+    'mega_item'    => '1',
+    'mega_cards'   => 0,
+    'mega_columns' => [['_id' => 'a', 'column_title' => 'فقط اولی']],
+]);
+
+Tests::keeps('ستونِ بی‌تنظیم عنوانِ خودش را نگه می‌دارد', $html_partial, '<bdi>انواع مواد و متریال</bdi>');
+
+/* ردیفِ خالی هم نباید چیزی را پاک کند */
+$html_blank = $render([
+    'menu_id'      => 7,
+    'mega_item'    => '1',
+    'mega_cards'   => 0,
+    'mega_columns' => [['_id' => 'a', 'column_title' => '', 'column_cta' => '']],
+]);
+
+Tests::keeps('ردیفِ خالی عنوان را پاک نمی‌کند', $html_blank, '<bdi>انواع قطعات</bdi>');
+
+/* --------------------------------------------------------------------------
+ * کارت‌هایِ دستی
+ * ----------------------------------------------------------------------- */
+
+$html_cards_manual = $render([
+    'menu_id'         => 7,
+    'mega_item'       => '1',
+    'mega_cards'      => 3,
+    'popular_title'   => 'محبوب‌ترین ها',
+    'mega_card_items' => [
+        ['_id' => 'c1', 'card_title' => 'کوره سینتر زیرکونیا', 'card_link' => ['url' => 'https://zig3d.test/p1'], 'card_image' => ['url' => 'https://zig3d.test/a.png']],
+        ['_id' => 'c2', 'card_title' => 'اسکنر سه بعدی'],
+        ['_id' => 'c3', 'card_title' => ''],
+    ],
+]);
+
+Tests::keeps('کارتِ دستی نامش را می‌گیرد', $html_cards_manual, '<bdi>کوره سینتر زیرکونیا</bdi>');
+Tests::keeps('و تصویرش را', $html_cards_manual, 'src="https://zig3d.test/a.png"');
+
+/* بی‌پیوند، کارت span است نه a‌ی بی‌مقصد که فوکوس بگیرد و جایی نبرد */
+Tests::keeps('کارتِ پیونددار a است', $html_cards_manual, '<a class="zig-menu__card" href="https://zig3d.test/p1"');
+Tests::keeps('کارتِ بی‌پیوند span است', $html_cards_manual, '<span class="zig-menu__card">');
+
+/* ردیفِ بی‌نام یعنی مدیر هنوز پرش نکرده — کارتِ خالی ساخته نمی‌شود */
+Tests::same('فقط دو کارت رندر شد', substr_count($html_cards_manual, 'zig-menu__card"'), 2);
+
+/*
+ * فهرستِ دستی بر کوئریِ خودکار می‌چربد — ولی خالی که باشد، همان رفتارِ
+ * «خودکار از ووکامرس» سرِ جایش می‌ماند.
+ */
+Tests::blocks('کوئریِ خودکار کنار می‌رود', $html_cards_manual, 'zig-menu__card-image" src=""');
+
 /* صفر یعنی ستون اصلاً نباشد، نه ستونِ خالی */
 $html_zero = $render(['menu_id' => 7, 'mega_item' => '1', 'mega_cards' => 0]);
 
@@ -427,6 +507,25 @@ Tests::keeps('باز که شد، صاف می‌ایستد', $section, 'rotateX(0
 /* پرده پشتِ زیرمنو */
 Tests::keeps('پرده هست', $section, '.zig-menu .zig-menu__scrim {');
 Tests::keeps('و با هاورِ آیتمِ پنل‌دار می‌آید', $section, ':has(li.zig-menu__item--has-panel:hover) .zig-menu__scrim');
+
+/*
+ * پرده باید از *زیرِ* نوار شروع شود نه از بالایِ صفحه. با ‎inset: 0‎ کلِ
+ * هدر — از جمله ردیف‌هایِ بالایِ منو — هم تیره می‌شد.
+ *
+ * ‎inset-block-start: auto‎ در ‎fixed‎ یعنی «جایِ طبیعیِ خودت در جریان»،
+ * و چون پرده بلافاصله بعد از نوار می‌آید، آن جا لبهٔ پایینِ نوار است.
+ */
+Tests::keeps('پرده از زیرِ نوار شروع می‌شود', $section, 'inset-block-start: auto;');
+Tests::blocks('و کلِ صفحه را نمی‌پوشاند', zig_css_block($section, '.zig-menu .zig-menu__scrim'), 'inset: 0;');
+
+/*
+ * پیش‌فرضِ رنگِ هاور و فعال باید *همان رنگِ پایه* باشد نه سفیدِ ثابت.
+ * سفید فقط رویِ هدرِ تیرهٔ این طرح درست بود؛ رویِ هدرِ روشن آیتم در
+ * لحظهٔ هاور کاملاً ناپدید می‌شد — سفید رویِ سفید.
+ */
+Tests::keeps('رنگِ هاور از رنگِ پایه ارث می‌برد', $section, 'color: var(--zig-menu-color-hover, var(--zig-menu-color, #ffffff));');
+Tests::keeps('رنگِ آیتمِ فعال هم', $section, 'color: var(--zig-menu-color-active, var(--zig-menu-color, #ffffff));');
+Tests::keeps('زیرخط رنگِ متن را می‌گیرد', $section, 'background: var(--zig-menu-underline-color, currentColor);');
 
 /*
  * پرده تمامِ ویوپورت را می‌گیرد. بدونِ ‎pointer-events: none‎ همان لحظه
