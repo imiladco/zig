@@ -293,6 +293,19 @@ namespace {
         }
     }
 
+    /**
+     * جفتِ نوشتنیِ ‎get_post_meta()‎ی بالا — همان رجیستریِ سوم را می‌نویسد.
+     * محصول/پیوست را عمداً پوشش نمی‌دهد؛ تا امروز فقط ‎Likes‎ چیزی
+     * می‌نویسد و آن هم رویِ پستِ عمومی است.
+     */
+    if (!function_exists('update_post_meta')) {
+        function update_post_meta($id, $key, $value) {
+            $GLOBALS['__zig_post_meta'][(int) $id][$key] = $value;
+
+            return true;
+        }
+    }
+
     if (!function_exists('get_the_terms')) {
         function get_the_terms($id, $taxonomy) {
             $product = \WC_Product::$registry[(int) $id] ?? null;

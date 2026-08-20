@@ -6963,3 +6963,115 @@ nav.zig-menu {
 }
 
 /* پیامِ راهنما در ‎product-configurator.php‎ عمداً کلاسِ ‎.zig-price__notice‎ی موجود را دوباره استفاده می‌کند */
+
+/* ==========================================================================
+ * .zig-post-meta — نوارِ متایِ پست: زمانِ مطالعه، دیدگاه، لایک
+ * ======================================================================= */
+
+.zig-post-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 24px;
+}
+
+.zig-post-meta__reading-time {
+	color: #64748b;
+	font-size: 14px;
+}
+
+/*
+ * پایهٔ مشترکِ دو آیتمِ کلیک‌پذیر — پیوندِ دیدگاه‌ها و دکمهٔ لایک. دومی
+ * چون ‎<button>‎ است، ریست‌های خامِ مرورگر (بوردر/بک‌گراند/فونت/پدینگ)
+ * اینجا صفر می‌شوند تا هر دو دقیقاً یک شکل بیفتند.
+ */
+.zig-post-meta__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	background: transparent;
+	font: inherit;
+	text-decoration: none;
+	cursor: pointer;
+	color: #334155;
+}
+
+.zig-post-meta__count {
+	font-size: 14px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.zig-post-meta__icon {
+	position: relative;
+	display: inline-grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 9999px;
+	color: inherit;
+	background: rgba(15, 23, 42, 0.04);
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.zig-post-meta__icon svg {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+.zig-post-meta__comments:hover,
+.zig-post-meta__comments:focus-visible {
+	color: #10b981;
+}
+
+.zig-post-meta__comments:hover .zig-post-meta__icon,
+.zig-post-meta__comments:focus-visible .zig-post-meta__icon {
+	background: rgba(16, 185, 129, 0.1);
+}
+
+.zig-post-meta__like:not(.is-liked):hover,
+.zig-post-meta__like:not(.is-liked):focus-visible {
+	color: #ef4444;
+}
+
+.zig-post-meta__like:not(.is-liked):hover .zig-post-meta__icon,
+.zig-post-meta__like:not(.is-liked):focus-visible .zig-post-meta__icon {
+	background: rgba(239, 68, 68, 0.1);
+}
+
+/*
+ * دو آیکونِ لایک (خالی/پر) رویِ هم می‌نشینند — گرید یک‌خانه‌ای، نه دو
+ * عنصرِ کنارِ هم — و فقط یکی با کلاسِ ‎is-liked‎ دیده می‌شود. سوییچ کاملاً
+ * CSS است؛ اسکریپت فقط کلاس را عوض می‌کند، چیزی از جنسِ آیکون نمی‌داند.
+ */
+.zig-post-meta__like .zig-post-meta__icon {
+	display: inline-grid;
+	grid-template-areas: 'stack';
+}
+
+.zig-post-meta__icon-outline,
+.zig-post-meta__icon-filled {
+	grid-area: stack;
+	display: inline-flex;
+}
+
+.zig-post-meta__like:not(.is-liked) .zig-post-meta__icon-filled {
+	display: none;
+}
+
+.zig-post-meta__like.is-liked .zig-post-meta__icon-outline {
+	display: none;
+}
+
+.zig-post-meta__like.is-liked {
+	color: #ef4444;
+}
+
+.zig-post-meta__like.is-liked .zig-post-meta__icon {
+	color: #fff;
+	background: #ef4444;
+}

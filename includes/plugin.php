@@ -49,6 +49,7 @@ final class Plugin {
         'search' => Widgets\Search::class,
         'contact-bar' => Widgets\Contact_Bar::class,
         'menu' => Widgets\Menu::class,
+        'post-meta' => Widgets\Post_Meta::class,
     ];
 
     public static function instance(): self {
@@ -87,6 +88,7 @@ final class Plugin {
 
         add_action('init', [$this, 'boot_filters'], 5);
         add_action('init', [$this, 'boot_download_archive'], 5);
+        add_action('init', [$this, 'boot_post_meta'], 5);
 
         if (is_admin()) {
             add_action('init', [$this, 'boot_admin'], 6);
@@ -155,6 +157,20 @@ final class Plugin {
 
         Download_Archive_Data::boot();
         Archive_Endpoint::boot();
+    }
+
+    /**
+     * زمانِ مطالعه/دیدگاه/لایک — بدونِ ووکامرس هم معنا دارد (پستِ بلاگِ
+     * عادی)، پس برخلافِ ‎boot_filters()‎ پشتِ ‎class_exists('WooCommerce')‎
+     * قفل نیست. نقطهٔ لایک هم مثلِ سرچ باید بیرون از شرطِ ادمین ثبت شود
+     * تا در ‎admin-ajax.php‎ حاضر باشد.
+     */
+    public function boot_post_meta(): void {
+        foreach (['reading-time', 'likes', 'likes-endpoint'] as $file) {
+            require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
+        }
+
+        Likes_Endpoint::boot();
     }
 
     /**
@@ -314,6 +330,9 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/rate-price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/configurator.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/reading-time.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/likes.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/likes-endpoint.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
@@ -490,6 +509,19 @@ final class Plugin {
         wp_register_script(
             'zig3d-configurator',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-configurator.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * زمانِ مطالعه و شمارشِ دیدگاه کاملاً از PHP رندر می‌شوند؛ این
+         * فایل فقط دکمهٔ لایک را زنده می‌کند. بدونِ آن، عددها همچنان
+         * درست‌اند، فقط کلیکِ لایک کاری نمی‌کند.
+         */
+        wp_register_script(
+            'zig3d-post-meta',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-post-meta.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true
