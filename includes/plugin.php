@@ -46,6 +46,7 @@ final class Plugin {
         'documents' => Widgets\Documents::class,
         'description' => Widgets\Description::class,
         'search' => Widgets\Search::class,
+        'contact-bar' => Widgets\Contact_Bar::class,
     ];
 
     public static function instance(): self {

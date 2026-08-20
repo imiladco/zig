@@ -273,6 +273,28 @@ if (!function_exists('zig_reset_filters')) {
  * چارچوب کوچک assert
  * ----------------------------------------------------------------------- */
 
+/**
+ * بخشِ یک ویجت از شیتِ مشترک، *فقط* تا شروعِ بخشِ بعدی.
+ *
+ * پیش از این هر تست از عنوانِ خودش تا آخرِ فایل را برمی‌داشت؛ درست بود
+ * تا وقتی که بخشِ تازه‌ای ته فایل اضافه شد و ناگهان سنجهٔ «هر انتخاب‌گر
+ * با ریشهٔ .zig-search شروع می‌شود» رویِ قواعدِ ویجتِ دیگری اجرا شد و
+ * شکست. مرزِ بالا و پایین، هر دو لازم است.
+ */
+function zig_css_section(string $css, string $title): string {
+    $start = strpos($css, "\n   " . $title . "\n");
+
+    if (false === $start) {
+        return '';
+    }
+
+    // از خودِ سرتیتر جلوتر می‌رویم تا بنرِ همین بخش، «بخشِ بعدی» شمرده نشود
+    $body = substr($css, $start + strlen($title) + 5);
+    $next = strpos($body, '/* ======');
+
+    return false === $next ? $body : substr($body, 0, $next);
+}
+
 final class Tests {
 
     private static int $passed = 0;

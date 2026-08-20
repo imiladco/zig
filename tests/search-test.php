@@ -272,7 +272,7 @@ foreach (zig_collect_selectors(Search::class) as [$control, $selector]) {
 Tests::group('ویجتِ سرچ › وزنِ انتخاب‌گرهایِ CSS');
 
 $css = file_get_contents($root . '/assets/css/zig3d-widgets.css');
-$section = substr($css, strpos($css, "\n   سرچ\n"));
+$section = zig_css_section($css, 'سرچ');
 
 preg_match_all('/(?m)^([^@{}\/\s][^{}]*?)\s*\{/', $section, $matches);
 

@@ -5707,3 +5707,101 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 .zig-search template {
 	display: none;
 }
+
+/* ==========================================================================
+   اطلاعاتِ تماس
+   ========================================================================== */
+
+/*
+ * همان بازهٔ وزنی که در بخشِ سرچ توضیحش رفت: ریشهٔ ‎.zig-contact‎ و نامِ
+ * تگ رویِ ‎ul‎/‎li‎/‎a‎ — چیزهایی که قالب‌ها واقعاً استایلشان می‌دهند.
+ *
+ * فاصله‌ها از طرح: بینِ آیکون و متن ۴، بینِ هر آیتم و نقطهٔ کنارش ۲۰.
+ * پس فاصلهٔ دیداریِ دو آیتم می‌شود ۲۰ + ۵ + ۲۰ — و همین است که ‎gap‎
+ * روی هر دو سطح (ظرف و آیتم) یک عدد است، نه دو عددِ جدا.
+ */
+/*
+ * کلاس عمداً دوبار آمده. ریشهٔ این ویجت خودش ‎<ul>‎ است، پس جدِ دیگری
+ * نیست که وزن را بالا ببرد، و ‎ul.zig-contact‎ی ساده ‎(0,1,1)‎ می‌شود —
+ * هم‌وزنِ ‎.elementor ul‎ی که ‎padding‎ و ‎list-style‎ی خودش را دارد، و
+ * در تساوی هرکه دیرتر لود شود می‌برد. تکرارِ کلاس ‎(0,2,1)‎ می‌دهد:
+ * بالایِ قالب، پایینِ کنترل‌هایِ المنتور.
+ */
+ul.zig-contact.zig-contact {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-contact-gap, 20px);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-contact li.zig-contact__item {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-contact-gap, 20px);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * نقطه جداکنندهٔ دیداری است، نه یک موردِ فهرست. اگر عنصرِ واقعی می‌شد،
+ * صفحه‌خوان «فهرست، ۵ مورد» می‌گفت که دوتاش هیچ محتوایی ندارند.
+ */
+.zig-contact li.zig-contact__item::before {
+	content: '';
+	flex: none;
+	width: var(--zig-contact-dot-size, 5px);
+	height: var(--zig-contact-dot-size, 5px);
+	border-radius: 50%;
+	background-color: var(--zig-contact-dot-color, #d7dce5);
+}
+
+.zig-contact li.zig-contact__item:first-child::before {
+	display: none;
+}
+
+.zig-contact .zig-contact__link,
+.zig-contact a.zig-contact__link {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--zig-contact-icon-gap, 4px);
+	color: var(--zig-contact-text-color, #344054);
+	text-decoration: none;
+	box-shadow: none;
+	/*
+	 * عددِ طرح، مستقیم و بدونِ متغیر: اندازهٔ متن را گروهِ «تایپوگرافی»ِ
+	 * تبِ استایل می‌نویسد و آن رویِ ‎.zig-contact__label‎ می‌نشیند که
+	 * وزنش بیشتر است. متغیرِ جدا فقط یک منبعِ دومِ بی‌کنترل می‌ساخت.
+	 */
+	font-size: 15px;
+	line-height: normal;
+}
+
+/*
+ * آیکون‌ها در طرح تیره‌ترند از متن (‎#17171b‎ در برابرِ ‎#344054‎) — یک
+ * تفاوتِ عمدی که با ارث‌بردنِ رنگ از دست می‌رفت.
+ */
+.zig-contact .zig-contact__icon {
+	flex: none;
+	display: inline-flex;
+	line-height: 0;
+	color: var(--zig-contact-icon-color, #17171b);
+}
+
+.zig-contact .zig-contact__icon svg,
+.zig-contact .zig-contact__icon i {
+	width: var(--zig-contact-icon-size, 14px);
+	height: var(--zig-contact-icon-size, 14px);
+	font-size: var(--zig-contact-icon-size, 14px);
+}
+
+.zig-contact .zig-contact__label {
+	color: inherit;
+}
+
+/* در طرح فقط شماره نیم‌ضخیم است؛ بقیه عادی */
+.zig-contact .zig-contact__item--emphasis .zig-contact__label {
+	font-weight: var(--zig-contact-emphasis-weight, 600);
+}
