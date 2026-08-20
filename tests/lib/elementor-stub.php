@@ -196,6 +196,24 @@ class Widget_Base {
 
     public function get_repeater_setting_key($f, $r, $i) { return $r . '.' . $i . '.' . $f; }
 
+    /**
+     * ‎get_settings()‎ عمداً می‌ترکد، نه اینکه مقداری برگرداند.
+     *
+     * در المنتورِ واقعی این متد برایِ آماده‌کردنِ تنظیمات سراغِ
+     * ‎get_controls()‎ می‌رود و آن هم اگر کنترل‌ها هنوز ثبت نشده باشند
+     * ‎register_controls()‎ را صدا می‌زند. پس هر فراخوانیِ ‎get_settings()‎
+     * از داخلِ ‎register_controls()‎ یک بازگشتِ بی‌پایان است که پنلِ ویجت
+     * را در ویرایشگر کاملاً از کار می‌اندازد — بی‌آنکه PHP خطایی بدهد.
+     *
+     * یک بار همین افتاد (ویجتِ منو: پنل بالا نمی‌آمد و مگامنو هیچ‌وقت
+     * گزینه‌ای برایِ انتخاب نداشت) و هیچ سنجه‌ای نگرفتش. حالا می‌گیرد.
+     */
+    public function get_settings($key = null) {
+        throw new \RuntimeException(
+            'get_settings() هنگامِ ثبتِ کنترل‌ها صدا زده شد؛ در المنتور این یعنی بازگشتِ بی‌پایان.'
+        );
+    }
+
     /** خروجی رندر با تنظیمات داده‌شده — نقطهٔ ورود تست‌ها */
     public function zig_render(array $settings): string {
         $this->zig_attributes = [];

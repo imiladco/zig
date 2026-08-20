@@ -139,12 +139,42 @@ Tests::same('ترمِ ناموجود صفر می‌دهد', Menu_Tree::term_coun
 Tests::same('شمارشِ کلِ فروشگاه', Menu_Tree::shop_count(), 250);
 
 /* ==========================================================================
+ * گزینه‌هایِ پنل
+ *
+ * این‌ها هیچ‌وقت در خروجیِ رندر دیده نمی‌شوند و فقط در پنلِ المنتور
+ * معلوم می‌شوند — آن هم به شکلِ «یک کشویِ خالی» که هیچ خطایی نمی‌دهد.
+ * ======================================================================= */
+
+Tests::group('منو › گزینه‌هایِ پنل');
+
+$widget_class = Menu::class;
+
+$options = (function () use ($widget_class): array {
+    $method = new ReflectionMethod($widget_class, 'top_level_options');
+    $method->setAccessible(true);
+
+    return $method->invoke(zig_widget($widget_class));
+})();
+
+/*
+ * فهرستِ گزینه‌ها نباید به ‎menu_id‎ی انتخاب‌شده وابسته باشد. در لحظهٔ
+ * ثبتِ کنترل‌ها هنوز هیچ فهرستی انتخاب نشده، پس وابستگی یعنی کشویِ
+ * «کدام آیتم مگامنو باشد؟» همیشه خالی — و مگامنو عملاً غیرقابلِ
+ * روشن‌کردن. دقیقاً همین اتفاق افتاده بود.
+ */
+Tests::ok('گزینه‌ها بدونِ انتخابِ فهرست هم پر می‌شوند', count($options) > 0, 'تعداد: ' . count($options));
+Tests::ok('و آیتم‌هایِ سطحِ اول را دارند', in_array('محصولات', $options, true));
+
+/* کلیدها همان شناسه‌ای‌اند که ‎panel_kind()‎ با آن مقایسه می‌کند */
+Tests::ok('کلیدشان شناسهٔ آیتم است', isset($options['1']));
+
+/* ==========================================================================
  * رندر
  * ======================================================================= */
 
 Tests::group('منو › رندر');
 
-$widget = zig_widget(Menu::class);
+$widget = zig_widget($widget_class);
 $render = static function (array $settings) use ($widget): string {
     return $widget->zig_render($settings);
 };
@@ -351,8 +381,13 @@ Tests::keeps('پنل با visibility پنهان می‌شود', $section, 'visib
 /* لبهٔ زیرمنویِ ساده با لبهٔ عنوانِ آیتم یکی می‌شود */
 Tests::keeps('لبهٔ زیرمنو با لبهٔ عنوانِ آیتم یکی می‌شود', $section, 'inset-inline-start: var(--zig-menu-item-pad-inline, 16px);');
 
-/* مگامنو وسطِ ویوپورت */
-Tests::keeps('مگامنو وسطِ صفحه می‌نشیند', $section, 'transform: translateX(-50%);');
+/*
+ * مگامنو وسطِ ویوپورت. جابه‌جاییِ افقی از راهِ متغیر می‌آید نه یک
+ * ‎transform‎ی جدا — چون ‎transform‎ی خودِ پنل تا خوردنش را هم دارد و
+ * نوشتنِ دوباره‌اش یکی از آن دو را پاک می‌کرد.
+ */
+Tests::keeps('مگامنو وسطِ صفحه می‌نشیند', $section, '--zig-menu-panel-shift: -50%;');
+Tests::keeps('و جابه‌جایی داخلِ همان transform است', $section, 'transform: translateX(var(--zig-menu-panel-shift, 0))');
 
 $unscoped = [];
 
@@ -371,6 +406,42 @@ foreach ($matches[1] as $group) {
 }
 
 Tests::same('هر انتخاب‌گر با ریشهٔ .zig-menu شروع می‌شود', $unscoped, []);
+
+/*
+ * زیرخط باید در هاور و فوکوس هم بیاید، نه فقط رویِ صفحهٔ جاری. و باید
+ * *همیشه* در DOM باشد و فقط محو/پیدا شود — اگر ساختِ ‎::after‎ به هاور
+ * گره بخورد، گذاری در کار نیست و خط جهشی ظاهر می‌شود.
+ */
+Tests::keeps('زیرخط بی‌قید ساخته می‌شود', $section, ".zig-menu a.zig-menu__link .zig-menu__label::after {");
+Tests::keeps('هاور زیرخط را روشن می‌کند', $section, ':hover > a.zig-menu__link .zig-menu__label::after');
+Tests::keeps('فوکوسِ کیبورد هم زیرخط می‌گیرد', $section, ':focus-within > a.zig-menu__link .zig-menu__label::after');
+
+/*
+ * تا خوردنِ پنل. ‎perspective‎ باید داخلِ خودِ ‎transform‎ باشد نه رویِ
+ * والد: پنلِ مگا ‎fixed‎ است و پرسپکتیوِ والد به آن نمی‌رسد.
+ */
+Tests::keeps('پنل تا می‌خورد', $section, 'rotateX(var(--zig-menu-fold, 90deg))');
+Tests::keeps('و پرسپکتیو داخلِ همان transform است', $section, 'perspective(var(--zig-menu-perspective, 1400px))');
+Tests::keeps('باز که شد، صاف می‌ایستد', $section, 'rotateX(0deg)');
+
+/* پرده پشتِ زیرمنو */
+Tests::keeps('پرده هست', $section, '.zig-menu .zig-menu__scrim {');
+Tests::keeps('و با هاورِ آیتمِ پنل‌دار می‌آید', $section, ':has(li.zig-menu__item--has-panel:hover) .zig-menu__scrim');
+
+/*
+ * پرده تمامِ ویوپورت را می‌گیرد. بدونِ ‎pointer-events: none‎ همان لحظه
+ * که ظاهر می‌شود جلویِ هاورِ خودِ منو را می‌گیرد و منو بی‌وقفه باز و
+ * بسته می‌شود — حلقه‌ای که فقط در مرورگر دیده می‌شود.
+ */
+Tests::keeps('پرده جلویِ هاور را نمی‌گیرد', $section, 'pointer-events: none;');
+
+/*
+ * با حرکتِ کم، زاویه هم باید صفر شود نه فقط مدت: با مدتِ صفر و زاویهٔ
+ * ۹۰، پنل لبه‌به‌لبه و جهشی ظاهر می‌شد.
+ */
+$reduced_desktop = zig_css_block($section, '@media (prefers-reduced-motion: reduce)');
+
+Tests::keeps('حرکتِ کم، تا خوردن را برمی‌دارد', $reduced_desktop, '--zig-menu-fold: 0deg;');
 
 /* لینک‌ها نامِ تگ می‌گیرند وگرنه رنگ/زیرخطِ قالب رویشان می‌نشیند */
 foreach (['a.zig-menu__link', 'a.zig-menu__sub-link', 'a.zig-menu__cta', 'a.zig-menu__card'] as $selector) {
@@ -400,12 +471,25 @@ Tests::group('منو › پوششِ کنترل‌ها');
 
 preg_match_all('/var\(\s*(--zig-menu-[a-z0-9-]+)/', $section, $var_matches);
 
-$used    = array_values(array_unique($var_matches[1]));
+$used          = array_values(array_unique($var_matches[1]));
 $widget_source = file_get_contents($root . '/includes/widgets/menu.php');
 
 preg_match_all('/(--zig-menu-[a-z0-9-]+)\s*:/', $widget_source, $written_matches);
 
-$written = array_unique($written_matches[1]);
+/*
+ * دو راهِ پذیرفته برایِ «تنظیم‌شدنی بودن»:
+ *
+ *   ۱. یک کنترلِ المنتور مقدارش را می‌نویسد — حالتِ عادی.
+ *   ۲. خودِ CSS جایی مقدارش را می‌گذارد — متغیرهایِ داخلیِ چیدمان، مثلِ
+ *      جابه‌جاییِ افقیِ مگامنو، که تنظیمِ کاربر نیستند و نباید کنترل
+ *      بگیرند.
+ *
+ * چیزی که این سنجه جلویش را می‌گیرد همچنان همان است: متغیری که هیچ‌جا
+ * مقدار نمی‌گیرد، یعنی گوشه‌ای از دیزاین که از تبِ استایل در دسترس نیست.
+ */
+preg_match_all('/(?m)^\s*(--zig-menu-[a-z0-9-]+)\s*:/', $section, $css_set_matches);
+
+$written = array_unique(array_merge($written_matches[1], $css_set_matches[1]));
 
 sort($used);
 

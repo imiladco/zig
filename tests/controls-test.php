@@ -59,6 +59,14 @@ require_once $root . '/includes/widgets/product-feature-showcase.php';
 require_once $root . '/includes/video-gallery-field.php';
 require_once $root . '/includes/widgets/product-video-gallery.php';
 require_once $root . '/includes/widgets/documents.php';
+require_once $root . '/includes/widgets/description.php';
+require_once $root . '/includes/design-icons.php';
+require_once $root . '/includes/search-normalizer.php';
+require_once $root . '/includes/search-query.php';
+require_once $root . '/includes/widgets/search.php';
+require_once $root . '/includes/widgets/contact-bar.php';
+require_once $root . '/includes/menu-tree.php';
+require_once $root . '/includes/widgets/menu.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -77,6 +85,10 @@ $widgets = [
     'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
     'گالریِ ویدئو'  => \Zig3d_Widgets\Widgets\Product_Video_Gallery::class,
     'اسناد دانلود' => \Zig3d_Widgets\Widgets\Documents::class,
+    'توضیحات'       => \Zig3d_Widgets\Widgets\Description::class,
+    'سرچ'           => \Zig3d_Widgets\Widgets\Search::class,
+    'اطلاعاتِ تماس' => \Zig3d_Widgets\Widgets\Contact_Bar::class,
+    'منویِ اصلی'    => \Zig3d_Widgets\Widgets\Menu::class,
 ];
 
 /*

@@ -5826,6 +5826,13 @@ nav.zig-menu {
 
 .zig-menu ul.zig-menu__bar {
 	display: flex;
+	/*
+	 * بالاتر از پرده و پایین‌تر از پنل. بدونِ این، پرده رویِ خودِ نوار هم
+	 * می‌افتد و آیتم‌ها با آن تیره می‌شوند — رویِ هدرِ تیرهٔ این طرح به
+	 * چشم نمی‌آمد ولی رویِ هر هدرِ روشنی می‌آمد.
+	 */
+	position: relative;
+	z-index: 55;
 	align-items: center;
 	justify-content: flex-end;
 	gap: var(--zig-menu-gap, 4px);
@@ -5869,10 +5876,13 @@ nav.zig-menu {
 }
 
 /*
- * زیرخطِ آیتمِ فعال. عرضش از خودِ متن می‌آید نه از عددِ ثابتِ طرح: ۸۸
- * فقط برایِ «محصولات» درست بود و بقیهٔ آیتم‌ها زیرخطِ بریده می‌گرفتند.
+ * زیرخط. عرضش از خودِ متن می‌آید نه از عددِ ثابتِ طرح: ۸۸ فقط برایِ
+ * «محصولات» درست بود و بقیهٔ آیتم‌ها زیرخطِ بریده می‌گرفتند.
+ *
+ * خط همیشه در DOM است و فقط محو/پیدا می‌شود — نه اینکه در حالتِ هاور
+ * ساخته شود. اگر ساخته می‌شد، گذاری در کار نبود و خط جهشی ظاهر می‌شد.
  */
-.zig-menu li.zig-menu__item--current > a.zig-menu__link .zig-menu__label::after {
+.zig-menu a.zig-menu__link .zig-menu__label::after {
 	content: '';
 	position: absolute;
 	inset-inline: 0;
@@ -5880,6 +5890,22 @@ nav.zig-menu {
 	height: var(--zig-menu-underline-height, 4px);
 	border-radius: 999px;
 	background: var(--zig-menu-underline-color, #ffffff);
+	opacity: 0;
+	transform: scaleX(var(--zig-menu-underline-grow, 0.4));
+	transform-origin: center;
+	transition: opacity var(--zig-menu-anim, 300ms) ease-out,
+		transform var(--zig-menu-anim, 300ms) ease-out;
+}
+
+/*
+ * سه حالت یک خط را روشن می‌کنند: صفحهٔ جاری، هاور، و فوکوسِ کیبورد.
+ * سومی لازم است وگرنه کاربرِ کیبورد هیچ نشانه‌ای از جایِ خودش ندارد.
+ */
+.zig-menu li.zig-menu__item--current > a.zig-menu__link .zig-menu__label::after,
+.zig-menu li.zig-menu__item:hover > a.zig-menu__link .zig-menu__label::after,
+.zig-menu li.zig-menu__item:focus-within > a.zig-menu__link .zig-menu__label::after {
+	opacity: 1;
+	transform: scaleX(1);
 }
 
 .zig-menu .zig-menu__label {
@@ -5905,6 +5931,22 @@ nav.zig-menu {
  * ‎display: none‎ — تا گذارِ محوشدن مقدارِ شروع داشته باشد. تأخیرِ
  * ‎visibility‎ فقط در بسته‌شدن است تا تا آخرِ محو دیده شود.
  */
+/*
+ * باز شدن یک «تا خوردن» است: پنل از بالا لولا می‌خورد و پایین می‌آید.
+ *
+ * چند چیز که آن را از یک ‎rotateX‎ی خام جدا می‌کند:
+ *
+ *   • ‎perspective()‎ داخلِ خودِ ‎transform‎. بدونش ‎rotateX‎ فقط ارتفاع را
+ *     له می‌کند و شبیهِ باز شدنِ یک در نیست. چون پنلِ مگا ‎fixed‎ است،
+ *     ‎perspective‎ی والد به آن نمی‌رسد و باید همین‌جا باشد.
+ *   • جابه‌جاییِ افقی از پیش‌فرضِ صفر جدا شده (‎--zig-menu-panel-shift‎)
+ *     تا مگامنو بتواند هم وسط‌چین بماند هم تا بخورد؛ وگرنه هر کدام
+ *     ‎transform‎ی دیگری را پاک می‌کرد.
+ *   • ‎backface-visibility‎ برایِ نیم‌فریمِ سوسویی که در وسطِ چرخش
+ *     دیده می‌شد.
+ *   • منحنیِ شتاب کمی «بیرون‌زن» است تا ته حرکت نرم بنشیند، نه اینکه
+ *     ناگهان بایستد.
+ */
 .zig-menu .zig-menu__panel {
 	position: absolute;
 	inset-block-start: 100%;
@@ -5914,17 +5956,58 @@ nav.zig-menu {
 	background-color: var(--zig-menu-panel-bg, #ffffff);
 	border-end-start-radius: var(--zig-menu-panel-radius, 28px);
 	border-end-end-radius: var(--zig-menu-panel-radius, 28px);
+	transform-origin: top center;
+	transform: translateX(var(--zig-menu-panel-shift, 0))
+		perspective(var(--zig-menu-perspective, 1400px))
+		rotateX(var(--zig-menu-fold, 90deg));
+	backface-visibility: hidden;
 	opacity: 0;
 	visibility: hidden;
-	transition: opacity var(--zig-menu-anim, 150ms) ease-out,
-		visibility 0s linear var(--zig-menu-anim, 150ms);
+	transition: transform var(--zig-menu-anim, 300ms) cubic-bezier(0.22, 1, 0.36, 1),
+		opacity var(--zig-menu-anim, 300ms) ease-out,
+		visibility 0s linear var(--zig-menu-anim, 300ms);
 }
 
 .zig-menu li.zig-menu__item:hover > .zig-menu__panel,
 .zig-menu li.zig-menu__item:focus-within > .zig-menu__panel {
+	transform: translateX(var(--zig-menu-panel-shift, 0))
+		perspective(var(--zig-menu-perspective, 1400px))
+		rotateX(0deg);
 	opacity: 1;
 	visibility: visible;
-	transition: opacity var(--zig-menu-anim, 150ms) ease-out, visibility 0s;
+	transition: transform var(--zig-menu-anim, 300ms) cubic-bezier(0.22, 1, 0.36, 1),
+		opacity var(--zig-menu-anim, 300ms) ease-out, visibility 0s;
+}
+
+/*
+ * پردهٔ پشتِ زیرمنو: صفحه پشتش تیره می‌شود تا چشم رویِ خودِ زیرمنو
+ * بنشیند.
+ *
+ * ‎:has()‎ لازم است چون پرده خواهرِ نوار است نه فرزندِ آیتم، و باید به
+ * هاورِ *هر* آیتمِ پنل‌دار واکنش بدهد. اگر مرورگری ‎:has()‎ نداشته باشد
+ * فقط پرده نمی‌آید و بقیهٔ منو دست‌نخورده کار می‌کند.
+ *
+ * ‎pointer-events: none‎ حتمی است: پرده تمامِ ویوپورت را می‌گیرد و بدونِ
+ * آن، همان لحظه که ظاهر می‌شود جلویِ هاورِ خودِ منو را می‌گرفت و منو
+ * بی‌وقفه باز و بسته می‌شد.
+ */
+.zig-menu .zig-menu__scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	background-color: var(--zig-menu-scrim, rgba(16, 24, 40, 0.5));
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity var(--zig-menu-anim, 300ms) ease-out,
+		visibility 0s linear var(--zig-menu-anim, 300ms);
+}
+
+.zig-menu:has(li.zig-menu__item--has-panel:hover) .zig-menu__scrim,
+.zig-menu:has(li.zig-menu__item--has-panel:focus-within) .zig-menu__scrim {
+	opacity: 1;
+	visibility: visible;
+	transition: opacity var(--zig-menu-anim, 300ms) ease-out, visibility 0s;
 }
 
 /*
@@ -5961,7 +6044,12 @@ nav.zig-menu {
 	inset-block-start: auto;
 	inset-inline: auto;
 	left: 50%;
-	transform: translateX(-50%);
+	/*
+	 * وسط‌چینی به متغیر داده می‌شود نه مستقیم به ‎transform‎: قاعدهٔ پایه
+	 * همین‌جا تا خوردنِ پنل را هم در همان ‎transform‎ دارد و نوشتنِ
+	 * دوباره‌اش یکی از آن دو را پاک می‌کرد.
+	 */
+	--zig-menu-panel-shift: -50%;
 	width: min(var(--zig-menu-mega-width, 1280px), 100vw);
 	padding-block-end: var(--zig-menu-mega-pad, 32px);
 	padding-inline: var(--zig-menu-mega-pad, 32px);
@@ -6194,7 +6282,19 @@ nav.zig-menu {
 
 @media (prefers-reduced-motion: reduce) {
 
-	.zig-menu .zig-menu__panel {
+	/*
+	 * با حرکتِ کم، تا خوردن و کشیدنِ زیرخط هر دو برداشته می‌شوند و فقط
+	 * محو شدن می‌مانَد. زاویه باید صفر شود نه فقط مدت: با مدتِ صفر و
+	 * زاویهٔ ۹۰، پنل بسته جهشی و لبه‌به‌لبه ظاهر می‌شد.
+	 */
+	.zig-menu {
+		--zig-menu-fold: 0deg;
+		--zig-menu-underline-grow: 1;
+	}
+
+	.zig-menu .zig-menu__panel,
+	.zig-menu .zig-menu__scrim,
+	.zig-menu a.zig-menu__link .zig-menu__label::after {
 		transition-duration: 0s;
 	}
 }

@@ -331,17 +331,44 @@ final class Menu extends Widget_Base {
     }
 
     /**
-     * آیتم‌هایِ سطحِ اولِ فهرستِ انتخاب‌شده — برایِ کنترل‌هایی که باید به
-     * یک آیتمِ مشخص اشاره کنند.
+     * آیتم‌هایِ سطحِ اولِ *همهٔ* فهرست‌ها — برایِ کنترل‌هایی که باید به یک
+     * آیتمِ مشخص اشاره کنند.
+     *
+     * دو نکته که هر دو یک بار اشتباه شدند:
+     *
+     * ۱. اینجا نباید ‎get_settings()‎ صدا زده شود. این تابع از داخلِ
+     *    ‎register_controls()‎ فراخوانی می‌شود و ‎get_settings()‎ برایِ
+     *    آماده‌کردنِ تنظیمات دوباره سراغِ همان ثبتِ کنترل‌ها می‌رود —
+     *    یعنی بازگشتِ بی‌پایان. نتیجه‌اش این بود که پنلِ ویجت در ویرایشگر
+     *    اصلاً بالا نمی‌آمد.
+     *
+     * ۲. حتی اگر بازگشتی هم نبود، در لحظهٔ ثبتِ کنترل‌ها هنوز ‎menu_id‎
+     *    انتخاب نشده. پس فهرستِ گزینه‌ها خالی می‌ماند و «کدام آیتم مگامنو
+     *    باشد؟» هیچ‌وقت گزینه‌ای نداشت — مگامنو عملاً غیرقابلِ روشن‌کردن
+     *    بود.
+     *
+     * راهِ درست: به ‎menu_id‎ کاری نداشته باشیم. شناسهٔ آیتمِ منو در
+     * وردپرس سراسری یکتاست، پس آیتم‌هایِ همهٔ فهرست‌ها می‌توانند کنارِ هم
+     * بیایند؛ نامِ فهرست جلویشان می‌آید تا وقتی چند فهرست هست هم روشن
+     * بماند کدام از کجاست.
      *
      * @return array<string,string>
      */
     private function top_level_options(): array {
-        $menu_id = (int) ($this->get_settings('menu_id') ?? 0);
+        if (!function_exists('wp_get_nav_menus')) {
+            return [];
+        }
+
+        $menus   = wp_get_nav_menus();
+        $several = count($menus) > 1;
         $options = [];
 
-        foreach (Menu_Tree::build($menu_id) as $node) {
-            $options[(string) $node['id']] = $node['title'];
+        foreach ($menus as $menu) {
+            foreach (Menu_Tree::build((int) $menu->term_id) as $node) {
+                $options[(string) $node['id']] = $several
+                    ? $node['title'] . ' — ' . $menu->name
+                    : $node['title'];
+            }
         }
 
         return $options;
@@ -604,13 +631,61 @@ final class Menu extends Widget_Base {
             'selectors' => [$root => '--zig-menu-count-color: {{VALUE}};'],
         ]);
 
+        $this->add_control('scrim_heading', [
+            'label'     => __('پردهٔ پشتِ زیرمنو', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('scrim_color', [
+            'label'       => __('رنگِ پرده', 'zig3d-widgets'),
+            'type'        => Controls_Manager::COLOR,
+            'selectors'   => [$root => '--zig-menu-scrim: {{VALUE}};'],
+            'description' => __('وقتی زیرمنو باز است، پشتِ صفحه تیره می‌شود تا چشم رویِ خودِ زیرمنو بنشیند. کاملاً شفافش کنید تا اصلاً دیده نشود.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('anim_heading', [
+            'label'     => __('حرکت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
         $this->add_control('panel_anim', [
             'label'      => __('زمانِ باز و بسته شدن', 'zig3d-widgets'),
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['ms'],
-            'range'      => ['ms' => ['min' => 0, 'max' => 600, 'step' => 10]],
-            'separator'  => 'before',
+            'range'      => ['ms' => ['min' => 0, 'max' => 900, 'step' => 10]],
             'selectors'  => [$root => '--zig-menu-anim: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        /*
+         * زاویهٔ تا خوردن. ۹۰ درجه یعنی پنل کاملاً لبه‌به‌لبه شروع کند
+         * (تا خوردنِ کامل)؛ عددهایِ کمتر همان حس را نرم‌تر می‌دهند.
+         */
+        $this->add_control('panel_fold', [
+            'label'       => __('زاویهٔ تا خوردن', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'size_units'  => ['deg'],
+            'range'       => ['deg' => ['min' => 0, 'max' => 90]],
+            'selectors'   => [$root => '--zig-menu-fold: {{SIZE}}{{UNIT}};'],
+            'description' => __('پنل از بالا لولا می‌خورد و باز می‌شود. صفر یعنی بدونِ تا خوردن، فقط محو شدن.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('panel_perspective', [
+            'label'       => __('عمقِ پرسپکتیو', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'size_units'  => ['px'],
+            'range'       => ['px' => ['min' => 200, 'max' => 4000, 'step' => 50]],
+            'selectors'   => [$root => '--zig-menu-perspective: {{SIZE}}{{UNIT}};'],
+            'description' => __('هرچه کمتر، تا خوردن اغراق‌آمیزتر. عددِ بزرگ حرکت را تخت‌تر می‌کند.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('underline_grow', [
+            'label'       => __('کشیدگیِ اولیهٔ زیرخط', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'range'       => ['px' => ['min' => 0, 'max' => 1, 'step' => 0.05]],
+            'selectors'   => [$root => '--zig-menu-underline-grow: {{SIZE}};'],
+            'description' => __('زیرخط از این نسبت تا عرضِ کامل باز می‌شود. یک یعنی بدونِ کشیدگی.', 'zig3d-widgets'),
         ]);
 
         $this->end_controls_section();
@@ -1128,6 +1203,9 @@ final class Menu extends Widget_Base {
         }
 
         echo '</ul>';
+
+        /* پردهٔ پشتِ زیرمنویِ دسکتاپ — تزئینی، پس از دیدِ صفحه‌خوان بیرون */
+        echo '<div class="zig-menu__scrim" aria-hidden="true"></div>';
 
         $this->render_sheet($nodes, $settings);
 
