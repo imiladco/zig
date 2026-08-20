@@ -43,11 +43,39 @@ if (!function_exists('wp_get_nav_menus')) {
         return [(object) ['term_id' => 7, 'name' => 'منویِ اصلی']];
     }
 }
+/*
+ * تاکسونومیِ ساختگی: دو دستهٔ والد و زیردسته‌هایشان — همان شکلی که
+ * ستون‌هایِ مگامنو از آن ساخته می‌شوند.
+ */
+$GLOBALS['__zig_terms'] = [
+    11  => ['name' => 'دستهٔ قطعات', 'parent' => 0,  'count' => 141],
+    12  => ['name' => 'دستهٔ متریال', 'parent' => 0,  'count' => 95],
+    101 => ['name' => 'زیردستهٔ یک', 'parent' => 11, 'count' => 20],
+    102 => ['name' => 'زیردستهٔ دو', 'parent' => 11, 'count' => 30],
+    201 => ['name' => 'زیردستهٔ سه', 'parent' => 12, 'count' => 40],
+];
+
+/* همان ترم‌ها، به شکلی که ‎get_terms()‎ی استابِ مشترک برمی‌گرداند */
+$GLOBALS['__zig_wp_terms'] = [];
+
+foreach ($GLOBALS['__zig_terms'] as $id => $term) {
+    $GLOBALS['__zig_wp_terms'][] = (object) array_merge(['term_id' => (int) $id], $term);
+}
+
 if (!function_exists('get_term')) {
     function get_term($id, $taxonomy = '') {
-        $counts = $GLOBALS['__zig_term_counts'] ?? [];
+        $terms = $GLOBALS['__zig_terms'] ?? [];
 
-        return isset($counts[$id]) ? (object) ['term_id' => $id, 'count' => $counts[$id]] : null;
+        if (!isset($terms[$id])) {
+            return null;
+        }
+
+        return (object) array_merge(['term_id' => (int) $id], $terms[$id]);
+    }
+}
+if (!function_exists('get_term_link')) {
+    function get_term_link($id, $taxonomy = '') {
+        return 'https://zig3d.test/cat/' . (int) $id;
     }
 }
 if (!function_exists('is_wp_error')) {
@@ -255,52 +283,93 @@ Tests::ok(
 );
 
 /* --------------------------------------------------------------------------
- * محتوایِ دستیِ مگامنو
+ * ستون‌ها از دستهٔ محصول
  *
- * ردیف‌هایِ هر ستون باید از فهرستِ وردپرس بیایند (پیوندِ واقعیِ دسته‌ها
- * آنجاست) ولی متنِ دکمه و سرتیتر از تنظیمات — چون در طرح این دو با هم
- * فرق دارند و هیچ فیلدی در فهرستِ وردپرس این تفاوت را طبیعی نگه نمی‌دارد.
+ * منبعِ اصلیِ ستون‌ها تاکسونومیِ محصول است نه تودرتوییِ فهرستِ وردپرس:
+ * زیردسته‌ها، شمارش و پیوند همه آنجا هستند و دستهٔ تازه باید خودبه‌خود
+ * در منو دیده شود، نه اینکه مدیر دستی در فهرست هم تکرارش کند.
  * ----------------------------------------------------------------------- */
 
-$html_manual = $render([
+$html_terms = $render([
+    'menu_id'      => 7,
+    'mega_item'    => '1',
+    'mega_cards'   => 0,
+    'show_counts'  => 'yes',
+    'mega_columns' => [
+        ['_id' => 'a', 'column_term' => '11', 'column_cta' => 'دسته بندی قطعات یدکی'],
+        ['_id' => 'b', 'column_term' => '12', 'column_title' => 'متریالِ دلخواه', 'column_cta' => ''],
+    ],
+]);
+
+/* خالی گذاشتنِ عنوان یعنی نامِ خودِ دسته */
+Tests::keeps('عنوانِ ستون از نامِ دسته می‌آید', $html_terms, '<bdi>دستهٔ قطعات</bdi>');
+Tests::keeps('و قابلِ بازنویسی است', $html_terms, '<bdi>متریالِ دلخواه</bdi>');
+
+/* متنِ دکمه جداست؛ خالی که باشد همان نامِ ستون */
+Tests::keeps('متنِ دکمه دستی است', $html_terms, '<bdi>دسته بندی قطعات یدکی</bdi>');
+Tests::keeps('و خالی یعنی همان عنوان', $html_terms, '<bdi>متریالِ دلخواه</bdi>');
+
+/* ردیف‌ها زیردسته‌هایِ همان دسته‌اند، با پیوندِ آرشیوِ خودشان */
+Tests::keeps('زیردسته ردیف می‌شود', $html_terms, '<bdi>زیردستهٔ یک</bdi>');
+Tests::keeps('و پیوندش آرشیوِ ترم است', $html_terms, 'href="https://zig3d.test/cat/101"');
+
+/* شمارشِ ستون از خودِ دسته می‌آید */
+Tests::keeps('شمارشِ ستون از دسته می‌آید', $html_terms, '141 محصول');
+
+/*
+ * تعدادِ ستون‌ها را تنظیمات تعیین می‌کند، نه فهرستِ وردپرس. یک ردیف یعنی
+ * یک ستون.
+ */
+$html_one = $render([
+    'menu_id'      => 7,
+    'mega_item'    => '1',
+    'mega_cards'   => 0,
+    'mega_columns' => [['_id' => 'a', 'column_term' => '11']],
+]);
+
+Tests::same('یک ردیف، یک ستون', substr_count($html_one, 'zig-menu__col-body'), 1);
+
+/*
+ * دقیقاً *سرتیترِ ستون* سنجیده می‌شود، نه خودِ رشته: همان نام در کشویِ
+ * موبایل هم هست — و باید باشد، چون آنجا فهرستِ وردپرس منبع است.
+ */
+Tests::blocks(
+    'ستونِ فهرستِ وردپرس نمی‌آید',
+    $html_one,
+    '<span class="zig-menu__col-title"><bdi>انواع مواد و متریال</bdi>'
+);
+
+/* دستهٔ ناموجود ردیفش نادیده گرفته می‌شود، نه اینکه ستونِ خالی بسازد */
+$html_ghost = $render([
     'menu_id'      => 7,
     'mega_item'    => '1',
     'mega_cards'   => 0,
     'mega_columns' => [
-        ['_id' => 'a', 'column_title' => 'قطعاتِ دستی', 'column_cta' => 'دسته بندی قطعات یدکی'],
-        ['_id' => 'b', 'column_title' => 'متریالِ دستی', 'column_cta' => 'دسته بندی مواد و متریال'],
+        ['_id' => 'a', 'column_term' => '999'],
+        ['_id' => 'b', 'column_term' => '11'],
     ],
 ]);
 
-Tests::keeps('عنوانِ ستون از تنظیمات می‌آید', $html_manual, '<bdi>قطعاتِ دستی</bdi>');
-Tests::keeps('متنِ دکمه هم', $html_manual, '<bdi>دسته بندی قطعات یدکی</bdi>');
-Tests::keeps('ستونِ دوم هم جدا تنظیم می‌شود', $html_manual, '<bdi>متریالِ دستی</bdi>');
-
-/* ردیف‌ها همچنان از فهرستِ وردپرس‌اند، با پیوندِ واقعیِ خودشان */
-Tests::keeps('ردیف‌ها از فهرست می‌آیند', $html_manual, 'href="https://zig3d.test/111"');
+Tests::same('دستهٔ ناموجود ستون نمی‌سازد', substr_count($html_ghost, 'zig-menu__col-body'), 1);
 
 /*
- * ستونی که ردیفی در تنظیمات ندارد باید دست‌نخورده بماند. وگرنه افزودنِ
- * یک دستهٔ تازه به فهرستِ وردپرس، ستونِ بی‌عنوان می‌ساخت.
+ * تا وقتی هیچ ردیفی دسته‌ای انتخاب نکرده، رفتارِ قبلی سرِ جایش می‌ماند —
+ * وگرنه نمونه‌هایِ ذخیره‌شدهٔ پیش از این تغییر یک‌شبه خالی می‌شدند.
  */
-$html_partial = $render([
+$html_legacy = $render([
     'menu_id'      => 7,
     'mega_item'    => '1',
     'mega_cards'   => 0,
-    'mega_columns' => [['_id' => 'a', 'column_title' => 'فقط اولی']],
+    'mega_columns' => [['_id' => 'a', 'column_term' => '']],
 ]);
 
-Tests::keeps('ستونِ بی‌تنظیم عنوانِ خودش را نگه می‌دارد', $html_partial, '<bdi>انواع مواد و متریال</bdi>');
+Tests::keeps('بدونِ دسته، فهرستِ وردپرس جواب می‌دهد', $html_legacy, '<bdi>انواع قطعات</bdi>');
 
-/* ردیفِ خالی هم نباید چیزی را پاک کند */
-$html_blank = $render([
-    'menu_id'      => 7,
-    'mega_item'    => '1',
-    'mega_cards'   => 0,
-    'mega_columns' => [['_id' => 'a', 'column_title' => '', 'column_cta' => '']],
-]);
+/* گزینه‌هایِ کنترل، با تورفتگیِ سطح */
+$cats = Menu_Tree::category_options();
 
-Tests::keeps('ردیفِ خالی عنوان را پاک نمی‌کند', $html_blank, '<bdi>انواع قطعات</bdi>');
+Tests::ok('دسته‌ها برایِ کنترل فهرست می‌شوند', isset($cats['11']));
+Tests::same('زیردسته تورفتگی می‌گیرد', $cats['101'], '— زیردستهٔ یک');
 
 /* --------------------------------------------------------------------------
  * کارت‌هایِ دستی

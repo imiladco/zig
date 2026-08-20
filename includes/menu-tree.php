@@ -159,6 +159,174 @@ final class Menu_Tree {
     }
 
     /* =====================================================================
+     * دسته‌هایِ محصول
+     *
+     * ستون‌هایِ مگامنو از اینجا ساخته می‌شوند، نه از تودرتوییِ فهرستِ
+     * وردپرس. دلیلش این است که آن‌ها *دسته‌هایِ محصول‌اند*: زیردسته‌ها،
+     * شمارش و پیوندشان همه در تاکسونومی هستند و هر بار که مدیر دسته‌ای
+     * اضافه می‌کند باید خودبه‌خود در منو دیده شوند — نه اینکه دستی در
+     * فهرستِ وردپرس هم تکرارشان کند و آن نسخه کهنه بماند.
+     * =================================================================== */
+
+    /**
+     * دسته‌هایِ محصول برایِ کنترلِ انتخاب، با تورفتگیِ سطح.
+     *
+     * از داخلِ ‎register_controls()‎ صدا زده می‌شود، پس هیچ تنظیمی را
+     * نمی‌خوانَد و هیچ کشی هم نمی‌سازد — پنلِ ویرایشگر جایِ کشِ شش‌ساعته
+     * نیست.
+     *
+     * @return array<string,string>
+     */
+    public static function category_options(): array {
+        if (!function_exists('get_terms')) {
+            return [];
+        }
+
+        $terms = get_terms([
+            'taxonomy'   => 'product_cat',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+        ]);
+
+        if (!is_array($terms)) {
+            return [];
+        }
+
+        $by_parent = [];
+
+        foreach ($terms as $term) {
+            $by_parent[(int) $term->parent][] = $term;
+        }
+
+        return self::flatten_options($by_parent, 0, 0);
+    }
+
+    /** @param array<int,array<int,object>> $by_parent */
+    private static function flatten_options(array $by_parent, int $parent, int $depth): array {
+        if (empty($by_parent[$parent]) || $depth > 4) {
+            return [];
+        }
+
+        $options = [];
+
+        foreach ($by_parent[$parent] as $term) {
+            $options[(string) $term->term_id] = str_repeat('— ', $depth) . $term->name;
+
+            foreach (self::flatten_options($by_parent, (int) $term->term_id, $depth + 1) as $id => $label) {
+                $options[$id] = $label;
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * یک دسته به شکلِ ستونِ آمادهٔ رندر: خودش، به‌علاوهٔ زیردسته‌هایش.
+     *
+     * شکلِ خروجی عمداً همان شکلِ گرهِ فهرست است تا رندر لازم نباشد بداند
+     * ستون از کجا آمده.
+     *
+     * @return array{id:int,title:string,url:string,description:string,term_id:int,current:bool,target:string,children:array}|null
+     */
+    public static function category_column(int $term_id): ?array {
+        if ($term_id <= 0 || !function_exists('get_term')) {
+            return null;
+        }
+
+        $key = 'col_' . $term_id;
+
+        if (isset(self::$memo[$key])) {
+            return self::$memo[$key];
+        }
+
+        $term = get_term($term_id, 'product_cat');
+
+        if (!$term || is_wp_error($term)) {
+            return self::$memo[$key] = null;
+        }
+
+        return self::$memo[$key] = [
+            'id'          => $term_id,
+            'title'       => (string) $term->name,
+            'url'         => self::term_url($term_id),
+            'description' => '',
+            'term_id'     => $term_id,
+            'current'     => false,
+            'target'      => '',
+            'children'    => self::child_terms($term_id),
+        ];
+    }
+
+    /**
+     * زیردسته‌هایِ یک دسته — یک سطح، همان‌قدر که طرح نشان می‌دهد.
+     *
+     * کش با همان الگویِ نسخه‌دار است: هر ویرایشِ دسته نسخه را جلو می‌برد
+     * و کلیدهایِ قدیمی یک‌باره بی‌اثر می‌شوند.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public static function child_terms(int $parent_id): array {
+        if ($parent_id <= 0 || !function_exists('get_terms')) {
+            return [];
+        }
+
+        $key = 'zig3d_menu_kids_' . self::version() . '_' . $parent_id;
+
+        if (isset(self::$memo[$key])) {
+            return self::$memo[$key];
+        }
+
+        $cached = get_transient($key);
+
+        if (is_array($cached)) {
+            return self::$memo[$key] = $cached;
+        }
+
+        $terms = get_terms([
+            'taxonomy'   => 'product_cat',
+            'parent'     => $parent_id,
+            'hide_empty' => false,
+            'orderby'    => 'name',
+        ]);
+
+        $rows = [];
+
+        if (is_array($terms)) {
+            foreach ($terms as $term) {
+                $rows[] = [
+                    'id'          => (int) $term->term_id,
+                    'title'       => (string) $term->name,
+                    'url'         => self::term_url((int) $term->term_id),
+                    'description' => '',
+                    'term_id'     => (int) $term->term_id,
+                    'current'     => false,
+                    'target'      => '',
+                    'children'    => [],
+                ];
+            }
+        }
+
+        /* خالی کش نمی‌شود، به همان دلیلِ پرفروش‌ترین‌ها */
+        if ([] === $rows) {
+            return [];
+        }
+
+        set_transient($key, $rows, self::TTL);
+
+        return self::$memo[$key] = $rows;
+    }
+
+    private static function term_url(int $term_id): string {
+        if (!function_exists('get_term_link')) {
+            return '';
+        }
+
+        $link = get_term_link($term_id, 'product_cat');
+
+        return is_string($link) ? $link : '';
+    }
+
+    /* =====================================================================
      * کارت‌هایِ مگامنو
      * =================================================================== */
 

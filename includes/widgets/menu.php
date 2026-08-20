@@ -271,28 +271,39 @@ final class Menu extends Widget_Base {
         ]);
 
         /*
-         * ستون‌هایِ دسته: ردیف‌هایشان از فهرستِ وردپرس می‌آیند (چون
-         * پیوندِ واقعیِ دسته‌ها آنجاست) ولی *متنِ* دکمه و سرتیتر دستی
-         * است. در طرح این دو با هم فرق دارند — «دسته بندی قطعات یدکی» در
-         * برابرِ «انواع قطعات» — و هیچ فیلدی در فهرستِ وردپرس نیست که
-         * این تفاوت را طبیعی نگه دارد.
+         * هر ستونِ مگامنو یک *دستهٔ والدِ محصول* است و ردیف‌هایش
+         * زیردسته‌هایِ همان دسته — نه فرزندانِ آیتم در فهرستِ وردپرس.
          *
-         * تطبیق ترتیبی است: ردیفِ اول همان ستونِ اول. این‌طور پیش‌فرض‌ها
-         * بدونِ دانستنِ شناسهٔ آیتم‌ها همان لحظه کار می‌کنند.
+         * چرا این بهتر است: زیردسته‌ها، شمارش و پیوند همه در خودِ
+         * تاکسونومی هستند. با تکیه بر فهرستِ وردپرس، مدیر باید هر دستهٔ
+         * تازه را دستی آنجا هم تکرار می‌کرد و آن نسخه بی‌صدا کهنه می‌شد.
+         *
+         * عنوان و متنِ دکمه دستی می‌مانند، چون در طرح با هم فرق دارند —
+         * «دسته بندی قطعات یدکی» در برابرِ «انواع قطعات» — و خالی
+         * گذاشتنشان یعنی همان نامِ خودِ دسته.
          */
         $column = new Repeater();
+
+        $column->add_control('column_term', [
+            'label'       => __('دستهٔ والد', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SELECT,
+            'options'     => ['' => __('— انتخاب کنید —', 'zig3d-widgets')] + Menu_Tree::category_options(),
+            'label_block' => true,
+            'description' => __('زیردسته‌هایِ همین دسته، ردیف‌هایِ ستون می‌شوند.', 'zig3d-widgets'),
+        ]);
 
         $column->add_control('column_title', [
             'label'       => __('عنوانِ ستون', 'zig3d-widgets'),
             'type'        => Controls_Manager::TEXT,
             'label_block' => true,
-            'description' => __('خالی یعنی همان عنوانِ آیتم در فهرستِ وردپرس.', 'zig3d-widgets'),
+            'description' => __('خالی یعنی همان نامِ دسته.', 'zig3d-widgets'),
         ]);
 
         $column->add_control('column_cta', [
             'label'       => __('متنِ دکمه', 'zig3d-widgets'),
             'type'        => Controls_Manager::TEXT,
             'label_block' => true,
+            'description' => __('خالی یعنی همان نامِ دسته. پیوندش صفحهٔ خودِ دسته است.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('mega_columns', [
@@ -301,17 +312,7 @@ final class Menu extends Widget_Base {
             'fields'      => $column->get_controls(),
             'title_field' => '{{{ column_title || column_cta }}}',
             'condition'   => ['mega_item!' => ''],
-            'default'     => [
-                [
-                    'column_title' => __('انواع قطعات', 'zig3d-widgets'),
-                    'column_cta'   => __('دسته بندی قطعات یدکی', 'zig3d-widgets'),
-                ],
-                [
-                    'column_title' => __('انواع مواد و متریال', 'zig3d-widgets'),
-                    'column_cta'   => __('دسته بندی مواد و متریال دندانسازی', 'zig3d-widgets'),
-                ],
-            ],
-            'description' => __('ردیفِ اول ستونِ اول است، ردیفِ دوم ستونِ دوم. ردیف‌هایِ زیرِ هر ستون از خودِ فهرستِ وردپرس می‌آیند.', 'zig3d-widgets'),
+            'description' => __('هر ردیف یک ستون. تا وقتی هیچ دسته‌ای انتخاب نشده، ستون‌ها مثلِ قبل از فرزندانِ همین آیتم در فهرستِ وردپرس ساخته می‌شوند.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('mega_cards', [
@@ -1624,7 +1625,14 @@ final class Menu extends Widget_Base {
 
     /** شکلِ «محصولات»: ستون‌ها، هر کدام CTA + سرتیترِ شمارش‌دار + محتوا */
     private function render_mega_panel(array $node, array $settings): void {
-        if ([] === $node['children']) {
+        $columns = $this->mega_columns($node, $settings);
+
+        /*
+         * شرط رویِ *ستون‌ها*ست نه رویِ فرزندانِ آیتم: وقتی ستون‌ها از
+         * دسته‌هایِ محصول می‌آیند، آیتمِ «محصولات» در فهرستِ وردپرس
+         * می‌تواند اصلاً فرزندی نداشته باشد.
+         */
+        if ([] === $columns) {
             return;
         }
 
@@ -1634,24 +1642,7 @@ final class Menu extends Widget_Base {
          * هر دستهٔ فرزند یک ستونِ فهرستی می‌شود، به ترتیبِ خودِ فهرستِ
          * وردپرس. مدیر با کشیدن‌ورهاکردن جایشان را عوض می‌کند.
          */
-        $overrides = array_values((array) ($settings['mega_columns'] ?? []));
-
-        foreach ($node['children'] as $index => $column) {
-            /*
-             * تطبیقِ ترتیبی: ردیفِ n اُمِ تنظیمات، ستونِ n اُم. ستونی که
-             * ردیفی نداشته باشد دست‌نخورده از فهرستِ وردپرس می‌آید، پس
-             * افزودنِ یک دستهٔ تازه چیزی را نمی‌شکند.
-             */
-            $override = $overrides[$index] ?? [];
-
-            $column['title'] = $this->pick($override, 'column_title', $column['title']);
-
-            /*
-             * متنِ دکمه سه جا را به ترتیب می‌گردد: تنظیماتِ همین ستون،
-             * فیلدِ توضیحِ آیتم در فهرستِ وردپرس، و آخر عنوانِ خودش.
-             */
-            $column['description'] = $this->pick($override, 'column_cta', (string) ($column['description'] ?? ''));
-
+        foreach ($columns as $column) {
             echo '<div class="zig-menu__col">';
 
             $this->render_cta($column, $settings);
@@ -1673,6 +1664,38 @@ final class Menu extends Widget_Base {
         $this->render_popular_column($node, $settings);
 
         echo '</div>';
+    }
+
+    /**
+     * ستون‌هایِ مگامنو، از هر منبعی که تنظیم شده باشد.
+     *
+     * راهِ اصلی: هر ردیفِ تنظیمات یک دستهٔ والدِ محصول را نام می‌برد و
+     * زیردسته‌هایش ردیف‌هایِ ستون می‌شوند. عنوان و متنِ دکمه دستی‌اند و
+     * خالی‌شان یعنی نامِ خودِ دسته.
+     *
+     * راهِ دوم، وقتی هیچ ردیفی دسته‌ای انتخاب نکرده: همان رفتارِ قبلی،
+     * یعنی فرزندانِ خودِ آیتم در فهرستِ وردپرس. نگه داشتنش برایِ این است
+     * که نمونه‌هایِ ذخیره‌شدهٔ پیش از این تغییر یک‌شبه خالی نشوند.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function mega_columns(array $node, array $settings): array {
+        $columns = [];
+
+        foreach ((array) ($settings['mega_columns'] ?? []) as $row) {
+            $column = Menu_Tree::category_column((int) ($row['column_term'] ?? 0));
+
+            if (null === $column) {
+                continue;
+            }
+
+            $column['title']       = $this->pick($row, 'column_title', $column['title']);
+            $column['description'] = $this->pick($row, 'column_cta', $column['title']);
+
+            $columns[] = $column;
+        }
+
+        return [] !== $columns ? $columns : $node['children'];
     }
 
     /**

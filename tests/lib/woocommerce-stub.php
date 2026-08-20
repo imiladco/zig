@@ -580,8 +580,29 @@ namespace {
         }
     }
 
+    /**
+     * فهرستِ ترم‌ها.
+     *
+     * آرگومان‌ها عمداً *تقریباً* همه نادیده گرفته می‌شوند — تستی که از
+     * این استاب استفاده می‌کند خودش دقیقاً می‌گوید چه چیزی برگردد.
+     * استثنا ‎parent‎ است: ستون‌هایِ مگامنو زیردسته‌هایِ یک دستهٔ مشخص را
+     * می‌خواهند و بدونِ این فیلتر، هر دسته همهٔ ترم‌ها را زیرِ خودش
+     * می‌دید. فیلتر فقط وقتی اعمال می‌شود که ‎parent‎ داده شده باشد، پس
+     * فراخوان‌هایِ قدیمی دست‌نخورده می‌مانند.
+     */
     if (!function_exists('get_terms')) {
-        function get_terms($args = []) { return $GLOBALS['__zig_wp_terms'] ?? []; }
+        function get_terms($args = []) {
+            $terms = $GLOBALS['__zig_wp_terms'] ?? [];
+
+            if (!isset($args['parent'])) {
+                return $terms;
+            }
+
+            return array_values(array_filter(
+                $terms,
+                static fn($term): bool => (int) ($term->parent ?? 0) === (int) $args['parent']
+            ));
+        }
     }
     if (!function_exists('get_posts')) {
         function get_posts($args = []) { return []; }
