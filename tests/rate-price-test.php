@@ -34,7 +34,12 @@ $GLOBALS['__zig_mns_currencies'] = [];
 
 if (!class_exists('MNS_Currency_Stub')) {
     final class MNS_Currency_Stub {
-        public function __construct(private int $update_time) {}
+        private int $update_time;
+
+        public function __construct(int $update_time) {
+            $this->update_time = $update_time;
+        }
+
         public function get_update_time(): int { return $this->update_time; }
     }
 }
