@@ -177,7 +177,7 @@ final class Menu_Tree {
      * @return int[]
      */
     public static function popular_products(int $term_id, int $limit): array {
-        if ($term_id < 0 || $limit <= 0 || !class_exists('WP_Query')) {
+        if ($term_id < 0 || $limit <= 0) {
             return [];
         }
 
@@ -191,6 +191,15 @@ final class Menu_Tree {
 
         if (is_array($cached)) {
             return self::$memo[$key] = $cached;
+        }
+
+        /*
+         * سنجهٔ ‎WP_Query‎ عمداً *بعد* از کش است: وقتی کش گرم است هیچ
+         * کوئری‌ای لازم نیست، پس نبودنِ کلاس هم نباید جلویِ پاسخ‌دادن را
+         * بگیرد. جایِ قبلی‌اش یعنی کشِ گرم هم بی‌مصرف می‌ماند.
+         */
+        if (!class_exists('WP_Query')) {
+            return [];
         }
 
         $args = [

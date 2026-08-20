@@ -297,6 +297,44 @@ function zig_css_section(string $css, string $title): string {
     return false === $next ? $body : substr($body, 0, $next);
 }
 
+/**
+ * بدنهٔ یک بلوکِ ‎@media‎ (یا هر بلوکِ آکولاددار)، از روی سرآیندش.
+ *
+ * برایِ سنجه‌هایی که باید *داخلِ* یک بلوکِ خاص را ببینند: «حرکتِ کم مدت
+ * را صفر می‌کند» اگر رویِ کلِ فایل اجرا شود، با یک ‎0s‎ی از هر جایِ دیگر
+ * هم پاس می‌شود و دیگر چیزی را تضمین نمی‌کند.
+ */
+function zig_css_block(string $css, string $header): string {
+    $start = strpos($css, $header);
+
+    if (false === $start) {
+        return '';
+    }
+
+    $open = strpos($css, '{', $start);
+
+    if (false === $open) {
+        return '';
+    }
+
+    $depth = 0;
+    $length = strlen($css);
+
+    for ($i = $open; $i < $length; $i++) {
+        if ('{' === $css[$i]) {
+            $depth++;
+        } elseif ('}' === $css[$i]) {
+            $depth--;
+
+            if (0 === $depth) {
+                return substr($css, $open + 1, $i - $open - 1);
+            }
+        }
+    }
+
+    return '';
+}
+
 final class Tests {
 
     private static int $passed = 0;

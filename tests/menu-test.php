@@ -244,6 +244,91 @@ Tests::keeps('دکمه متنِ توضیحِ آیتم را می‌گیرد', $ht
 Tests::keeps('و عنوانِ ستون سرِ جایش می‌ماند', $html_desc, '<span class="zig-menu__col-title"><bdi>انواع قطعات</bdi>');
 
 /* ==========================================================================
+ * کشویِ موبایل
+ *
+ * نسخهٔ موبایل *همان درخت* است با ناوبریِ دیگر. چیزهایی که اینجا سنجیده
+ * می‌شوند، همان‌هایی‌اند که در پنلِ المنتور سالم به نظر می‌رسند ولی رویِ
+ * گوشی می‌شکنند.
+ * ======================================================================= */
+
+Tests::group('منو › کشویِ موبایل');
+
+$mobile = $render([
+    'menu_id'     => 7,
+    'mega_item'   => '1',
+    'mega_cards'  => 0,
+    'show_counts' => 'yes',
+    'close_label' => 'بستن',
+    'back_label'  => 'بازگشت',
+    'open_label'  => 'منو',
+]);
+
+Tests::keeps('دکمهٔ بازکننده هست', $mobile, 'class="zig-menu__trigger"');
+Tests::keeps('و به کشو وصل است', $mobile, 'aria-controls="zig-menu-sheet-testid"');
+Tests::keeps('کشو همان شناسه را دارد', $mobile, 'id="zig-menu-sheet-testid"');
+Tests::keeps('کشو یک دیالوگ است', $mobile, 'role="dialog"');
+
+/* دکمهٔ آیکون‌تنها باید نامِ خوانا داشته باشد وگرنه صفحه‌خوان «دکمه» می‌گوید */
+Tests::keeps('دکمه نامِ خوانا دارد', $mobile, '<span class="zig-menu__sr">منو</span>');
+
+/*
+ * هر دو متن رویِ خودِ دکمه‌اند تا اسکریپت مجبور نشود رشتهٔ فارسی هاردکد
+ * کند — و مدیر بتواند از تبِ محتوا عوضشان کند.
+ */
+Tests::keeps('متنِ بستن روی دکمه است', $mobile, 'data-close-label="بستن"');
+Tests::keeps('متنِ بازگشت هم', $mobile, 'data-back-label="بازگشت"');
+
+/* هر دو آیکون در DOM‌اند و CSS یکی را نشان می‌دهد — نه ساختنِ HTML در JS */
+Tests::keeps('آیکونِ بستن هست', $mobile, "data-icon=\"close\"");
+Tests::keeps('آیکونِ بازگشت هم', $mobile, "data-icon=\"back\"");
+
+/* لایهٔ ریشه باز است و لایه‌هایِ تودرتو بسته */
+Tests::keeps('لایهٔ ریشه هست', $mobile, 'data-level="root"');
+Tests::blocks('و پنهان نیست', $mobile, 'data-level="root" hidden');
+Tests::keeps('لایهٔ فرزند پنهان است', $mobile, 'data-level="1" hidden');
+
+/*
+ * ردیفِ فرزنددار دکمه است نه پیوند: تپ رویش تو می‌رود. اگر پیوند بماند،
+ * تپ صفحه را عوض می‌کند و کشو اصلاً لایهٔ دوم را نشان نمی‌دهد.
+ */
+Tests::keeps('ردیفِ فرزنددار دکمه است', $mobile, '<button type="button" class="zig-menu__m-link" data-open-level="1"');
+Tests::keeps('و آیتمِ بی‌فرزند پیوند', $mobile, '<a class="zig-menu__m-link" href="https://zig3d.test/3"');
+
+/*
+ * چون تپ رویِ والد تو می‌رود، تنها راهِ رسیدن به *خودِ* صفحهٔ والد ردیفِ
+ * «مشاهده …» است. نبودنش یعنی صفحهٔ «محصولات» از موبایل غیرقابلِ دسترس.
+ */
+Tests::keeps('ردیفِ «مشاهده …» در لایهٔ فرزند هست', $mobile, 'مشاهده محصولات');
+Tests::keeps('و به خودِ والد می‌رود', $mobile, '<a class="zig-menu__m-link" href="https://zig3d.test/1"');
+
+/* شمارش در ردیف‌هایِ دستهٔ محصول */
+Tests::keeps('ردیفِ دسته شمارش دارد', $mobile, 'zig-menu__m-count');
+
+/* لایهٔ سوم هم ساخته می‌شود، نه فقط دو سطح */
+Tests::keeps('لایهٔ سوم هم رندر شده', $mobile, 'data-level="11" hidden');
+
+/* پرده برایِ بستن با تپِ بیرون */
+Tests::keeps('پرده هست', $mobile, 'class="zig-menu__backdrop"');
+
+/* قالبِ پایین فقط وقتی انتخاب شده باشد */
+Tests::blocks('بدونِ قالب، بلوکِ پایین نمی‌آید', $mobile, 'zig-menu__sheet-foot');
+
+/* جهتِ باز شدن یک کلاس است تا CSS سه چیدمانِ متفاوت بسازد */
+Tests::keeps('جهتِ پیش‌فرض لبهٔ شروع است', $mobile, 'zig-menu--sheet-start');
+Tests::keeps(
+    'و تنظیم‌شدنی است',
+    $render(['menu_id' => 7, 'sheet_from' => 'bottom']),
+    'zig-menu--sheet-bottom'
+);
+
+/* مقدارِ ناشناخته به پیش‌فرض برمی‌گردد، نه به کلاسِ بی‌معنی */
+Tests::keeps(
+    'مقدارِ ناشناخته بی‌اثر است',
+    $render(['menu_id' => 7, 'sheet_from' => '"><script>']),
+    'zig-menu--sheet-start'
+);
+
+/* ==========================================================================
  * استایل
  * ======================================================================= */
 
@@ -328,3 +413,69 @@ $uncontrolled = array_values(array_diff($used, $written));
 
 Tests::ok('این بخش متغیر دارد', count($used) > 30);
 Tests::same('هر متغیر یک کنترل دارد', $uncontrolled, []);
+
+/* ==========================================================================
+ * استایل › کشویِ موبایل
+ * ======================================================================= */
+
+Tests::group('منو › استایل › کشو');
+
+/*
+ * جدا شدنِ دو نسخه فقط کارِ برک‌پوینت است. اگر نوارِ دسکتاپ در موبایل
+ * پنهان نشود، هر دو با هم دیده می‌شوند.
+ */
+Tests::keeps('نوارِ دسکتاپ در موبایل پنهان می‌شود', $section, 'ul.zig-menu__bar {
+		display: none;');
+
+/*
+ * ‎translateX‎ فیزیکی است و در راست‌چین باید آینه شود، وگرنه کشو از لبهٔ
+ * مخالف وارد می‌شود و از رویِ کلِ صفحه رد می‌شود.
+ */
+Tests::keeps('جهتِ کشو در راست‌چین آینه می‌شود', $section, '.zig-menu--sheet-start .zig-menu__sheet:dir(rtl)');
+
+/* پنهان‌شدن با visibility تا گذار مقدارِ شروع داشته باشد */
+Tests::keeps('کشو با visibility پنهان می‌شود', $section, 'visibility 0s linear var(--zig-menu-anim, 150ms)');
+
+/*
+ * ‎transition-duration: 0s‎ و نه ‎transition: none‎ — اسکریپت همین مدت را
+ * می‌خوانَد تا بداند کِی کشو واقعاً پنهان شده. با ‎none‎ عدد صفر
+ * برنمی‌گردد و کشو برایِ همیشه باز می‌مانْد.
+ */
+$reduced = zig_css_block($section, '@media (max-width: 1023px) and (prefers-reduced-motion: reduce)');
+
+// توضیحات کنار می‌روند: خودِ همین قاعده در توضیحش «transition: none» را
+// به‌عنوانِ کارِ *نکردنی* نام می‌برد و بدونِ این، سنجه رویِ متنِ توضیح می‌افتاد
+$reduced_rules = preg_replace('#/\*.*?\*/#s', '', $reduced);
+
+Tests::keeps('حرکتِ کم، مدت را صفر می‌کند', $reduced_rules, 'transition-duration: 0s;');
+Tests::blocks('نه اینکه گذار را حذف کند', $reduced_rules, 'transition: none');
+
+/* قفلِ اسکرول کلاسِ خودش را دارد، جدا از سرچ */
+Tests::keeps('قفلِ اسکرول کلاسِ جدا دارد', $section, '.zig-menu-sheet-open');
+
+/* ==========================================================================
+ * اسکریپت
+ * ======================================================================= */
+
+Tests::group('منو › اسکریپت');
+
+$js = file_get_contents($root . '/assets/js/zig3d-menu.js');
+
+/*
+ * عددِ برک‌پوینت نباید در جاوااسکریپت تکرار شود. تکرارش یعنی روزی که
+ * CSS عوض شود، اسکریپت بی‌صدا با آن واگرا می‌شود.
+ */
+Tests::blocks('عددِ برک‌پوینت در اسکریپت تکرار نشده', $js, '1023');
+Tests::keeps('به‌جایش display را می‌خوانَد', $js, "getComputedStyle(this.trigger).display");
+
+/* مدتِ گذار هم از CSS خوانده می‌شود نه از یک ثابت */
+Tests::keeps('مدتِ گذار از CSS می‌آید', $js, 'transitionDuration');
+
+/* هیچ HTMLی از اسکریپت ساخته نمی‌شود */
+Tests::blocks('اسکریپت innerHTML نمی‌نویسد', $js, 'innerHTML');
+
+/* متنِ دکمه از HTML می‌آید تا ترجمه‌پذیر بماند */
+Tests::keeps('متنِ دکمه از صفت خوانده می‌شود', $js, "getAttribute(nested ? 'data-back-label' : 'data-close-label')");
+
+/* Esc باید ببندد */
+Tests::keeps('Esc کشو را می‌بندد', $js, "'Escape' !== event.key");

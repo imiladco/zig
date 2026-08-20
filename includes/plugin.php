@@ -454,6 +454,19 @@ final class Plugin {
             ZIG3D_WIDGETS_VERSION,
             true
         );
+
+        /*
+         * منو هم بدونِ jQuery. فقط کشویِ موبایل به این فایل نیاز دارد؛
+         * نوارِ دسکتاپ با ‎:hover‎ و ‎:focus-within‎ در CSS باز می‌شود و
+         * اگر این اسکریپت اصلاً بار نشود، دست‌نخورده کار می‌کند.
+         */
+        wp_register_script(
+            'zig3d-menu',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-menu.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
     }
 
     public function enqueue_editor_styles(): void {

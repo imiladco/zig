@@ -6198,3 +6198,319 @@ nav.zig-menu {
 		transition-duration: 0s;
 	}
 }
+
+/* ---------------------------- کشویِ موبایل ---------------------------- */
+
+/*
+ * نسخهٔ موبایل یک کشویِ تمام‌ارتفاع است که لایه‌به‌لایه تو می‌رود.
+ *
+ * دو تصمیم که بقیه از آن‌ها می‌آید:
+ *
+ * ۱. کدام نسخه دیده شود را *فقط* برک‌پوینت تعیین می‌کند — نه یک کلاسِ
+ *    جاوااسکریپتی. برایِ همین عددِ برک‌پوینت هم متغیر است و جاوااسکریپت
+ *    به‌جایِ تکرارِ همان عدد، ‎display‎ی محاسبه‌شدهٔ دکمه را می‌خوانَد.
+ *    این همان درسی است که در ویجتِ سرچ گرفته شد: عددِ تکراری دیر یا زود
+ *    از هم واگرا می‌شود.
+ *
+ * ۲. پنهان‌شدن با ‎visibility‎ است نه ‎display: none‎، تا گذار مقدارِ
+ *    شروع داشته باشد. تأخیرش فقط در بسته‌شدن است.
+ */
+.zig-menu .zig-menu__trigger,
+.zig-menu .zig-menu__sheet,
+.zig-menu .zig-menu__backdrop {
+	display: none;
+}
+
+/*
+ * قفلِ اسکرولِ پشتِ کشو. کلاسش جدا از کلاسِ سرچ است تا بستنِ یکی قفلِ
+ * آن یکی را برندارد؛ تا وقتی هر کدام باز باشند صفحه قفل می‌ماند.
+ */
+.zig-menu-sheet-open,
+.zig-menu-sheet-open body {
+	overflow: hidden;
+}
+
+.zig-menu .zig-menu__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+@media (max-width: 1023px) {
+
+	.zig-menu ul.zig-menu__bar {
+		display: none;
+	}
+
+	.zig-menu .zig-menu__trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--zig-menu-trigger-color, #ffffff);
+		cursor: pointer;
+		line-height: 0;
+	}
+
+	.zig-menu .zig-menu__trigger svg {
+		width: var(--zig-menu-trigger-size, 24px);
+		height: var(--zig-menu-trigger-size, 24px);
+	}
+
+	.zig-menu .zig-menu__sheet {
+		display: flex;
+		flex-direction: column;
+		position: fixed;
+		z-index: 90;
+		padding-block: var(--zig-menu-sheet-pad-block, 24px);
+		padding-inline: var(--zig-menu-sheet-pad-inline, 16px);
+		background-color: var(--zig-menu-sheet-bg, #ffffff);
+		opacity: 0;
+		visibility: hidden;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		transition: transform var(--zig-menu-anim, 150ms) ease-out,
+			opacity var(--zig-menu-anim, 150ms) ease-out,
+			visibility 0s linear var(--zig-menu-anim, 150ms);
+	}
+
+	.zig-menu--sheet-start .zig-menu__sheet,
+	.zig-menu--sheet-end .zig-menu__sheet {
+		inset-block: 0;
+		width: min(var(--zig-menu-sheet-width, 368px), 100vw);
+	}
+
+	.zig-menu--sheet-start .zig-menu__sheet {
+		inset-inline-start: 0;
+	}
+
+	.zig-menu--sheet-end .zig-menu__sheet {
+		inset-inline-end: 0;
+	}
+
+	.zig-menu--sheet-bottom .zig-menu__sheet {
+		inset-inline: 0;
+		inset-block-end: 0;
+		block-size: 100dvh;
+		transform: translateY(100%);
+	}
+
+	/*
+	 * جایِ بسته‌بودن با درصدِ خودِ کشو حساب می‌شود نه با عددِ ثابت، چون
+	 * عرضش تنظیم‌شدنی است.
+	 *
+	 * ‎translateX‎ فیزیکی است و معادلِ منطقی ندارد، پس جهت با ‎:dir()‎
+	 * تفکیک می‌شود: کشو باید از همان لبه‌ای بیرون برود که به آن چسبیده،
+	 * وگرنه در راست‌چین از سمتِ مخالف وارد می‌شد و از رویِ کلِ صفحه
+	 * رد می‌شد.
+	 */
+	.zig-menu--sheet-start .zig-menu__sheet {
+		transform: translateX(-100%);
+	}
+
+	.zig-menu--sheet-end .zig-menu__sheet {
+		transform: translateX(100%);
+	}
+
+	.zig-menu--sheet-start .zig-menu__sheet:dir(rtl) {
+		transform: translateX(100%);
+	}
+
+	.zig-menu--sheet-end .zig-menu__sheet:dir(rtl) {
+		transform: translateX(-100%);
+	}
+
+	.zig-menu .zig-menu__sheet.is-open,
+	.zig-menu .zig-menu__sheet.is-open:dir(rtl) {
+		opacity: 1;
+		visibility: visible;
+		transform: translate(0, 0);
+		transition: transform var(--zig-menu-anim, 150ms) ease-out,
+			opacity var(--zig-menu-anim, 150ms) ease-out, visibility 0s;
+	}
+
+	.zig-menu .zig-menu__backdrop {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 89;
+		background-color: var(--zig-menu-sheet-backdrop, rgba(16, 24, 40, 0.45));
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity var(--zig-menu-anim, 150ms) ease-out,
+			visibility 0s linear var(--zig-menu-anim, 150ms);
+	}
+
+	.zig-menu .zig-menu__backdrop.is-open {
+		opacity: 1;
+		visibility: visible;
+		transition: opacity var(--zig-menu-anim, 150ms) ease-out, visibility 0s;
+	}
+
+	/* ------------------------- سربرگِ کشو ------------------------- */
+
+	.zig-menu .zig-menu__sheet-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		flex: none;
+		margin-block-end: var(--zig-menu-sheet-gap, 24px);
+	}
+
+	.zig-menu button.zig-menu__sheet-back {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--zig-menu-back-gap, 10px);
+		padding-inline: var(--zig-menu-back-pad, 12px);
+		border: 0;
+		border-radius: var(--zig-menu-back-radius, 8px);
+		block-size: 32px;
+		background-color: var(--zig-menu-back-bg, #f7f8f9);
+		color: var(--zig-menu-back-color, #a1a3a8);
+		cursor: pointer;
+		font-size: 15px;
+		line-height: normal;
+	}
+
+	.zig-menu .zig-menu__sheet-back-icon {
+		display: none;
+		flex: none;
+		line-height: 0;
+		color: inherit;
+	}
+
+	/*
+	 * هر دو آیکون در DOM هستند و فقط یکی دیده می‌شود. ساختنِ آیکون در
+	 * لحظه یعنی نوشتنِ ‎innerHTML‎ از داخلِ جاوااسکریپت، که هم SVGی
+	 * کاربر را دور می‌زد هم یک مسیرِ تزریق باز می‌کرد.
+	 */
+	.zig-menu .zig-menu__sheet:not(.is-nested) .zig-menu__sheet-back-icon[data-icon='close'],
+	.zig-menu .zig-menu__sheet.is-nested .zig-menu__sheet-back-icon[data-icon='back'] {
+		display: inline-flex;
+	}
+
+	.zig-menu .zig-menu__sheet-back-icon svg {
+		width: var(--zig-menu-back-icon-size, 12px);
+		height: var(--zig-menu-back-icon-size, 12px);
+	}
+
+	.zig-menu .zig-menu__sheet-logo {
+		display: inline-flex;
+		flex: none;
+		line-height: 0;
+	}
+
+	.zig-menu .zig-menu__sheet-logo img {
+		block-size: var(--zig-menu-sheet-logo-height, 48px);
+		inline-size: auto;
+		max-inline-size: 100%;
+		object-fit: contain;
+	}
+
+	/* ------------------------- کارتِ فهرست ------------------------- */
+
+	.zig-menu ul.zig-menu__level {
+		margin: 0;
+		padding-block: var(--zig-menu-m-card-pad-block, 8px);
+		padding-inline: var(--zig-menu-m-card-pad-inline, 16px);
+		background-color: var(--zig-menu-m-card-bg, #f9fafc);
+		border-radius: var(--zig-menu-m-card-radius, 16px);
+		list-style: none;
+		overflow: hidden;
+	}
+
+	.zig-menu li.zig-menu__m-item {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.zig-menu li.zig-menu__m-item + li.zig-menu__m-item {
+		border-block-start: 1px solid var(--zig-menu-m-divider, rgba(161, 163, 168, 0.15));
+	}
+
+	/*
+	 * ردیف هم پیوند است هم دکمه — یکی برایِ آیتمِ بی‌فرزند و یکی برایِ
+	 * آیتمی که تو می‌رود — پس هر دو تگ باید یک شکل باشند و هیچ‌کدام
+	 * ظاهرِ پیش‌فرضِ خودش را نگه ندارد.
+	 */
+	.zig-menu a.zig-menu__m-link,
+	.zig-menu button.zig-menu__m-link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		inline-size: 100%;
+		padding-block: var(--zig-menu-m-pad, 18px);
+		padding-inline: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+		color: var(--zig-menu-m-color, #111827);
+		text-align: start;
+		text-decoration: none;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 20px;
+	}
+
+	/*
+	 * چیدمانِ ردیف کارِ ‎space-between‎ است و بس: برچسب لبهٔ شروع، و هرچه
+	 * بعدش بیاید — شمارش یا فلش — لبهٔ پایان. در طرح این دو هیچ‌وقت با
+	 * هم نمی‌آیند، ولی اگر بیایند هم همین قاعده جوابشان را می‌دهد.
+	 */
+	.zig-menu .zig-menu__m-count {
+		color: var(--zig-menu-m-count-color, #a1a3a8);
+		font-size: 12px;
+		font-weight: 400;
+	}
+
+	.zig-menu .zig-menu__m-arrow {
+		display: inline-flex;
+		flex: none;
+		line-height: 0;
+		color: inherit;
+	}
+
+	.zig-menu .zig-menu__m-arrow svg {
+		width: var(--zig-menu-m-arrow-size, 16px);
+		height: var(--zig-menu-m-arrow-size, 16px);
+	}
+
+	/* ------------------------- پایینِ کشو ------------------------- */
+
+	/*
+	 * بلوکِ پایین در طرح به کفِ کشو چسبیده و فاصلهٔ بالایش کشسان است،
+	 * نه یک عددِ ثابت — با فهرستِ کوتاه ته صفحه می‌ماند و با فهرستِ بلند
+	 * هل داده می‌شود.
+	 */
+	.zig-menu .zig-menu__sheet-foot {
+		margin-block-start: auto;
+		padding-block-start: 24px;
+		flex: none;
+	}
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+
+	/*
+	 * ‎transition-duration: 0s‎ و نه ‎transition: none‎ — اسکریپت همین
+	 * مدت را می‌خوانَد تا بداند کِی کشو واقعاً پنهان شده.
+	 */
+	.zig-menu .zig-menu__sheet,
+	.zig-menu .zig-menu__backdrop {
+		transition-duration: 0s;
+	}
+}

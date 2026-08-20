@@ -4,6 +4,7 @@ namespace Zig3d_Widgets\Widgets;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Background;
 use Elementor\Group_Control_Typography;
+use Elementor\Icons_Manager;
 use Elementor\Repeater;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Design_Icons;
@@ -45,6 +46,24 @@ final class Menu extends Widget_Base {
 
     use Traits\Box;
 
+    /**
+     * نگاشتِ هر جایگاهِ آیکون به فایلِ صادرشده از فیگما.
+     *
+     * ‎trigger_icon‎ تنها موردی است که در طرح نیست: فریم‌هایِ موبایل از
+     * *بازِ* کشو شروع می‌شوند و دکمهٔ بازکننده را نشان نمی‌دهند. پس یک
+     * آیکونِ سه‌خطیِ ساده با همان قلمِ بقیه (میله‌هایِ ۲ پیکسلیِ گرد)
+     * ساخته شد و مثلِ بقیه قابلِ جایگزینی است.
+     */
+    private const DESIGN_ICONS = [
+        'bar_chevron_icon' => 'chevron-down',
+        'row_chevron_icon' => 'chevron',
+        'cta_icon'         => 'arrow-left',
+        'trigger_icon'     => 'menu',
+        'close_icon'       => 'close',
+        'back_icon'        => 'arrow-right',
+        'mobile_arrow'     => 'arrow-left',
+    ];
+
     public function get_name(): string {
         return 'zig3d-menu';
     }
@@ -69,6 +88,10 @@ final class Menu extends Widget_Base {
         return ['zig3d-widgets'];
     }
 
+    public function get_script_depends(): array {
+        return ['zig3d-menu'];
+    }
+
     public function has_widget_inner_wrapper(): bool {
         return false;
     }
@@ -76,10 +99,101 @@ final class Menu extends Widget_Base {
     protected function register_controls(): void {
         $this->register_source_section();
         $this->register_submenu_section();
+        $this->register_mobile_section();
+        $this->register_icons_section();
         $this->register_bar_style_section();
         $this->register_panel_style_section();
         $this->register_mega_style_section();
         $this->register_card_style_section();
+        $this->register_sheet_style_section();
+    }
+
+    /* =====================================================================
+     * محتوا › موبایل
+     * =================================================================== */
+
+    private function register_mobile_section(): void {
+        $this->start_controls_section('mobile_section', ['label' => __('کشویِ موبایل', 'zig3d-widgets')]);
+
+        $this->add_control('open_label', [
+            'label'       => __('نامِ دکمهٔ بازکننده', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => __('منو', 'zig3d-widgets'),
+            'description' => __('دیده نمی‌شود؛ فقط صفحه‌خوان می‌خوانَدش. دکمه در طرح آیکونِ تنهاست و بدونِ این نام، صفحه‌خوان فقط «دکمه» می‌گوید.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('close_label', [
+            'label'   => __('متنِ بستن', 'zig3d-widgets'),
+            'type'    => Controls_Manager::TEXT,
+            'default' => __('بستن', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('back_label', [
+            'label'       => __('متنِ بازگشت', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'default'     => __('بازگشت', 'zig3d-widgets'),
+            'description' => __('همان دکمه است: در لایهٔ اول می‌بندد، در لایه‌هایِ تودرتو یک پله برمی‌گردد.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('sheet_logo', [
+            'label'       => __('لوگویِ بالایِ کشو', 'zig3d-widgets'),
+            'type'        => Controls_Manager::MEDIA,
+            'description' => __('خالی بگذارید تا اصلاً نیاید.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('sheet_template', [
+            'label'       => __('قالبِ پایینِ کشو', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SELECT,
+            'options'     => $this->template_options(),
+            'label_block' => true,
+            'description' => __('در طرح، بلوکِ راه‌هایِ تماس است. چون محتوایش ربطی به منو ندارد، یک قالبِ المنتور می‌گیرد — مثلاً همان ویجتِ «اطلاعاتِ تماس».', 'zig3d-widgets'),
+        ]);
+
+        $this->end_controls_section();
+    }
+
+    /* =====================================================================
+     * محتوا › آیکون‌ها
+     * =================================================================== */
+
+    private function register_icons_section(): void {
+        $this->start_controls_section('icons_section', ['label' => __('آیکون‌ها', 'zig3d-widgets')]);
+
+        /*
+         * همان سویچِ ویجتِ سرچ و به همان دلیل: کنترلِ ICONSِ المنتور
+         * «هیچ آیکون» و «دست‌نخورده» را از هم تفکیک نمی‌کند، پس معنیِ
+         * «خالی» باید جایی صریح تعیین شود.
+         */
+        $this->add_control('design_icons', [
+            'label'        => __('آیکون‌هایِ پیش‌فرضِ طرح', 'zig3d-widgets'),
+            'type'         => Controls_Manager::SWITCHER,
+            'default'      => 'yes',
+            'label_on'     => __('روشن', 'zig3d-widgets'),
+            'label_off'    => __('خاموش', 'zig3d-widgets'),
+            'return_value' => 'yes',
+            'description'  => __('روشن باشد، هر آیکونی که خالی بگذارید همان SVGی طرح را می‌گیرد. خاموشش کنید تا آیکونِ خالی واقعاً حذف شود.', 'zig3d-widgets'),
+        ]);
+
+        $icons = [
+            'bar_chevron_icon' => __('فلشِ آیتمِ نوار', 'zig3d-widgets'),
+            'row_chevron_icon' => __('فلشِ ردیفِ زیرمنو', 'zig3d-widgets'),
+            'cta_icon'         => __('آیکونِ دکمهٔ ستونِ مگامنو', 'zig3d-widgets'),
+            'trigger_icon'     => __('آیکونِ دکمهٔ بازکنندهٔ موبایل', 'zig3d-widgets'),
+            'close_icon'       => __('آیکونِ بستنِ کشو', 'zig3d-widgets'),
+            'back_icon'        => __('آیکونِ بازگشتِ کشو', 'zig3d-widgets'),
+            'mobile_arrow'     => __('فلشِ ردیفِ فرزنددارِ موبایل', 'zig3d-widgets'),
+        ];
+
+        foreach ($icons as $key => $label) {
+            $this->add_control($key, [
+                'label'       => $label,
+                'type'        => Controls_Manager::ICONS,
+                'default'     => ['value' => '', 'library' => ''],
+                'description' => __('خالی یعنی آیکونِ خودِ طرح.', 'zig3d-widgets'),
+            ]);
+        }
+
+        $this->end_controls_section();
     }
 
     /* =====================================================================
@@ -758,6 +872,229 @@ final class Menu extends Widget_Base {
     }
 
     /* =====================================================================
+     * استایل › کشویِ موبایل
+     * =================================================================== */
+
+    private function register_sheet_style_section(): void {
+        $this->start_controls_section('sheet_style_section', [
+            'label' => __('کشویِ موبایل', 'zig3d-widgets'),
+            'tab'   => Controls_Manager::TAB_STYLE,
+        ]);
+
+        $root = '{{WRAPPER}} .zig-menu';
+
+        /*
+         * طرح فقط کشویِ *باز* را نشان می‌دهد و نمی‌گوید از کدام لبه
+         * می‌آید. به‌جایِ حدس‌زدن، خودِ جهت یک تنظیم شد.
+         */
+        $this->add_control('sheet_from', [
+            'label'   => __('از کدام لبه باز شود', 'zig3d-widgets'),
+            'type'    => Controls_Manager::SELECT,
+            'default' => 'start',
+            'options' => [
+                'start'  => __('لبهٔ شروع (در راست‌چین: راست)', 'zig3d-widgets'),
+                'end'    => __('لبهٔ پایان (در راست‌چین: چپ)', 'zig3d-widgets'),
+                'bottom' => __('پایین', 'zig3d-widgets'),
+            ],
+        ]);
+
+        /*
+         * برک‌پوینت عمداً کنترل ندارد: عددش باید داخلِ ‎@media‎ بنشیند و
+         * ‎@media‎ متغیرِ CSS نمی‌خوانَد. کنترلی که بنویسم بی‌اثر می‌ماند
+         * و بدتر از نبودنش است. عدد ۱۰۲۳ است — همان مرزِ تبلتِ المنتور.
+         */
+        $this->add_control('trigger_color', [
+            'label'     => __('رنگِ دکمهٔ بازکننده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-trigger-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('trigger_size', [
+            'label'      => __('اندازهٔ آیکونِ بازکننده', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 12, 'max' => 48]],
+            'selectors'  => [$root => '--zig-menu-trigger-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_bg', [
+            'label'     => __('پس‌زمینهٔ کشو', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-sheet-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_backdrop', [
+            'label'     => __('رنگِ پرده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-sheet-backdrop: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('sheet_width', [
+            'label'      => __('عرضِ کشو', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px', '%', 'vw'],
+            'range'      => ['px' => ['min' => 240, 'max' => 720], '%' => ['min' => 40, 'max' => 100], 'vw' => ['min' => 40, 'max' => 100]],
+            'selectors'  => [$root => '--zig-menu-sheet-width: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('sheet_pad', [
+            'label'      => __('فاصلهٔ داخلیِ کشو', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px'],
+            'selectors'  => [
+                $root => '--zig-menu-sheet-pad-block: {{TOP}}{{UNIT}}; --zig-menu-sheet-pad-inline: {{RIGHT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_control('sheet_gap', [
+            'label'      => __('فاصلهٔ سربرگ تا فهرست', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 80]],
+            'selectors'  => [$root => '--zig-menu-sheet-gap: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_back_heading', [
+            'label'     => __('دکمهٔ بستن/بازگشت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_group_control(Group_Control_Typography::get_type(), [
+            'name'     => 'sheet_back_typography',
+            'selector' => '{{WRAPPER}} .zig-menu__sheet-back-label',
+        ]);
+
+        $this->add_control('sheet_back_color', [
+            'label'     => __('رنگ', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-back-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_back_bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-back-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_back_radius', [
+            'label'      => __('گردیِ گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 32]],
+            'selectors'  => [$root => '--zig-menu-back-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_back_pad', [
+            'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => [$root => '--zig-menu-back-pad: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_back_gap', [
+            'label'      => __('فاصلهٔ متن تا آیکون', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 32]],
+            'selectors'  => [$root => '--zig-menu-back-gap: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_back_icon_size', [
+            'label'      => __('اندازهٔ آیکون', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 8, 'max' => 32]],
+            'selectors'  => [$root => '--zig-menu-back-icon-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_logo_height', [
+            'label'      => __('ارتفاعِ لوگو', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 16, 'max' => 120]],
+            'selectors'  => [$root => '--zig-menu-sheet-logo-height: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_card_heading', [
+            'label'     => __('کارتِ فهرست', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('sheet_card_bg', [
+            'label'     => __('پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-m-card-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_card_radius', [
+            'label'      => __('گردیِ گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => [$root => '--zig-menu-m-card-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_card_pad', [
+            'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px'],
+            'selectors'  => [
+                $root => '--zig-menu-m-card-pad-block: {{TOP}}{{UNIT}}; --zig-menu-m-card-pad-inline: {{RIGHT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_control('sheet_row_heading', [
+            'label'     => __('ردیف‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_group_control(Group_Control_Typography::get_type(), [
+            'name'     => 'sheet_row_typography',
+            'selector' => '{{WRAPPER}} .zig-menu__m-label',
+        ]);
+
+        $this->add_control('sheet_row_color', [
+            'label'     => __('رنگِ متن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-m-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_row_pad', [
+            'label'      => __('فاصلهٔ عمودی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 40]],
+            'selectors'  => [$root => '--zig-menu-m-pad: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_row_divider', [
+            'label'     => __('رنگِ خطِ جداکننده', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-m-divider: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_row_arrow_size', [
+            'label'      => __('اندازهٔ فلش', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 8, 'max' => 32]],
+            'selectors'  => [$root => '--zig-menu-m-arrow-size: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('sheet_count_color', [
+            'label'     => __('رنگِ شمارش', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$root => '--zig-menu-m-count-color: {{VALUE}};'],
+        ]);
+
+        $this->end_controls_section();
+    }
+
+    /* =====================================================================
      * رندر
      * =================================================================== */
 
@@ -769,10 +1106,20 @@ final class Menu extends Widget_Base {
             return;
         }
 
+        /*
+         * جهتِ باز شدنِ کشو یک کلاس است نه یک متغیرِ CSS: مقادیرش سه
+         * چیدمانِ متفاوت‌اند (نه سه عدد)، و هر کدام مجموعهٔ خودش از
+         * ‎inset‎ و ‎transform‎ را لازم دارد.
+         */
+        $from = (string) ($settings['sheet_from'] ?? 'start');
+
         printf(
-            '<nav class="zig-menu" data-zig-menu aria-label="%s">',
+            '<nav class="zig-menu zig-menu--sheet-%s" data-zig-menu aria-label="%s">',
+            esc_attr(in_array($from, ['start', 'end', 'bottom'], true) ? $from : 'start'),
             esc_attr((string) ($settings['aria_label'] ?? ''))
         );
+
+        $this->render_trigger($settings);
 
         echo '<ul class="zig-menu__bar" role="list">';
 
@@ -781,7 +1128,230 @@ final class Menu extends Widget_Base {
         }
 
         echo '</ul>';
+
+        $this->render_sheet($nodes, $settings);
+
         echo '</nav>';
+    }
+
+    /* =====================================================================
+     * موبایل
+     *
+     * نسخهٔ موبایل همان درخت است با ناوبریِ دیگری: به‌جایِ باز شدنِ پنل
+     * زیرِ آیتم، یک کشویِ تمام‌صفحه که لایه‌به‌لایه تو می‌رود. هر دو
+     * نسخه از یک درخت رندر می‌شوند و هیچ‌کدام دیگری را با
+     * ‎display: none‎ی شرطی تقلید نمی‌کند — کدام یک دیده شود را فقط
+     * برک‌پوینت تعیین می‌کند.
+     *
+     * همهٔ لایه‌ها همان اول در DOM هستند و جابه‌جاییِ بینشان فقط عوض
+     * کردنِ یک صفت است. دلیلش رفتارِ صفحه‌خوان و دکمهٔ بازگشت است: با
+     * ساختنِ لایه در لحظه، فوکوس هر بار می‌پرید.
+     * =================================================================== */
+
+    private function render_trigger(array $settings): void {
+        printf(
+            '<button type="button" class="zig-menu__trigger" aria-expanded="false" aria-controls="%s">',
+            esc_attr($this->sheet_id())
+        );
+
+        printf('<span class="zig-menu__trigger-icon" aria-hidden="true">%s</span>', $this->render_icon($settings, 'trigger_icon'));
+        printf('<span class="zig-menu__sr">%s</span>', esc_html($this->label($settings, 'open_label', __('منو', 'zig3d-widgets'))));
+
+        echo '</button>';
+    }
+
+    private function render_sheet(array $nodes, array $settings): void {
+        echo '<div class="zig-menu__backdrop"></div>';
+
+        printf('<div class="zig-menu__sheet" id="%s" role="dialog" aria-modal="true" aria-label="%s">',
+            esc_attr($this->sheet_id()),
+            esc_attr($this->label($settings, 'aria_label', __('منو', 'zig3d-widgets')))
+        );
+
+        echo '<div class="zig-menu__sheet-head">';
+
+        /*
+         * یک دکمه، دو کار: در لایهٔ صفر می‌بندد و در لایه‌هایِ تودرتو یک
+         * پله برمی‌گردد. متن و آیکونش را اسکریپت عوض می‌کند، پس هر دو
+         * حالت همین‌جا در دسترسِ اسکریپت گذاشته می‌شوند تا رشتهٔ فارسی
+         * داخلِ جاوااسکریپت هاردکد نشود و از تبِ محتوا قابلِ تغییر بماند.
+         */
+        printf(
+            '<button type="button" class="zig-menu__sheet-back" data-close-label="%s" data-back-label="%s">',
+            esc_attr($this->label($settings, 'close_label', __('بستن', 'zig3d-widgets'))),
+            esc_attr($this->label($settings, 'back_label', __('بازگشت', 'zig3d-widgets')))
+        );
+
+        printf('<span class="zig-menu__sheet-back-label">%s</span>', esc_html($this->label($settings, 'close_label', __('بستن', 'zig3d-widgets'))));
+        printf('<span class="zig-menu__sheet-back-icon" data-icon="close" aria-hidden="true">%s</span>', $this->render_icon($settings, 'close_icon'));
+        printf('<span class="zig-menu__sheet-back-icon" data-icon="back" aria-hidden="true">%s</span>', $this->render_icon($settings, 'back_icon'));
+
+        echo '</button>';
+
+        $logo = (array) ($settings['sheet_logo'] ?? []);
+
+        if ('' !== (string) ($logo['url'] ?? '')) {
+            printf(
+                '<span class="zig-menu__sheet-logo"><img src="%s" alt="" /></span>',
+                esc_url((string) $logo['url'])
+            );
+        }
+
+        echo '</div>';
+
+        echo '<div class="zig-menu__sheet-body">';
+
+        $this->render_sheet_level($nodes, '', $settings);
+
+        foreach ($nodes as $node) {
+            $this->render_sheet_branch($node, $settings);
+        }
+
+        echo '</div>';
+
+        $template = (int) ($settings['sheet_template'] ?? 0);
+
+        if ($template > 0) {
+            echo '<div class="zig-menu__sheet-foot">';
+            $this->render_template_panel($template);
+            echo '</div>';
+        }
+
+        echo '</div>';
+    }
+
+    /** لایه‌هایِ تودرتو، برایِ هر آیتمی که فرزند دارد */
+    private function render_sheet_branch(array $node, array $settings): void {
+        if ([] === $node['children']) {
+            return;
+        }
+
+        $this->render_sheet_level($node['children'], (string) $node['id'], $settings, $node);
+
+        foreach ($node['children'] as $child) {
+            $this->render_sheet_branch($child, $settings);
+        }
+    }
+
+    /**
+     * یک لایهٔ کشو.
+     *
+     * ‎$parent‎ی که داده شود یعنی این لایه تودرتوست و باید ردیفِ
+     * «مشاهده …» را بالایِ خودش داشته باشد — همان ردیفی که در طرح هست و
+     * تنها راهِ رسیدن به *خودِ* صفحهٔ والد است، چون در موبایل تپ رویِ
+     * ردیفِ والد تو می‌رود نه به صفحه.
+     */
+    private function render_sheet_level(array $nodes, string $key, array $settings, ?array $parent = null): void {
+        printf(
+            '<ul class="zig-menu__level" role="list" data-level="%s"%s>',
+            esc_attr('' === $key ? 'root' : $key),
+            null === $parent ? '' : ' hidden'
+        );
+
+        if (null !== $parent) {
+            printf('<li class="zig-menu__m-item"><a class="zig-menu__m-link" href="%s">', esc_url($parent['url']));
+            printf(
+                '<span class="zig-menu__m-label"><bdi>%s</bdi></span>',
+                esc_html(sprintf(
+                    /* translators: %s: نامِ دستهٔ والد */
+                    __('مشاهده %s', 'zig3d-widgets'),
+                    $parent['title']
+                ))
+            );
+            $this->render_m_count($parent['term_id'] > 0 ? Menu_Tree::term_count($parent['term_id']) : Menu_Tree::shop_count(), $settings);
+            echo '</a></li>';
+        }
+
+        foreach ($nodes as $node) {
+            $has_children = [] !== $node['children'];
+
+            echo '<li class="zig-menu__m-item">';
+
+            /*
+             * ردیفِ فرزنددار دکمه است نه پیوند: تپ رویش یک پله تو می‌رود.
+             * رفتن به خودِ صفحه‌اش کارِ ردیفِ «مشاهده …» در لایهٔ بعدی
+             * است — همان تفکیکی که طرح دارد.
+             */
+            if ($has_children) {
+                printf(
+                    '<button type="button" class="zig-menu__m-link" data-open-level="%s" aria-expanded="false">',
+                    esc_attr((string) $node['id'])
+                );
+            } else {
+                printf(
+                    '<a class="zig-menu__m-link" href="%s"%s>',
+                    esc_url($node['url']),
+                    $node['current'] ? ' aria-current="page"' : ''
+                );
+            }
+
+            printf('<span class="zig-menu__m-label"><bdi>%s</bdi></span>', esc_html($node['title']));
+
+            $this->render_m_count($node['term_id'] > 0 ? Menu_Tree::term_count($node['term_id']) : 0, $settings);
+
+            if ($has_children) {
+                printf(
+                    '<span class="zig-menu__m-arrow" aria-hidden="true">%s</span>',
+                    $this->render_icon($settings, 'mobile_arrow')
+                );
+            }
+
+            echo $has_children ? '</button>' : '</a>';
+            echo '</li>';
+        }
+
+        echo '</ul>';
+    }
+
+    private function render_m_count(int $count, array $settings): void {
+        if ($count <= 0 || 'yes' !== ($settings['show_counts'] ?? 'yes')) {
+            return;
+        }
+
+        printf(
+            '<span class="zig-menu__m-count"><bdi>%s</bdi></span>',
+            esc_html(sprintf(
+                /* translators: %s: تعدادِ محصول */
+                __('%s محصول', 'zig3d-widgets'),
+                number_format_i18n($count)
+            ))
+        );
+    }
+
+    private function label(array $settings, string $key, string $fallback): string {
+        $value = trim((string) ($settings[$key] ?? ''));
+
+        return '' !== $value ? $value : $fallback;
+    }
+
+    /**
+     * آیکونِ یک جایگاه: انتخابِ مدیر، وگرنه SVGی خودِ طرح.
+     *
+     * همان قراردادِ ویجتِ سرچ، با همان دلیل: کنترلِ ICONSِ المنتور حالتِ
+     * «هیچ» ندارد، پس سویچِ ‎design_icons‎ معنیِ «خالی» را تعیین می‌کند.
+     */
+    private function render_icon(array $settings, string $key): string {
+        $icon = $settings[$key] ?? [];
+
+        if (!empty($icon['value'])) {
+            ob_start();
+            Icons_Manager::render_icon($icon, ['aria-hidden' => 'true']);
+
+            return (string) ob_get_clean();
+        }
+
+        if ('yes' !== ($settings['design_icons'] ?? 'yes')) {
+            return '';
+        }
+
+        return isset(self::DESIGN_ICONS[$key])
+            ? Design_Icons::get(self::DESIGN_ICONS[$key])
+            : '';
+    }
+
+    /** شناسهٔ یکتا برایِ ‎aria-controls‎ — چند ویجت در یک صفحه ممکن است */
+    private function sheet_id(): string {
+        return 'zig-menu-sheet-' . $this->get_id();
     }
 
     private function render_item(array $node, array $settings): void {
@@ -816,7 +1386,7 @@ final class Menu extends Widget_Base {
         if ($has_panel) {
             printf(
                 '<span class="zig-menu__chevron" aria-hidden="true">%s</span>',
-                Design_Icons::get('chevron-down')
+                $this->render_icon($settings, 'bar_chevron_icon')
             );
         }
 
@@ -883,7 +1453,7 @@ final class Menu extends Widget_Base {
             echo '<li class="zig-menu__sub-item">';
             printf('<a class="zig-menu__sub-link" href="%s">', esc_url($child['url']));
             printf('<span class="zig-menu__sub-label"><bdi>%s</bdi></span>', esc_html($child['title']));
-            printf('<span class="zig-menu__sub-chevron" aria-hidden="true">%s</span>', Design_Icons::get('chevron'));
+            printf('<span class="zig-menu__sub-chevron" aria-hidden="true">%s</span>', $this->render_icon($settings, 'row_chevron_icon'));
             echo '</a>';
             echo '</li>';
         }
@@ -906,7 +1476,7 @@ final class Menu extends Widget_Base {
         foreach ($node['children'] as $column) {
             echo '<div class="zig-menu__col">';
 
-            $this->render_cta($column);
+            $this->render_cta($column, $settings);
 
             /*
              * فاصلهٔ سرتیتر تا ردیف‌ها در ستونِ فهرستی ۹ پیکسل است و در
@@ -953,7 +1523,7 @@ final class Menu extends Widget_Base {
             'url'         => $node['url'],
             'title'       => $node['title'],
             'description' => (string) ($settings['popular_cta'] ?? ''),
-        ]);
+        ], $settings);
 
         $this->render_col_head(
             (string) ($settings['popular_title'] ?? ''),
@@ -974,14 +1544,14 @@ final class Menu extends Widget_Base {
      * وردپرس خوانده می‌شود — فیلدی که برایِ همین‌جور چیزی هست و در پنلِ
      * منو با «گزینه‌هایِ صفحه» روشن می‌شود. نبودش یعنی همان عنوان.
      */
-    private function render_cta(array $column): void {
+    private function render_cta(array $column, array $settings): void {
         $label = '' !== trim((string) ($column['description'] ?? ''))
             ? (string) $column['description']
             : (string) $column['title'];
 
         printf('<a class="zig-menu__cta" href="%s">', esc_url($column['url']));
         printf('<span class="zig-menu__cta-label"><bdi>%s</bdi></span>', esc_html($label));
-        printf('<span class="zig-menu__cta-icon" aria-hidden="true">%s</span>', Design_Icons::get('arrow-left'));
+        printf('<span class="zig-menu__cta-icon" aria-hidden="true">%s</span>', $this->render_icon($settings, 'cta_icon'));
         echo '</a>';
     }
 
