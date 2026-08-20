@@ -315,6 +315,15 @@ final class Menu extends Widget_Base {
             'description' => __('هر ردیف یک ستون. تا وقتی هیچ دسته‌ای انتخاب نشده، ستون‌ها مثلِ قبل از فرزندانِ همین آیتم در فهرستِ وردپرس ساخته می‌شوند.', 'zig3d-widgets'),
         ]);
 
+        $this->add_control('mega_hide_empty', [
+            'label'        => __('زیردسته‌هایِ بی‌محصول مخفی شوند', 'zig3d-widgets'),
+            'type'         => Controls_Manager::SWITCHER,
+            'default'      => '',
+            'return_value' => 'yes',
+            'condition'    => ['mega_item!' => ''],
+            'description'  => __('در همین دو ستون. زیردسته‌ای که هنوز محصولی ندارد، در فهرست نمی‌آید — خودِ دسته و شمارشِ ستون دست‌نخورده می‌مانند.', 'zig3d-widgets'),
+        ]);
+
         $this->add_control('mega_cards', [
             'label'       => __('تعدادِ کارتِ محصول در مگامنو', 'zig3d-widgets'),
             'type'        => Controls_Manager::NUMBER,
@@ -1655,7 +1664,7 @@ final class Menu extends Widget_Base {
              */
             echo '<div class="zig-menu__col-body">';
             $this->render_col_head($column['title'], $column['term_id'] > 0 ? Menu_Tree::term_count($column['term_id']) : 0, $settings);
-            $this->render_list_panel($column['children'], $settings);
+            $this->render_list_panel($this->visible_children($column['children'], $settings), $settings);
             echo '</div>';
 
             echo '</div>';
@@ -1696,6 +1705,28 @@ final class Menu extends Widget_Base {
         }
 
         return [] !== $columns ? $columns : $node['children'];
+    }
+
+    /**
+     * ردیف‌هایِ یک ستون، با زیردسته‌هایِ بی‌محصول کنارگذاشته‌شده — اگر
+     * تنظیم روشن باشد.
+     *
+     * فقط رویِ ردیفی اثر می‌کند که واقعاً دستهٔ محصول است (‎term_id‎ی
+     * غیرصفر دارد). آیتمِ لینکِ دلخواه بی‌قید و شرط می‌ماند: شمارشی
+     * ندارد که بشود دربارهٔ خالی‌بودنش قضاوت کرد.
+     *
+     * @param array<int,array<string,mixed>> $children
+     * @return array<int,array<string,mixed>>
+     */
+    private function visible_children(array $children, array $settings): array {
+        if ('yes' !== ($settings['mega_hide_empty'] ?? '')) {
+            return $children;
+        }
+
+        return array_values(array_filter(
+            $children,
+            static fn(array $child): bool => 0 === $child['term_id'] || Menu_Tree::term_count($child['term_id']) > 0
+        ));
     }
 
     /**
