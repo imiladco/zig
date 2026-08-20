@@ -25,25 +25,29 @@ if (!defined('ABSPATH')) {
  *
  *     div.zig-configurator
  *       script.zig-configurator__data      دادهٔ واریانت‌ها (فقط محصولِ متغیر)
- *       div.zig-configurator__header
- *         h3.zig-configurator__title
- *         p.zig-configurator__subtitle
- *       div.zig-configurator__fields       یک کشو به‌ازای هر ویژگیِ واریانت‌ساز
- *         div.zig-configurator__field
- *           label.zig-configurator__label
- *           span.zig-configurator__select-wrap
- *             select.zig-configurator__select
- *             span.zig-configurator__chevron
- *       div.zig-configurator__price
- *         bdi.zig-configurator__value
- *           span.zig-configurator__amount
- *           span.zig-configurator__unit
- *       div.zig-configurator__stock.zig-configurator__stock--{bucket}
- *         span.zig-configurator__stock-label
- *       div.zig-configurator__updated
- *         span.zig-configurator__updated-label
- *         span.zig-configurator__updated-value
- *       div.zig-configurator__actions
+ *       div.zig-configurator__card         جعبهٔ تیره — فقط تا زیرِ قیمت/موجودی
+ *         div.zig-configurator__header
+ *           h3.zig-configurator__title
+ *           p.zig-configurator__subtitle
+ *         div.zig-configurator__fields     یک کشو به‌ازای هر ویژگیِ واریانت‌ساز
+ *           div.zig-configurator__field
+ *             label.zig-configurator__label
+ *             span.zig-configurator__select-wrap
+ *               select.zig-configurator__select
+ *               span.zig-configurator__chevron
+ *         div.zig-configurator__bottom     ردیفِ قیمت (چپ) و موجودی/زمان (راست)
+ *           div.zig-configurator__price
+ *             bdi.zig-configurator__value
+ *               span.zig-configurator__amount
+ *               span.zig-configurator__unit
+ *           div.zig-configurator__side
+ *             div.zig-configurator__stock.zig-configurator__stock--{bucket}
+ *               span.zig-configurator__stock-label
+ *               span.zig-configurator__stock-dot
+ *             div.zig-configurator__updated
+ *               span.zig-configurator__updated-label
+ *               span.zig-configurator__updated-value
+ *       div.zig-configurator__actions      بیرونِ جعبهٔ تیره
  *         a|button.zig-configurator__btn.zig-configurator__btn--secondary
  *         a|button.zig-configurator__btn.zig-configurator__btn--primary
  *
@@ -77,9 +81,9 @@ final class Product_Configurator extends Widget_Base {
      */
     private function stock_states(): array {
         return [
-            'instock'    => ['label' => __('موجود در انبار', 'zig3d-widgets'), 'default' => __('موجود در انبار', 'zig3d-widgets'), 'color' => '#1B8A4B'],
-            'preorder'   => ['label' => __('پیش‌فروش', 'zig3d-widgets'), 'default' => __('پیش‌فروش', 'zig3d-widgets'), 'color' => '#2B6CB0'],
-            'outofstock' => ['label' => __('ناموجود', 'zig3d-widgets'), 'default' => __('ناموجود', 'zig3d-widgets'), 'color' => '#B02A2A'],
+            'instock'    => ['label' => __('موجود در انبار', 'zig3d-widgets'), 'default' => __('موجود در انبار', 'zig3d-widgets'), 'color' => '#34D399'],
+            'preorder'   => ['label' => __('پیش‌فروش', 'zig3d-widgets'), 'default' => __('پیش‌فروش', 'zig3d-widgets'), 'color' => '#60A5FA'],
+            'outofstock' => ['label' => __('ناموجود', 'zig3d-widgets'), 'default' => __('ناموجود', 'zig3d-widgets'), 'color' => '#F87171'],
         ];
     }
 
@@ -512,11 +516,11 @@ final class Product_Configurator extends Widget_Base {
         $this->add_responsive_control(
             'content_gap',
             [
-                'label'      => __('فاصلهٔ بین بخش‌ها', 'zig3d-widgets'),
+                'label'      => __('فاصلهٔ جعبه تا دکمه‌ها', 'zig3d-widgets'),
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px', 'em', 'rem'],
                 'range'      => ['px' => ['min' => 0, 'max' => 60]],
-                'default'    => ['size' => 20, 'unit' => 'px'],
+                'default'    => ['size' => 24, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-configurator' => 'gap: {{SIZE}}{{UNIT}};'],
             ]
         );
@@ -526,7 +530,7 @@ final class Product_Configurator extends Widget_Base {
             [
                 'name'     => 'container_background',
                 'types'    => ['classic', 'gradient'],
-                'selector' => '{{WRAPPER}} .zig-configurator',
+                'selector' => '{{WRAPPER}} .zig-configurator__card',
             ]
         );
 
@@ -534,7 +538,7 @@ final class Product_Configurator extends Widget_Base {
             Group_Control_Border::get_type(),
             [
                 'name'     => 'container_border',
-                'selector' => '{{WRAPPER}} .zig-configurator',
+                'selector' => '{{WRAPPER}} .zig-configurator__card',
             ]
         );
 
@@ -544,7 +548,7 @@ final class Product_Configurator extends Widget_Base {
                 'label'      => __('گردی گوشه', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', '%'],
-                'selectors'  => ['{{WRAPPER}} .zig-configurator' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+                'selectors'  => ['{{WRAPPER}} .zig-configurator__card' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
 
@@ -554,7 +558,7 @@ final class Product_Configurator extends Widget_Base {
                 'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem'],
-                'selectors'  => ['{{WRAPPER}} .zig-configurator' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+                'selectors'  => ['{{WRAPPER}} .zig-configurator__card' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
 
@@ -562,7 +566,7 @@ final class Product_Configurator extends Widget_Base {
             Group_Control_Box_Shadow::get_type(),
             [
                 'name'     => 'container_shadow',
-                'selector' => '{{WRAPPER}} .zig-configurator',
+                'selector' => '{{WRAPPER}} .zig-configurator__card',
             ]
         );
 
@@ -590,7 +594,7 @@ final class Product_Configurator extends Widget_Base {
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px', 'em'],
                 'range'      => ['px' => ['min' => 0, 'max' => 30]],
-                'default'    => ['size' => 6, 'unit' => 'px'],
+                'default'    => ['size' => 8, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-configurator__header' => 'gap: {{SIZE}}{{UNIT}};'],
             ]
         );
@@ -782,7 +786,16 @@ final class Product_Configurator extends Widget_Base {
                 'label'      => __('فاصلهٔ داخلی', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em'],
-                'default'    => ['top' => '12', 'right' => '38', 'bottom' => '12', 'left' => '14', 'unit' => 'px', 'isLinked' => false],
+                /*
+                 * طرح ‎paddingLeft:14, paddingRight:14, paddingTop:15,
+                 * paddingBottom:15‎ می‌دهد — چون آنجا فلش یک فرزندِ فلکسِ
+                 * جداست، نه آیکونی که رویِ متن می‌نشیند. اینجا با ‎<select>‎
+                 * واقعی، سمتی که فلش رویش می‌نشیند (فیزیکی چپ، چون در
+                 * راست‌به‌چپ ‎inset-inline-end‎ یعنی چپ) باید فضای بیشتری
+                 * داشته باشد تا متن زیرِ فلش نرود؛ سمتِ متن (راست) همان ۱۴
+                 * طرح می‌ماند.
+                 */
+                'default'    => ['top' => '15', 'right' => '14', 'bottom' => '15', 'left' => '38', 'unit' => 'px', 'isLinked' => false],
                 'selectors'  => ['{{WRAPPER}} .zig-configurator__select' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
@@ -799,12 +812,13 @@ final class Product_Configurator extends Widget_Base {
         $this->add_responsive_control(
             'chevron_size',
             [
-                'label'      => __('اندازه', 'zig3d-widgets'),
-                'type'       => Controls_Manager::SLIDER,
-                'size_units' => ['px'],
-                'range'      => ['px' => ['min' => 6, 'max' => 40]],
-                'default'    => ['size' => 12, 'unit' => 'px'],
-                'selectors'  => ['{{WRAPPER}} .zig-configurator__chevron' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};'],
+                'label'       => __('عرض', 'zig3d-widgets'),
+                'type'        => Controls_Manager::SLIDER,
+                'size_units'  => ['px'],
+                'range'       => ['px' => ['min' => 6, 'max' => 40]],
+                'default'     => ['size' => 12, 'unit' => 'px'],
+                'selectors'   => ['{{WRAPPER}} .zig-configurator__chevron' => 'width: {{SIZE}}{{UNIT}};'],
+                'description' => __('فقط عرض؛ ارتفاع خودکار و متناسب با نسبتِ خودِ آیکون است (این فلش مربع نیست).', 'zig3d-widgets'),
             ]
         );
 
@@ -1111,7 +1125,7 @@ final class Product_Configurator extends Widget_Base {
                 'type'       => Controls_Manager::SLIDER,
                 'size_units' => ['px', 'em'],
                 'range'      => ['px' => ['min' => 0, 'max' => 40]],
-                'default'    => ['size' => 12, 'unit' => 'px'],
+                'default'    => ['size' => 24, 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-configurator__actions' => 'gap: {{SIZE}}{{UNIT}};'],
             ]
         );
@@ -1122,6 +1136,7 @@ final class Product_Configurator extends Widget_Base {
                 'label'      => __('فاصلهٔ داخلی هر دکمه', 'zig3d-widgets'),
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em'],
+                'default'    => ['top' => '15', 'right' => '22', 'bottom' => '15', 'left' => '22', 'unit' => 'px', 'isLinked' => false],
                 'selectors'  => ['{{WRAPPER}} .zig-configurator__btn' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
@@ -1333,15 +1348,27 @@ final class Product_Configurator extends Widget_Base {
             $this->render_payload($settings, $fields, $variations, $display, $persian);
         }
 
+        /*
+         * جعبهٔ تیرهٔ کارت فقط دور عنوان/کشوها/قیمت را می‌گیرد؛ طبقِ طرح
+         * دو دکمهٔ پایین بیرونِ همین جعبه‌اند، نه داخلش.
+         */
+        echo '<div class="zig-configurator__card">';
+
         $this->render_header($settings);
 
         if ($can_select) {
             $this->render_fields($settings, $fields);
         }
 
+        echo '<div class="zig-configurator__bottom">';
         $this->render_price($settings, $display, $persian, $currency);
+        echo '<div class="zig-configurator__side">';
         $this->render_stock($settings, $display, $can_select);
         $this->render_updated($settings, $display, $variations, $persian);
+        echo '</div></div>';
+
+        echo '</div>';
+
         $this->render_actions($settings);
 
         echo '</div>';
@@ -1487,7 +1514,7 @@ final class Product_Configurator extends Widget_Base {
         }
 
         printf(
-            '<div class="zig-configurator__stock zig-configurator__stock--%s"%s><span class="zig-configurator__stock-label">%s</span></div>',
+            '<div class="zig-configurator__stock zig-configurator__stock--%s"%s><span class="zig-configurator__stock-label">%s</span><span class="zig-configurator__stock-dot" aria-hidden="true"></span></div>',
             esc_attr($bucket),
             '' === $label ? ' hidden' : '',
             esc_html($label)

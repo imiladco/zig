@@ -6666,37 +6666,40 @@ nav.zig-menu {
 .zig-configurator {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
-	background: #12151d;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	border-radius: 20px;
-	padding: 28px;
+	gap: 24px;
+}
+
+.zig-configurator__card {
+	display: flex;
+	flex-direction: column;
+	gap: 26px;
+	background: rgba(16, 23, 34, 0.96);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(43, 53, 72, 0.9);
+	border-radius: 16px;
+	padding: 24px 18px;
 }
 
 .zig-configurator__header {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 8px;
 }
 
 .zig-configurator__title {
 	margin: 0;
-	font-size: 20px;
+	font-size: 14px;
 	font-weight: 700;
-	color: #f5f5f7;
+	line-height: 20px;
+	color: #f6f8ff;
 }
 
 .zig-configurator__subtitle {
 	margin: 0;
-	font-size: 14px;
+	font-size: 12px;
 	font-weight: 400;
-	line-height: 1.6;
-	color: #9aa1b1;
-}
-
-.zig-configurator__label {
-	font-size: 13px;
-	color: #9aa1b1;
+	line-height: 20px;
+	color: #93a0b6;
 }
 
 .zig-configurator__fields {
@@ -6716,18 +6719,39 @@ nav.zig-menu {
 }
 
 .zig-configurator__field {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
+	position: relative;
 	min-width: 0;
+}
+
+/*
+ * برچسبِ «شناور رویِ لبه» — طرح دقیقاً همین را می‌دهد: ‎top:-8‎ باعث
+ * می‌شود متن دقیقاً رویِ خطِ کادر بنشیند، و پس‌زمینه‌اش تکه‌ای از خودِ
+ * کادر را می‌پوشاند تا انگار کادر دور برچسب بریده شده. به همین دلیل
+ * ‎.zig-configurator__field‎ چیدمانِ فلکسِ ستونی ندارد — تنها فرزندِ در
+ * جریانش ‎select-wrap‎ است؛ برچسب با ‎position:absolute‎ از جریان بیرون
+ * است و نسبت به همین عنصر جای می‌گیرد.
+ */
+.zig-configurator__label {
+	position: absolute;
+	top: -8px;
+	inset-inline-end: 14px;
+	z-index: 1;
+	padding: 0 8px;
+	background: linear-gradient(180deg, #0f1622 0%, #0c111b 100%);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: #d7dde8;
+	white-space: nowrap;
+	pointer-events: none;
 }
 
 .zig-configurator__select-wrap {
 	position: relative;
 	display: block;
-	background: #181c27;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	border-radius: 12px;
+	background: rgba(12, 17, 27, 0.98);
+	border: 1px solid rgba(48, 58, 78, 0.92);
+	border-radius: 10px;
 }
 
 /*
@@ -6742,22 +6766,27 @@ nav.zig-menu {
 	display: block;
 	width: 100%;
 	font: inherit;
-	font-size: 15px;
-	color: #f5f5f7;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 16px;
+	color: #d7dde8;
 	background: transparent;
 	cursor: pointer;
 }
 
 .zig-configurator__select:invalid,
 .zig-configurator__select option[value=""] {
-	color: #7c8494;
+	color: #d7dde8;
 }
 
 .zig-configurator__select::-ms-expand {
 	display: none;
 }
 
-/* موقعیتِ فلش با جهتِ نوشتار عوض می‌شود؛ در راست‌به‌چپ سمتِ چپ می‌نشیند */
+/*
+ * موقعیتِ فلش با جهتِ نوشتار عوض می‌شود؛ در راست‌به‌چپ ‎inset-inline-end‎
+ * سمتِ چپِ فیزیکی است — دقیقاً همان‌جا که طرح فلش را گذاشته.
+ */
 .zig-configurator__chevron {
 	position: absolute;
 	top: 50%;
@@ -6766,12 +6795,32 @@ nav.zig-menu {
 	display: inline-flex;
 	pointer-events: none;
 	line-height: 0;
-	color: #9aa1b1;
+	color: #667085;
 }
 
+/*
+ * فقط عرض ست می‌شود؛ این فلش مربع نیست (نسبتِ خودِ SVG تقریباً ۱۲:۶٫۹
+ * است) و اگر ارتفاع هم برابرِ عرض بشود، آیکون کش می‌آید.
+ */
 .zig-configurator__chevron svg {
+	display: block;
 	width: 100%;
-	height: 100%;
+	height: auto;
+}
+
+/*
+ * ‎.zig-configurator__card‎ گپِ ۲۶ پیکسل دارد (فاصلهٔ عنوان تا کشوها،
+ * دقیقاً طبقِ طرح). فاصلهٔ کشوها تا این ردیف باید ۴۸ باشد، پس همان ۲۲
+ * اضافه این‌جا با ‎margin-top‎ جبران می‌شود؛ راهی سبک‌تر از یک دیوِ
+ * بسته‌بندیِ اضافه فقط برایِ یک گپِ دوم.
+ */
+.zig-configurator__bottom {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 22px;
 }
 
 .zig-configurator__price {
@@ -6781,57 +6830,77 @@ nav.zig-menu {
 .zig-configurator__value {
 	display: inline-flex;
 	align-items: baseline;
-	gap: var(--zig-unit-gap, 0.25em);
-	font-size: 34px;
+	gap: var(--zig-unit-gap, 4px);
+	font-size: 32px;
 	font-weight: 800;
-	color: #f5f5f7;
+	line-height: 38px;
+	color: #fff;
 }
 
 .zig-configurator__unit {
-	font-size: 0.6em;
-	font-weight: 400;
-	color: #9aa1b1;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 24px;
+	color: rgba(255, 255, 255, 0.75);
 	white-space: nowrap;
+}
+
+.zig-configurator__side {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 10px;
 }
 
 .zig-configurator__stock {
 	display: inline-flex;
 	align-items: center;
-	align-self: flex-start;
+	gap: 4px;
+	align-self: flex-end;
 	white-space: nowrap;
-	line-height: 1;
-	padding: 5px 14px;
-	border: 1px solid transparent;
-	border-radius: 999px;
-	font-size: 12px;
+	line-height: 16px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	font-size: 10px;
 	font-weight: 600;
 }
 
+/* رنگِ نقطه از همان رنگِ متنِ حالت می‌آید — برچسب و نقطه همیشه هم‌رنگ‌اند */
+.zig-configurator__stock-dot {
+	width: 2px;
+	height: 2px;
+	border-radius: 9999px;
+	background: currentColor;
+}
+
 .zig-configurator__stock--instock {
-	background: rgba(27, 138, 75, 0.15);
-	border-color: rgba(27, 138, 75, 0.4);
+	color: #34d399;
+	background: rgba(16, 185, 129, 0.1);
 }
 
 .zig-configurator__stock--preorder {
-	background: rgba(43, 108, 176, 0.15);
-	border-color: rgba(43, 108, 176, 0.4);
+	color: #60a5fa;
+	background: rgba(59, 130, 246, 0.1);
 }
 
 .zig-configurator__stock--outofstock {
-	background: rgba(176, 42, 42, 0.15);
-	border-color: rgba(176, 42, 42, 0.4);
+	color: #f87171;
+	background: rgba(239, 68, 68, 0.1);
 }
 
 .zig-configurator__updated {
-	font-size: 0.85em;
-	color: #9aa1b1;
-	opacity: 0.75;
+	align-self: flex-end;
+	font-size: 10px;
+	font-weight: 400;
+	line-height: 14px;
+	color: #7f8aa0;
+	opacity: 0.9;
 }
 
 /*
- * پنهان‌شدنِ این دو با اسکریپت (‎hidden‎) باید بر رنگ/چیدمانِ ‎display‎یِ
- * بالا بچربد؛ سلکتورِ ترکیبی همان وزنِ کلاس‌ها را دارد ولی دیرتر می‌آید،
- * پس در تساویِ اختصاصیت این‌ها برنده‌اند.
+ * پنهان‌شدنِ این دو با اسکریپت (‎hidden‎) باید بر چیدمانِ ‎display‎یِ بالا
+ * بچربد؛ سلکتورِ ترکیبی همان وزنِ کلاس‌ها را دارد ولی دیرتر می‌آید، پس در
+ * تساویِ اختصاصیت این‌ها برنده‌اند.
  */
 .zig-configurator__stock[hidden],
 .zig-configurator__updated[hidden] {
@@ -6841,25 +6910,39 @@ nav.zig-menu {
 .zig-configurator__actions {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 12px;
+	align-items: stretch;
+	gap: 24px;
+	min-height: 56px;
 }
 
+/*
+ * دو دکمه هم‌عرض نیستند — طرح ۱۹۸px برایِ اول و ۳۵۲px برایِ دوم می‌دهد.
+ * به‌جای عرضِ ثابت (که در باریکه‌های مختلف نمی‌شکند)، همان نسبت با
+ * ‎flex-grow‎ می‌آید تا واکنش‌گرا هم بماند.
+ */
 .zig-configurator__btn {
 	display: inline-flex;
+	flex: 1 1 0;
+	min-height: 56px;
 	align-items: center;
 	justify-content: center;
 	text-align: center;
 	text-decoration: none;
 	cursor: pointer;
 	font: inherit;
-	font-size: 15px;
-	font-weight: 600;
-	color: #f5f5f7;
-	background: transparent;
-	border: 1px solid currentColor;
+	font-weight: 700;
+	line-height: 20px;
+	color: #fff;
 	border-radius: 12px;
-	padding: 14px 22px;
 	transition: background-color 0.15s ease;
+}
+
+.zig-configurator__btn--secondary {
+	flex-grow: 198;
+	font-size: 14px;
+	background: rgba(8, 12, 20, 0);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .zig-configurator__btn--secondary:hover,
@@ -6868,14 +6951,15 @@ nav.zig-menu {
 }
 
 .zig-configurator__btn--primary {
-	color: #fff;
-	background: #6928d9;
-	border-color: transparent;
+	flex-grow: 352;
+	font-size: 15px;
+	background: #6d28d9;
+	border: 1px solid rgba(139, 92, 255, 0.65);
 }
 
 .zig-configurator__btn--primary:hover,
 .zig-configurator__btn--primary:focus-visible {
-	background: #5a21c4;
+	background: #5c21b8;
 }
 
 /* پیامِ راهنما در ‎product-configurator.php‎ عمداً کلاسِ ‎.zig-price__notice‎ی موجود را دوباره استفاده می‌کند */
