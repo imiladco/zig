@@ -15,6 +15,8 @@ if (!defined('ABSPATH')) {
 
 foreach ([
     'KB_IN_BYTES'     => 1024,
+    'HOUR_IN_SECONDS' => 3600,
+    'DAY_IN_SECONDS'  => 86400,
     'WEEK_IN_SECONDS' => 604800,
 ] as $name => $value) {
     if (!defined($name)) {

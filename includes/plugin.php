@@ -47,6 +47,7 @@ final class Plugin {
         'description' => Widgets\Description::class,
         'search' => Widgets\Search::class,
         'contact-bar' => Widgets\Contact_Bar::class,
+        'menu' => Widgets\Menu::class,
     ];
 
     public static function instance(): self {
@@ -112,7 +113,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
@@ -219,6 +220,13 @@ final class Plugin {
      * تغییر می‌کند (کاهشِ موجودی بعدِ سفارش) هم باید همین کش را بترکاند —
      * وگرنه محصولِ ناموجود تا انقضایِ TTL در نتایجِ سرچ می‌ماند.
      */
+    /** باطل‌کردنِ کشِ کارت‌هایِ مگامنو */
+    public function flush_menu_cache(): void {
+        if (class_exists(__NAMESPACE__ . '\\Menu_Tree')) {
+            Menu_Tree::flush();
+        }
+    }
+
     private function watch_search_cache(): void {
         foreach ([
             'woocommerce_update_product',
@@ -238,6 +246,18 @@ final class Plugin {
         foreach (['deleted_post', 'trashed_post'] as $hook) {
             add_action($hook, [$this, 'flush_search_cache_for_post'], 20);
         }
+
+        /*
+         * کارت‌هایِ مگامنو هم فهرستی از محصولاتِ پرفروش‌اند؛ همان تغییرها
+         * که نتایجِ سرچ را کهنه می‌کنند، این را هم کهنه می‌کنند. ویرایشِ
+         * خودِ فهرستِ منو جدا هوک می‌شود، چون آنجا ترتیب و اعضا عوض
+         * می‌شوند نه محصولات.
+         */
+        foreach (['woocommerce_update_product', 'woocommerce_delete_product'] as $hook) {
+            add_action($hook, [$this, 'flush_menu_cache'], 20);
+        }
+
+        add_action('wp_update_nav_menu', [$this, 'flush_menu_cache'], 20);
 
         /*
          * تغییرِ نامِ یک ترم روی رتبه‌بندیِ Pass B اثر می‌گذارد (جست‌وجو در
@@ -276,6 +296,7 @@ final class Plugin {
     public function register_widgets($manager): void {
         require_once ZIG3D_WIDGETS_PATH . 'includes/svg.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/design-icons.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/menu-tree.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/markup.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/selector.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';

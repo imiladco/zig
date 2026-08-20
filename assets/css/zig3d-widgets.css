@@ -5805,3 +5805,396 @@ ul.zig-contact.zig-contact {
 .zig-contact .zig-contact__item--emphasis .zig-contact__label {
 	font-weight: var(--zig-contact-emphasis-weight, 600);
 }
+
+/* ==========================================================================
+   منویِ اصلی
+   ========================================================================== */
+
+/*
+ * باز شدنِ زیرمنو هیچ جاوااسکریپتی ندارد و این تصمیمِ اصلیِ این بخش است:
+ * ‎:hover‎ برایِ موس و ‎:focus-within‎ برایِ کیبورد. کلیک دست‌نخورده به
+ * مقصدِ خودِ آیتم می‌رود، همان‌طور که قرار شد.
+ *
+ * مزیتش فقط «بدونِ JS» نبودن نیست — کاربرِ کیبورد بدونِ هیچ کدی زیرمنو
+ * را می‌بیند و ‎Enter‎ همچنان می‌بَرد. با جاوااسکریپت باید همین را دستی
+ * می‌ساختیم و معمولاً یکی از دو حالت از قلم می‌افتد.
+ */
+.zig-menu nav.zig-menu,
+nav.zig-menu {
+	position: relative;
+}
+
+.zig-menu ul.zig-menu__bar {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--zig-menu-gap, 4px);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-menu li.zig-menu__item {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-menu a.zig-menu__link {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-menu-chevron-gap, 16px);
+	padding-block: var(--zig-menu-item-pad-block, 24px);
+	padding-inline: var(--zig-menu-item-pad-inline, 16px);
+	border-radius: var(--zig-menu-item-radius, 6px);
+	background-color: transparent;
+	color: var(--zig-menu-color, #ffffff);
+	text-decoration: none;
+	box-shadow: none;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 20px;
+	white-space: nowrap;
+}
+
+.zig-menu li.zig-menu__item:hover > a.zig-menu__link,
+.zig-menu li.zig-menu__item:focus-within > a.zig-menu__link {
+	background-color: var(--zig-menu-item-bg-hover, transparent);
+	color: var(--zig-menu-color-hover, #ffffff);
+}
+
+.zig-menu li.zig-menu__item--current > a.zig-menu__link {
+	color: var(--zig-menu-color-active, #ffffff);
+}
+
+/*
+ * زیرخطِ آیتمِ فعال. عرضش از خودِ متن می‌آید نه از عددِ ثابتِ طرح: ۸۸
+ * فقط برایِ «محصولات» درست بود و بقیهٔ آیتم‌ها زیرخطِ بریده می‌گرفتند.
+ */
+.zig-menu li.zig-menu__item--current > a.zig-menu__link .zig-menu__label::after {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-end: calc(var(--zig-menu-item-pad-block, 24px) * -1 + 2px);
+	height: var(--zig-menu-underline-height, 4px);
+	border-radius: 999px;
+	background: var(--zig-menu-underline-color, #ffffff);
+}
+
+.zig-menu .zig-menu__label {
+	position: relative;
+}
+
+.zig-menu .zig-menu__chevron {
+	display: inline-flex;
+	flex: none;
+	line-height: 0;
+	color: inherit;
+}
+
+.zig-menu .zig-menu__chevron svg {
+	width: var(--zig-menu-chevron-size, 12px);
+	height: auto;
+}
+
+/* ---------------------------- پنل ---------------------------- */
+
+/*
+ * پنل همیشه در DOM است و با ‎visibility‎ پنهان می‌شود، نه
+ * ‎display: none‎ — تا گذارِ محوشدن مقدارِ شروع داشته باشد. تأخیرِ
+ * ‎visibility‎ فقط در بسته‌شدن است تا تا آخرِ محو دیده شود.
+ */
+.zig-menu .zig-menu__panel {
+	position: absolute;
+	inset-block-start: 100%;
+	z-index: 60;
+	padding-block-end: var(--zig-menu-panel-pad-block, 28px);
+	padding-inline: var(--zig-menu-panel-pad-inline, 28px);
+	background-color: var(--zig-menu-panel-bg, #ffffff);
+	border-end-start-radius: var(--zig-menu-panel-radius, 28px);
+	border-end-end-radius: var(--zig-menu-panel-radius, 28px);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity var(--zig-menu-anim, 150ms) ease-out,
+		visibility 0s linear var(--zig-menu-anim, 150ms);
+}
+
+.zig-menu li.zig-menu__item:hover > .zig-menu__panel,
+.zig-menu li.zig-menu__item:focus-within > .zig-menu__panel {
+	opacity: 1;
+	visibility: visible;
+	transition: opacity var(--zig-menu-anim, 150ms) ease-out, visibility 0s;
+}
+
+/*
+ * زیرمنویِ ساده لبه‌اش با لبهٔ عنوانِ خودِ آیتم یکی می‌شود، نه با لبهٔ
+ * جعبه‌اش — برایِ همین به‌اندازهٔ پدینگِ آیتم به داخل کشیده می‌شود.
+ *
+ * لبهٔ هم‌ترازشونده ‎inset-inline-start‎ است: در راست‌چین یعنی لبهٔ راستِ
+ * پنل رویِ لبهٔ راستِ عنوان بنشیند، و در چپ‌چین آینه‌اش. اگر
+ * ‎inset-inline-end‎ می‌بود پنل از لبهٔ *مخالف* آویزان می‌شد و ۱۵۶ پیکسل
+ * آن‌طرف‌تر می‌افتاد.
+ */
+.zig-menu .zig-menu__panel--list,
+.zig-menu .zig-menu__panel--template {
+	inset-inline-end: auto;
+	inset-inline-start: var(--zig-menu-item-pad-inline, 16px);
+	width: var(--zig-menu-list-width, 270px);
+}
+
+/*
+ * مگامنو از جعبهٔ آیتم بیرون می‌زند و وسطِ خودِ ویوپورت می‌نشیند — برایِ
+ * همین ‎fixed‎ است. دو نکته که هر دو یک‌بار اشتباه شدند و اندازه‌گیری
+ * لوشان داد:
+ *
+ * ۱. ‎left‎ و ‎translateX‎ عمداً فیزیکی‌اند نه منطقی. وسط‌چینی قرینه است و
+ *    جهتِ نوشتار در آن معنایی ندارد؛ با ‎inset-inline-start: 50%‎ در
+ *    راست‌چین لبهٔ *راست* وسط می‌نشست و ترجمهٔ منفی پنل را کامل بیرونِ
+ *    صفحه می‌بُرد (‎x = -1200‎).
+ * ۲. ‎inset-block-start‎ باید ‎auto‎ بماند. در ‎fixed‎ مقدارِ ‎100%‎ یعنی صد
+ *    درصدِ *ویوپورت* (ته صفحه)، ولی ‎auto‎ یعنی همان جایِ طبیعیِ خودش در
+ *    جریان — یعنی دقیقاً زیرِ نوار.
+ */
+.zig-menu .zig-menu__panel--mega {
+	position: fixed;
+	inset-block-start: auto;
+	inset-inline: auto;
+	left: 50%;
+	transform: translateX(-50%);
+	width: min(var(--zig-menu-mega-width, 1280px), 100vw);
+	padding-block-end: var(--zig-menu-mega-pad, 32px);
+	padding-inline: var(--zig-menu-mega-pad, 32px);
+	padding-block-start: var(--zig-menu-mega-pad, 32px);
+}
+
+.zig-menu .zig-menu__mega {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+	gap: var(--zig-menu-mega-gap, 32px);
+}
+
+.zig-menu .zig-menu__col {
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-menu-col-gap, 16px);
+	width: var(--zig-menu-col-width, 272px);
+	flex: none;
+}
+
+/*
+ * سرتیتر و ردیف‌ها با فاصلهٔ خودشان، که از فاصلهٔ ستون کمتر است.
+ */
+.zig-menu .zig-menu__col-body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-menu-col-body-gap, 9px);
+}
+
+.zig-menu .zig-menu__col--cards {
+	flex: 1 1 0;
+	min-width: 0;
+	width: auto;
+}
+
+/* ---------------------------- ردیف‌هایِ زیرمنو ---------------------------- */
+
+.zig-menu ul.zig-menu__sub {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-menu li.zig-menu__sub-item {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * خطِ جداکننده با ‎border‎ رویِ ردیف است نه با ‎gap‎ی روی یک پس‌زمینهٔ
+ * خاکستری (کاری که فیگما کرده): آن روش برایِ ردیفِ آخر هم خط می‌کشد و
+ * باید جدا خنثی می‌شد.
+ *
+ * و فقط در زیرمنویِ ساده — ستون‌هایِ مگامنو در طرح هیچ خطِ میانی ندارند،
+ * تنها خطشان زیرِ سرتیتر است.
+ */
+.zig-menu .zig-menu__panel--list li.zig-menu__sub-item + li.zig-menu__sub-item,
+.zig-menu .zig-menu__panel--template li.zig-menu__sub-item + li.zig-menu__sub-item {
+	border-block-start: 1px solid var(--zig-menu-sub-divider, #f0f0f3);
+}
+
+.zig-menu a.zig-menu__sub-link {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-block: var(--zig-menu-sub-pad, 18px);
+	color: var(--zig-menu-sub-color, #111827);
+	text-decoration: none;
+	box-shadow: none;
+	font-size: 14px;
+	/*
+	 * صریح، وگرنه قالب می‌تواند ردیف‌ها را ضخیم کند. کنترلِ تایپوگرافیِ
+	 * ردیف رویِ ‎.zig-menu__sub-label‎ می‌نشیند که فرزندِ همین است، پس
+	 * انتخابِ مدیر بر این پیش‌فرض می‌چربد.
+	 */
+	font-weight: 400;
+	line-height: 20px;
+}
+
+/*
+ * ردیف‌هایِ مگامنو کوتاه‌ترند (‎۱۲‎ به‌جایِ ‎۱۸‎): آنجا ستون سه‌تایی است و
+ * ارتفاع باید جمع‌وجورتر بماند.
+ */
+.zig-menu .zig-menu__panel--mega a.zig-menu__sub-link {
+	padding-block: var(--zig-menu-mega-sub-pad, 12px);
+}
+
+.zig-menu .zig-menu__sub-chevron {
+	display: inline-flex;
+	flex: none;
+	line-height: 0;
+	color: inherit;
+}
+
+.zig-menu .zig-menu__sub-chevron svg {
+	height: var(--zig-menu-sub-chevron-size, 12px);
+	width: auto;
+}
+
+/* ---------------------------- دکمهٔ ستون ---------------------------- */
+
+.zig-menu a.zig-menu__cta {
+	display: flex;
+	/*
+	 * دکمه به اندازهٔ متنش است، نه به عرضِ ستون، و به لبهٔ شروعِ ستون
+	 * می‌چسبد — در طرح ۲۱۳ از ۲۷۲ را گرفته و راست‌چین است.
+	 */
+	align-self: flex-start;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--zig-menu-cta-gap, 24px);
+	padding-block: var(--zig-menu-cta-pad-block, 12px);
+	padding-inline: var(--zig-menu-cta-pad-inline, 24px);
+	border-radius: 999px;
+	/*
+	 * بدونِ متغیر، چون کنترلِ گروهیِ پس‌زمینه خودش مستقیم رویِ همین
+	 * ویژگی می‌نویسد — و انتخاب‌گرش عمداً ‎.zig-menu a.zig-menu__cta‎
+	 * است تا از این قاعده وزنِ بیشتری داشته باشد. اگر متغیر می‌ماند،
+	 * دو راهِ موازی برایِ یک چیز داشتیم که یکی‌شان بی‌اثر بود.
+	 */
+	background-image: linear-gradient(46.928deg, #7b5cff 33.548%, #5d2ccb 66.452%);
+	box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+	color: var(--zig-menu-cta-color, #ffffff);
+	text-decoration: none;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+}
+
+.zig-menu .zig-menu__cta-icon {
+	display: inline-flex;
+	flex: none;
+	line-height: 0;
+}
+
+.zig-menu .zig-menu__cta-icon svg {
+	width: var(--zig-menu-cta-icon-size, 16px);
+	height: var(--zig-menu-cta-icon-size, 16px);
+}
+
+/* ---------------------------- سرتیترِ ستون ---------------------------- */
+
+.zig-menu .zig-menu__col-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 42px;
+	border-block-end: 1px solid var(--zig-menu-sub-divider, #f0f0f3);
+}
+
+.zig-menu .zig-menu__col-title {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--zig-menu-col-title-color, #000000);
+}
+
+.zig-menu .zig-menu__count {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--zig-menu-count-color, #667085);
+}
+
+/* ---------------------------- کارت‌هایِ محصول ---------------------------- */
+
+.zig-menu .zig-menu__cards {
+	display: grid;
+	grid-template-columns: repeat(var(--zig-menu-card-cols, 3), minmax(0, 1fr));
+	gap: var(--zig-menu-card-gap, 16px);
+}
+
+.zig-menu a.zig-menu__card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--zig-menu-card-inner-gap, 16px);
+	padding-block: var(--zig-menu-card-pad-top, 40px) var(--zig-menu-card-pad-bottom, 8px);
+	padding-inline: var(--zig-menu-card-pad-inline, 8px);
+	background-color: var(--zig-menu-card-bg, rgba(247, 243, 255, 0.58));
+	/*
+	 * شبکهٔ نقشه‌کشیِ پشتِ کارت. در فیگما دو دسته خطِ برداری است؛ اینجا
+	 * دو گرادیانِ تکرارشونده — همان قدمِ ۱۶ پیکسلی و همان رنگ، ولی بدونِ
+	 * ۴۴ نودِ SVG برایِ هر کارت.
+	 */
+	background-image:
+		repeating-linear-gradient(to right, var(--zig-menu-card-grid, rgba(220, 212, 255, 0.32)) 0 1px, transparent 1px var(--zig-menu-card-grid-step, 16px)),
+		repeating-linear-gradient(to bottom, var(--zig-menu-card-grid, rgba(220, 212, 255, 0.32)) 0 1px, transparent 1px var(--zig-menu-card-grid-step, 16px));
+	border: 1px solid var(--zig-menu-card-border, #d7c8f4);
+	border-radius: var(--zig-menu-card-radius, 13px);
+	box-shadow: 0 14px 28px -12px rgba(16, 24, 40, 0.06);
+	text-decoration: none;
+	overflow: hidden;
+}
+
+.zig-menu .zig-menu__card-media {
+	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+	width: 100%;
+}
+
+.zig-menu .zig-menu__card-image {
+	max-width: 100%;
+	height: auto;
+	object-fit: contain;
+}
+
+.zig-menu .zig-menu__card-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: var(--zig-menu-card-title-pad, 10px);
+	background-color: var(--zig-menu-card-title-bg, #ffffff);
+	border-radius: var(--zig-menu-card-title-radius, 12px);
+	color: var(--zig-menu-card-title-color, #111827);
+	font-size: 14px;
+	line-height: 20px;
+	text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.zig-menu .zig-menu__panel {
+		transition-duration: 0s;
+	}
+}
