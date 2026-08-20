@@ -326,6 +326,39 @@ final class Menu_Tree {
         return is_string($link) ? $link : '';
     }
 
+    /**
+     * پیوندِ صفحهٔ یک دسته — نسخهٔ عمومیِ همان ‎term_url()‎.
+     *
+     * برایِ کارتِ دستیِ مگامنو: وقتی مدیر پیوندی ننوشته ولی دسته‌ای
+     * انتخاب کرده، پیوند به‌جایِ خالی‌ماندن همین‌جا می‌آید.
+     */
+    public static function category_url(int $term_id): string {
+        return self::term_url($term_id);
+    }
+
+    /** نامِ یک دسته، برایِ عنوانِ پیش‌فرضِ کارتِ دستی */
+    public static function category_title(int $term_id): string {
+        if ($term_id <= 0 || !function_exists('get_term')) {
+            return '';
+        }
+
+        $term = get_term($term_id, 'product_cat');
+
+        return ($term && !is_wp_error($term)) ? (string) $term->name : '';
+    }
+
+    /**
+     * شناسهٔ پیوستِ تصویرِ دسته — همان تصویری که خودِ ووکامرس در
+     * ویرایشِ دسته می‌گیرد (‎thumbnail_id‎ در متایِ ترم).
+     */
+    public static function category_image_id(int $term_id): int {
+        if ($term_id <= 0 || !function_exists('get_term_meta')) {
+            return 0;
+        }
+
+        return (int) get_term_meta($term_id, 'thumbnail_id', true);
+    }
+
     /* =====================================================================
      * کارت‌هایِ مگامنو
      * =================================================================== */

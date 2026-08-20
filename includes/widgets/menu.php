@@ -354,24 +354,41 @@ final class Menu extends Widget_Base {
          * کارت‌هایِ دستی. پر بودنِ این فهرست بر کوئریِ خودکار می‌چربد،
          * چون انتخابِ صریحِ مدیر است — ولی خالی گذاشتنش هنوز همان رفتارِ
          * «خودکار از ووکامرس، با کش» را می‌دهد.
+         *
+         * هر ردیف را می‌شود دو‌جور پر کرد: دستیِ کامل (نام/تصویر/پیوند)،
+         * یا با انتخابِ یک دسته که نام و تصویرِ ووکامرسش پیش‌فرض می‌شوند
+         * و پیوندش صفحهٔ خودِ دسته است — و همان‌ها همچنان قابلِ
+         * بازنویسی‌اند، چون گاهی مدیر تصویرِ دیگری از خودِ محصول
+         * می‌خواهد، نه عکسِ دسته.
          */
         $card = new Repeater();
+
+        $card->add_control('card_category', [
+            'label'       => __('دسته (اختیاری)', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SELECT2,
+            'options'     => ['' => __('— هیچ‌کدام —', 'zig3d-widgets')] + Menu_Tree::category_options(),
+            'label_block' => true,
+            'description' => __('نام و تصویرِ ووکامرسِ همین دسته پیش‌فرضِ کارت می‌شوند؛ خودِ دو فیلدِ زیر همچنان می‌توانند بازنویسی‌شان کنند.', 'zig3d-widgets'),
+        ]);
 
         $card->add_control('card_title', [
             'label'       => __('نام', 'zig3d-widgets'),
             'type'        => Controls_Manager::TEXT,
             'label_block' => true,
+            'description' => __('خالی یعنی نامِ دسته، اگر دسته‌ای انتخاب شده باشد.', 'zig3d-widgets'),
         ]);
 
         $card->add_control('card_image', [
-            'label' => __('تصویر', 'zig3d-widgets'),
-            'type'  => Controls_Manager::MEDIA,
+            'label'       => __('تصویر', 'zig3d-widgets'),
+            'type'        => Controls_Manager::MEDIA,
+            'description' => __('خالی یعنی تصویرِ ووکامرسِ دسته، اگر دسته‌ای انتخاب شده باشد.', 'zig3d-widgets'),
         ]);
 
         $card->add_control('card_link', [
             'label'       => __('پیوند', 'zig3d-widgets'),
             'type'        => Controls_Manager::URL,
             'label_block' => true,
+            'description' => __('خالی یعنی صفحهٔ خودِ دسته، اگر دسته‌ای انتخاب شده باشد.', 'zig3d-widgets'),
         ]);
 
         $this->add_control('mega_card_items', [
@@ -1774,10 +1791,11 @@ final class Menu extends Widget_Base {
     }
 
     /**
-     * کارت‌هایی که مدیر دستی نوشته — فقط ردیف‌هایی که واقعاً نامی دارند.
+     * کارت‌هایی که مدیر دستی نوشته — فقط ردیف‌هایی که واقعاً چیزی
+     * برایِ نشان‌دادن دارند: یا نام، یا دسته‌ای که نامش را قرض می‌گیرد.
      *
-     * ردیفِ بی‌نام یعنی مدیر ردیف را اضافه کرده و هنوز پرش نکرده؛ رندرش
-     * یک کارتِ خالی می‌ساخت.
+     * ردیفِ بی‌هر دو یعنی مدیر ردیف را اضافه کرده و هنوز پرش نکرده؛
+     * رندرش یک کارتِ خالی می‌ساخت.
      *
      * @return array<int,array<string,mixed>>
      */
@@ -1785,7 +1803,10 @@ final class Menu extends Widget_Base {
         $rows = [];
 
         foreach ((array) ($settings['mega_card_items'] ?? []) as $row) {
-            if ('' === trim((string) ($row['card_title'] ?? ''))) {
+            $has_title    = '' !== trim((string) ($row['card_title'] ?? ''));
+            $has_category = (int) ($row['card_category'] ?? 0) > 0;
+
+            if (!$has_title && !$has_category) {
                 continue;
             }
 
@@ -1804,8 +1825,23 @@ final class Menu extends Widget_Base {
         echo '<div class="zig-menu__cards">';
 
         foreach ($rows as $index => $row) {
-            $url   = trim((string) ($row['card_link']['url'] ?? ''));
-            $image = (string) ($row['card_image']['url'] ?? '');
+            $term_id = (int) ($row['card_category'] ?? 0);
+            $title   = $this->pick($row, 'card_title', $term_id > 0 ? Menu_Tree::category_title($term_id) : '');
+
+            /*
+             * پیوند اول از خودِ ردیف می‌آید؛ خالی که باشد و دسته‌ای
+             * انتخاب شده، صفحهٔ همان دسته جایش می‌نشیند. ساختِ آرایهٔ
+             * لینکِ کامل — نه فقط یک رشته — لازم است چون
+             * ‎add_link_attributes()‎ به همان شکلِ کنترلِ URL نیاز دارد
+             * (‎is_external‎، ‎nofollow‎، ‎custom_attributes‎).
+             */
+            $link = (array) ($row['card_link'] ?? []);
+
+            if ('' === trim((string) ($link['url'] ?? '')) && $term_id > 0) {
+                $link['url'] = Menu_Tree::category_url($term_id);
+            }
+
+            $url = trim((string) ($link['url'] ?? ''));
 
             /*
              * بی‌پیوند، کارت یک ‎span‎ است نه ‎a‎ی بی‌مقصد — همان قراردادِ
@@ -1815,29 +1851,53 @@ final class Menu extends Widget_Base {
             if ('' !== $url) {
                 $key = 'card_' . $index;
                 $this->add_render_attribute($key, 'class', 'zig-menu__card');
-                $this->add_link_attributes($key, $row['card_link']);
+                $this->add_link_attributes($key, $link);
 
                 printf('<a %s>', $this->get_render_attribute_string($key));
             } else {
                 echo '<span class="zig-menu__card">';
             }
 
-            if ('' !== $image) {
-                printf(
-                    '<span class="zig-menu__card-media"><img class="zig-menu__card-image" src="%s" alt="" loading="lazy" /></span>',
-                    esc_url($image)
-                );
-            }
+            echo $this->manual_card_image($row, $term_id);
 
-            printf(
-                '<span class="zig-menu__card-title"><bdi>%s</bdi></span>',
-                esc_html((string) $row['card_title'])
-            );
+            printf('<span class="zig-menu__card-title"><bdi>%s</bdi></span>', esc_html($title));
 
             echo '' !== $url ? '</a>' : '</span>';
         }
 
         echo '</div>';
+    }
+
+    /**
+     * تصویرِ یک کارتِ دستی: تصویرِ خودِ ردیف، وگرنه تصویرِ ووکامرسِ
+     * دسته‌ای که انتخاب شده — همان دو راهی که فیلدِ عنوان دارد.
+     */
+    private function manual_card_image(array $row, int $term_id): string {
+        $explicit = (string) ($row['card_image']['url'] ?? '');
+
+        if ('' !== $explicit) {
+            return sprintf(
+                '<span class="zig-menu__card-media"><img class="zig-menu__card-image" src="%s" alt="" loading="lazy" /></span>',
+                esc_url($explicit)
+            );
+        }
+
+        if ($term_id <= 0) {
+            return '';
+        }
+
+        $attachment_id = Menu_Tree::category_image_id($term_id);
+
+        if ($attachment_id <= 0) {
+            return '';
+        }
+
+        $image = wp_get_attachment_image($attachment_id, 'medium', false, [
+            'class'   => 'zig-menu__card-image',
+            'loading' => 'lazy',
+        ]);
+
+        return '' !== (string) $image ? '<span class="zig-menu__card-media">' . $image . '</span>' : '';
     }
 
     /** اولین مقدارِ ناخالیِ تنظیمات، وگرنه پیش‌فرض */

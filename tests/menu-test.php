@@ -453,6 +453,59 @@ Tests::same('فقط دو کارت رندر شد', substr_count($html_cards_manua
  */
 Tests::blocks('کوئریِ خودکار کنار می‌رود', $html_cards_manual, 'zig-menu__card-image" src=""');
 
+/* --------------------------------------------------------------------------
+ * کارتِ دستی از رویِ دسته
+ *
+ * انتخابِ یک دسته نام و تصویرِ ووکامرسش را پیش‌فرضِ کارت می‌کند؛ خودِ دو
+ * فیلد همچنان می‌توانند بازنویسی‌شان کنند.
+ * ----------------------------------------------------------------------- */
+
+$GLOBALS['__zig_term_meta'][101]['thumbnail_id'] = 909;
+
+$html_cards_cat = $render([
+    'menu_id'         => 7,
+    'mega_item'       => '1',
+    'mega_cards'      => 3,
+    'mega_card_items' => [
+        // فقط دسته: نام و تصویر هر دو از ووکامرس می‌آیند
+        ['_id' => 'g1', 'card_category' => '101'],
+        // دسته + بازنویسیِ نام: نام از تنظیمات، تصویر همچنان از دسته
+        ['_id' => 'g2', 'card_category' => '101', 'card_title' => 'نامِ دلخواه'],
+        // دسته + بازنویسیِ تصویر و پیوند
+        ['_id' => 'g3', 'card_category' => '101', 'card_image' => ['url' => 'https://zig3d.test/custom.png'], 'card_link' => ['url' => 'https://zig3d.test/custom-link']],
+    ],
+]);
+
+Tests::keeps('نامِ کارت از خودِ دسته می‌آید', $html_cards_cat, '<bdi>زیردستهٔ یک</bdi>');
+Tests::keeps('تصویرِ کارت هم از دسته', $html_cards_cat, 'src="https://zig3d.test/img/909.jpg"');
+Tests::keeps('پیوندِ کارت صفحهٔ خودِ دسته است', $html_cards_cat, 'href="https://zig3d.test/cat/101"');
+
+Tests::keeps('نامِ دستی بر نامِ دسته می‌چربد', $html_cards_cat, '<bdi>نامِ دلخواه</bdi>');
+
+Tests::keeps('تصویرِ دستی بر تصویرِ دسته می‌چربد', $html_cards_cat, 'src="https://zig3d.test/custom.png"');
+Tests::keeps('پیوندِ دستی هم همین‌طور', $html_cards_cat, 'href="https://zig3d.test/custom-link"');
+
+/* دسته‌ای بی‌تصویر — کارت بدونِ ‎<img>‎، نه یک تگِ شکسته */
+$html_no_thumb = $render([
+    'menu_id'         => 7,
+    'mega_item'       => '1',
+    'mega_cards'      => 1,
+    'mega_card_items' => [['_id' => 'g4', 'card_category' => '102']],
+]);
+
+Tests::keeps('کارتِ دستهٔ بی‌تصویر همچنان رندر می‌شود', $html_no_thumb, '<bdi>زیردستهٔ دو</bdi>');
+Tests::blocks('ولی تگِ تصویر نمی‌سازد', $html_no_thumb, '<img');
+
+/* ردیفی که فقط دسته دارد و نه نام، دیگر کارتِ خالی حساب نمی‌شود */
+$html_category_only = $render([
+    'menu_id'         => 7,
+    'mega_item'       => '1',
+    'mega_cards'      => 1,
+    'mega_card_items' => [['_id' => 'g5', 'card_category' => '101']],
+]);
+
+Tests::same('یک کارتِ دسته‌محور رندر شد', substr_count($html_category_only, 'zig-menu__card"'), 1);
+
 /* صفر یعنی ستون اصلاً نباشد، نه ستونِ خالی */
 $html_zero = $render(['menu_id' => 7, 'mega_item' => '1', 'mega_cards' => 0]);
 
