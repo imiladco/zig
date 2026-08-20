@@ -73,6 +73,9 @@ namespace {
                     'height'       => '',
                     'post_terms'   => [],
                     'cat_ids'      => [],
+                    // ویجتِ کانفیگ (Configurator)
+                    'variation_attributes' => [],
+                    'variation_attrs'      => [],
                 ];
 
                 if ($this->props['id']) {
@@ -93,7 +96,22 @@ namespace {
             public function get_price_suffix() { return $this->props['suffix']; }
             public function get_name() { return $this->props['name']; }
             public function get_description() { return $this->props['description']; }
-            public function get_attributes() { return $this->props['attrs']; }
+            /*
+             * دو معنیِ کاملاً متفاوت برایِ یک نام، مثلِ خودِ ووکامرس: رویِ
+             * محصولِ والد یعنی فهرستِ آبجکت‌هایِ اتریبیوت (‎Zig_Test_Attribute‎،
+             * برایِ Spec_Value)، رویِ واریانت یعنی نگاشتِ تخت
+             * ‎کلید => مقدارِ انتخاب‌شده‎ (برایِ Configurator). اگر یک آرایه
+             * برایِ هر دو استفاده می‌شد، یکی از دو مصرف‌کننده باید فرمتِ
+             * غلط را می‌خواند.
+             */
+            public function get_attributes() {
+                return 'variation' === $this->props['type']
+                    ? $this->props['variation_attrs']
+                    : $this->props['attrs'];
+            }
+
+            /** فهرستِ اتریبیوت‌هایِ واریانت‌ساز، رویِ محصولِ والد */
+            public function get_variation_attributes() { return $this->props['variation_attributes']; }
             public function get_image_id() { return (int) $this->props['image']; }
             public function get_gallery_image_ids() { return $this->props['gallery']; }
             public function get_status() { return $this->props['status_post'] ?? 'publish'; }

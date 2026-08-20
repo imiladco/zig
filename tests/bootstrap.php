@@ -108,6 +108,26 @@ if (!function_exists('sanitize_html_class')) {
         return '' === $class ? $fallback : $class;
     }
 }
+if (!function_exists('sanitize_title')) {
+    /*
+     * تقریبِ ‎sanitize_title()‎ی وردپرس — همان قاعده‌ای که پیش از این در
+     * ‎Query_State::slug()‎ به‌عنوانِ جایگزینِ بی‌وردپرس نوشته شده بود
+     * (کاراکترهایِ ساختاریِ آدرس حذف، فاصله به خط‌تیره). اینجا آمد چون
+     * حالا مصرف‌کنندهٔ دومی هم دارد (Configurator) و نباید در دو فایلِ
+     * تست دو تعریفِ متفاوت وجود داشته باشد — همان چیزی که یک بار باعثِ
+     * ناسازگاریِ بی‌صدا شد.
+     *
+     * حروفِ فارسی دست‌نخورده می‌مانند: وردپرسِ واقعی هم برایِ
+     * غیرلاتین‌ها آوانگاری نمی‌کند، فقط lower و رمزگشاییِ درصدی می‌کند.
+     */
+    function sanitize_title($title) {
+        $title = mb_strtolower(trim(rawurldecode((string) $title)));
+        $title = preg_replace('/[\x00-\x1F\x7F<>"\'`\\\\\/&?#,|=]+/u', '', $title);
+        $title = preg_replace('/[\s_]+/u', '-', $title);
+
+        return trim((string) $title, '-');
+    }
+}
 if (!function_exists('wp_strip_all_tags')) {
     function wp_strip_all_tags($text) {
         return trim(strip_tags(preg_replace('@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text)));

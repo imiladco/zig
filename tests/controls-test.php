@@ -32,6 +32,9 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/rate-price.php';
+require_once $root . '/includes/configurator.php';
+require_once $root . '/includes/widgets/product-configurator.php';
 require_once $root . '/includes/query-state.php';
 require_once $root . '/includes/facets.php';
 require_once $root . '/includes/filter-schema.php';
@@ -74,6 +77,7 @@ $widgets = [
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
+    'کانفیگ محصول'  => \Zig3d_Widgets\Widgets\Product_Configurator::class,
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
     'آرشیو دانلود' => \Zig3d_Widgets\Widgets\Download_Archive::class,
     'سیستم‌عامل‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class,

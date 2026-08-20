@@ -33,6 +33,7 @@ final class Plugin {
         'button'        => Widgets\Button::class,
         'product-price' => Widgets\Product_Price::class,
         'product-stock' => Widgets\Product_Stock::class,
+        'product-configurator' => Widgets\Product_Configurator::class,
         'product-archive' => Widgets\Product_Archive::class,
         'download-archive' => Widgets\Download_Archive::class,
         'compatible-operating-systems' => Widgets\Compatible_Operating_Systems::class,
@@ -311,6 +312,8 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/selector.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/rate-price.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/configurator.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
@@ -473,6 +476,20 @@ final class Plugin {
         wp_register_script(
             'zig3d-menu',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-menu.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * کانفیگ‌گر هم بدونِ jQuery. فقط محصولِ متغیرِ با کشو به این فایل
+         * نیاز دارد؛ بدونِ آن، قیمتِ پیش‌فرض و موجودی و زمانِ به‌روزرسانی
+         * همچنان کاملاً از PHP رندر شده‌اند، فقط سوییچِ بینِ ترکیب‌ها کار
+         * نمی‌کند.
+         */
+        wp_register_script(
+            'zig3d-configurator',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-configurator.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

@@ -6652,3 +6652,147 @@ nav.zig-menu {
 		transition-duration: 0s;
 	}
 }
+
+/* ==========================================================================
+   کانفیگ محصول
+   ========================================================================== */
+
+.zig-configurator {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.zig-configurator__header {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.zig-configurator__fields {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+/*
+ * قاعدهٔ زوج/فرد: با تعدادِ زوجِ کشو، همیشه دو ستون. با فرد، همهٔ ردیف‌ها
+ * دو ستونی‌اند جز آخری که یک آیتم دارد و آن یکی تمامِ عرض را می‌گیرد. برایِ
+ * یک کشوِ تنها هم همین قاعده جواب می‌دهد: تنها فرزند، آخرین فرزند هم
+ * هست، پس تمامِ عرض می‌شود.
+ */
+.zig-configurator__field:last-child:nth-child(odd) {
+	grid-column: 1 / -1;
+}
+
+.zig-configurator__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.zig-configurator__select-wrap {
+	position: relative;
+	display: block;
+}
+
+/*
+ * ‎<select>‎ی بومی، نه یک کمبوباکسِ دستی: پیکرِ موبایل و ناوبریِ صفحه‌کلید
+ * را خودِ مرورگر می‌دهد و اینجا فقط فلشِ پیش‌فرض حذف و جایش با آیکونِ طرح
+ * پر می‌شود.
+ */
+.zig-configurator__select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	display: block;
+	width: 100%;
+	font: inherit;
+	color: inherit;
+	background: transparent;
+	cursor: pointer;
+}
+
+.zig-configurator__select::-ms-expand {
+	display: none;
+}
+
+/* موقعیتِ فلش با جهتِ نوشتار عوض می‌شود؛ در راست‌به‌چپ سمتِ چپ می‌نشیند */
+.zig-configurator__chevron {
+	position: absolute;
+	top: 50%;
+	inset-inline-end: 14px;
+	transform: translateY(-50%);
+	display: inline-flex;
+	pointer-events: none;
+	line-height: 0;
+}
+
+.zig-configurator__chevron svg {
+	width: 100%;
+	height: 100%;
+}
+
+.zig-configurator__price {
+	display: flex;
+}
+
+.zig-configurator__value {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--zig-unit-gap, 0.25em);
+}
+
+.zig-configurator__unit {
+	font-size: 0.6em;
+	white-space: nowrap;
+}
+
+.zig-configurator__stock {
+	display: inline-flex;
+	align-items: center;
+	align-self: flex-start;
+	white-space: nowrap;
+	line-height: 1;
+}
+
+.zig-configurator__updated {
+	font-size: 0.85em;
+	opacity: 0.75;
+}
+
+/*
+ * پنهان‌شدنِ این دو با اسکریپت (‎hidden‎) باید بر رنگ/چیدمانِ ‎display‎یِ
+ * بالا بچربد؛ سلکتورِ ترکیبی همان وزنِ کلاس‌ها را دارد ولی دیرتر می‌آید،
+ * پس در تساویِ اختصاصیت این‌ها برنده‌اند.
+ */
+.zig-configurator__stock[hidden],
+.zig-configurator__updated[hidden] {
+	display: none;
+}
+
+.zig-configurator__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.zig-configurator__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+	font: inherit;
+	color: inherit;
+	background: transparent;
+	border: 1px solid currentColor;
+}
+
+.zig-configurator__btn--primary {
+	border-color: transparent;
+}
+
+/* پیامِ راهنما در ‎product-configurator.php‎ عمداً کلاسِ ‎.zig-price__notice‎ی موجود را دوباره استفاده می‌کند */
