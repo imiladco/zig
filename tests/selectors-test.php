@@ -63,6 +63,7 @@ require_once $root . '/includes/feature-repeater.php';
 require_once $root . '/includes/widgets/product-feature-showcase.php';
 require_once $root . '/includes/video-gallery-field.php';
 require_once $root . '/includes/widgets/product-video-gallery.php';
+require_once $root . '/includes/widgets/toc.php';
 
 use Zig3d_Widgets\Selector;
 
@@ -81,6 +82,7 @@ $widgets = [
     'دستگاه‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Devices::class,
     'گالری محیط نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class,
     'جدول مشخصات نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Info_Table::class,
+    'فهرست مطالب'   => \Zig3d_Widgets\Widgets\Toc::class,
 ];
 
 /*

@@ -50,6 +50,7 @@ final class Plugin {
         'contact-bar' => Widgets\Contact_Bar::class,
         'menu' => Widgets\Menu::class,
         'post-meta' => Widgets\Post_Meta::class,
+        'toc' => Widgets\Toc::class,
     ];
 
     public static function instance(): self {
@@ -522,6 +523,20 @@ final class Plugin {
         wp_register_script(
             'zig3d-post-meta',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-post-meta.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * برخلافِ بقیهٔ اسکریپت‌های بالا، این یکی تزئینی نیست: سرتیترهایی
+         * که فهرستِ مطالب باید فهرستشان کند متعلقِ ویجت‌های دیگرِ همان
+         * صفحه‌اند و فقط مرورگر، بعدِ رندرِ کاملِ صفحه، می‌تواند ببیندشان.
+         * بدونِ این فایل، خروجیِ ویجت یک ‎<ul>‎ کاملاً خالی می‌ماند.
+         */
+        wp_register_script(
+            'zig3d-toc',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-toc.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

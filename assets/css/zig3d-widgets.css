@@ -7107,3 +7107,130 @@ nav.zig-menu {
 	stroke: #fff;
 	fill: #fff;
 }
+
+/* ==========================================================================
+   فهرست مطالب
+   ========================================================================== */
+
+/*
+ * فهرست از سمت سرور خالی می‌آید و جاوااسکریپت (‎zig3d-toc.js‎) آن را پر
+ * می‌کند — تنها ویجتِ این افزونه که واقعاً به اسکریپت وابسته است، چون
+ * سرتیترهایی که باید فهرست کند متعلق به ویجت‌های دیگرِ همان صفحه‌اند.
+ */
+
+.zig-toc {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.zig-toc__header {
+	border-bottom: 1px solid transparent;
+}
+
+.zig-toc__title {
+	margin: 0;
+}
+
+/*
+ * ناحیهٔ اسکرول‌شونده. رنگ و اندازهٔ نوار از همان متغیرهایِ ‎--zig-scroll-*‎
+ * می‌آیند که پنلِ فیلترِ آرشیوِ محصولات هم به کار می‌برد — یک زبانِ اسکرول
+ * برایِ کلِ افزونه.
+ */
+.zig-toc__scroll {
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
+}
+
+.zig-toc__scroll::-webkit-scrollbar {
+	width: var(--zig-scroll-size, 10px);
+}
+
+.zig-toc__scroll::-webkit-scrollbar-track {
+	background-color: transparent;
+}
+
+.zig-toc__scroll::-webkit-scrollbar-thumb {
+	border: var(--zig-scroll-pad, 3px) solid transparent;
+	background-clip: padding-box;
+	border-radius: 999px;
+	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
+}
+
+.zig-toc__scroll::-webkit-scrollbar-thumb:hover {
+	background-color: var(--zig-scroll-thumb-hover, rgba(17, 12, 46, 0.32));
+}
+
+.zig-toc__list {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * زیرِ ‎<li>‎ نه گَپ فلکس را می‌شکند و نه معناشناسیِ فهرست را — فلکس‌گپِ ظرف
+ * روی همین عنصرها می‌نشیند، بدون آنکه لازم باشد لینک داخلش دوباره فلکس شود
+ * تا فاصله‌ها درست دربیایند.
+ */
+.zig-toc__item-wrap {
+	display: flex;
+	min-width: 0;
+}
+
+.zig-toc__item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+	color: inherit;
+	text-decoration: none;
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+}
+
+.zig-toc__label {
+	overflow-wrap: anywhere;
+}
+
+.zig-toc__index {
+	flex: none;
+	text-align: end;
+	font-variant-numeric: tabular-nums;
+}
+
+.zig-toc__item:focus-visible {
+	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
+	outline-offset: var(--zig-focus-offset, -2px);
+	border-radius: 2px;
+}
+
+/* پیام «چیزی پیدا نشد»، فقط با جاوااسکریپت و فقط داخل ادیتور آشکار می‌شود */
+.zig-toc__empty {
+	margin: 0;
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}
+
+@media print {
+	.zig-toc__item {
+		box-shadow: none;
+		transform: none;
+	}
+
+	/*
+	 * روی کاغذ اسکرول معنا ندارد؛ کل فهرست باید دیده شود. سلکتور المنتور
+	 * (‎{{WRAPPER}} .zig-toc__scroll‎) وزن بیشتری از این قاعده دارد، پس
+	 * ‎!important‎ لازم نیست.
+	 */
+	.zig-toc__scroll {
+		max-height: none;
+		overflow: visible;
+	}
+}

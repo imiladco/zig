@@ -74,6 +74,7 @@ require_once $root . '/includes/reading-time.php';
 require_once $root . '/includes/likes.php';
 require_once $root . '/includes/likes-endpoint.php';
 require_once $root . '/includes/widgets/post-meta.php';
+require_once $root . '/includes/widgets/toc.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -98,6 +99,7 @@ $widgets = [
     'اطلاعاتِ تماس' => \Zig3d_Widgets\Widgets\Contact_Bar::class,
     'منویِ اصلی'    => \Zig3d_Widgets\Widgets\Menu::class,
     'متایِ پست'     => \Zig3d_Widgets\Widgets\Post_Meta::class,
+    'فهرست مطالب'   => \Zig3d_Widgets\Widgets\Toc::class,
 ];
 
 /*
