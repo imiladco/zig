@@ -415,6 +415,7 @@ final class Toc extends Widget_Base {
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem', '%'],
                 'separator'  => 'before',
+                'default'    => ['top' => '18', 'right' => '24', 'bottom' => '18', 'left' => '24', 'unit' => 'px'],
                 'selectors'  => ['{{WRAPPER}} .zig-toc__header' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
@@ -424,6 +425,7 @@ final class Toc extends Widget_Base {
             [
                 'label'     => __('رنگ خط جداکننده', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
+                'default'   => '#ECEEF2',
                 'selectors' => ['{{WRAPPER}} .zig-toc__header' => 'border-color: {{VALUE}};'],
             ]
         );
@@ -513,6 +515,37 @@ final class Toc extends Widget_Base {
             [
                 'label' => __('آیتم', 'zig3d-widgets'),
                 'tab'   => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_control(
+            'item_bg',
+            [
+                'label'     => __('پس‌زمینهٔ ردیفِ فرد (Odd)', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#FFFFFF',
+                'selectors' => ['{{WRAPPER}} .zig-toc' => '--zig-toc-row-bg: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'item_bg_even',
+            [
+                'label'       => __('پس‌زمینهٔ ردیفِ زوج (Even) — Zebra', 'zig3d-widgets'),
+                'type'        => Controls_Manager::COLOR,
+                'default'     => '#FAFAFC',
+                'description' => __('با پس‌زمینهٔ ردیفِ فرد فرق‌گذاری می‌کند تا ردیف‌ها یکی‌درمیان دیده شوند؛ برایِ بازگشت به پس‌زمینهٔ یک‌دست، همین رنگ را با رنگِ ردیفِ فرد یکی کنید.', 'zig3d-widgets'),
+                'selectors'   => ['{{WRAPPER}} .zig-toc' => '--zig-toc-row-bg-even: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'item_divider_color',
+            [
+                'label'     => __('رنگ خط جداکنندهٔ ردیف‌ها', 'zig3d-widgets'),
+                'type'      => Controls_Manager::COLOR,
+                'default'   => '#ECEEF2',
+                'selectors' => ['{{WRAPPER}} .zig-toc' => '--zig-toc-row-divider: {{VALUE}};'],
             ]
         );
 

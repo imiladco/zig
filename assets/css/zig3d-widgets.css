@@ -7118,10 +7118,23 @@ nav.zig-menu {
  * سرتیترهایی که باید فهرست کند متعلق به ویجت‌های دیگرِ همان صفحه‌اند.
  */
 
+/*
+ * ظاهرِ پیش‌فرض دقیقاً طبقِ طرح: کارتِ گردِ سفید با حاشیهٔ بنفشِ کم‌رنگ و
+ * سایهٔ نرم. هر چهارتا از همین ‎add_box_style_tabs()‎ می‌آیند ولی آن trait
+ * خودش مقدارِ پیش‌فرض نمی‌گذارد (مشترک است، هر ویجت ظاهرِ پایهٔ خودش را
+ * دارد)؛ تا وقتی کاربر در پنل چیزی تنظیم نکرده همین قواعد اعمال می‌شوند —
+ * سلکتورِ المنتور (‎{{WRAPPER}} .zig-toc‎) وزنِ بیشتری دارد، پس هر مقداری
+ * که در پنل بگذارد رویِ همین می‌چربد.
+ */
 .zig-toc {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	background-color: #fff;
+	border: 1px solid #ece4fb;
+	border-radius: 20px;
+	box-shadow: 0 20px 40px -16px rgba(76, 29, 149, 0.16);
+	overflow: hidden;
 }
 
 .zig-toc__header {
@@ -7161,6 +7174,17 @@ nav.zig-menu {
 	background-color: var(--zig-scroll-thumb-hover, rgba(17, 12, 46, 0.32));
 }
 
+/*
+ * برخی مرورگر/سیستم‌عامل‌ها بدونِ این، دو دکمهٔ فلش (بالا/پایین) در دو سرِ
+ * نوارِ اسکرول اضافه می‌کنند — چیزی که در دیزاین نیست و ظاهرِ نوارِ باریکِ
+ * قرصی را می‌شکند.
+ */
+.zig-toc__scroll::-webkit-scrollbar-button {
+	display: none;
+	width: 0;
+	height: 0;
+}
+
 .zig-toc__list {
 	display: flex;
 	flex-direction: column;
@@ -7177,6 +7201,17 @@ nav.zig-menu {
 .zig-toc__item-wrap {
 	display: flex;
 	min-width: 0;
+	background: var(--zig-toc-row-bg, #fff);
+	border-top: 1px solid var(--zig-toc-row-divider, #eceef2);
+}
+
+.zig-toc__item-wrap:first-child {
+	border-top: 0;
+}
+
+/* زبرا: ردیفِ فرد از همان var پایه می‌آید، این‌جا فقط ردیفِ زوج فرق می‌کند */
+.zig-toc__item-wrap:nth-child(even) {
+	background: var(--zig-toc-row-bg-even, #fafafc);
 }
 
 .zig-toc__item {
@@ -7185,6 +7220,7 @@ nav.zig-menu {
 	justify-content: space-between;
 	gap: 8px;
 	width: 100%;
+	padding: 14px 24px;
 	color: inherit;
 	text-decoration: none;
 	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
