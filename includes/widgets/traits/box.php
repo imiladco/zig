@@ -27,8 +27,19 @@ trait Box {
      * @param string $selector    سلکتور جعبه، نسبت به ‎{{WRAPPER}}‎.
      * @param string $hover_scope سلکتوری که هاور روی آن حالت هاور را فعال می‌کند؛
      *                            برای کارت یعنی «هاور روی هر جای کارت»، نه فقط خود جعبه.
+     * @param array<string,string> $padding_selectors اگر داده شود، جای سلکتورِ
+     *                            پیش‌فرضِ کنترلِ «فاصلهٔ داخلی» را می‌گیرد.
+     *                            برای جعبه‌ای لازم است که پوستش از خودش جدا
+     *                            شده باشد: آن‌وقت پس‌زمینه و سایه روی یک عنصر
+     *                            می‌نشینند ولی پدینگ باید روی عنصرِ دیگری برود.
+     *                            کلیدها باید خودشان ‎{{WRAPPER}}‎ داشته باشند.
      */
-    protected function add_box_style_tabs(string $prefix, string $selector, string $hover_scope): void {
+    protected function add_box_style_tabs(
+        string $prefix,
+        string $selector,
+        string $hover_scope,
+        array $padding_selectors = []
+    ): void {
         $box = '{{WRAPPER}} ' . $selector;
 
         /*
@@ -88,7 +99,9 @@ trait Box {
                 'type'       => Controls_Manager::DIMENSIONS,
                 'size_units' => ['px', 'em', 'rem', '%'],
                 'separator'  => 'before',
-                'selectors'  => [$box => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+                'selectors'  => [] !== $padding_selectors
+                    ? $padding_selectors
+                    : [$box => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
             ]
         );
 

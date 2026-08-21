@@ -38,6 +38,31 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/query-state.php';
+require_once $root . '/includes/facets.php';
+require_once $root . '/includes/filter-schema.php';
+require_once $root . '/includes/schema-store.php';
+require_once $root . '/includes/sorting.php';
+require_once $root . '/includes/attributes.php';
+require_once $root . '/includes/archive-query.php';
+require_once $root . '/includes/seo.php';
+require_once $root . '/includes/card.php';
+require_once $root . '/includes/product-card.php';
+require_once $root . '/includes/widgets/product-archive.php';
+require_once $root . '/includes/download-archive-data.php';
+require_once $root . '/includes/widgets/compatible-operating-systems.php';
+require_once $root . '/includes/widgets/compatible-devices.php';
+require_once $root . '/includes/widgets/software-environment-gallery.php';
+require_once $root . '/includes/widgets/software-info-table.php';
+require_once $root . '/includes/widgets/product-gallery.php';
+require_once $root . '/includes/spec-group.php';
+require_once $root . '/includes/spec-store.php';
+require_once $root . '/includes/spec-value.php';
+require_once $root . '/includes/widgets/product-specs.php';
+require_once $root . '/includes/feature-repeater.php';
+require_once $root . '/includes/widgets/product-feature-showcase.php';
+require_once $root . '/includes/video-gallery-field.php';
+require_once $root . '/includes/widgets/product-video-gallery.php';
 
 use Zig3d_Widgets\Selector;
 
@@ -47,14 +72,36 @@ $widgets = [
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
+    'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
+    'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
+    'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
+    'نمایشِ قابلیت‌ها' => \Zig3d_Widgets\Widgets\Product_Feature_Showcase::class,
+    'گالریِ ویدئو'  => \Zig3d_Widgets\Widgets\Product_Video_Gallery::class,
+    'سیستم‌عامل‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class,
+    'دستگاه‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Devices::class,
+    'گالری محیط نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class,
+    'جدول مشخصات نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Info_Table::class,
+];
+
+/*
+ * همان استثنایِ ‎controls-test.php‎: گالریِ ویدئو عمداً کم‌کنترل است، پس
+ * سقفِ ‎>۱۰‎ سلکتور برایش کالیبره نیست.
+ */
+$minSelectors = [
+    \Zig3d_Widgets\Widgets\Product_Video_Gallery::class => 5,
+    \Zig3d_Widgets\Widgets\Compatible_Operating_Systems::class => 8,
+    \Zig3d_Widgets\Widgets\Compatible_Devices::class => 10,
+    \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class => 15,
+    \Zig3d_Widgets\Widgets\Software_Info_Table::class => 8,
 ];
 
 foreach ($widgets as $label => $class) {
     Tests::group('سلکتورها › ' . $label);
 
     $selectors = zig_collect_selectors($class);
+    $min       = $minSelectors[$class] ?? 10;
 
-    Tests::ok('سلکتوری ثبت شده', count($selectors) > 10, sprintf('تعداد: %d', count($selectors)));
+    Tests::ok('سلکتوری ثبت شده', count($selectors) > $min, sprintf('تعداد: %d (آستانه: %d)', count($selectors), $min));
 
     $leaked = [];
 
@@ -220,3 +267,105 @@ Tests::ok(
         && false !== strpos($price_rules['unit_offset'][0], '.zig-price__unit ⇒ transform'),
     $price_rules['unit_offset'][0] ?? 'ثبت نشده'
 );
+
+/* ==========================================================================
+ * ایمپورت‌ها
+ *
+ * این را یک خطای مرگ‌بار روی نصب واقعی یاد داد: ‎Archive_Head::page_state()‎
+ * به ویجت اضافه شده بود بدون ‎use‎ متناظرش. ویجت در فضای‌نام
+ * ‎Zig3d_Widgets\Widgets‎ است، پس PHP دنبال
+ * ‎Zig3d_Widgets\Widgets\Archive_Head‎ می‌گشت و پیدا نمی‌کرد.
+ *
+ * هیچ تستی نمی‌گرفتش چون رندر ویجت به المنتور و ووکامرس نیاز دارد و در
+ * تست واحد اجرا نمی‌شود. ولی *خودِ فایل* را می‌شود خواند — و همین کافی
+ * است.
+ * ======================================================================= */
+
+Tests::group('ایمپورت‌ها');
+
+foreach (glob(dirname(__DIR__) . '/includes/widgets/*.php') as $file) {
+    $source = (string) file_get_contents($file);
+    $name   = basename($file);
+
+    if (!preg_match('/^namespace\s+([^;]+);/m', $source, $ns) || 'Zig3d_Widgets\\Widgets' !== trim($ns[1])) {
+        continue;
+    }
+
+    preg_match_all('/^use\s+Zig3d_Widgets\\\\([A-Za-z_]+);/m', $source, $imports);
+
+    $known = array_flip($imports[1]);
+
+    // کلاس‌های فضای‌نام ریشه، از روی فایل‌های واقعی
+    foreach (glob(dirname(__DIR__) . '/includes/*.php') as $sibling) {
+        $class = str_replace(' ', '_', ucwords(str_replace('-', ' ', basename($sibling, '.php'))));
+
+        if (!preg_match('/\b' . preg_quote($class, '/') . '::/', $source)) {
+            continue;
+        }
+
+        Tests::ok(
+            $name . ' › ' . $class . ' ایمپورت شده',
+            isset($known[$class])
+        );
+    }
+}
+
+/* ==========================================================================
+ * متغیرهایی که کنترل‌ها می‌نویسند، باید جایی مصرف شوند
+ *
+ * معماری این افزونه این است: کنترل المنتور یک متغیر CSS می‌نویسد و شیت
+ * پایه آن را با ‎var()‎ مصرف می‌کند. سودش این است که پیش‌فرضِ دیزاین در
+ * خودِ شیت می‌ماند و بدون فایل CSSِ سند هم درست درمی‌آید.
+ *
+ * ولی یک شکافِ بی‌صدا دارد: اگر اسم متغیر در کنترل و در شیت یکی نباشد —
+ * یک حرف، یک خط تیره — مدیر رنگ را عوض می‌کند و *هیچ اتفاقی نمی‌افتد*.
+ * نه خطایی، نه هشداری. رندر هم درست است، چون متغیرِ بی‌مصرف در CSS کاملاً
+ * قانونی است.
+ *
+ * این دقیقاً دو بار در همین ویجت افتاد: یک بار کنترلِ «پس‌زمینهٔ ویژگی»
+ * روی ‎<li>‎ می‌نشست در حالی که پس‌زمینه مال ظرف بود، و یک بار دو کنترل
+ * یک خاصیت را از دو راه می‌نوشتند.
+ * ======================================================================= */
+
+Tests::group('سلکتورها › متغیرهای بی‌مصرف');
+
+$sheet = (string) file_get_contents(dirname(__DIR__) . '/assets/css/zig3d-widgets.css');
+
+/*
+ * چند متغیر عمداً در CSS مصرف نمی‌شوند — جاوااسکریپت با
+ * ‎getComputedStyle().getPropertyValue()‎ مستقیم می‌خواندشان (مثلاً
+ * مدت/easingِ موشنِ سوییچِ تب در نمایشِ قابلیت‌ها، که Web Animations API
+ * اجرا می‌کند، نه یک ‎transition‎ی CSS). این‌ها هم واقعاً «مصرف» می‌شوند،
+ * فقط نه با ‎var()‎ — پس این‌جا صریح مستثنا هستند، نه این‌که سنجه
+ * نادیده‌شان بگیرد.
+ */
+$jsConsumedVars = [
+    '--zig-feature-motion-duration',
+    '--zig-feature-motion-easing',
+];
+
+foreach ($widgets as $label => $class) {
+    $orphans = [];
+
+    foreach (zig_collect_selectors($class) as [$control, $selector, $rule]) {
+        if (!preg_match_all('/(--zig-[a-z0-9-]+)\s*:/i', (string) $rule, $names)) {
+            continue;
+        }
+
+        foreach ($names[1] as $name) {
+            if (in_array($name, $jsConsumedVars, true)) {
+                continue;
+            }
+
+            if (false === strpos($sheet, 'var(' . $name)) {
+                $orphans[] = $control . ' → ' . $name;
+            }
+        }
+    }
+
+    Tests::ok(
+        $label . ': هر متغیری که نوشته می‌شود، مصرف هم می‌شود',
+        [] === $orphans,
+        implode(' | ', array_unique($orphans))
+    );
+}

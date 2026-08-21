@@ -23,8 +23,16 @@ if (!defined('ABSPATH')) {
  */
 trait Pulse {
 
-    /** کلاسی که شیت با آن تپش را روشن می‌کند */
-    private const PULSE_CLASS = 'zig-pulse';
+    /**
+     * کلاسی که شیت با آن تپش را روشن می‌کند.
+     *
+     * به‌جای ثابتِ trait (که تا پیش از PHP 8.2 خطای parse می‌دهد) از یک
+     * متدِ استاتیک استفاده شده تا با پایین‌ترین نسخهٔ پشتیبانی‌شدهٔ پلاگین
+     * (PHP 7.4) هم سازگار بماند.
+     */
+    private static function pulse_class(): string {
+        return 'zig-pulse';
+    }
 
     /**
      * کنترل‌های تنظیم تپش.

@@ -96,14 +96,29 @@ final class Price {
     /**
      * دادهٔ قیمت، آمادهٔ نمایش.
      *
+     * ‎$deep‎ تفاوت «یک محصول» و «پانزده کارت» است.
+     *
+     * برای محصول چندقیمتی، مسیر عمیق همهٔ گزینه‌ها را با ‎wc_get_product()‎
+     * بار می‌کند تا ارزان‌ترینِ *قابل خرید* و قیمت پیشینِ دقیقاً همان گزینه
+     * را پیدا کند. روی صفحهٔ یک محصول این درست‌ترین کار است.
+     *
+     * در یک گرید فاجعه است: پانزده کارت × تا شصت گزینه یعنی صدها بارگذاری
+     * محصول در یک درخواست. مسیر سبک به‌جایش مقدار تجمیعیِ خودِ ووکامرس را
+     * می‌گیرد که در ترنزینت ‎wc_var_prices_{id}‎ کش شده و عملاً رایگان است.
+     *
+     * هزینه‌اش: بج تخفیف روی محصول متغیر در گرید نمی‌آید. که اتفاقاً ضرر
+     * نیست — همان بج از روی مقادیر تجمیعی، درصدی می‌ساخت که هیچ گزینه‌ای
+     * واقعاً نداشت (توضیحش در ‎aggregate()‎).
+     *
      * @param string $variable_mode 'min' یا 'range' — فقط برای محصول متغیر و گروهی معنا دارد.
+     * @param bool   $deep          گزینه‌ها تک‌تک خوانده شوند؟ در فهرست، نه.
      * @return array{has_price:bool,is_free:bool,is_multi:bool,is_range:bool,on_sale:bool,current:string,old:string,max:string,percent:int,saved:string}
      */
-    public static function data(\WC_Product $product, string $variable_mode = 'min'): array {
+    public static function data(\WC_Product $product, string $variable_mode = 'min', bool $deep = true): array {
         $multi = self::multi_price_type($product);
 
         $data = $multi
-            ? self::multi_data($product, $variable_mode)
+            ? self::multi_data($product, $variable_mode, $deep)
             : self::simple_data($product);
 
         /*
@@ -127,11 +142,11 @@ final class Price {
         return $product->is_type('variable') || $product->is_type('grouped');
     }
 
-    private static function multi_data(\WC_Product $product, string $variable_mode): array {
+    private static function multi_data(\WC_Product $product, string $variable_mode, bool $deep = true): array {
         $data = self::EMPTY;
 
         if ('range' === $variable_mode) {
-            $range = self::price_range($product);
+            $range = self::price_range($product, $deep);
 
             if ('' !== $range['min'] && '' !== $range['max'] && (float) $range['max'] > (float) $range['min']) {
                 $data['current']   = $range['min'];
@@ -152,7 +167,11 @@ final class Price {
          * واقعاً ندارد. این خطا در نگاه اول دیده نمی‌شود چون عدد «معقول»
          * به نظر می‌رسد.
          */
-        $cheapest = self::cheapest_child($product);
+        /*
+         * مسیر سبک مستقیم سراغ مقدار تجمیعی می‌رود. بدون قیمت پیشین، که
+         * عمدی است و در ‎aggregate()‎ توضیح داده شده.
+         */
+        $cheapest = $deep ? self::cheapest_child($product) : self::aggregate($product);
 
         $data['current'] = $cheapest['price'];
 
@@ -228,12 +247,21 @@ final class Price {
      *
      * @return array{min:string,max:string}
      */
-    private static function price_range(\WC_Product $product): array {
+    private static function price_range(\WC_Product $product, bool $deep = true): array {
         if ($product->is_type('variable') && method_exists($product, 'get_variation_price')) {
             return [
                 'min' => (string) $product->get_variation_price('min', true),
                 'max' => (string) $product->get_variation_price('max', true),
             ];
+        }
+
+        /*
+         * محصول گروهی مقدار تجمیعی ندارد و بازه‌اش فقط با پیمایش فرزندان
+         * درمی‌آید. در مسیر سبک این کار انجام نمی‌شود و بازه‌ای هم اعلام
+         * نمی‌شود؛ نتیجه به حالت «کمترین قیمت» برمی‌گردد.
+         */
+        if (!$deep) {
+            return ['min' => '', 'max' => ''];
         }
 
         $prices = [];

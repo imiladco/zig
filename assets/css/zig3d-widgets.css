@@ -15,7 +15,9 @@
  * متغیر می‌نویسد و این فایل تصمیم می‌گیرد آن مقدار کجا و چطور به کار برود.
  * مزیتش این است که حالت هاور فقط یک متغیر را عوض می‌کند، نه یک قاعدهٔ کامل.
  *
- * این افزونه هیچ جاوااسکریپتی به صفحه اضافه نمی‌کند؛ همهٔ حالت‌ها اعلانی‌اند.
+ * جز آرشیو محصولات، هیچ ویجتی جاوااسکریپت به صفحه اضافه نمی‌کند و همهٔ
+ * حالت‌ها اعلانی‌اند. آرشیو هم استایلش اعلانی است — JS فقط ‎aria-busy‎ و
+ * ‎data-zig-state‎ را عوض می‌کند و بقیه‌اش را CSS می‌چیند.
  */
 
 /* ==========================================================================
@@ -28,6 +30,500 @@
 .zig-btn,
 .zig-icon {
 	box-sizing: border-box;
+}
+
+/* Download Archive ------------------------------------------------------- */
+.zig-archive.zig-download-archive {
+	--zig-download-purple: #6928d9;
+	--zig-download-soft: #f5f1ff;
+	--zig-download-line: #e2e7f0;
+	direction: rtl;
+	color: #171923;
+	display: block;
+}
+
+.zig-download-archive__toolbar {
+	display: grid;
+	grid-template-columns: minmax(132px, auto) minmax(220px, 1fr) auto;
+	align-items: center;
+	gap: 16px;
+	padding: 14px 18px;
+	border: 1px solid var(--zig-download-line);
+	border-radius: 16px;
+	background: #fff;
+}
+
+.zig-download-toolbar__scope { display: grid; gap: 4px; }
+.zig-download-toolbar__scope strong { font-size: 16px; }
+.zig-download-toolbar__scope span { color: #667085; font-size: 13px; }
+.zig-archive.zig-download-archive .zig-download-toolbar__search input[type="search"] {
+	inline-size: 100%; min-block-size: 46px; padding-inline: 16px;
+	border: 1px solid var(--zig-download-line); border-radius: 11px; background: #f8f9fc;
+	box-shadow: none;
+	color: #171923;
+	font: inherit;
+}
+.zig-download-toolbar__sort, .zig-download-toolbar__sort > span { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.zig-download-toolbar__sort-label { color: #667085; font-size: 12px; white-space: nowrap; }
+.zig-download-toolbar__sort-label svg { inline-size: 16px; block-size: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.zig-download-sort {
+	padding: 9px 12px; border-radius: 10px; color: #5f27cf; font-size: 13px; text-decoration: none;
+}
+.zig-download-sort.is-active { background: var(--zig-download-soft); font-weight: 700; }
+
+.zig-download-archive__layout { display: flex; direction: ltr; gap: 24px; align-items: flex-start; }
+.zig-download-archive__main { direction: rtl; flex: 1 1 auto; min-inline-size: 0; gap: 18px; }
+.zig-download-archive__filters { direction: rtl; flex: 0 0 296px; inline-size: 296px; }
+.zig-download-archive__filter-trigger { display: none; }
+.zig-download-list { display: grid; gap: 16px; }
+
+.zig-download-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	direction: rtl;
+	text-align: start;
+	padding: 22px;
+	border: 1px solid var(--zig-download-line);
+	border-radius: 18px;
+	background: #fff;
+	transition: border-color .18s ease, transform .18s ease;
+}
+.zig-download-card:hover { border-color: #cdbaf8; transform: translateY(-1px); }
+.zig-download-card__category,
+.zig-download-card__title,
+.zig-download-card__description,
+.zig-download-card__compatibility {
+	inline-size: 100%;
+	direction: rtl;
+	text-align: start;
+}
+.zig-download-card__category { margin-block-end: 6px; color: var(--zig-download-purple); font-size: 12px; font-weight: 700; }
+.zig-download-card__labels { display: flex; flex-wrap: wrap; gap: 6px; margin-block-end: 7px; }
+.zig-download-card__labels span { padding: 4px 9px; border-radius: 999px; background: var(--zig-download-soft); color: #5f27cf; font-size: 12px; }
+.zig-download-card__title {
+	margin: 0;
+	font-size: 21px;
+	font-weight: 750;
+	line-height: 1.45;
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	unicode-bidi: plaintext;
+}
+.zig-download-card__title a { display: block; inline-size: 100%; direction: rtl; color: inherit; text-align: start; text-decoration: none; }
+.zig-download-card__title bdi { unicode-bidi: isolate; }
+.zig-download-card__description {
+	margin: 8px 0 0;
+	color: #667085;
+	line-height: 1.8;
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+.zig-download-card__compatibility { margin-block-start: 18px; }
+.zig-download-card__compatibility-head {
+	display: inline-flex;
+	align-items: baseline;
+	max-inline-size: 100%;
+	gap: 6px;
+	margin: 0 0 10px;
+	color: #344054;
+	font-size: 14px;
+	font-weight: 700;
+}
+.zig-download-card__compatibility-separator { color: #98a2b3; font-weight: 400; }
+.zig-download-card__models-count { color: #667085; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.zig-download-card__models { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px 10px; direction: rtl; }
+.zig-download-card__model {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 32px;
+	padding: 4px 10px;
+	border: 1px solid #dfe3eb;
+	border-radius: 8px;
+	background: #f7f7fb;
+	color: #303846;
+	font-size: 12px;
+	font-weight: 650;
+	unicode-bidi: isolate;
+}
+.zig-download-card:not(.is-models-expanded) .zig-download-card__model.is-desktop-overflow { display: none; }
+.zig-download-archive .zig-download-card__models-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 5px;
+	inline-size: auto;
+	min-block-size: 32px;
+	margin-block-start: 10px;
+	padding: 3px 0;
+	border: 0;
+	background: transparent;
+	color: var(--zig-download-purple);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.6;
+	opacity: 1;
+	text-shadow: none;
+	-webkit-appearance: none;
+	appearance: none;
+	cursor: pointer;
+	transition: color .2s cubic-bezier(.22, 1, .36, 1);
+}
+.zig-download-archive .zig-download-card__models-toggle:hover { color: #4f18b5; }
+.zig-download-card__toggle-chevron {
+	inline-size: 14px;
+	block-size: 14px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transition: transform .2s cubic-bezier(.22, 1, .36, 1);
+}
+.zig-download-card.is-models-expanded .zig-download-card__toggle-chevron { transform: rotate(180deg); }
+.zig-download-card__toggle-less, .zig-download-card__toggle-more--mobile { display: none; }
+.zig-download-card.is-models-expanded .zig-download-card__toggle-more { display: none; }
+.zig-download-card.is-models-expanded .zig-download-card__toggle-less { display: inline; }
+.zig-download-card__models-toggle.is-desktop-hidden { display: none; }
+.zig-download-card__footer {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 18px;
+	margin-block-start: 20px;
+	padding-block-start: 14px;
+	border-block-start: 1px solid var(--zig-download-line);
+}
+.zig-download-card__meta { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 0; }
+.zig-download-card__meta div { display: grid; gap: 2px; font-size: 13px; }
+.zig-download-card__meta dt { color: #667085; font-size: 11px; }
+.zig-download-card__meta dd { margin: 0; color: #252b37; font-weight: 700; unicode-bidi: isolate; }
+.zig-download-card__meta-values { display: flex; flex-wrap: wrap; gap: 3px 7px; }
+.zig-download-card__meta-values bdi { white-space: nowrap; }
+.zig-download-card__actions { display: flex; flex: none; gap: 8px; }
+.zig-download-card__actions a { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; padding-inline: 17px; border-radius: 11px; text-decoration: none; }
+.zig-download-archive .zig-download-card__download,
+.zig-download-archive .zig-download-card__download:visited { background: var(--zig-download-purple); color: #fff; font-weight: 700; }
+.zig-download-archive .zig-download-card__download:hover { background: #5520b8; color: #fff; }
+.zig-download-archive .zig-download-card__details,
+.zig-download-archive .zig-download-card__details:visited { border: 1px solid #cdbaf8; color: #5f27cf; background: #fff; }
+.zig-download-archive__empty { padding: 48px 24px; border: 1px dashed #cdd3df; border-radius: 18px; text-align: center; color: #667085; }
+
+.zig-download-archive .zig-facet__item.is-selected > a { border-color: #bda2fa; background: var(--zig-download-soft); color: #5420b8; font-weight: 700; }
+.zig-download-archive .zig-filters__title { display: flex; align-items: center; gap: 8px; }
+.zig-download-archive .zig-filters__title svg { inline-size: 18px; block-size: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.zig-download-archive .zig-filters__badge { margin-inline-start: auto; white-space: nowrap; }
+.zig-download-archive .zig-filters__head { padding-block: 12px; }
+.zig-download-archive .zig-facet__title { min-block-size: 52px; padding: 10px 14px; }
+.zig-download-archive .zig-facet__title::marker { content: ""; }
+.zig-download-archive .zig-facet__chevron {
+	display: block;
+	inline-size: 14px;
+	block-size: 14px;
+	min-inline-size: 14px;
+	max-inline-size: 14px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transform-origin: center;
+}
+.zig-download-archive .zig-facet:not([open]) > .zig-facet__list { display: none; }
+.zig-download-archive .zig-facet__list {
+	max-block-size: 288px;
+	margin-block-end: 10px;
+	margin-inline: 12px;
+	padding: 8px;
+	gap: 6px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scroll-padding-block: 8px;
+}
+.zig-download-archive .zig-facet__item > a { min-block-size: 48px; padding: 8px 10px; border-radius: 10px; }
+.zig-download-archive .zig-facet__item > a > bdi { min-inline-size: 0; overflow-wrap: anywhere; }
+.zig-download-archive .zig-facet__count { direction: ltr; unicode-bidi: isolate; }
+.zig-download-card__model bdi, .zig-download-card__meta bdi { unicode-bidi: isolate; }
+.zig-download-archive :where(a, button, input):focus-visible { outline: 3px solid rgba(105, 40, 217, .28); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+	.zig-download-archive__toolbar { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+	.zig-download-toolbar__scope { grid-row: 2; }
+	.zig-download-toolbar__sort { overflow-x: auto; flex-wrap: nowrap; padding-block-end: 2px; }
+	.zig-download-sort { flex: 0 0 auto; }
+	.zig-download-archive__filter-trigger {
+		display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px;
+		margin-block-end: 14px; padding-inline: 18px; border: 1px solid #cdbaf8; border-radius: 12px;
+		background: #fff; color: #5f27cf; font-weight: 700;
+	}
+	.zig-download-archive__layout { display: block; }
+	.zig-download-archive__filters { display: none; inline-size: 100%; margin-block-end: 16px; }
+	.zig-download-archive.is-filters-open .zig-download-archive__filters { display: block; }
+	.zig-download-card { padding: 17px; }
+	.zig-download-card__title { font-size: 19px; }
+	.zig-download-card__compatibility { margin-block-start: 16px; }
+	.zig-download-card:not(.is-models-expanded) .zig-download-card__model.is-mobile-overflow { display: none; }
+	.zig-download-card:not(.is-models-expanded) .zig-download-card__model.is-desktop-overflow:not(.is-mobile-overflow) { display: inline-flex; }
+	.zig-download-card__toggle-more--desktop { display: none; }
+	.zig-download-card__toggle-more--mobile { display: inline; }
+	.zig-download-card__models-toggle.is-desktop-hidden { display: inline-block; }
+	.zig-download-card__models-toggle.is-mobile-hidden { display: none; }
+	.zig-download-card.is-models-expanded .zig-download-card__toggle-more--mobile { display: none; }
+	.zig-download-card__footer { align-items: stretch; flex-direction: column; gap: 13px; margin-block-start: 14px; padding-block-start: 13px; }
+	.zig-download-card__meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+	.zig-download-card__actions { inline-size: 100%; }
+	.zig-download-card__actions a { flex: 1 1 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-download-card, .zig-download-card__models-toggle, .zig-download-card__toggle-chevron { transition: none; }
+}
+
+/* Download compatibility widgets ---------------------------------------- */
+.zig-compatible-os,
+.zig-compatible-devices {
+	--zig-compat-purple: #6928d9;
+	--zig-compat-line: #dfe4ee;
+	direction: rtl;
+	inline-size: 100%;
+	color: #344054;
+	text-align: start;
+	display: flex;
+	align-items: center;
+	column-gap: var(--zig-compat-heading-gap, 32px);
+}
+.zig-compatible-os__heading,
+.zig-compatible-devices__heading {
+	flex: none;
+	margin: 0;
+	color: #667085;
+	font-size: 16px;
+	font-weight: 750;
+	line-height: 1.5;
+}
+.zig-compatible-os__items,
+.zig-compatible-devices__items {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	align-items: center;
+	flex: 1 1 auto;
+	min-inline-size: 0;
+	gap: 10px 14px;
+	direction: rtl;
+}
+.zig-compatible-os__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	min-block-size: 48px;
+	padding: 8px 18px;
+	border: 1px solid var(--zig-compat-line);
+	border-radius: 13px;
+	background: #fff;
+	color: #344054;
+	direction: ltr;
+	font-size: 15px;
+	font-weight: 600;
+}
+.zig-compatible-os__icon {
+	flex: none;
+	inline-size: 24px;
+	block-size: 24px;
+	color: #087ccc;
+}
+.zig-compatible-os__item bdi,
+.zig-compatible-devices__item bdi { unicode-bidi: isolate; }
+.zig-compatible-devices__item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-block-size: 42px;
+	padding: 7px 18px;
+	border: 1px solid var(--zig-compat-line);
+	border-radius: 12px;
+	background: #f8f9fc;
+	color: #344054;
+	font-size: 14px;
+	font-weight: 650;
+}
+.zig-compatible-devices__item.is-desktop-overflow { display: none; }
+.zig-compatible-devices a.zig-compatible-devices__more-link,
+.zig-compatible-devices a.zig-compatible-devices__more-link:visited {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-block-size: 46px;
+	flex: none;
+	margin: 0;
+	margin-inline-start: var(--zig-compat-more-gap, 0px);
+	padding: 8px 20px;
+	border: 1px solid #ddc9ff;
+	border-radius: 13px;
+	background: #fff;
+	color: var(--zig-compat-purple);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 650;
+	line-height: 1.4;
+	text-decoration: none;
+	text-shadow: none;
+	box-shadow: none;
+	transition: color .2s cubic-bezier(.22, 1, .36, 1), background-color .2s cubic-bezier(.22, 1, .36, 1), border-color .2s cubic-bezier(.22, 1, .36, 1);
+}
+.zig-compatible-devices a.zig-compatible-devices__more-link:hover {
+	border-color: #b98cff;
+	background: #f8f3ff;
+	color: #4f18b5;
+	text-decoration: none;
+}
+.zig-compatible-devices a.zig-compatible-devices__more-link:focus-visible { outline: 3px solid rgba(105, 40, 217, .25); outline-offset: 2px; }
+.zig-compatible-devices__chevron {
+	inline-size: 14px;
+	block-size: 14px;
+	fill: none;
+	color: inherit;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+@media (max-width: 767px) {
+	.zig-compatible-os,
+	.zig-compatible-devices {
+		flex-direction: column;
+		align-items: stretch;
+		row-gap: var(--zig-compat-heading-gap, 12px);
+	}
+	.zig-compatible-os__items,
+	.zig-compatible-devices__items { flex: none; gap: 8px; }
+	.zig-compatible-os__item { min-block-size: 44px; padding: 7px 14px; }
+	.zig-compatible-devices__item { min-block-size: 40px; padding-inline: 14px; }
+	.zig-compatible-devices__item.is-mobile-overflow { display: none; }
+	.zig-compatible-devices__item.is-desktop-overflow:not(.is-mobile-overflow) { display: inline-flex; }
+	.zig-compatible-devices a.zig-compatible-devices__more-link {
+		align-self: flex-start;
+		margin-inline-start: 0;
+		margin-block-start: var(--zig-compat-more-gap, 0px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-compatible-devices__more-link { transition: none; }
+}
+
+/* Software environment gallery ----------------------------------------- */
+.zig-software-gallery {
+	direction: rtl;
+	inline-size: 100%;
+	text-align: start;
+}
+.zig-software-gallery__header { inline-size: 100%; }
+.zig-software-gallery__title {
+	margin: 0;
+	color: #273142;
+	font-size: 20px;
+	font-weight: 750;
+	line-height: 1.45;
+}
+.zig-software-gallery__description {
+	margin: 6px 0 0;
+	color: #475467;
+	font-size: 14px;
+	line-height: 1.8;
+	unicode-bidi: plaintext;
+}
+.zig-software-gallery__viewer { margin-block-start: 16px; }
+.zig-software-gallery__stage {
+	position: relative;
+	overflow: hidden;
+	inline-size: 100%;
+	aspect-ratio: 16 / 9;
+	border-radius: 12px;
+	background: #eef1f5;
+}
+.zig-software-gallery__main-image {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	object-fit: cover;
+	opacity: 1;
+	transition: opacity .18s ease;
+}
+.zig-software-gallery__main-image.is-changing { opacity: .72; }
+.zig-software-gallery__arrow {
+	position: absolute;
+	top: 50%;
+	z-index: 2;
+	display: inline-grid;
+	place-items: center;
+	inline-size: 36px;
+	block-size: 36px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(24, 24, 27, .72);
+	color: #fff;
+	cursor: pointer;
+	transform: translateY(-50%);
+	transition: background-color .18s ease;
+}
+.zig-software-gallery__arrow--previous { inset-inline-start: 14px; }
+.zig-software-gallery__arrow--next { inset-inline-end: 14px; }
+.zig-software-gallery__arrow:hover { background: rgba(24, 24, 27, .9); }
+.zig-software-gallery__arrow:focus-visible,
+.zig-software-gallery__thumb:focus-visible { outline: 3px solid rgba(105, 40, 217, .35); outline-offset: 2px; }
+.zig-software-gallery__arrow svg {
+	inline-size: 15px;
+	block-size: 15px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.zig-software-gallery__thumbs {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+	gap: 10px;
+	margin-block-start: 12px;
+}
+.zig-software-gallery__thumb {
+	box-sizing: border-box;
+	overflow: hidden;
+	inline-size: 100%;
+	aspect-ratio: 4 / 3;
+	padding: 5px;
+	border: 1px solid #cfd5df;
+	border-radius: 11px;
+	background: #fff;
+	cursor: pointer;
+}
+.zig-software-gallery__thumb[aria-current="true"] { border: 2px solid #596273; }
+.zig-software-gallery__thumb-image {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	border-radius: 7px;
+	object-fit: cover;
+}
+@media (max-width: 767px) {
+	.zig-software-gallery__title { font-size: 18px; }
+	.zig-software-gallery__description { font-size: 13px; }
+	.zig-software-gallery__viewer { margin-block-start: 14px; }
+	.zig-software-gallery__thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+	.zig-software-gallery__arrow { inline-size: 36px; block-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.zig-software-gallery__main-image,
+	.zig-software-gallery__arrow { transition: none; }
 }
 
 .zig-card *,
@@ -64,6 +560,15 @@
  * می‌شود.
  */
 @media (prefers-reduced-motion: reduce) {
+	.zig-card__cta-icon,
+	.zig-archive__grid .zig-card {
+		transition: none;
+	}
+
+	.zig-card__cta:hover .zig-card__cta-icon {
+		transform: none;
+	}
+
 	.zig-card,
 	.zig-list__item,
 	.zig-btn,
@@ -535,6 +1040,10 @@ a.zig-list__label:focus-visible {
 	line-height: 1;
 }
 
+.zig-card__title {
+	color: var(--zig-title-color, var(--zig-ink));
+}
+
 .zig-price__prefix,
 .zig-price__sep,
 .zig-price__suffix {
@@ -558,7 +1067,8 @@ a.zig-list__label:focus-visible {
  * «قیمت فعلی:» معنا کامل می‌شود. عمداً ‎display: none‎ نیست — آن، متن را از
  * صفحه‌خوان هم پنهان می‌کند.
  */
-.zig-price__sr {
+.zig-price__sr,
+.zig-sr {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -722,4 +1232,5878 @@ a.zig-list__label:focus-visible {
 		box-shadow: none;
 		transform: none;
 	}
+}
+
+/* ==========================================================================
+   آرشیو محصولات
+
+   همان قاعدهٔ کل فایل اینجا هم برقرار است: این بخش فقط ساختار و رفتار
+   می‌سازد. رنگ، گِرد بودن گوشه، پدینگ و فاصله از پنل المنتور می‌آیند و چون
+   سلکتور المنتور وزن بیشتری دارد، بر هرچه اینجاست می‌چربند.
+
+   همه‌جا از خصوصیت‌های منطقی (inline/block) استفاده شده نه چپ و راست:
+   این ویجت روی فروشگاه فارسی می‌نشیند ولی قرار نیست فقط آنجا کار کند، و
+   یک margin-left در RTL دقیقاً همان‌جایی است که چیدمان بی‌صدا آینه می‌شود.
+   ========================================================================== */
+
+.zig-archive,
+.zig-archive * {
+	box-sizing: border-box;
+}
+
+/*
+ * دو ستون: سایدبار و بدنه.
+ *
+ * minmax(0, 1fr) و نه 1fr: ستون گرید به‌طور پیش‌فرض از محتوای خودش
+ * کوچک‌تر نمی‌شود، پس یک عنوان بلندِ بدون فاصله یا یک تصویر پهن، ستون را
+ * از ظرفش بیرون می‌زند و کل صفحه اسکرول افقی می‌گیرد.
+ */
+/*
+ * توکن‌های دیزاین، یک جا.
+ *
+ * هر رنگی که در این بخش تکرار می‌شود اینجا تعریف شده و بقیهٔ قواعد فقط
+ * ارجاعش می‌دهند. سه سود دارد: تغییر رنگ برند یک خط است، کنترل‌های
+ * المنتور روی همین‌ها می‌نشینند (پس یک کنترل، همهٔ مصرف‌ها را می‌گیرد)، و
+ * هیچ رنگی دو بار با دو مقدار کمی متفاوت نوشته نمی‌شود.
+ */
+.zig-archive {
+	--zig-brand: #6d28d9;
+	--zig-brand-soft: #ede9fe;
+	--zig-ink: #1c1330;
+	--zig-muted: #6b6480;
+	--zig-line: #ece9f4;
+	--zig-surface: #fff;
+
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 32px;
+	align-items: start;
+}
+
+/*
+ * چیدمان تک‌ستونی زیرِ این عرض، طراحیِ موبایل نیست — فقط جلوگیری از
+ * شکستن است تا سایدبار ۲۸۰ پیکسلی روی نمایشگر ۳۶۰ پیکسلی بدنه را له
+ * نکند. طرح موبایل جای خودش را دارد.
+ */
+@media (min-width: 880px) {
+	.zig-archive--filters-start {
+		grid-template-columns: var(--zig-archive-sidebar, 312px) minmax(0, 1fr);
+	}
+
+	.zig-archive--filters-end {
+		grid-template-columns: minmax(0, 1fr) var(--zig-archive-sidebar, 312px);
+	}
+
+	/*
+	 * سایدبار در HTML اول می‌آید — چون در ترتیب خواندن، «با چه چیزی
+	 * فیلتر کنم» قبل از نتیجه می‌آید. برای حالت «انتهای ردیف» فقط جای
+	 * دیداری‌اش عوض می‌شود، نه ترتیب DOM.
+	 *
+	 * شمارهٔ ستون در گرید از جهت نوشتار پیروی می‌کند، پس ۲ در RTL یعنی
+	 * سمت چپ و در LTR یعنی سمت راست — همان معنایی که «انتها» دارد.
+	 */
+	.zig-archive--filters-end > .zig-archive__filters {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.zig-archive--filters-end > .zig-archive__main {
+		grid-column: 1;
+		grid-row: 1;
+	}
+}
+
+.zig-archive__main {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	/* لنگرِ حالت «بالای گرید» پیام خطا */
+	position: relative;
+	min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   سایدبار فیلتر
+   ----------------------------------------------------------------------- */
+
+/*
+ * چسبنده، ولی بدون ارتفاع ثابت: با max-height و overflow، کاربری که وسط
+ * فهرست برندهاست ناگهان دو ناحیهٔ اسکرول تودرتو دارد و چرخ ماوس در یکی
+ * گیر می‌کند.
+ */
+/*
+ * پنل فیلتر — یک کارت، نه یک ستون از عنصرهای جدا.
+ *
+ * تمام رنگ‌ها و اندازه‌ها متغیرند، پس تب استایل المنتور می‌تواند هرکدام را
+ * جدا عوض کند بدون اینکه این فایل چیزی از دست بدهد.
+ */
+.zig-archive__filters {
+	/*
+	 * ‎sticky‎ همان ‎position‎ی است که هم چسبندگی را می‌دهد و هم زمینهٔ
+	 * موقعیت‌دهی برای ‎::before‎ی تکهٔ بنفش را — پس دومی لازم نیست.
+	 *
+	 * اینجا یک بار همین را دو بار نوشته بودم (‎sticky‎ و بعد ‎relative‎ در
+	 * همان بلوک)، و در CSS آخرین مقدار برنده می‌شود: پنل بی‌سروصدا
+	 * ‎relative‎ می‌شد. دو پیامد داشت — یکی دیدنی و یکی نه:
+	 *
+	 *   • دیدنی: روی ‎relative‎، ‎inset-block-start‎ دیگر «آستانهٔ
+	 *     چسبیدن» نیست، افستِ همیشگی است — پس پنل از همان اول ‎۱۶px‎
+	 *     از بالای گرید پایین‌تر می‌نشست، حتی وقتی هیچ اسکرولی در کار
+	 *     نبود. همان فاصله‌ای که از دیزاین گزارش شد.
+	 *   • نادیدنی: خودِ چسبندگی از کار افتاده بود. پنل دیگر موقع
+	 *     اسکرول سرِ جایش نمی‌ماند — و چون هیچ خطایی نمی‌داد، تا وقتی
+	 *     کسی از روی چشم مقایسه نکند، کشف نمی‌شد.
+	 */
+	position: sticky;
+	inset-block-start: var(--zig-archive-sticky, 16px);
+	align-self: start;
+	min-width: 0;
+	/*
+	 * کارت از هر طرف تو رفته و تکهٔ بنفش پشتش می‌نشیند. اعداد از خودِ
+	 * فیگما: ‎24‎ بالا و پایین، ‎16‎ دو طرف.
+	 */
+	padding: var(--zig-filters-cap, 24px) var(--zig-filters-inset, 16px);
+	/*
+	 * پس‌زمینه روی خودِ ظرف، نه فقط روی کارتِ درون.
+	 *
+	 * ناحیهٔ پدینگ — همان ۲۴ بالا و پایین و ۱۶ دو طرف — هم بخشی از پنل
+	 * است، پس باید رنگ خودش را داشته باشد. بدون این، آن حاشیه زمینهٔ
+	 * صفحه را نشان می‌داد و پنل روی هر قالبی یک شکل درنمی‌آمد.
+	 *
+	 * تکهٔ بنفش با ‎::before‎ رویش می‌نشیند، پس این رنگ زیرِ آن هم هست و
+	 * دو تا با هم نمی‌جنگند.
+	 */
+	background-color: var(--zig-filters-outer-bg, var(--zig-surface));
+	border-radius: var(--zig-filters-outer-radius, 24px);
+	/*
+	 * سایه روی ظرفِ بیرونی، نه روی کارتِ درون.
+	 *
+	 * کارت ‎overflow: hidden‎ دارد — لازمهٔ گوشه‌های گِرد و اسکرول — و
+	 * سایه‌ای که پشتِ همان مرز باشد بریده می‌شود. ظرف بیرونی این مرز را
+	 * ندارد، پس سایه کامل و بدون قاچ‌شدن دیده می‌شود؛ در ضمن هم روی
+	 * تکهٔ بنفش می‌افتد هم روی کارتِ سفید، یعنی سایهٔ *کل پنل* است نه
+	 * فقط بخشِ زیرِ سربرگ.
+	 */
+	box-shadow: var(--zig-filters-shadow, 0 2px 16px rgba(17, 12, 46, 0.06));
+}
+
+/*
+ * تکهٔ بنفشِ بالا — یک عنصرِ جدا، پشتِ همه‌چیز.
+ *
+ * ‎::before‎ و نه ‎<div>‎: این هیچ محتوایی ندارد و نباید در DOM، در
+ * صفحه‌خوان، یا در قطعهٔ آژاکس دیده شود.
+ *
+ * ارتفاعش از سربرگ *بیشتر* نیست و همین نکته‌اش است: بخش بالایی سربرگ
+ * روی بنفش می‌افتد و بقیه‌اش روی زمینهٔ صفحه. چون سربرگ شیشه است، بلورِ
+ * همین مرز است که آن محوشدگیِ لوندری را می‌سازد — نه یک گرادیان.
+ *
+ * فقط گوشه‌های بالا گِردند: پایینش زیر شیشه است و اگر گِرد بود، قوسش از
+ * پشتِ سربرگ دیده می‌شد.
+ */
+.zig-archive__filters::before {
+	content: "";
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline: 0;
+	block-size: var(--zig-filters-cap-height, 40px);
+	background-color: var(--zig-filters-cap-bg, var(--zig-brand));
+	border-start-start-radius: var(--zig-filters-outer-radius, 24px);
+	border-start-end-radius: var(--zig-filters-outer-radius, 24px);
+}
+
+/*
+ * کارت خودش پس‌زمینه ندارد.
+ *
+ * اگر داشت، جلوی بنفش را می‌گرفت و شیشهٔ سربرگ چیزی برای بلورکردن
+ * نداشت. پس سفیدی را بخش‌های *زیرِ* سربرگ می‌آورند و خودِ کارت فقط
+ * گوشه و اسکرول را نگه می‌دارد؛ سایه هم مالِ ظرف بیرونی است، نه اینجا
+ * — دلیلش کنار همان قاعده آمده.
+ *
+ * ‎position: relative‎ تا روی ‎::before‎ بنشیند — هر دو عنصرِ موقعیت‌دارند
+ * و به ترتیبِ درخت نقاشی می‌شوند، پس ‎z-index‎ لازم نیست.
+ *
+ * ‎overflow: hidden auto‎ یعنی افقی بریده شود (تا گوشه‌های گِرد حفظ شوند)
+ * و عمودی در صورت نیاز اسکرول بگیرد.
+ */
+.zig-filters__card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	max-block-size: var(--zig-filters-max, calc(100vh - 96px));
+	border-radius: var(--zig-filters-radius, 16px);
+}
+
+.zig-filters__active,
+.zig-filters__groups {
+	background-color: var(--zig-filters-bg, var(--zig-surface));
+}
+
+/*
+ * فقط گروه‌ها اسکرول می‌خورند، نه کل کارت.
+ *
+ * سربرگ و ردیفِ فیلترهای اعمال‌شده سرِ جایشان می‌مانند — «چند فیلتر فعال»
+ * و دکمهٔ حذف دقیقاً وقتی لازم‌اند که کاربر ته فهرست برندهاست.
+ *
+ * قبلاً این کار با ‎position: sticky‎ روی سربرگ انجام می‌شد. جواب می‌داد
+ * ولی حقهٔ بصری بود روی ناحیه‌ای که *واقعاً* اسکرول داشت؛ حالا ناحیهٔ
+ * اسکرول همان چیزی است که باید اسکرول شود. یک لایه کمتر، و ‎sticky‎ی که
+ * می‌توانست با ‎backdrop-filter‎ در بعضی موتورها بجنگد هم رفت.
+ *
+ * ‎min-block-size: 0‎ لازم است: آیتمِ فلکس به‌طور پیش‌فرض کوچک‌تر از
+ * محتوایش نمی‌شود، پس بدون آن سقفِ ارتفاع نادیده گرفته می‌شد و به‌جای
+ * اسکرول، کل پنل بلند می‌ماند.
+ */
+.zig-filters__groups {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
+}
+
+.zig-filters__head,
+.zig-filters__active {
+	flex: none;
+}
+
+/*
+ * نوار اسکرول: تیغهٔ باریکِ قرصی، با فاصله از لبه.
+ *
+ * ‎scrollbar-width‎ استاندارد است ولی سافاری و کرومِ قدیمی نمی‌شناسندش؛
+ * بدون شبهٔ وبکیتی، پنل روی مک یک نوارِ پهنِ خاکستری می‌گرفت که ۱۵ پیکسل
+ * از عرض گزینه‌ها می‌خورد.
+ *
+ * فاصله از لبه با کادرِ *شفاف* ساخته می‌شود، نه با ‎margin‎ — روی
+ * ‎::-webkit-scrollbar-thumb‎ مارجین کار نمی‌کند. ‎background-clip:
+ * padding-box‎ رنگ را داخل کادر نگه می‌دارد، پس عرضِ دیده‌شدهٔ تیغه
+ * ‎size‎ منهای دو برابرِ ‎pad‎ است و خودِ ناحیهٔ گرفتنِ ماوس همان عرضِ
+ * کامل می‌ماند: باریک به چشم، ولی هنوز قابل گرفتن.
+ *
+ * جای نوار خودبه‌خود درست است — مرورگر آن را در انتهای محورِ نوشتار
+ * می‌گذارد، یعنی در فارسی سمت چپ.
+ */
+/*
+ * اینجا ‎width‎ فیزیکی است و نه ‎inline-size‎ — برخلاف بقیهٔ این فایل.
+ *
+ * ‎::-webkit-scrollbar‎ یک شبه‌عنصرِ استانداردنشده است و ضخامتِ *فیزیکیِ*
+ * نوار را می‌گیرد. با خاصیت منطقی، در حالت نوشتارِ عمودی به ارتفاع نگاشت
+ * می‌شد و بی‌صدا کار اشتباه می‌کرد. ضمناً همهٔ پیاده‌سازی‌ها ‎width‎ را
+ * می‌شناسند و این یکی جای ریسک‌کردن نیست.
+ */
+.zig-filters__groups::-webkit-scrollbar,
+.zig-facet__list::-webkit-scrollbar {
+	width: var(--zig-scroll-size, 10px);
+}
+
+.zig-filters__groups::-webkit-scrollbar-track,
+.zig-facet__list::-webkit-scrollbar-track {
+	background-color: transparent;
+}
+
+.zig-filters__groups::-webkit-scrollbar-thumb,
+.zig-facet__list::-webkit-scrollbar-thumb {
+	border: var(--zig-scroll-pad, 3px) solid transparent;
+	background-clip: padding-box;
+	border-radius: 999px;
+	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
+}
+
+.zig-filters__groups::-webkit-scrollbar-thumb:hover,
+.zig-facet__list::-webkit-scrollbar-thumb:hover {
+	background-color: var(--zig-scroll-thumb-hover, rgba(17, 12, 46, 0.32));
+}
+
+/*
+ * سربرگ — یک لایهٔ شیشه‌ای روی تکهٔ بنفش.
+ *
+ * ‎backdrop-filter‎ آنچه را *پشتِ* عنصر نقاشی شده بلور می‌کند، نه خودش را.
+ * پس بنفشِ بالا از پشتش می‌تراود و به سمت پایین محو می‌شود؛ همان چیزی که
+ * در فیگما شبیه گرادیان به نظر می‌رسید.
+ *
+ * پس‌زمینهٔ نیمه‌شفاف *لازم* است، نه تزئین: با ‎transparent‎ کامل، بعضی
+ * موتورها اصلاً بک‌دراپ را کامپوزیت نمی‌کنند و شیشه بی‌اثر می‌ماند.
+ */
+/*
+ * سربرگ جایی نمی‌رود، ولی دیگر ‎sticky‎ لازم ندارد: ناحیهٔ اسکرول خودِ
+ * گروه‌هاست و سربرگ اصلاً داخلش نیست.
+ */
+.zig-filters__head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: var(--zig-filters-head-padding, 16px 18px);
+	background-color: var(--zig-filters-head-bg, rgba(255, 255, 255, 0.55));
+	-webkit-backdrop-filter: blur(var(--zig-filters-head-blur, 22px));
+	backdrop-filter: blur(var(--zig-filters-head-blur, 22px));
+	color: var(--zig-filters-head-color, inherit);
+	border-block-end: 1px solid var(--zig-archive-rule, var(--zig-line));
+}
+
+/*
+ * جایی که شیشه نیست، سربرگ باید خوانا بماند.
+ *
+ * بدون این، در موتوری که ‎backdrop-filter‎ ندارد، سفیدِ ۵۵٪ روی بنفشِ
+ * توپر می‌نشست و متن تیره روی زمینهٔ نیمه‌بنفش کنتراست را از دست می‌داد.
+ * این قاعده همان رنگِ *نتیجهٔ* بلور را به‌صورت تخت می‌گذارد.
+ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.zig-filters__head {
+		background-color: var(--zig-filters-head-fallback, #ece7f9);
+	}
+}
+
+.zig-filters__title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: var(--zig-filters-title-size, 1.05rem);
+	font-weight: 700;
+	line-height: 1.6;
+	color: inherit;
+}
+
+.zig-icon-line {
+	flex: none;
+	inline-size: 1.15em;
+	block-size: 1.15em;
+}
+
+/*
+ * شمارندهٔ فیلتر فعال.
+ *
+ * margin-inline-start: auto می‌بردش به انتهای سربرگ، بدون اینکه لازم باشد
+ * عرض عنوان را بدانیم.
+ */
+.zig-filters__badge {
+	margin-inline-start: auto;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: var(--zig-filters-badge-size, 0.78rem);
+	line-height: 1.8;
+	white-space: nowrap;
+	background-color: var(--zig-filters-badge-bg, var(--zig-brand-soft));
+	color: var(--zig-filters-badge-color, var(--zig-brand));
+}
+
+/* --------------------------------------------------------------------------
+   فیلترهای اعمال‌شده
+   ----------------------------------------------------------------------- */
+
+.zig-filters__active {
+	padding: var(--zig-filters-active-padding, 14px 18px);
+	border-block-end: 1px solid var(--zig-archive-rule, rgba(17, 12, 46, 0.08));
+}
+
+.zig-filters__active-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-block-end: var(--zig-filters-active-gap, 12px);
+}
+
+.zig-filters__active-title {
+	margin: 0;
+	font-size: var(--zig-filters-active-size, 0.92rem);
+	font-weight: 600;
+	line-height: 1.7;
+}
+
+.zig-filters__clear {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.82rem;
+	text-decoration: none;
+	color: var(--zig-filters-clear-color, inherit);
+}
+
+.zig-filters__clear:hover {
+	text-decoration: underline;
+}
+
+/*
+ * ردیفِ چیپ‌ها سقف ارتفاع دارد و خودش اسکرول می‌گیرد.
+ *
+ * کاربری که هشت فیلتر را با هم زده، هشت چیپ می‌بیند — و بدون سقف، همین
+ * یک ردیف به‌اندازهٔ کل بقیهٔ پنل بلند می‌شد و «گروه‌ها» را تا پایین
+ * صفحه می‌راند. سقف نگهش می‌دارد و اسکرولِ خودش، مثل فهرستِ هر گروه،
+ * از سرایت به بقیهٔ پنل جلوگیری می‌کند.
+ *
+ * صفرکردنِ ‎--zig-filters-chips-max‎ سقف را برمی‌دارد.
+ */
+.zig-filters__chips {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	max-block-size: var(--zig-filters-chips-max, 70px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
+	list-style: none;
+}
+
+.zig-filters__chips::-webkit-scrollbar {
+	width: var(--zig-scroll-size, 10px);
+}
+
+.zig-filters__chips::-webkit-scrollbar-track {
+	background-color: transparent;
+}
+
+.zig-filters__chips::-webkit-scrollbar-thumb {
+	border: var(--zig-scroll-pad, 3px) solid transparent;
+	background-clip: padding-box;
+	border-radius: 999px;
+	background-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18));
+}
+
+.zig-filters__chip > a {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 10px;
+	border-radius: var(--zig-filters-chip-radius, 10px);
+	font-size: var(--zig-filters-chip-size, 0.82rem);
+	line-height: 1.8;
+	text-decoration: none;
+	background-color: var(--zig-filters-chip-bg, var(--zig-brand-soft));
+	color: var(--zig-filters-chip-color, var(--zig-brand));
+	transition: background-color var(--zig-transition, 200ms ease);
+}
+
+.zig-filters__chip > a:hover {
+	background-color: var(--zig-filters-chip-hover, rgba(109, 40, 217, 0.18));
+}
+
+.zig-filters__chip-icon,
+.zig-filters__clear-icon {
+	opacity: 0.75;
+}
+
+/* --------------------------------------------------------------------------
+   گروه‌ها
+   ----------------------------------------------------------------------- */
+
+/*
+ * فاصلهٔ افقی مالِ خودِ ردیف‌هاست، نه ظرفشان.
+ *
+ * وقتی پدینگ روی ظرف بود، پس‌زمینهٔ هاورِ عنوان از دو طرف تو می‌ماند و
+ * شبیه یک نوارِ شناور می‌شد نه یک ردیفِ کامل. حالا پدینگ روی خودِ
+ * ‎__title‎ است، پس رنگ تا لبهٔ پنل می‌رود و ناحیهٔ کلیک هم همان‌قدر
+ * بزرگ می‌شود.
+ */
+.zig-filters__groups {
+	padding: 0 0 8px;
+}
+
+.zig-facet {
+	border-block-end: 1px solid var(--zig-archive-rule, rgba(17, 12, 46, 0.08));
+	padding-block: 4px;
+}
+
+.zig-facet:last-child {
+	border-block-end: 0;
+}
+
+.zig-facet__title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	padding: var(--zig-facet-title-padding, 14px 18px);
+	font-size: var(--zig-facet-title-size, 0.95rem);
+	font-weight: 600;
+	line-height: 1.7;
+	background-color: var(--zig-facet-title-bg, transparent);
+	transition: background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+	/* نشانگر پیش‌فرض مرورگر جای خودش را به فلشِ خودمان می‌دهد */
+	list-style: none;
+}
+
+.zig-facet__title::-webkit-details-marker {
+	display: none;
+}
+
+/*
+ * هاور و بازبودن دو حالتِ جدا هستند و رنگشان هم.
+ *
+ * «موس رویش است» و «الان باز است» دو خبر متفاوت‌اند؛ با یک رنگ، کاربر
+ * نمی‌فهمد گروهی که می‌بیند باز است یا فقط زیر مکان‌نماست.
+ *
+ * ترتیب مهم است: قاعدهٔ ‎open‎ بعد از ‎hover‎ می‌آید تا وقتی هر دو
+ * برقرارند، حالتِ باز برنده شود.
+ */
+.zig-facet__title:hover {
+	background-color: var(--zig-facet-title-hover-bg, rgba(17, 12, 46, 0.04));
+}
+
+.zig-facet[open] > .zig-facet__title {
+	background-color: var(--zig-facet-title-open-bg, var(--zig-brand-soft));
+	color: var(--zig-facet-title-open-color, inherit);
+}
+
+/*
+ * عنوان به اندازهٔ متنش، نه تمام‌عرض.
+ *
+ * قبلاً ‎flex: 1 1 auto‎ بود و کل فضای خالی را می‌گرفت. با آن، بولتِ
+ * «فیلتر فعال» می‌افتاد ته ردیف و آن‌قدر از اسم دور می‌شد که معلوم نبود
+ * مالِ کدام گروه است. حالا عنوان به‌اندازهٔ متنش است و بولت بلافاصله
+ * کنارش می‌نشیند.
+ *
+ * ‎0 1 auto‎ و نه ‎0 0 auto‎: عنوان بلند باید بتواند کوچک شود، وگرنه از
+ * پنل می‌زند بیرون. سه‌نقطه هم برای همان حالت است.
+ */
+.zig-facet__name {
+	order: 0;
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/*
+ * بولتِ «این گروه فیلتر فعال دارد».
+ *
+ * روی ‎.zig-facet‎ می‌نشیند نه روی ‎[open]‎، چون بعد از بستنِ گروه هم باید
+ * بماند — همان‌جا که تنها نشانهٔ فعال‌بودن است.
+ *
+ * ‎order‎ لازم است چون ‎::before‎ در ترتیب طبیعی اولِ ظرف است؛ بدون آن
+ * بولت می‌رفت ابتدای ردیف، جلوی اسم نه کنارش.
+ *
+ * و ‎margin-inline-end: auto‎ اینجاست نه روی نام: فضای خالی باید *بعد*
+ * از بولت بیاید تا فلش ته ردیف بنشیند و بولت چسبیده به متن بماند. روی
+ * نام که بود، کلِ بولت و فلش با هم به انتها رانده می‌شدند.
+ */
+.zig-facet.is-active > .zig-facet__title::before {
+	content: "";
+	order: 1;
+	flex: none;
+	align-self: center;
+	inline-size: var(--zig-facet-bullet-size, 8px);
+	block-size: var(--zig-facet-bullet-size, 8px);
+	margin-inline-end: auto;
+	border-radius: 50%;
+	background-color: var(--zig-facet-bullet-bg, var(--zig-brand));
+}
+
+/*
+ * گروهِ بی‌فیلتر بولت ندارد، ولی فضای خالی باید همچنان بعد از نام بیاید
+ * تا فلش سرِ جایش بماند.
+ */
+.zig-facet:not(.is-active) > .zig-facet__title .zig-facet__name {
+	margin-inline-end: auto;
+}
+
+/* فلش، با چرخش در حالت باز */
+.zig-facet__chevron {
+	order: 2;
+	flex: none;
+	color: var(--zig-facet-chevron-color, inherit);
+	transition: transform var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+}
+
+/*
+ * فلشِ گروهِ باز رنگ خودش را می‌گیرد.
+ *
+ * با پس‌زمینهٔ روشنِ حالت باز، فلشِ هم‌رنگِ متن کم‌پیدا می‌شود؛ و همین
+ * فلش تنها چیزی است که می‌گوید کلیکِ بعدی گروه را می‌بندد.
+ */
+.zig-facet[open] > .zig-facet__title .zig-facet__chevron {
+	transform: rotate(180deg);
+	color: var(--zig-facet-chevron-open-color, var(--zig-brand));
+}
+
+/*
+ * فهرست گزینه‌ها داخل یک تشکِ رنگی می‌نشیند، نه روی زمینهٔ پنل.
+ *
+ * دلیلش دیداری نیست: با چند گروهِ باز پشت سر هم، مرزِ «این گزینه‌ها مال
+ * کدام عنوان‌اند» گم می‌شود. تشک، گروه را یک بلوک می‌کند و خطِ جداکنندهٔ
+ * بین گروه‌ها دیگر تنها نشانه نیست.
+ */
+/*
+ * و خودش هم سقف ارتفاع دارد.
+ *
+ * یک گروهِ «برند» با شصت برند، بقیهٔ گروه‌ها را از صفحه بیرون می‌اندازد و
+ * کاربر اصلاً نمی‌فهمد زیرش چیز دیگری هم هست.
+ *
+ * ‎overscroll-behavior: contain‎ همان چیزی است که اسکرولِ تودرتو را قابل
+ * تحمل می‌کند: وقتی این فهرست به ته رسید، چرخِ ماوس *به پنل و صفحه سرایت
+ * نمی‌کند*. بدون آن، کاربر داخل فهرست اسکرول می‌کرد و ناگهان کل صفحه
+ * می‌پرید.
+ */
+/*
+ * فاصلهٔ بالای تشک تا زیرِ عنوان، جدا از پدینگِ خودِ عنوان.
+ *
+ * دو چیز جداست: پدینگِ عنوان فضای *داخلِ* ردیفِ عنوان را کنترل می‌کند،
+ * این یکی فاصلهٔ *بین* عنوان و تشک را. صفر است چون عنوان با پدینگِ
+ * پایینش خودش فاصله را می‌سازد؛ ولی مدیری که آن پدینگ را عوض کرده باید
+ * بتواند این را هم جدا تنظیم کند.
+ */
+.zig-facet__list {
+	margin: var(--zig-facet-list-top, 0) 0 12px;
+	padding: var(--zig-facet-list-padding, 10px);
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-facet-list-gap, 8px);
+	/*
+	 * تشک همان‌قدر تو می‌رود که عنوانِ بالایش.
+	 *
+	 * پدینگِ افقی از ظرفِ گروه‌ها به خودِ عنوان‌ها منتقل شد تا رنگِ هاور تا
+	 * لبه برود؛ ولی همان پدینگ *تشک* را هم تو نگه می‌داشت. بدون این خط،
+	 * تشکِ گِردگوشه می‌چسبد به لبهٔ کارت و از عنوانِ بالایش بیرون‌تر
+	 * می‌زند. صفر گذاشتنش تشک را تمام‌عرض می‌کند.
+	 */
+	margin-inline: var(--zig-facet-list-inset, 18px);
+	max-block-size: var(--zig-facet-list-max, 280px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-scroll-thumb, rgba(17, 12, 46, 0.18)) transparent;
+	border-radius: var(--zig-facet-list-radius, 14px);
+	background-color: var(--zig-facet-list-bg, #f6f4fa);
+}
+
+/*
+ * هر گزینه یک ردیفِ کامل است، نه یک خط متن.
+ *
+ * سطح کلیک بزرگ‌تر از خودِ برچسب می‌شود — که هم روی موبایل لازم است و هم
+ * برای کسی که دست لرزان دارد. کادر دور ردیف هم همان چیزی است که «انتخاب
+ * شده» را از دور پیدا می‌کند.
+ */
+.zig-facet__item > a,
+.zig-facet__item > span {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: var(--zig-facet-item-padding, 12px 14px);
+	color: inherit;
+	text-decoration: none;
+	line-height: 1.8;
+	border: 1px solid transparent;
+	border-radius: var(--zig-facet-item-radius, 12px);
+	background-color: var(--zig-facet-item-bg, var(--zig-surface));
+	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
+}
+
+.zig-facet__item > a:hover {
+	background-color: var(--zig-facet-item-hover, rgba(17, 12, 46, 0.05));
+}
+
+.zig-facet__item.is-selected > a {
+	background-color: var(--zig-facet-selected-bg, var(--zig-brand-soft));
+	border-color: var(--zig-facet-selected-border, rgba(109, 40, 217, 0.35));
+}
+
+/*
+ * چک‌باکس تصویری.
+ *
+ * یک <span> است و نه <input>: عنصر واقعیِ کلیک‌شدنی همان لینک است و یک
+ * input اینجا فقط یک هدف فوکوسِ دوم می‌ساخت که هیچ کاری نمی‌کند.
+ * aria-hidden هم دارد، پس صفحه‌خوان دو بار همان حرف را نمی‌زند.
+ */
+.zig-facet__box {
+	flex: none;
+	inline-size: var(--zig-facet-box-size, 20px);
+	block-size: var(--zig-facet-box-size, 20px);
+	border: 2px solid var(--zig-facet-box-border, rgba(17, 12, 46, 0.22));
+	border-radius: var(--zig-facet-box-radius, 6px);
+	position: relative;
+	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
+}
+
+.zig-facet__item.is-selected .zig-facet__box {
+	background-color: var(--zig-facet-box-checked, var(--zig-brand));
+	border-color: var(--zig-facet-box-checked, var(--zig-brand));
+}
+
+/*
+ * مربعِ تیک‌خورده تیک ندارد — یک مربعِ پرِ توپر است، همان‌طور که در دیزاین
+ * آمده.
+ *
+ * این «رنگ‌تنها» نیست و با ۱٫۴٫۱ هم نمی‌جنگد: تفاوت پر و خالی، تفاوتِ
+ * *شکل* است نه فقط رنگ، و علاوه بر آن خودِ ردیف کادر و پس‌زمینه‌اش را عوض
+ * می‌کند و همان ترم بالای پنل هم به‌صورت چیپ می‌آید. برای صفحه‌خوان هم
+ * متن پنهانِ «— حذف این فیلتر» تکلیف را روشن می‌کند، و مربع
+ * ‎aria-hidden‎ است.
+ *
+ * جای تیک با ‎--zig-archive-tick‎ خالی نمانده: هرکس آن را بخواهد یک
+ * قاعدهٔ ‎::after‎ کافی است، ولی پیش‌فرض دیزاین است.
+ */
+
+.zig-facet__count {
+	margin-inline-start: auto;
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.6;
+}
+
+/*
+ * گزینهٔ صفر می‌ماند ولی غیرفعال است.
+ *
+ * حذفش ارتفاع سایدبار را با هر درخواست می‌پراند و کاربر جای گزینه‌ای را
+ * که یک لحظه پیش دیده بود گم می‌کند.
+ */
+.zig-facet__item.is-disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   نوار بالا: شمارش و ترتیب
+   ----------------------------------------------------------------------- */
+
+/*
+ * نوار بالا یک کارت است، نه یک ردیفِ شناور.
+ *
+ * شمارش در یک سر و ترتیب در سرِ دیگر؛ روی عرض کم، ‎flex-wrap‎ آن‌ها را
+ * زیر هم می‌برد بدون اینکه چیزی از کادر بزند بیرون.
+ */
+.zig-archive__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px 20px;
+	padding: var(--zig-toolbar-padding, 12px 18px);
+	background-color: var(--zig-toolbar-bg, var(--zig-surface));
+	border: 1px solid var(--zig-toolbar-border, var(--zig-line));
+	border-radius: var(--zig-toolbar-radius, 14px);
+}
+
+.zig-archive__count {
+	margin: 0;
+	font-size: var(--zig-count-size, 0.9rem);
+	font-variant-numeric: tabular-nums;
+	color: var(--zig-count-color, var(--zig-ink));
+}
+
+.zig-sorts__wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.zig-sorts__label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.85rem;
+	color: var(--zig-muted);
+}
+
+.zig-sorts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-sorts__pill {
+	display: inline-block;
+	padding: var(--zig-sort-padding, 6px 14px);
+	border-radius: var(--zig-sort-radius, 999px);
+	font-size: var(--zig-sort-size, 0.85rem);
+	line-height: 1.8;
+	text-decoration: none;
+	color: var(--zig-sort-color, var(--zig-muted));
+	transition: background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+}
+
+/*
+ * هاورِ پیل هم بنفش است، نه خاکستری.
+ *
+ * در دیزاین، پیلِ فعال و پیلی که مکان‌نما رویش است هر دو زمینهٔ بنفشِ روشن
+ * دارند و فقط شدتشان فرق می‌کند — نشانه‌ای که می‌گوید «این‌ها یک خانواده‌اند
+ * و انتخابِ بعدی از میان همین‌هاست». خاکستری آن پیوند را می‌بُرد.
+ */
+.zig-sorts__pill:hover {
+	color: var(--zig-sort-hover-color, var(--zig-brand));
+	background-color: var(--zig-sort-hover-bg, rgba(109, 40, 217, 0.07));
+}
+
+.zig-sorts__pill.is-active {
+	font-weight: 600;
+	color: var(--zig-sort-active-color, var(--zig-brand));
+	background-color: var(--zig-sort-active-bg, var(--zig-brand-soft));
+}
+
+/* --------------------------------------------------------------------------
+   گرید
+   ----------------------------------------------------------------------- */
+
+.zig-archive__grid {
+	display: grid;
+	grid-template-columns: repeat(var(--zig-archive-columns, 3), minmax(0, 1fr));
+	gap: 24px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * سه ستون روی نمایشگر باریک یعنی کارت‌های صد پیکسلی.
+ *
+ * این با کنترل واکنش‌گرای «تعداد ستون» نمی‌جنگد: سلکتور المنتور
+ * ({{WRAPPER}} .zig-archive__grid) وزن بیشتری دارد، پس به‌محض اینکه مدیر
+ * مقدار تبلت یا موبایل را بگذارد همان می‌نشیند. این فقط جای خالی را پر
+ * می‌کند تا چیدمانِ تنظیم‌نشده نشکند — طرح موبایل جای خودش را دارد.
+ */
+@media (max-width: 879px) {
+	.zig-archive__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+/* سلول کشیده می‌شود تا کارت‌های یک ردیف هم‌قد باشند */
+.zig-archive__cell {
+	display: flex;
+	min-width: 0;
+}
+
+/*
+ * کارت محصول، نه کارت ویژگی.
+ *
+ * نام کلاس یکی است ولی معنایش فرق دارد: آن یکی یک ردیف افقیِ آیکون و متن
+ * است. محدودکردن به داخل گرید، هر دو را بدون تغییر نام کلاس نگه می‌دارد —
+ * و تغییر نام یعنی شکستن هر سایتی که روی این کلاس CSS نوشته.
+ *
+ * شش ناحیه، و هر کدام سه چیز جدا دارد که مدیر می‌تواند عوض کند: فاصلهٔ
+ * درونی، فاصلهٔ بین فرزندانش، و ترتیبش. همه از راه متغیر، پس یک کنترل
+ * المنتور کافی است و این فایل هیچ‌وقت با پنل نمی‌جنگد.
+ *
+ * ‎order‎ روی هر سه ناحیهٔ سطح‌اول هست: کسی که می‌خواهد تصویر زیر متن
+ * بنشیند، لازم نیست قالب را عوض کند — و ترتیب DOM دست‌نخورده می‌ماند، پس
+ * صفحه‌خوان و خزنده همان ترتیب منطقی را می‌بینند.
+ */
+.zig-archive__grid .zig-card {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--zig-card-gap, 0);
+	inline-size: 100%;
+}
+
+.zig-card__media {
+	order: var(--zig-media-order, 1);
+}
+
+.zig-archive__grid .zig-card__body {
+	order: var(--zig-body-order, 2);
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-body-gap, 12px);
+	padding: var(--zig-body-padding, 0);
+	min-width: 0;
+}
+
+/* ۳ — برند و موجودی، دو سرِ یک ردیف */
+.zig-card__meta {
+	order: var(--zig-meta-order, 1);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--zig-meta-gap, 8px);
+	padding: var(--zig-meta-padding, 0);
+}
+
+/* ۴ — دسته، عنوان، توضیح */
+.zig-card__text {
+	order: var(--zig-text-order, 2);
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-text-gap, 6px);
+	padding: var(--zig-text-padding, 0);
+	min-width: 0;
+}
+
+.zig-card__category {
+	margin: 0;
+	font-size: var(--zig-category-size, 0.78rem);
+	line-height: 1.8;
+	color: var(--zig-category-color, inherit);
+	opacity: var(--zig-category-opacity, 0.7);
+}
+
+/* ۶ — قیمت و دکمه، با خط جداکننده روی خودش */
+.zig-card__foot {
+	order: var(--zig-foot-order, 3);
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-foot-gap, 14px);
+	padding: var(--zig-foot-padding, 16px 0 0);
+	margin-block-start: var(--zig-foot-margin, 16px);
+	border-block-start: var(--zig-divider-width, 1px) solid var(--zig-divider-color, rgba(17, 12, 46, 0.08));
+}
+
+.zig-archive__grid .zig-card {
+	background-color: var(--zig-card-bg, var(--zig-surface));
+	border: 1px solid var(--zig-card-border, var(--zig-line));
+	border-radius: var(--zig-card-radius, 16px);
+	padding: var(--zig-card-padding, 16px);
+	transition: border-color var(--zig-transition, 200ms ease), box-shadow var(--zig-transition, 200ms ease);
+}
+
+/*
+ * سه حالتِ کارت، همان‌طور که در دیزاین آمده.
+ *
+ * هاورِ کارت فقط سایه و رنگ کادر را عوض می‌کند، نه اندازه یا جای چیزی:
+ * جابه‌جایی زیر مکان‌نما باعث می‌شود کاربر هدفی را که داشت به آن می‌رسید
+ * از دست بدهد.
+ *
+ * ‎:focus-within‎ کنار ‎:hover‎ است تا کاربر کیبورد هم همان نشانه را
+ * بگیرد — وگرنه حالتِ «این کارت الان فعال است» فقط با ماوس دیده می‌شود.
+ */
+.zig-archive__grid .zig-card:hover,
+.zig-archive__grid .zig-card:focus-within {
+	border-color: var(--zig-card-hover-border, rgba(109, 40, 217, 0.28));
+	box-shadow: var(--zig-card-hover-shadow, 0 10px 30px rgba(28, 19, 48, 0.08));
+}
+
+/*
+ * ظرف تصویر ارتفاع ثابت دارد، نه ارتفاعِ تصویر.
+ *
+ * محصول‌های یک فروشگاه هیچ‌وقت عکس‌های هم‌اندازه ندارند؛ اگر ارتفاع را
+ * تصویر تعیین کند، ردیفِ کارت‌ها پله‌پله می‌شود و خطِ عنوان‌ها به‌هم
+ * می‌ریزد. ‎object-fit: contain‎ هم یعنی هیچ عکسی بریده نمی‌شود.
+ *
+ * پیش‌فرض‌ها همان اعداد دیزاین‌اند و اینجا — در CSS — نشسته‌اند نه فقط
+ * در پیش‌فرضِ کنترل: کنترل‌ها CSS خودشان را در فایلِ سندِ المنتور
+ * می‌نویسند، و هر جایی که آن فایل نیاید (قالب‌ساز شخص ثالث، پیش‌نمایش،
+ * رندر بیرون از سند) کارت باید همچنان درست دربیاید.
+ */
+.zig-card__media {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--zig-media-gap, 2px);
+	overflow: hidden;
+	block-size: var(--zig-media-height, 210px);
+	padding: var(--zig-media-padding, 32px 16px 16px);
+	border-radius: var(--zig-media-radius, 12px);
+	background-color: var(--zig-media-bg, #f7f7fa);
+}
+
+.zig-card__image {
+	display: block;
+	inline-size: var(--zig-image-width, 162px);
+	max-inline-size: 100%;
+	block-size: 100%;
+	object-fit: var(--zig-image-fit, contain);
+}
+
+/*
+ * ریبون روی تصویر می‌ماند، لیبل موجودی نه.
+ *
+ * inset-inline به‌جای left/right: در RTL خودش جابه‌جا می‌شود و لازم نیست
+ * قاعدهٔ دومی برای جهت نوشته شود.
+ */
+.zig-card__ribbon {
+	position: absolute;
+	inset-block-start: var(--zig-ribbon-offset, 12px);
+	inset-inline-start: var(--zig-ribbon-offset, 12px);
+	z-index: 1;
+}
+
+.zig-card__ribbon {
+	background-color: var(--zig-ribbon-bg, var(--zig-brand));
+	color: var(--zig-ribbon-color, #fff);
+}
+
+/*
+ * هر حالت موجودی رنگ خودش را دارد و پیش‌فرض‌ها معنایی‌اند نه تزئینی:
+ * سبز «هست»، نارنجی «هنوز نه»، خاکستری «نیست». کنترل المنتور هرکدام را
+ * جدا می‌گیرد، ولی پیش‌فرضی که معنا را می‌رساند بهتر از خاکستریِ یکنواخت
+ * است — چون تا وقتی کسی رنگ‌ها را تنظیم نکرده، صفحه هنوز خوانا بماند.
+ */
+.zig-card__stock--instock,
+.zig-card__stock--available {
+	background-color: var(--zig-stock-in-bg, #e7f6ee);
+	color: var(--zig-stock-in-color, #0f7b55);
+}
+
+.zig-card__stock--lowstock,
+.zig-card__stock--onbackorder {
+	background-color: var(--zig-stock-pre-bg, #fdf1e3);
+	color: var(--zig-stock-pre-color, #b45309);
+}
+
+.zig-card__stock--outofstock {
+	background-color: var(--zig-stock-out-bg, #f3f2f6);
+	color: var(--zig-stock-out-color, #6b6480);
+}
+
+.zig-card__ribbon,
+.zig-card__stock {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: var(--zig-badge-padding, 5px 12px);
+	font-size: var(--zig-badge-size, 0.75rem);
+	line-height: 1.8;
+	border-radius: var(--zig-badge-radius, 999px);
+	white-space: nowrap;
+}
+
+/*
+ * نقطهٔ کوچکِ کنار متن.
+ *
+ * ‎currentColor‎ یعنی رنگش را از خودِ لیبل می‌گیرد، پس کنترلِ رنگِ هر حالت
+ * موجودی خودبه‌خود نقطه‌اش را هم درست می‌کند — و یک کنترل جداگانه برای
+ * چیزی که همیشه باید هم‌رنگ باشد، فقط راهی است برای ناهماهنگ‌شدن.
+ */
+.zig-card__dot {
+	flex: none;
+	inline-size: 6px;
+	block-size: 6px;
+	border-radius: 50%;
+	background-color: currentColor;
+}
+
+/*
+ * نام برند تیره است، نه رنگِ برندِ سایت.
+ *
+ * وسوسه‌اش هست — اسمش «برند» است — ولی در کارت، بنفشِ توپر یعنی «این را
+ * ببین»، و آن جایگاه مال ریبون و دکمه است. برند یک برچسبِ اطلاعاتی است و
+ * باید کنار لیبل موجودی هم‌وزن دیده شود.
+ */
+.zig-card__brand {
+	margin: 0;
+	font-size: var(--zig-brand-size, 0.8rem);
+	font-weight: 600;
+	line-height: 1.8;
+	color: var(--zig-card-brand-color, var(--zig-ink));
+}
+
+/*
+ * عنوان و توضیح با تعداد خط محدود.
+ *
+ * -webkit-line-clamp با اینکه پیشوند دارد، در همهٔ مرورگرهای امروزی کار
+ * می‌کند و جایگزین استانداردش هنوز همه‌جا نیست. اگر روزی کار نکرد، متن
+ * کامل دیده می‌شود — یعنی بدترین حالتش هم چیزی را پنهان نمی‌کند.
+ */
+.zig-card__desc {
+	margin: 0;
+	font-size: var(--zig-desc-size, 0.85rem);
+	line-height: 1.9;
+	color: var(--zig-desc-color, var(--zig-muted));
+	overflow-wrap: anywhere;
+}
+
+.zig-archive__grid .zig-card__title,
+.zig-card__desc {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.zig-archive__grid .zig-card__title {
+	color: var(--zig-title-color, var(--zig-ink));
+}
+
+.zig-archive__grid .zig-card__title a {
+	color: inherit;
+	text-decoration: none;
+}
+
+/* ۵ — یک نوار، نه چند چیپ */
+.zig-card__features {
+	order: var(--zig-features-order, 3);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: var(--zig-features-gap, 8px);
+	margin: 0;
+	padding: var(--zig-features-padding, 8px 12px);
+	list-style: none;
+	border-radius: var(--zig-features-radius, 10px);
+	background-color: var(--zig-features-bg, #f6f4fa);
+	color: var(--zig-features-color, var(--zig-muted));
+}
+
+.zig-card__feature {
+	font-size: var(--zig-feature-size, 0.75rem);
+	line-height: 1.8;
+}
+
+/* جداکنندهٔ نقطه‌ای بین ویژگی‌ها */
+.zig-card__sep {
+	inline-size: 4px;
+	block-size: 4px;
+	border-radius: 50%;
+	background-color: currentColor;
+	opacity: 0.45;
+}
+
+/*
+ * ردیف قیمت: برچسب یک سر، مقدار سرِ دیگر.
+ *
+ * ‎space-between‎ و نه فاصلهٔ ثابت: با مبلغ‌های ده‌رقمی، هر فاصلهٔ ثابتی
+ * روی کارتِ باریک می‌شکند.
+ */
+.zig-card__price {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 6px;
+	font-variant-numeric: tabular-nums;
+}
+
+.zig-price__prefix {
+	font-size: var(--zig-price-prefix-size, 0.8rem);
+	color: var(--zig-price-prefix-color, var(--zig-muted));
+}
+
+/*
+ * مبلغ همیشه سرِ دیگرِ ردیف می‌نشیند، پیشوند باشد یا نباشد.
+ *
+ * با ‎space-between‎ تنها، کارتی که پیشوند ندارد مبلغش می‌پرید به ابتدای
+ * ردیف و ستون قیمت‌ها در گرید ناهم‌تراز می‌شد — دقیقاً همان چیزی که
+ * ‎tabular-nums‎ برای جلوگیری‌اش هست.
+ */
+.zig-price__value {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+	margin-inline-start: auto;
+	color: var(--zig-price-color, var(--zig-ink));
+}
+
+.zig-price__amount {
+	font-size: var(--zig-price-size, 1.05rem);
+	font-weight: 700;
+}
+
+.zig-price__unit {
+	font-size: var(--zig-price-unit-size, 0.8rem);
+	font-weight: 400;
+	color: var(--zig-price-unit-color, var(--zig-muted));
+}
+
+/* «استعلام قیمت» عمل است نه مقدار، پس تمام‌عرض و وسط می‌نشیند */
+.zig-price__inquiry {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	inline-size: 100%;
+	color: var(--zig-price-inquiry-color, var(--zig-muted));
+}
+
+/*
+ * دکمه به کف کارت می‌چسبد.
+ *
+ * بدون این، کارتی که توضیح کوتاه‌تری دارد دکمه‌اش وسط می‌ماند و ردیفِ
+ * دکمه‌ها در گرید پله‌پله می‌شود.
+ */
+/*
+ * دکمهٔ تمام‌عرض.
+ *
+ * ‎margin-block-start: auto‎ دیگر لازم نیست — کشیده‌شدنِ ‎__body‎ کار
+ * چسباندن پا به کف را انجام می‌دهد، و آن یکی روی ظرفِ فلکسِ ستونی با
+ * ‎gap‎ می‌جنگید.
+ */
+/*
+ * دکمهٔ تمام‌عرض، با کادر نازک و متن رنگِ برند.
+ *
+ * ‎margin-block-start: auto‎ دیگر لازم نیست — کشیده‌شدنِ ‎__body‎ کار
+ * چسباندن پا به کف را انجام می‌دهد، و آن یکی روی ظرفِ فلکسِ ستونی با
+ * ‎gap‎ می‌جنگید.
+ */
+.zig-card__cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	inline-size: 100%;
+	padding: var(--zig-cta-padding, 11px 16px);
+	border: 1px solid var(--zig-cta-border, var(--zig-line));
+	border-radius: var(--zig-cta-radius, 10px);
+	background-color: var(--zig-cta-bg, transparent);
+	color: var(--zig-cta-color, var(--zig-ink));
+	font-weight: 600;
+	text-decoration: none;
+	transition: border-color var(--zig-transition, 200ms ease), background-color var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+}
+
+.zig-card__cta:hover,
+.zig-card__cta:focus-visible {
+	border-color: var(--zig-cta-hover-border, var(--zig-brand));
+	background-color: var(--zig-cta-hover-bg, var(--zig-brand-soft));
+	color: var(--zig-cta-hover-color, var(--zig-brand));
+}
+
+/*
+ * فلش رنگِ برند دارد حتی وقتی متن تیره است — همان تفاوتی که در دیزاین
+ * بین حالت عادی و هاور دیده می‌شود. در هاور، ‎currentColor‎ می‌گیرد تا با
+ * متن یکی شود.
+ */
+.zig-card__cta-icon {
+	color: var(--zig-cta-icon-color, var(--zig-brand));
+	transition: transform var(--zig-transition, 200ms ease), color var(--zig-transition, 200ms ease);
+}
+
+.zig-card__cta:hover .zig-card__cta-icon,
+.zig-card__cta:focus-visible .zig-card__cta-icon {
+	color: currentColor;
+}
+
+/* فلش کمی به سمت مقصد می‌رود — نشانهٔ «می‌بردت آنجا» */
+.zig-card__cta:hover .zig-card__cta-icon {
+	transform: translateX(-3px);
+}
+
+[dir="ltr"] .zig-card__cta:hover .zig-card__cta-icon {
+	transform: translateX(3px);
+}
+
+/* --------------------------------------------------------------------------
+   بدون نتیجه
+   ----------------------------------------------------------------------- */
+
+.zig-archive__empty {
+	padding: 48px 24px;
+	text-align: center;
+}
+
+.zig-archive__empty-title {
+	margin: 0 0 12px;
+	font-size: 1.05rem;
+	line-height: 1.8;
+}
+
+.zig-archive__empty-link {
+	text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   صفحه‌بندی
+   ----------------------------------------------------------------------- */
+
+.zig-archive__pagination {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.zig-page {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-inline-size: var(--zig-page-size, 40px);
+	min-block-size: var(--zig-page-size, 40px);
+	padding: 0 12px;
+	border: 1px solid var(--zig-page-border, var(--zig-line));
+	border-radius: var(--zig-page-radius, 10px);
+	font-size: 0.9rem;
+	font-variant-numeric: tabular-nums;
+	text-decoration: none;
+	color: var(--zig-page-color, var(--zig-ink));
+	background-color: var(--zig-surface);
+	transition: background-color var(--zig-transition, 200ms ease), border-color var(--zig-transition, 200ms ease);
+}
+
+.zig-page:hover {
+	border-color: var(--zig-brand);
+	color: var(--zig-brand);
+}
+
+/* صفحهٔ جاری ‎<span>‎ است نه لینک: رفتن به جایی که هستی، ناوبری نیست */
+.zig-page.is-current {
+	font-weight: 600;
+	border-color: var(--zig-page-current-bg, var(--zig-brand));
+	background-color: var(--zig-page-current-bg, var(--zig-brand));
+	color: var(--zig-page-current-color, #fff);
+}
+
+/* --------------------------------------------------------------------------
+   خطای فنی
+
+   این جعبه فقط برای خطای *فنی* است: تایم‌اوت، ۵۰۰، نانس منقضی، قطعی شبکه.
+   «هیچ محصولی با این فیلتر نیست» از این مسیر نمی‌آید — آن پاسخ درستِ
+   سیستم است و جایش داخل گرید است، نه یک آلرت قرمز با دکمهٔ تلاش مجدد که
+   هرچه بزنی همان برمی‌گردد.
+   ----------------------------------------------------------------------- */
+
+.zig-archive__error {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	border-radius: 10px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+	z-index: 9;
+}
+
+/* صفت hidden باید بر display: flex بچربد، وگرنه جعبه همیشه دیده می‌شود */
+.zig-archive__error[hidden] {
+	display: none;
+}
+
+.zig-archive__error--bottom-center,
+.zig-archive__error--bottom-start,
+.zig-archive__error--bottom-end {
+	position: fixed;
+	inset-block-end: 24px;
+	z-index: 999;
+	max-inline-size: min(420px, calc(100vw - 32px));
+}
+
+.zig-archive__error--bottom-center {
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+}
+
+.zig-archive__error--bottom-start {
+	inset-inline-start: 24px;
+}
+
+.zig-archive__error--bottom-end {
+	inset-inline-end: 24px;
+}
+
+/* لنگرش .zig-archive__main است که position: relative دارد */
+.zig-archive__error--top-grid {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline: 0;
+}
+
+.zig-archive__error-text {
+	margin: 0;
+	flex: 1 1 auto;
+	font-size: 0.9rem;
+	line-height: 1.8;
+}
+
+.zig-archive__retry {
+	flex: none;
+	padding: 6px 14px;
+	border: 1px solid currentColor;
+	border-radius: 8px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 0.85rem;
+	cursor: pointer;
+}
+
+/*
+ * انیمیشن ورود.
+ *
+ * روی جعبه‌ای که تازه از hidden درآمده اجرا می‌شود. حالت وسط‌چینِ پایین
+ * transform خودش را دارد، پس کی‌فریم جداگانه‌ای لازم دارد وگرنه انیمیشن،
+ * وسط‌چینی را از بین می‌برد.
+ */
+@keyframes zig-archive-error-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+}
+
+@keyframes zig-archive-error-in-center {
+	from {
+		opacity: 0;
+		transform: translate(-50%, 12px);
+	}
+}
+
+@keyframes zig-archive-error-fade {
+	from {
+		opacity: 0;
+	}
+}
+
+.zig-archive__error--anim-slide {
+	animation: zig-archive-error-in var(--zig-archive-error-duration, 240ms) ease-out;
+}
+
+.zig-archive__error--anim-slide.zig-archive__error--bottom-center {
+	animation-name: zig-archive-error-in-center;
+}
+
+.zig-archive__error--anim-fade {
+	animation: zig-archive-error-fade var(--zig-archive-error-duration, 240ms) ease-out;
+}
+
+/* --------------------------------------------------------------------------
+   حالت‌ها
+   ----------------------------------------------------------------------- */
+
+/*
+ * در حال گرفتن نتیجهٔ تازه.
+ *
+ * aria-busy همان صفتی است که جاوااسکریپت می‌گذارد و صفحه‌خوان هم می‌فهمدش،
+ * پس یک کلاسِ فقط-تزئینی برای همین کار اضافه نمی‌کنیم.
+ *
+ * pointer-events: none تا کاربر روی کارتی که همین حالا جایش عوض می‌شود
+ * کلیک نکند — کلیک روی محصولِ اشتباه بدتر از کمی صبر است.
+ */
+.zig-archive[aria-busy="true"] .zig-archive__grid {
+	opacity: 0.55;
+	pointer-events: none;
+	transition: opacity var(--zig-transition, 200ms ease);
+}
+
+/*
+ * صفحه‌بندی روی حالتی که چیزی برای صفحه‌بندی ندارد بی‌معناست. رندر سرور
+ * هم آن را نمی‌سازد؛ این برای بعد از یک درخواست آژاکس است که هنوز
+ * صفحه‌بندی قبلی در DOM مانده.
+ */
+.zig-archive[data-zig-state="filtered_empty"] .zig-archive__pagination,
+.zig-archive[data-zig-state="empty"] .zig-archive__pagination,
+.zig-archive[data-zig-state="page_missing"] .zig-archive__pagination {
+	display: none;
+}
+
+/* --------------------------------------------------------------------------
+   دسترس‌پذیری و چاپ
+   ----------------------------------------------------------------------- */
+
+/*
+ * حلقهٔ فوکوس روی هر چیزی که با کیبورد به آن می‌رسیم.
+ *
+ * outline و نه box-shadow: مرورگر outline را بیرون از overflow می‌کشد، پس
+ * حتی داخل ظرفی با گوشهٔ بریده هم کامل دیده می‌شود.
+ */
+.zig-facet__item > a:focus-visible,
+.zig-filters__clear:focus-visible,
+.zig-sorts__pill:focus-visible,
+.zig-page:focus-visible,
+.zig-facet__title:focus-visible,
+.zig-archive__retry:focus-visible,
+.zig-archive__grid .zig-card__title a:focus-visible {
+	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
+	outline-offset: var(--zig-focus-offset, 3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-archive__error {
+		animation: none;
+	}
+
+	.zig-facet__title::after,
+	.zig-facet__box,
+	.zig-sorts__pill,
+	.zig-page,
+	.zig-archive__grid {
+		transition: none;
+	}
+}
+
+/*
+ * در چاپ، فیلتر و ترتیب و صفحه‌بندی معنایی ندارند — کاغذ صفحهٔ بعدی
+ * ندارد. جعبهٔ خطا هم اگر باز باشد، روی متن چاپ می‌افتد.
+ */
+@media print {
+	.zig-archive__filters,
+	.zig-archive__toolbar,
+	.zig-archive__pagination,
+	.zig-archive__error {
+		display: none;
+	}
+
+	.zig-archive {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.zig-archive__grid .zig-card {
+		break-inside: avoid;
+	}
+}
+
+
+/* ==========================================================================
+   گالری محصول
+
+   پورتِ مستقیمِ ‎amw-pg‎/‎amw-pg-modal‎ از افزونهٔ almasara-elementor-widgets
+   (‎assets/css/almasara-widgets.css‎ آنجا) — همان قاعده‌ها، عیناً، فقط با
+   تعویضِ پیشوندها:
+
+       amw-pg          → zig-gallery
+       amw-pg-modal     → zig-gallery-modal
+       --amw-pg-*       → --zig-gal-*
+       amw-pg-noscroll  → zig-gallery-noscroll
+
+   ساختار: .zig-gallery (position:relative) > .zig-gallery__strip > شاخص +
+   همه تامبنیل‌ها (flat).
+
+   دسکتاپ (>=768px): گرید N ستونه (--zig-gal-thumbs)؛ تصویر شاخص تمام عرض
+   سطر اول، فقط N تامبنیل اول نمایش و بقیه (--extra) مخفی.
+
+   موبایل «یکی‌درمیون»: نوار اسکرول افقی. ترفند: flex ستونی + wrap با
+   ارتفاع ثابت (--zig-gal-mh). آیتم تمام‌ارتفاع یک «ستون» کامل را می‌گیرد
+   و مربع است (عرض = ارتفاع از aspect-ratio)؛ دو آیتم نصف‌ارتفاع خودکار در
+   یک ستون روی هم می‌نشینند. الگوی 3n+1 تعیین می‌کند کدام آیتم‌ها بزرگ
+   باشند: شاخص(۱) بزرگ، ۲تای بعد کوچک، جایگاه ۴ بزرگ، … یکی‌درمیون.
+   ======================================================================= */
+
+.zig-gallery {
+	position: relative;
+	--zig-gal-rgap: 8px;
+	--zig-gal-cgap: 8px;
+}
+
+.zig-gallery__strip {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	row-gap: var(--zig-gal-rgap);
+	column-gap: var(--zig-gal-cgap);
+}
+
+.zig-gallery__main,
+.zig-gallery__thumb {
+	position: relative;
+	display: block;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	overflow: hidden;
+	aspect-ratio: 1 / 1;
+}
+
+.zig-gallery__main img,
+.zig-gallery__thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center center;
+	display: block;
+	transition: all 0.3s ease;
+}
+
+@media (max-width: 767px) {
+
+	/* ---- نوار اسکرول افقی یکی‌درمیون ---- */
+	.zig-gallery--mobile-alt .zig-gallery__strip {
+		display: flex;
+		flex-direction: column;
+		flex-wrap: wrap;
+		height: var(--zig-gal-mh, 85vw);
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.zig-gallery--mobile-alt .zig-gallery__strip::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* پیش‌فرض: مربع کوچک، دوتا در هر ستون */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb {
+		flex: 0 0 auto;
+		height: calc((100% - var(--zig-gal-rgap, 8px)) / 2);
+		width: auto;
+		scroll-snap-align: center;
+	}
+
+	/* آیتم‌های جایگاه 3n+1 (شاخص، تامبنیل ۳، ۶، ...) تمام‌ارتفاع و مربع بزرگ */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__main,
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb:nth-child(3n + 1) {
+		flex: 0 0 auto;
+		height: 100%;
+		width: auto;
+		scroll-snap-align: center;
+	}
+
+	/* در موبایل همه تصاویر دیده می‌شوند؛ اورلی و بلور «بیشتر» بی‌معنی است */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb--more .zig-gallery__more-overlay {
+		display: none;
+	}
+
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb--more img {
+		filter: none;
+	}
+
+	/* ---- حالت «همان چیدمان دسکتاپ» در موبایل: گرید ۲ ستونه ---- */
+	.zig-gallery--mobile-match .zig-gallery__strip > .zig-gallery__main {
+		grid-column: 1 / -1;
+	}
+
+	.zig-gallery--mobile-match .zig-gallery__strip > .zig-gallery__thumb--extra {
+		display: none;
+	}
+}
+
+/* دسکتاپ */
+@media (min-width: 768px) {
+	.zig-gallery__strip {
+		grid-template-columns: repeat(var(--zig-gal-thumbs, 4), minmax(0, 1fr));
+	}
+
+	.zig-gallery__strip > .zig-gallery__main {
+		grid-column: 1 / -1;
+	}
+
+	.zig-gallery__strip > .zig-gallery__thumb--extra {
+		display: none;
+	}
+}
+
+/* ---- نشانگر پیشرفت + تعداد (فقط موبایل یکی‌درمیون) ---- */
+
+.zig-gallery__counter {
+	display: none;
+}
+
+@media (max-width: 767px) {
+	.zig-gallery--mobile-alt > .zig-gallery__counter {
+		position: absolute;
+		bottom: 12px;
+		inset-inline-start: 12px;
+		z-index: 2;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 7px 12px;
+		border-radius: 999px;
+		background-color: rgba(255, 255, 255, 0.92);
+		box-shadow: 0 2px 10px rgba(16, 24, 40, 0.15);
+		color: #1a2b4a;
+		font-size: 13px;
+		font-weight: 700;
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	.zig-gallery__counter-bar {
+		width: 44px;
+		height: 5px;
+		border-radius: 999px;
+		background-color: #e4e7ee;
+		overflow: hidden;
+	}
+
+	.zig-gallery__counter-fill {
+		display: block;
+		height: 100%;
+		width: 0;
+		border-radius: inherit;
+		background-color: #8a94a6;
+		transition: width 0.15s ease;
+	}
+}
+
+/* اورلی «تصاویر بیشتر» با سه‌نقطه */
+.zig-gallery__more-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(16, 24, 40, 0.6);
+}
+
+.zig-gallery__dots {
+	display: flex;
+	gap: 5px;
+}
+
+.zig-gallery__dots span {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: #fff;
+}
+
+/* ---------- مودال گالری ---------- */
+
+body.zig-gallery-noscroll {
+	overflow: hidden;
+}
+
+.zig-gallery-modal {
+	--zig-gal-modal-dur: 260ms;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background-color: rgba(255, 255, 255, 0.98);
+	padding: 16px;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity var(--zig-gal-modal-dur) ease,
+		transform var(--zig-gal-modal-dur) cubic-bezier(0.16, 1, 0.3, 1),
+		visibility var(--zig-gal-modal-dur);
+}
+
+.zig-gallery-modal.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+	transition-delay: 0s;
+}
+
+/* ---------- انیمیشن‌های ورود/خروج مودال ---------- */
+
+.zig-gallery-modal--anim-fade {
+	transform: none;
+}
+
+.zig-gallery-modal--anim-fade-scale {
+	transform: scale(0.96);
+}
+.zig-gallery-modal--anim-fade-scale.is-open {
+	transform: scale(1);
+}
+
+.zig-gallery-modal--anim-slide-up {
+	transform: translateY(30px);
+}
+.zig-gallery-modal--anim-slide-up.is-open {
+	transform: translateY(0);
+}
+
+.zig-gallery-modal--anim-zoom .zig-gallery-modal__stage,
+.zig-gallery-modal--anim-zoom .zig-gallery-modal__tab,
+.zig-gallery-modal--anim-zoom .zig-gallery-modal__strip {
+	transform: scale(0.9);
+	transition: transform var(--zig-gal-modal-dur) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.zig-gallery-modal--anim-zoom.is-open .zig-gallery-modal__stage,
+.zig-gallery-modal--anim-zoom.is-open .zig-gallery-modal__tab,
+.zig-gallery-modal--anim-zoom.is-open .zig-gallery-modal__strip {
+	transform: scale(1);
+}
+
+/* رعایت prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+	.zig-gallery-modal,
+	.zig-gallery-modal * {
+		transition-duration: 1ms;
+		animation-duration: 1ms;
+	}
+}
+
+.zig-gallery-modal__close {
+	position: absolute;
+	top: 20px;
+	inset-inline-start: 20px;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px;
+	border: 0;
+	background: none;
+	color: #1a2b4a;
+	font-size: 26px;
+	cursor: pointer;
+	line-height: 1;
+}
+
+.zig-gallery-modal__tab {
+	flex-shrink: 0;
+	margin-bottom: 8px;
+	padding: 8px 22px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	box-shadow: 0 2px 12px rgba(16, 24, 40, 0.1);
+	color: #1a2b4a;
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.zig-gallery-modal__stage {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	flex: 1 1 auto;
+	width: 100%;
+	min-height: 0;
+}
+
+.zig-gallery-modal__imgwrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+	height: 100%;
+}
+
+.zig-gallery-modal__img {
+	max-width: 100%;
+	max-height: 72vh;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+	transition: opacity 0.2s ease;
+}
+
+.zig-gallery-modal__img.is-loading {
+	opacity: 0.4;
+}
+
+.zig-gallery-modal__spinner {
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	border: 3px solid rgba(26, 43, 74, 0.15);
+	border-top-color: #1a2b4a;
+	border-radius: 50%;
+	animation: zig-gallery-spin 0.8s linear infinite;
+}
+
+@keyframes zig-gallery-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.zig-gallery-modal__nav {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border: 0;
+	border-radius: 50%;
+	background-color: #ffffff;
+	box-shadow: 0 2px 12px rgba(16, 24, 40, 0.12);
+	color: #1a2b4a;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.zig-gallery-modal__strip {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 100%;
+	margin-top: 12px;
+	padding: 4px;
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.zig-gallery-modal__strip button {
+	flex-shrink: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	line-height: 0;
+}
+
+.zig-gallery-modal__strip img {
+	width: 64px;
+	height: 64px;
+	object-fit: cover;
+	border-radius: 8px;
+	border: 2px solid transparent;
+	opacity: 0.75;
+	transition: all 0.2s ease;
+}
+
+.zig-gallery-modal__strip button:hover img {
+	opacity: 1;
+}
+
+.zig-gallery-modal__strip .is-active img {
+	opacity: 1;
+	border-color: #1a2b4a;
+}
+
+/* ---------- استایل کارتی تامبنیل + بج تعداد ---------- */
+
+.zig-gallery__thumb {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+}
+
+.zig-gallery__more-count {
+	position: absolute;
+	top: 10px;
+	inset-inline-start: 10px;
+	z-index: 1;
+	padding: 4px 10px;
+	border-radius: 8px;
+	background-color: #1a2b40;
+	color: #fff;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.4;
+	direction: ltr;
+}
+
+.zig-gallery__more-count--top-end {
+	inset-inline-start: auto;
+	inset-inline-end: 10px;
+}
+
+.zig-gallery__more-count--bottom-start {
+	top: auto;
+	bottom: 10px;
+}
+
+.zig-gallery__more-count--bottom-end {
+	top: auto;
+	bottom: 10px;
+	inset-inline-start: auto;
+	inset-inline-end: 10px;
+}
+
+.zig-gallery__more-count--center {
+	top: 50%;
+	inset-inline-start: 50%;
+	transform: translate(-50%, -50%);
+}
+
+[dir="rtl"] .zig-gallery__more-count--center {
+	transform: translate(50%, -50%);
+}
+
+/* ==========================================================================
+   مشخصاتِ فنی محصول
+   ========================================================================== */
+
+.zig-specs {
+	--zig-specs-accent: #7B5CFF;
+	--zig-specs-accent-border: #D8C8FB;
+	--zig-specs-card-bg: #FFFFFF;
+	--zig-specs-card-bg-open: #FFFFFF;
+	--zig-specs-card-border: #E4E5EA;
+	--zig-specs-card-border-width: 1px;
+	--zig-specs-radius: 16px;
+	--zig-specs-closed-divider: #E4E5EA;
+	--zig-specs-header-bg: #FFFFFF;
+	--zig-specs-header-bg-open: #FBF9FF;
+	--zig-specs-header-bg-hover: #F6F3FD;
+	--zig-specs-header-height: 81px;
+	--zig-specs-header-border-bottom: transparent;
+	--zig-specs-header-border-bottom-width: 0px;
+	--zig-specs-divider-open: #ECE4FB;
+	--zig-specs-divider-width: 1px;
+	--zig-specs-badge-bg: #F8F8FB;
+	--zig-specs-badge-bg-open: #F8F8FB;
+	--zig-specs-badge-border: #E7E7EE;
+	--zig-specs-badge-border-width: 1.5px;
+	--zig-specs-badge-border-open: #7B5CFF;
+	--zig-specs-badge-icon: #8B8B99;
+	--zig-specs-badge-icon-open: #7B5CFF;
+	--zig-specs-badge-size: 40px;
+	--zig-specs-badge-radius: 10px;
+	--zig-specs-chevron-size: 16px;
+	--zig-specs-title-color: #1E1E2D;
+	--zig-specs-title-color-open: #1E1E2D;
+	--zig-specs-body-bg: transparent;
+	--zig-specs-label-color: #6B7280;
+	--zig-specs-value-color: #1E1E2D;
+	--zig-specs-row-bg: #FFFFFF;
+	--zig-specs-row-bg-even: #FAFAFC;
+	--zig-specs-row-bg-hover: #F7F5FD;
+	--zig-specs-row-divider: #ECEEF2;
+	--zig-specs-open-gap: 21px;
+	display: flex;
+	flex-direction: column;
+}
+
+/*
+ * کارت. پیش‌فرضِ قبلی هیچ ‎background‎/‎border‎ی رویِ خودِ جعبهٔ بیرونی
+ * نداشت — فقط سرستون و ردیف‌ها پس‌زمینه داشتند. رویِ صفحهٔ سفید یعنی
+ * هیچ مرزی دیده نمی‌شد و کل ظاهر «flat» به‌نظر می‌رسید. جعبهٔ بیرونی
+ * حالا خودش هم کارت است.
+ *
+ * ‎border‎ به سه تکه (width/style/color) شکسته شده تا استایلِ پهنایِ مرز
+ * بتواند مستقلِ رنگِ مرز کنترل شود، بدونِ آنکه یک shorthandِ مشترک را
+ * بازنویسی کند.
+ */
+.zig-specs__group {
+	background: var(--zig-specs-card-bg);
+	border-width: var(--zig-specs-card-border-width, 1px);
+	border-style: solid;
+	border-color: var(--zig-specs-card-border);
+	border-radius: 0;
+	overflow: hidden;
+	position: relative;
+}
+
+/*
+ * گروه‌هایِ بستهٔ پشتِ‌سرهم باید یک کارتِ یکپارچه بسازند، نه نوارهایِ
+ * جداگانه: مرزِ هر کدام رویِ مرزِ قبلی می‌نشیند (پهنایِ مرز overlap) تا
+ * فقط یک خط دیده شود — رنگِ همان خط از یک متغیرِ جدا (‎closed-divider‎)
+ * می‌آید تا مستقل از رنگِ مرزِ بیرونیِ کارت (لبه‌هایِ واقعی) قابلِ تنظیم
+ * باشد. گردیِ گوشه فقط رویِ لبهٔ واقعیِ فهرست می‌آید — اول/آخرِ کل فهرست،
+ * یا لبه‌ای که کنارِ کارتِ بازشده قرار می‌گیرد.
+ */
+.zig-specs__group + .zig-specs__group {
+	margin-top: calc(-1 * var(--zig-specs-card-border-width, 1px));
+	border-top-color: var(--zig-specs-closed-divider, var(--zig-specs-card-border));
+}
+
+.zig-specs__group:first-child {
+	border-top-left-radius: var(--zig-specs-radius, 16px);
+	border-top-right-radius: var(--zig-specs-radius, 16px);
+}
+
+.zig-specs__group:last-child {
+	border-bottom-left-radius: var(--zig-specs-radius, 16px);
+	border-bottom-right-radius: var(--zig-specs-radius, 16px);
+}
+
+/*
+ * کارتِ بازشده از بلوکِ بسته‌ها جدا و مستقل می‌شود.
+ *
+ * فاصله/شعاع از رویِ متغیرِ CSS خوانده می‌شوند، نه مستقیم — کنترلِ
+ * المنتور هم فقط همین متغیرها را عوض می‌کند، نه خودِ ‎margin-block‎/
+ * ‎border-radius‎ را. اگر مستقیم بود، رگه‌هایِ ‎:first-child‎/‎:last-child‎
+ * زیرش (که specificityِ برابر دارند) به ترتیبِ منبع بستگی پیدا می‌کرد و
+ * با تزریقِ ‎<style>‎ِ المنتور بعدِ این فایل، بی‌صدا می‌شکست. با این
+ * واسطه، آن رگه‌ها همیشه — مستقل از اینکه کدام فایل دیرتر لود شده —
+ * برنده‌اند.
+ */
+.zig-specs__group[open] {
+	background: var(--zig-specs-card-bg-open);
+	border-color: var(--zig-specs-accent-border);
+	border-radius: var(--zig-specs-radius, 16px);
+	margin-block: var(--zig-specs-open-gap, 21px);
+	z-index: 1;
+}
+
+.zig-specs__group[open]:first-child { margin-top: 0; }
+.zig-specs__group[open]:last-child { margin-bottom: 0; }
+
+/* بستهٔ همسایهٔ کارتِ باز، از نگاهِ بصری لبهٔ همان بلوکِ بسته‌هاست — همان‌جا هم گرد می‌شود */
+.zig-specs__group[open] + .zig-specs__group:not([open]) {
+	border-top-left-radius: var(--zig-specs-radius, 16px);
+	border-top-right-radius: var(--zig-specs-radius, 16px);
+}
+
+.zig-specs__group:not([open]):has(+ .zig-specs__group[open]) {
+	border-bottom-left-radius: var(--zig-specs-radius, 16px);
+	border-bottom-right-radius: var(--zig-specs-radius, 16px);
+}
+
+/*
+ * سرستونِ گروه — هم برایِ حالتِ آکاردئونی (‎summary‎) هم حالتِ تخت (‎div‎)
+ * همین یک کلاس. ‎list-style: none‎ فلشِ پیش‌فرضِ مرورگر را رویِ ‎summary‎
+ * برمی‌دارد؛ فلشِ خودمان (SVG) جایگزینش می‌شود، پس دو فلش روی هم نمی‌آید.
+ */
+.zig-specs__group-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: var(--zig-specs-header-height, 81px);
+	padding-inline: 20px;
+	background: var(--zig-specs-header-bg);
+	color: var(--zig-specs-title-color);
+	border-bottom: var(--zig-specs-header-border-bottom-width, 0px) solid var(--zig-specs-header-border-bottom, transparent);
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+	transition: background-color .18s ease;
+}
+
+.zig-specs__group-title::-webkit-details-marker {
+	display: none;
+}
+
+/*
+ * باز: تقریباً همان سفید، فقط رگه‌ای یاسیِ خیلی‌کم — کلِ سرستون نباید
+ * خاکستری/بنفش شود؛ تنها نشانِ فعال‌بودن، رنگِ خودِ فلش است. ارتفاعِ
+ * حالتِ باز همیشه ۴px کمتر از حالتِ بسته می‌ماند (نسبتِ طرح)، حتی وقتی
+ * ارتفاعِ پایه از استایل تغییر کند — چون از رویِ همان متغیر با ‎calc‎
+ * حساب می‌شود، نه عددی جدا.
+ */
+.zig-specs__group[open] > .zig-specs__group-title {
+	min-height: calc(var(--zig-specs-header-height, 81px) - 4px);
+	background: var(--zig-specs-header-bg-open);
+	color: var(--zig-specs-title-color-open);
+	border-bottom: var(--zig-specs-divider-width, 1px) solid var(--zig-specs-divider-open);
+}
+
+details.zig-specs__group > .zig-specs__group-title:hover,
+details.zig-specs__group > .zig-specs__group-title:focus-visible {
+	background: var(--zig-specs-header-bg-hover);
+}
+
+details.zig-specs__group > .zig-specs__group-title:focus-visible {
+	outline: 2px solid var(--zig-specs-accent);
+	outline-offset: -2px;
+}
+
+.zig-specs__group-title-text {
+	font-weight: 700;
+	font-size: 15px;
+}
+
+/*
+ * فلش داخلِ یک نشانِ مربعیِ گردشده — نشانگرِ اصلیِ حالتِ «فعال»: مرزش
+ * فقط وقتی گروه باز است رنگِ اصلی می‌گیرد؛ خودِ ردیفِ سرستون بینِ باز و
+ * بسته یکسان می‌ماند، تا تنها یک نشانه برایِ «این باز است» وجود داشته
+ * باشد، نه دو تصمیمِ بصریِ رقیب.
+ */
+.zig-specs__chevron-badge {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--zig-specs-badge-size, 40px);
+	height: var(--zig-specs-badge-size, 40px);
+	border-radius: var(--zig-specs-badge-radius, 10px);
+	background: var(--zig-specs-badge-bg);
+	border-width: var(--zig-specs-badge-border-width, 1.5px);
+	border-style: solid;
+	border-color: var(--zig-specs-badge-border);
+	color: var(--zig-specs-badge-icon);
+	transition: border-color .18s ease, color .18s ease, background-color .18s ease;
+}
+
+.zig-specs__chevron {
+	width: var(--zig-specs-chevron-size, 16px);
+	height: var(--zig-specs-chevron-size, 16px);
+	transition: transform .18s ease;
+}
+
+/* details[open] یعنی باز است — فلش می‌چرخد تا «رو به بالا» بشود، و نشان رنگِ اصلی می‌گیرد */
+.zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron-badge {
+	background: var(--zig-specs-badge-bg-open);
+	border-color: var(--zig-specs-badge-border-open);
+	color: var(--zig-specs-badge-icon-open);
+}
+
+.zig-specs__group[open] > .zig-specs__group-title .zig-specs__chevron {
+	transform: rotate(180deg);
+}
+
+.zig-specs__list {
+	margin: 0;
+	padding: 0;
+	background: var(--zig-specs-body-bg, transparent);
+	/* پیش‌فرضِ بدونِ‌جاوااسکریپت: بلافاصله دیده می‌شود؛ JS این را برایِ fade-inِ ۴۵ms موقتاً می‌پوشاند */
+	opacity: 1;
+}
+
+/* بدونِ جاوااسکریپت (یا مرورگرِ بی‌WAAPI)، خودِ ‎<details>‎ نمایش/عدم‌نمایش را مدیریت می‌کند */
+.zig-specs__group:not([open]) > .zig-specs__list {
+	display: none;
+}
+
+/* داخلِ همان کارت بماند، نه flat رویِ پس‌زمینهٔ صفحه — جدولِ ردیف‌ها زیرِ سرستون، هنوز داخلِ همان مرز/گردیِ کارت */
+.zig-specs__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	min-height: 70px;
+	padding-inline: 20px;
+	background: var(--zig-specs-row-bg);
+	border-top: 1px solid var(--zig-specs-row-divider);
+	transition: background-color .15s ease;
+}
+
+.zig-specs__row:first-child {
+	border-top: 0;
+}
+
+/*
+ * Zebra: ردیفِ فرد از همان var پایه (‎--zig-specs-row-bg‎) می‌آید — کنترلِ
+ * قبلیِ «پس‌زمینهٔ ردیف» دوباره تعریف نشد، فقط زوج یک var مستقل گرفت.
+ * دیوایدر (‎border-top‎) کاملاً مستقل می‌ماند، چون این رگه فقط
+ * ‎background‎ را عوض می‌کند.
+ *
+ * ‎:hover‎ عمداً *بعد* از این رگه آمده: specificityِ هر دو یکی است
+ * (دو pseudo-class)، پس هرکدام دیرتر در همین فایل بیاید، رویِ ردیفِ
+ * زوج هم برنده می‌شود — بدونِ ‎!important‎.
+ */
+.zig-specs__row:nth-child(even) {
+	background: var(--zig-specs-row-bg-even);
+}
+
+.zig-specs__row:hover {
+	background: var(--zig-specs-row-bg-hover);
+}
+
+.zig-specs__label {
+	flex-shrink: 0;
+	color: var(--zig-specs-label-color);
+	font-size: 13.5px;
+	font-weight: 500;
+}
+
+.zig-specs__value {
+	margin: 0;
+	text-align: end;
+	overflow-wrap: anywhere;
+	color: var(--zig-specs-value-color);
+	font-weight: 600;
+	font-size: 13.5px;
+	/*
+	 * واحدهایِ لاتین («RPM»، «kg»، «cm»، «ATC») وسطِ رشته‌ای که در یک ظرفِ
+	 * RTL نشسته، بدونِ این می‌توانند برعکس چیده شوند — چون جهتشان از
+	 * رویِ جهتِ *ظرف* حساب می‌شود، نه از رویِ خودِ محتوا. ‎plaintext‎ یعنی
+	 * جهت از رویِ اولین کاراکترِ قویِ همان رشته تعیین شود.
+	 */
+	unicode-bidi: plaintext;
+}
+
+.zig-specs__notice {
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}
+
+/* ==========================================================================
+   نمایشِ قابلیت‌های محصول
+   ========================================================================== */
+
+
+/*
+ * این ویجت هیچ‌وقت پس‌زمینهٔ سکشن نیست — فقط تب‌ها و پنلِ داخلی
+ * self-contained استایل دارند. ‎.zig-feature‎ی ریشه هیچ background،
+ * padding، max-width یا دکورِ گریدی ندارد؛ آن‌ها را المنتور رویِ خودِ
+ * سکشن/کانتینر تنظیم می‌کند (یا حتی Advanced tabِ خودِ ویجت، که
+ * پیش‌فرض رویِ هر ویجتِ المنتور هست). اگر این‌جا هم background می‌گذاشتیم،
+ * ویجت رویِ هر سکشنی مثلِ یک جعبهٔ تیرهٔ مستقل می‌افتاد و رنگِ سکشنِ
+ * پشتش دیده نمی‌شد.
+ */
+.zig-feature {
+	--zig-feature-media-fr: 1fr;
+	--zig-feature-content-fr: 1.35fr;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--zig-feature-frame-bg, transparent);
+	backdrop-filter: blur(var(--zig-feature-frame-blur, 0px));
+	-webkit-backdrop-filter: blur(var(--zig-feature-frame-blur, 0px));
+}
+
+/* ---------------------------------------------------------------------
+ * معرفی
+ * ------------------------------------------------------------------- */
+
+.zig-feature__intro {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 32px;
+}
+
+.zig-feature__kicker {
+	color: #A78BFA;
+	font-size: 12.5px;
+	font-weight: 700;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+}
+
+.zig-feature__intro-title {
+	margin: 0;
+	color: #F5F5F8;
+	font-size: clamp(22px, 2.4vw, 30px);
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.zig-feature__intro-desc {
+	margin: 0;
+	color: #9A9CAE;
+	font-size: 15px;
+	line-height: 1.8;
+	max-width: 640px;
+}
+
+/* ---------------------------------------------------------------------
+ * ناوبری / تب‌ها
+ *
+ * تبِ فعال یک گرادیانِ بنفش با glowِ نرمِ پشتش دارد؛ تبِ غیرِفعال تیره و
+ * مینیمال با مرزِ خیلی‌ظریف — نه رقیبِ تبِ فعال، فقط یک پسِ‌زمینه‌یِ آرام.
+ * ------------------------------------------------------------------- */
+
+.zig-feature__nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 24px;
+	/* اگر پیکان‌ها نباشند یا سرریز نشود، خودِ ردیف کل عرض را می‌گیرد */
+	min-width: 0;
+}
+
+.zig-feature__tablist {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+	/* تک‌خطی، بدونِ wrap — دقیقاً همان چیزی که برایِ سرریز خواسته شده */
+	flex-wrap: nowrap;
+	scroll-behavior: smooth;
+}
+
+.zig-feature__tablist::-webkit-scrollbar {
+	display: none;
+}
+
+.zig-feature__tab {
+	position: relative;
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	min-height: 44px;
+	padding-inline: 18px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, .07);
+	background-color: #15151F;
+	color: rgba(245, 245, 248, .68);
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color .18s ease, background-image .18s ease, color .18s ease, border-color .18s ease, box-shadow .25s ease;
+}
+
+.zig-feature__tab:hover {
+	background-color: #1C1C2A;
+	color: #F5F5F8;
+}
+
+.zig-feature__tab:focus-visible {
+	outline: 2px solid #7B5CFF;
+	outline-offset: 2px;
+}
+
+/*
+ * سلکتورِ فعال عمداً هم کلاس هم ویژگیِ آریا را با هم می‌گیرد تا
+ * specificityاش از ‎:hover‎ بالاتر باشد — یعنی وقتی موس رویِ تبِ فعال می‌ماند،
+ * ظاهرِ «فعال» نمی‌شکند؛ بدونِ ‎!important‎ و بدونِ وابستگی به ترتیبِ
+ * قاعده‌ها. پس‌زمینه یک گرادیان است (دو کنترلِ رنگِ مستقل)، نه رنگِ تخت.
+ */
+.zig-feature__tab.is-active[aria-selected="true"] {
+	background-color: var(--zig-feature-tab-active-to, #6D3FFF);
+	background-image: linear-gradient(135deg, var(--zig-feature-tab-active-from, #8B5CFF), var(--zig-feature-tab-active-to, #6D3FFF));
+	border-color: transparent;
+	color: #FFFFFF;
+}
+
+/* glow پشتِ تبِ فعال — فقط سایه‌ای نرم، نه هاله‌ای که کل ردیف را مه‌آلود کند */
+.zig-feature:not(.zig-feature--no-glow) .zig-feature__tab.is-active[aria-selected="true"] {
+	box-shadow: 0 6px 24px -4px color-mix(in srgb, var(--zig-feature-glow-color, #7B5CFF) var(--zig-feature-glow-opacity, 55%), transparent);
+}
+
+.zig-feature__nav-arrow {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, .08);
+	background-color: #15151F;
+	color: rgba(245, 245, 248, .7);
+	cursor: pointer;
+	transition: background-color .18s ease, color .18s ease;
+}
+
+.zig-feature__nav-arrow:hover {
+	background-color: #1C1C2A;
+	color: #F5F5F8;
+}
+
+.zig-feature__nav-arrow:focus-visible {
+	outline: 2px solid #7B5CFF;
+	outline-offset: 2px;
+}
+
+/* فقط وقتی JS واقعاً سرریز را تشخیص می‌دهد نمایان می‌شود؛ پیش‌فرض پنهان تا از فلشِ بی‌فایده (بدونِ سرریز) جلوگیری شود */
+.zig-feature__nav-arrow {
+	display: none;
+}
+
+.zig-feature__nav.is-overflowing .zig-feature__nav-arrow {
+	display: inline-flex;
+}
+
+/* ---------------------------------------------------------------------
+ * پنل — کارتِ شیشه‌ای (Glassmorphism)
+ *
+ * ‎backdrop-filter‎ خودش شیشه‌ای می‌کند؛ گرادیانِ اولِ ‎background‎ فقط یک
+ * هایلایتِ خیلی‌کمِ لبهٔ بالا می‌سازد (لایهٔ دوم، زیرِ رنگِ اصلی) — با
+ * ‎box-shadow‎ رقابت نمی‌کند، پس کنترلِ «سایهٔ پنل» (Group_Control_Box_Shadow)
+ * می‌تواند کاملاً مستقل خودش را بنویسد بدونِ این‌که این هایلایت را پاک کند.
+ * ------------------------------------------------------------------- */
+
+.zig-feature__panels {
+	display: block;
+}
+
+.zig-feature__panel {
+	position: relative;
+	display: grid;
+	/*
+	 * واحدِ ‎fr‎ خودش داخلِ متغیر است (‎1fr‎، نه ‎1‎) — چون ‎var(--x)fr‎
+	 * (چسباندنِ واحد بعدِ فراخوانیِ var) نحوِ نامعتبرِ CSS است و مرورگر کلِ
+	 * این رگه را نادیده می‌گیرد؛ کنترلِ المنتور هم به همین دلیل مستقیم
+	 * ‎…fr‎ می‌نویسد، نه فقط عدد.
+	 *
+	 * ترتیبِ ستون‌ها عمداً «محتوا، رسانه» است، نه «رسانه، محتوا»: در
+	 * Gridِ راست‌به‌چپ، ستونِ *اولِ* تعریف‌شده در inline-start می‌نشیند —
+	 * یعنی سمتِ راست، برخلافِ Flexbox که این‌جا زیاد به آن تکیه کرده‌ایم.
+	 * محتوا باید سمتِ راست بنشیند، رسانه سمتِ چپ؛ پس اندازهٔ ستونِ محتوا
+	 * اول می‌آید. جای واقعیِ ‎.zig-feature__media‎/‎.zig-feature__content‎
+	 * هم با ‎order‎ زیرشان به همین ترتیب پین شده — مستقل از ترتیبِ DOM.
+	 */
+	grid-template-columns: minmax(0, var(--zig-feature-content-fr, 1.35fr)) minmax(0, var(--zig-feature-media-fr, 1fr));
+	column-gap: 40px;
+	align-items: center;
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, .05), transparent 45%);
+	background-color: var(--zig-feature-panel-bg, rgba(16, 16, 26, .55));
+	background-blend-mode: normal;
+	backdrop-filter: blur(var(--zig-feature-panel-blur, 20px));
+	-webkit-backdrop-filter: blur(var(--zig-feature-panel-blur, 20px));
+	border: 1px solid color-mix(in srgb, var(--zig-feature-panel-border-color, #FFFFFF) var(--zig-feature-panel-border-opacity, 10%), transparent);
+	border-radius: 28px;
+	padding: 32px;
+	box-shadow: 0 24px 60px -16px rgba(0, 0, 0, .55);
+	overflow: hidden;
+}
+
+.zig-feature__panel[hidden] {
+	display: none;
+}
+
+/* بدونِ تصویر: ستونِ محتوا کل عرض را می‌گیرد، نه نصفِ صفحه خالی */
+.zig-feature__panel--no-media {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+/*
+ * سقفِ ‎max-width‎ی پهن‌تر، مخصوصِ حالتِ بدونِ تصویر — وگرنه متن همان
+ * عرضِ باریکِ چیدمانِ دوستونه را نگه می‌دارد و بقیهٔ پنل بصری خالی
+ * به‌نظر می‌رسد، دقیقاً همان مشکلی که قرار بود حل شود. نه تا لبه، چون
+ * طولِ خطِ خیلی‌بلند خودش خوانایی را کم می‌کند.
+ *
+ * هر دو رگه (این‌جا و پایین‌تر رویِ ‎.zig-feature__content‎ِ عادی) از
+ * رویِ *همان* متغیر می‌خوانند — کنترلِ المنتور هم فقط همین متغیر را
+ * می‌نویسد، نه ‎max-width‎ را مستقیم. اگر مستقیم بود، این رگهٔ
+ * specificityـبالاتر همیشه برنده می‌شد، حتی وقتی ادمین برایِ آن کنترل
+ * عددِ دلخواهش را گذاشته. با این واسطه، وقتی ادمین چیزی می‌گذارد هر دو
+ * حالت همان عدد را می‌گیرند؛ فقط وقتی چیزی نگذاشته، سقفِ پیش‌فرضِ
+ * جداگانهٔ هرکدام اعمال می‌شود.
+ */
+.zig-feature__panel--no-media .zig-feature__content {
+	max-width: min(100%, var(--zig-feature-content-max, 720px));
+}
+
+/*
+ * پیش‌فرض بدونِ کارتِ روشن — عکسِ محصول مستقیم رویِ خودِ پنلِ تیره
+ * می‌نشیند (دقیقاً طبقِ Reference)، نه داخلِ یک جعبهٔ سفیدِ جدا. اگر
+ * ادمین کارتِ روشن بخواهد، همان کنترل‌های قبلی (پس‌زمینه/مرز/سایه) هنوز
+ * هستند — فقط پیش‌فرضشان دیگر «کارت» نیست.
+ *
+ * بافتِ شطرنجیِ خط‌خطیِ ظریف (‎repeating-linear-gradient‎ی مورب) پشتِ
+ * تصویر — یک لایهٔ ‎background-image‎ جدا از ‎background-color‎ی
+ * کنترل‌پذیر، پس با هم تداخل ندارند. فاصلهٔ داخلیِ پیش‌فرض هم برگشت
+ * (نه صفر) تا این بافت واقعاً دورِ تصویر دیده شود، نه زیرش قایم بماند
+ * — بدونِ پس‌زمینهٔ توپر، این هنوز «کارت» نیست، فقط یک سطحِ تکنیکال.
+ */
+.zig-feature__media {
+	position: relative;
+	z-index: 1;
+	order: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: transparent;
+	background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 10px);
+	border-radius: 0;
+	overflow: visible;
+	padding: 20px;
+	min-width: 0;
+}
+
+.zig-feature__media img {
+	display: block;
+	width: auto;
+	height: auto;
+	max-width: 100%;
+	max-height: 360px;
+	object-fit: contain;
+}
+
+.zig-feature__content {
+	position: relative;
+	z-index: 1;
+	order: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	max-width: var(--zig-feature-content-max, 480px);
+	min-width: 0;
+	/*
+	 * پنل با ‎align-items: center‎ عمودی وسط‌چین می‌شود، اما محتوا معمولاً
+	 * از تصویر کوتاه‌تر است — نتیجه‌اش این بود که متن در میانهٔ ارتفاعِ
+	 * پنل شناور می‌ماند. اینجا فقط خودِ ستونِ محتوا را به بالای Grid سنجاق
+	 * می‌کنیم (‎align-self‎، نه تغییرِ ‎align-items‎ی کلِ پنل)، تا ستونِ
+	 * رسانه هم‌چنان طبقِ رفتارِ قبلی وسط بماند.
+	 */
+	align-self: start;
+}
+
+.zig-feature__meta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.zig-feature__index {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 34px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	background-color: #7B5CFF;
+	color: #FFFFFF;
+	font-size: 12.5px;
+	font-weight: 700;
+	unicode-bidi: plaintext;
+}
+
+/* glow پشتِ بجِ شماره — همان رنگ/شدتِ مشترکِ glow، نه کنترلِ جداگانه */
+.zig-feature:not(.zig-feature--no-glow) .zig-feature__index {
+	box-shadow: 0 0 18px 1px color-mix(in srgb, var(--zig-feature-glow-color, #7B5CFF) var(--zig-feature-glow-opacity, 55%), transparent);
+}
+
+.zig-feature__label {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 16px;
+	border-radius: 999px;
+	background-color: rgba(255, 255, 255, .05);
+	color: #B7B8C6;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.zig-feature__feature-title {
+	margin: 0;
+	color: #F5F5F8;
+	font-size: clamp(20px, 2vw, 28px);
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.zig-feature__feature-desc {
+	margin: 0;
+	color: #9A9CAE;
+	font-size: 15px;
+	line-height: 1.8;
+	/* واحدهایِ لاتینِ احتمالی وسطِ متنِ فارسی، مثلِ مقادیرِ فنی، جهتشان خراب نشود */
+	unicode-bidi: plaintext;
+}
+
+/* ---------------------------------------------------------------------
+ * Glow — فقط لکه‌های نرمِ محلی، هر کدام تویِ محدودهٔ خودشان
+ *
+ * دو ‎span‎ی واقعی (نه ‎::before/::after‎) تویِ هر پنل — یکی پشتِ محتوا،
+ * یکی گوشهٔ رسانه — چون JS باید بتواند با WAAPI موقعِ سوییچِ تب محوشان
+ * کند، و پشتیبانیِ ‎element.animate()‎ رویِ pseudo-element هنوز همه‌جا
+ * یکدست نیست. اگر «glow محلی» خاموش باشد، PHP اصلاً این spanها را چاپ
+ * نمی‌کند — نه این‌که با CSS پنهانشان کند.
+ *
+ * فقط ‎opacity‎/‎transform‎ پالس می‌شوند (نه ‎filter‎/‎background‎) تا
+ * pulse رویِ GPU composite شود و مرورگر مجبور به repaintِ پیوسته نباشد.
+ */
+.zig-feature__glow {
+	position: absolute;
+	z-index: 0;
+	border-radius: 50%;
+	pointer-events: none;
+	background: radial-gradient(circle, var(--zig-feature-glow-color, #7B5CFF), transparent 72%);
+	filter: blur(var(--zig-feature-glow-blur, 60px));
+	opacity: var(--zig-feature-glow-opacity, 55%);
+}
+
+/*
+ * ‎inset-inline-start‎ در آرایشِ راست‌به‌چپ یعنی سمتِ راست — نه
+ * ‎inset-inline-end‎ (که سمتِ چپ می‌شود). این لکه باید بالا-راست
+ * بنشیند، پس از همین سمت شروع می‌شود.
+ */
+.zig-feature__glow--content {
+	width: var(--zig-feature-glow-spread, 140px);
+	height: var(--zig-feature-glow-spread, 140px);
+	top: 6%;
+	inset-inline-start: 4%;
+}
+
+/*
+ * لکهٔ رسانه به‌شکلِ یک بیضیِ پهن و کوتاه است، نه دایره — دقیقاً همان
+ * «نورِ کفِ» زیرِ محصول در Reference، نه یک لکهٔ گوشه‌ایِ کوچک.
+ */
+.zig-feature__glow--media {
+	width: calc(var(--zig-feature-glow-spread, 140px) * 1.4);
+	height: calc(var(--zig-feature-glow-spread, 140px) * .5);
+	bottom: 2%;
+	inset-inline-start: 6%;
+}
+
+@keyframes zig-feature-glow-pulse {
+	0%, 100% { opacity: var(--zig-feature-glow-opacity, 55%); transform: scale(1); }
+	50%      { opacity: calc(var(--zig-feature-glow-opacity, 55%) * .7); transform: scale(1.08); }
+}
+
+/*
+ * لکهٔ محتوا بینِ چهار گوشهٔ پنل می‌گردد — بالا-راست (شروع) ← بالا-چپ ←
+ * پایین-چپ ← پایین-راست ← برگشت. ‎opacity‎ عمداً اینجا نیست — همان
+ * ‎opacity: var(--zig-feature-glow-opacity)‎ِ پایه و انیمیشنِ ورودِ
+ * WAAPI (هنگامِ سوییخِ تب) کافی‌اند؛ اگر این کی‌فریم‌ها هم opacity را
+ * دست می‌زدند، درست همان لحظه‌ای که WAAPI با ‎cancel()‎ رها می‌شود یک
+ * جهش/فلاشِ ریز پیش می‌آمد.
+ *
+ * توقفِ کوتاه رویِ هر گوشه (پله‌هایِ نامساوی: ۸٪/۳۰٪/۳۸٪/...) به‌جایِ
+ * فاصله‌هایِ مساویِ ۲۵٪-۲۵٪، همراه با ‎ease-in-out‎، یعنی سرعتِ حرکت بینِ
+ * گوشه‌ها ثابت نیست — «سرعتِ متغیر»ِ خواسته‌شده، بدونِ نیاز به چند
+ * انیمیشنِ جدا.
+ *
+ * درصدها به‌جایِ ‎transform: translate()‎ عمداً انتخاب شدند: ‎top‎/
+ * ‎inset-inline-start‎ به اندازهٔ *پنل* نسبی‌اند، نه اندازهٔ خودِ لکه —
+ * پس رویِ هر عرض/ارتفاعِ پنلی درست کار می‌کند، حتی اگر پرفورمنسش
+ * به‌اندازهٔ transformِ خالص GPU-friendly نباشد. برایِ یک لکهٔ کوچک و
+ * کند این معاوضه به‌صرفه است.
+ */
+@keyframes zig-feature-glow-orbit {
+	0%, 8%   { top: 6%;  inset-inline-start: 4%;  transform: scale(1); }
+	30%      { top: 6%;  inset-inline-start: 70%; transform: scale(1.1); }
+	38%      { top: 6%;  inset-inline-start: 70%; transform: scale(1); }
+	60%      { top: 62%; inset-inline-start: 70%; transform: scale(1.08); }
+	68%      { top: 62%; inset-inline-start: 70%; transform: scale(1); }
+	92%      { top: 62%; inset-inline-start: 4%;  transform: scale(1.06); }
+	100%     { top: 6%;  inset-inline-start: 4%;  transform: scale(1); }
+}
+
+/*
+ * پالس/گردشِ خیلی‌کند و ملایم («living light») — فقط وقتی هم کاربر
+ * حرکتِ کم را ترجیح نداده، هم گلوی متحرک از استایل خاموش نشده. لکهٔ
+ * محتوا می‌گردد (‎orbit‎)؛ لکهٔ رسانه — که خودش «نورِ کفِ» ثابتِ زیرِ
+ * محصول است — همان پالسِ سادهٔ قبلی را نگه می‌دارد.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	.zig-feature:not(.zig-feature--no-glow-animate) .zig-feature__glow--media {
+		animation: zig-feature-glow-pulse var(--zig-feature-glow-speed, 5s) ease-in-out infinite;
+	}
+
+	.zig-feature:not(.zig-feature--no-glow-animate) .zig-feature__glow--content {
+		animation: zig-feature-glow-orbit calc(var(--zig-feature-glow-speed, 5s) * 3) ease-in-out infinite;
+	}
+}
+
+/* ==========================================================================
+   گالریِ ویدئویِ محصول
+   ========================================================================== */
+
+.zig-product-video__notice {
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}
+
+.zig-product-video {
+	--zig-pv-max-width: 1280px;
+	--zig-pv-sidebar-width: 320px;
+	--zig-pv-gap: 24px;
+	--zig-pv-player-min-h: 500px;
+	--zig-pv-player-min-h-mobile: 300px;
+	--zig-pv-player-radius: 16px;
+	--zig-pv-primary: #5B21B6;
+	--zig-pv-primary-soft: #F2ECFF;
+	--zig-pv-active-bg: #F2ECFF;
+	--zig-pv-active-border: #5B21B6;
+	--zig-pv-card-border: #E2E7F0;
+	--zig-pv-card-bg: #FFFFFF;
+	--zig-pv-title: #1F2937;
+	--zig-pv-meta: #6B7280;
+	--zig-pv-player-bg-from: #1B1030;
+	--zig-pv-player-bg-to: #050308;
+	--zig-pv-transition: 180ms;
+	display: grid;
+	/*
+	 * ستونِ *اولِ* تعریف‌شده در Gridِ راست‌به‌چپ سمتِ راستِ صفحه می‌نشیند.
+	 * طرحِ مرجع صراحتاً می‌خواهد لیست چپ باشد و پلیر راست، مستقل از جهتِ
+	 * کلیِ RTL؛ پس ستونِ پلیر (‎1fr‎) اول تعریف شده. چون پلیر در DOM هم
+	 * قبل از سایدبار می‌آید، بدونِ نیاز به ‎order‎ همین ترتیب به‌طورِ
+	 * طبیعی برقرار می‌شود — هم در چیدمانِ دوستونهٔ دسکتاپ هم در پشته‌شدنِ
+	 * تک‌ستونهٔ موبایل («اول پلیر، بعد لیست»).
+	 */
+	grid-template-columns: minmax(0, 1fr) var(--zig-pv-sidebar-width);
+	gap: var(--zig-pv-gap);
+	max-width: var(--zig-pv-max-width);
+	margin: 0 auto;
+	direction: rtl;
+}
+
+@media (max-width: 767px) {
+	.zig-product-video {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 14px;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * پلیر
+ * ------------------------------------------------------------------- */
+
+.zig-product-video__player {
+	position: relative;
+	min-height: var(--zig-pv-player-min-h);
+	border-radius: var(--zig-pv-player-radius);
+	overflow: hidden;
+	background-image: linear-gradient(135deg, var(--zig-pv-player-bg-from), var(--zig-pv-player-bg-to));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	isolation: isolate;
+	box-shadow: 0 24px 60px -34px rgba(17, 10, 40, .72);
+}
+
+@media (max-width: 767px) {
+	.zig-product-video__player {
+		min-height: var(--zig-pv-player-min-h-mobile);
+	}
+}
+
+.zig-product-video__video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	/*
+	 * ویدئوهایِ عمودی باید بدونِ برشِ مخرب دیده شوند. ‎contain‎ تصویر را
+	 * کامل درونِ قاب نگه می‌دارد و حاشیه‌هایِ اضافه با پس‌زمینهٔ تیرهٔ
+	 * پلیر پر می‌شوند — نه کشیده‌شدن یا برش.
+	 */
+	object-fit: contain;
+	background: #000;
+	direction: ltr;
+}
+
+/*
+ * اورلیِ بنفش/تیرهٔ کنترل‌شده رویِ ویدئو/پوستر — نه یک لایهٔ سیاهِ تخت،
+ * یک گرادیانِ ملایم که پایینِ قاب کمی تیره‌تر می‌شود، دقیقاً طبقِ طرحِ
+ * مرجع. ‎::after‎، نه یک ‎<span>‎ی جدا: کاملاً تزئینی و ثابت است.
+ */
+.zig-product-video__player::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: rgba(5, 3, 8, .2);
+	pointer-events: none;
+	z-index: 1;
+	transition: opacity var(--zig-pv-transition) ease;
+}
+
+.zig-product-video__play {
+	position: relative;
+	z-index: 2;
+	width: 68px;
+	height: 68px;
+	border-radius: 50%;
+	background-color: rgba(255, 255, 255, .96);
+	color: var(--zig-pv-primary);
+	border: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	font-size: 24px;
+	box-shadow: 0 10px 30px -6px rgba(0, 0, 0, .55);
+	transition: opacity var(--zig-pv-transition) ease, transform var(--zig-pv-transition) ease, background-color var(--zig-pv-transition) ease;
+	overflow: hidden;
+}
+
+.zig-product-video__play-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background-color: var(--zig-pv-primary);
+	color: #FFFFFF;
+	font-size: 16px;
+}
+
+.zig-product-video__play-icon svg {
+	/* مثلثِ پخش بصری کمی به چپِ مرکزِ هندسی می‌چسبد؛ این جابه‌جاییِ ظریف واقعاً وسط‌چینش می‌کند */
+	margin-inline-start: 2px;
+}
+
+.zig-product-video__play-label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.zig-product-video__play:hover {
+	transform: scale(1.05);
+	background-color: #FFFFFF;
+}
+
+.zig-product-video__play:hover .zig-product-video__play-icon {
+	background-color: color-mix(in srgb, var(--zig-pv-primary) 85%, #4C1D95);
+}
+
+.zig-product-video__play:focus-visible {
+	outline: 2px solid #FFFFFF;
+	outline-offset: 3px;
+}
+
+.zig-product-video__player.has-started::after,
+.zig-product-video__player.has-started .zig-product-video__play,
+.zig-product-video__player.has-started .zig-product-video__duration {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.zig-product-video__duration {
+	position: absolute;
+	z-index: 2;
+	top: 14px;
+	/* راستِ فیزیکی در RTL: inset-inline-start، نه inset-inline-end */
+	inset-inline-end: 14px;
+	background-color: rgba(0, 0, 0, .65);
+	color: #FFFFFF;
+	border-radius: 8px;
+	padding: 6px 11px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	pointer-events: none;
+	transition: opacity var(--zig-pv-transition) ease;
+}
+
+.zig-product-video__current-info {
+	display: none;
+}
+
+/* ---------------------------------------------------------------------
+ * سایدبار — لیستِ ویدئوها
+ * ------------------------------------------------------------------- */
+
+.zig-product-video__sidebar {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.zig-product-video__list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-height: var(--zig-pv-player-min-h);
+	overflow-y: auto;
+	padding: 2px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--zig-pv-card-border) transparent;
+}
+
+.zig-product-video__list::-webkit-scrollbar {
+	width: 6px;
+}
+
+.zig-product-video__list::-webkit-scrollbar-thumb {
+	background-color: var(--zig-pv-card-border);
+	border-radius: 3px;
+}
+
+.zig-product-video__card {
+	appearance: none;
+	-webkit-appearance: none;
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 10px;
+	position: relative;
+	border-radius: 13px;
+	background-color: var(--zig-pv-card-bg);
+	border: 1px solid var(--zig-pv-card-border);
+	transition: background-color var(--zig-pv-transition) ease, border-color var(--zig-pv-transition) ease, box-shadow var(--zig-pv-transition) ease, transform var(--zig-pv-transition) ease;
+}
+
+.zig-product-video__card:hover {
+	border-color: color-mix(in srgb, var(--zig-pv-primary) 35%, var(--zig-pv-card-border));
+	background-color: color-mix(in srgb, var(--zig-pv-primary-soft) 30%, var(--zig-pv-card-bg));
+	transform: translateY(-1px);
+	box-shadow: 0 6px 18px -10px rgba(17, 10, 40, .28);
+}
+
+.zig-product-video__card:focus-visible {
+	outline: 2px solid var(--zig-pv-primary);
+	outline-offset: 2px;
+}
+
+/*
+ * کارتِ فعال — بلافاصله شناسایی‌پذیر: پس‌زمینهٔ بنفشِ روشن، حاشیهٔ بنفش،
+ * عنوانِ پررنگ، و نشانگرِ کناری در سمتِ منطقیِ آغاز (راست در RTL).
+ * فقط بر رنگ تکیه نمی‌کند: نشانگرِ نواری هم هست.
+ */
+.zig-product-video__card.is-active {
+	background-color: var(--zig-pv-active-bg);
+	border-color: var(--zig-pv-active-border);
+	box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--zig-pv-primary) 50%, transparent);
+}
+
+.zig-product-video__card.is-active::after {
+	content: '';
+	position: absolute;
+	inset-inline-start: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 4px;
+	height: 60%;
+	border-radius: 3px;
+	background-color: var(--zig-pv-primary);
+}
+
+.zig-product-video__card.is-active:hover {
+	transform: none;
+}
+
+/* نشانِ معناییِ ویدئو */
+.zig-product-video__icon {
+	flex: 0 0 auto;
+	width: 48px;
+	height: 48px;
+	border-radius: 11px;
+	background-color: var(--zig-pv-primary-soft);
+	color: var(--zig-pv-primary);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 24px;
+	transition: background-color var(--zig-pv-transition) ease, color var(--zig-pv-transition) ease, transform var(--zig-pv-transition) ease;
+}
+
+.zig-product-video__icon svg {
+	display: block;
+}
+
+.zig-product-video__card:hover .zig-product-video__icon,
+.zig-product-video__card.is-active .zig-product-video__icon {
+	background-color: var(--zig-pv-primary);
+	color: #FFFFFF;
+}
+
+.zig-product-video__body {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.zig-product-video__title {
+	display: block;
+	color: var(--zig-pv-title);
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.45;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	white-space: normal;
+}
+
+.zig-product-video__card.is-active .zig-product-video__title {
+	color: var(--zig-pv-primary);
+	font-weight: 700;
+}
+
+.zig-product-video__meta {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	align-self: flex-start;
+	color: var(--zig-pv-meta);
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.zig-product-video__clock {
+	display: inline-flex;
+	font-size: 15px;
+}
+
+.zig-product-video__description {
+	display: none;
+	color: var(--zig-pv-meta);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.7;
+}
+
+.zig-product-video__card.is-active .zig-product-video__description {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------
+ * موبایل — اطلاعاتِ فعال و فهرستِ عمودیِ فشرده
+ * ------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+	.zig-product-video__current-info {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 16px;
+		border: 1px solid color-mix(in srgb, var(--zig-pv-primary) 16%, transparent);
+		border-radius: 15px;
+		background-color: var(--zig-pv-primary-soft);
+		text-align: start;
+	}
+
+	.zig-product-video__current-info[hidden],
+	.zig-product-video__current-title[hidden],
+	.zig-product-video__current-description[hidden] {
+		display: none;
+	}
+
+	.zig-product-video__current-title {
+		color: var(--zig-pv-primary);
+		font-size: 15px;
+		font-weight: 800;
+		line-height: 1.5;
+	}
+
+	.zig-product-video__current-description {
+		color: var(--zig-pv-meta);
+		font-size: 13px;
+		line-height: 1.7;
+	}
+
+	.zig-product-video__list {
+		flex-direction: column;
+		gap: 10px;
+		max-height: none;
+		overflow: visible;
+		padding: 2px;
+	}
+
+	.zig-product-video__card {
+		width: 100%;
+		min-height: 68px;
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 12px;
+	}
+
+	.zig-product-video__card.is-active::after {
+		inset-inline-start: 0;
+		inset-inline-end: auto;
+		top: 50%;
+		bottom: auto;
+		width: 3px;
+		height: 54%;
+		transform: translateY(-50%);
+	}
+
+	.zig-product-video__icon {
+		width: 46px;
+		height: 46px;
+		border-radius: 11px;
+		font-size: 23px;
+	}
+
+	.zig-product-video__body {
+		gap: 2px;
+	}
+
+	.zig-product-video__card.is-active .zig-product-video__description {
+		display: none;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * تک‌ویدئو — سایدبار حذف می‌شود؛ پلیر تنهایی
+ * ------------------------------------------------------------------- */
+
+.zig-product-video--single .zig-product-video__player {
+	min-height: var(--zig-pv-player-min-h);
+}
+
+@media (max-width: 767px) {
+	.zig-product-video--single .zig-product-video__player {
+		min-height: var(--zig-pv-player-min-h-mobile);
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * حرکتِ کم‌شده
+ * ------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-product-video__play,
+	.zig-product-video__card,
+	.zig-product-video__icon {
+		transition: none;
+	}
+
+	.zig-product-video__play:hover,
+	.zig-product-video__card:hover {
+		transform: none;
+	}
+}
+
+/* ==========================================================================
+   اسناد قابل دانلود
+   ========================================================================== */
+
+.zig-documents {
+	display: grid;
+	grid-template-columns: repeat(var(--zig-documents-cols, 3), minmax(0, 1fr));
+	gap: 24px;
+	max-width: 1280px;
+}
+
+/*
+ * کارت دو ردیف دارد: بالا (آیکون + عنوان + نشان‌ها) و پایین (متادیتا + دانلود).
+ */
+.zig-documents__card {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	box-sizing: border-box;
+	padding: 22px 24px;
+	color: inherit;
+	text-decoration: none;
+	text-align: start;
+	background-color: var(--zig-documents-card-bg, #ffffff);
+	border: 1px solid var(--zig-documents-card-border-color, #e2e7f0);
+	border-radius: var(--zig-documents-card-radius, 16px);
+	box-shadow: var(--zig-documents-card-shadow, 0 18px 45px rgba(16, 24, 40, 0.06));
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: color, background-color, border-color, box-shadow, transform;
+	/*
+	 * ‎--zig-box-translate-y‎/‎--zig-box-scale‎ فقط رویِ حالتِ هاور/فوکوسِ Box
+	 * trait مقدار می‌گیرند (add_box_style_tabs)؛ اینجا همیشه خوانده می‌شوند
+	 * تا آن دو کنترلِ استایل واقعاً اثر داشته باشند — نه یک translateY
+	 * ثابت که کنترل‌ها را بی‌اثر می‌کند.
+	 */
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+}
+
+.zig-documents__card:hover,
+.zig-documents__card:focus-visible {
+	box-shadow: var(--zig-documents-card-shadow-hover, 0 22px 55px rgba(16, 24, 40, 0.09));
+	border-color: var(--zig-documents-card-border-color-hover, #cfc7ff);
+}
+
+/* ردیفِ بالا: آیکون + عنوان + نشان‌ها */
+.zig-documents__top {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+}
+
+/* ردیفِ پایین: متادیتا + دکمهٔ دانلود — در دو طرفِ خط */
+.zig-documents__bottom {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.zig-documents__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background-color: var(--zig-documents-icon-bg, #f3ecff);
+	color: var(--zig-documents-icon-color, #5b21b6);
+}
+
+.zig-documents__icon svg {
+	width: 26px;
+	height: 26px;
+	display: block;
+}
+
+.zig-documents__body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.zig-documents__title {
+	font-weight: 800;
+	font-size: 1rem;
+	line-height: 1.6;
+	color: var(--zig-documents-title-color, #151823);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	transition: color var(--zig-transition, 250ms);
+}
+
+/*
+ * نشان‌های مشخصات (فرمت/زبان/نسخه).
+ */
+.zig-documents__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-documents__meta-item {
+	display: inline-flex;
+	align-items: center;
+	height: 26px;
+	padding: 0 10px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: 8px;
+	background-color: var(--zig-documents-meta-bg, #f6f7fb);
+	border: 1px solid var(--zig-documents-meta-border-color, #e5e7ef);
+	color: var(--zig-documents-meta-color, #667085);
+	overflow-wrap: anywhere;
+}
+
+/* تاریخ و حجم — ردیفِ پایین. */
+.zig-documents__meta-plain {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--zig-documents-meta-plain-color, #7a8190);
+	line-height: 1.4;
+}
+
+/* دکمهٔ دانلود — گرادیانِ بنفش. */
+.zig-documents__download {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	flex: none;
+	height: 42px;
+	min-width: 104px;
+	padding: 0 16px;
+	font-size: 0.875rem;
+	font-weight: 800;
+	border-radius: 10px;
+	background: var(--zig-documents-download-bg, linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%));
+	border: none;
+	color: var(--zig-documents-download-color, #ffffff);
+	box-shadow: var(--zig-documents-download-shadow, 0 10px 24px rgba(91, 33, 182, 0.24));
+	transition: transform var(--zig-transition, 250ms), box-shadow var(--zig-transition, 250ms);
+}
+
+.zig-documents__download:hover {
+	transform: translateY(-1px);
+	box-shadow: var(--zig-documents-download-shadow-hover, 0 14px 30px rgba(91, 33, 182, 0.30));
+}
+
+.zig-documents__download svg {
+	width: 16px;
+	height: 16px;
+}
+
+@media (max-width: 1023px) {
+	.zig-documents {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 639px) {
+	.zig-documents {
+		grid-template-columns: 1fr;
+	}
+}
+/* Software Info Table --------------------------------------------------- */
+.zig-software-info-table {
+    --zig-info-label-width: 220px;
+    --zig-info-row-x: 24px;
+    --zig-info-row-y: 17px;
+    --zig-info-row-min-height: 60px;
+    direction: rtl;
+    inline-size: 100%;
+    min-inline-size: 0;
+}
+
+.zig-software-info-table__list {
+    margin: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e5e7ef;
+    border-radius: 16px;
+}
+
+.zig-software-info-table .zig-software-info-table__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--zig-info-label-width));
+    gap: 0;
+    align-items: center;
+    min-block-size: var(--zig-info-row-min-height);
+    direction: ltr;
+    padding-block: var(--zig-info-row-y);
+    padding-inline: 0;
+    border-block-end: 1px solid #eceff4;
+}
+
+.zig-software-info-table__row:last-child { border-block-end: 0; }
+.zig-software-info-table__row:nth-child(odd) { background-color: #fbfbfc; }
+.zig-software-info-table__label,
+.zig-software-info-table__value {
+    box-sizing: border-box;
+    min-inline-size: 0;
+    padding-inline: var(--zig-info-row-x);
+}
+.zig-software-info-table__label {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    direction: rtl;
+    text-align: right;
+    color: #6f7788;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+.zig-software-info-table .zig-software-info-table__value {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    direction: rtl;
+    text-align: right;
+    justify-self: stretch;
+    inline-size: 100%;
+    margin: 0;
+    color: #252b35;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.zig-software-info-table__value bdi { unicode-bidi: isolate; }
+.zig-software-info-table__separator { white-space: pre-wrap; }
+
+@media (max-width: 767px) {
+    .zig-software-info-table {
+        --zig-info-row-x: 18px;
+        --zig-info-row-y: 15px;
+    }
+    .zig-software-info-table .zig-software-info-table__row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+        direction: rtl;
+        align-items: start;
+    }
+    .zig-software-info-table .zig-software-info-table__label,
+    .zig-software-info-table .zig-software-info-table__value {
+        grid-column: 1;
+        direction: rtl;
+        text-align: right;
+    }
+    .zig-software-info-table .zig-software-info-table__label { grid-row: 1; }
+    .zig-software-info-table .zig-software-info-table__value { grid-row: 2; }
+}
+
+/* ==========================================================================
+   توضیحات
+   ========================================================================== */
+
+.zig-description {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	transform: translateY(var(--zig-box-translate-y, 0)) scale(var(--zig-box-scale, 1));
+	transition-duration: var(--zig-transition, 250ms);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: background-color, border-color, box-shadow, transform;
+}
+
+.zig-description__head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-block-end: 16px;
+}
+
+.zig-description__icon {
+	display: block;
+	flex: none;
+	width: 24px;
+	height: 24px;
+	object-fit: contain;
+}
+
+.zig-description__heading {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 800;
+	line-height: 1.4;
+	color: var(--zig-description-heading-color, #151823);
+}
+
+/*
+ * بدنه از ‎the_content‎/فیلدِ سفارشی می‌آید — عمداً استایلِ عمومیِ محتوایِ
+ * HTMLِ اختیاری (پاراگراف، فهرست، لینک، تصویر، نقل‌قول)، نه چیزِ اختصاصی.
+ */
+.zig-description__body {
+	font-size: 1rem;
+	line-height: 1.9;
+	color: var(--zig-description-body-color, #33394a);
+	overflow-wrap: anywhere;
+}
+
+.zig-description__body > * {
+	margin-block: 0;
+}
+
+.zig-description__body > * + * {
+	margin-block-start: var(--zig-description-p-gap, 16px);
+}
+
+.zig-description__body a {
+	color: var(--zig-description-link-color, #5b21b6);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.zig-description__body ul,
+.zig-description__body ol {
+	padding-inline-start: 1.4em;
+	padding-inline-end: 0;
+}
+
+.zig-description__body li + li {
+	margin-block-start: var(--zig-description-li-gap, 8px);
+}
+
+.zig-description__body img {
+	max-inline-size: 100%;
+	block-size: auto;
+	border-radius: 8px;
+}
+
+.zig-description__body blockquote {
+	margin-inline: 0;
+	margin-block: 16px;
+	padding-inline-start: 16px;
+	padding-inline-end: 0;
+	border-inline-start: 3px solid var(--zig-description-quote-border, #e2e7f0);
+	color: var(--zig-description-quote-color, #667085);
+}
+
+/*
+ * ‎h2‎ تا ‎h6‎ داخلِ بدنه (نه ‎.zig-description__heading‎ خودِ ویجت که در
+ * DOM بیرونِ بدنه است). فاصلهٔ پیش‌فرضِ هرکدام همان چیزی است که کنترل‌هایِ
+ * استایل هم پیش‌فرض گرفته‌اند (بالا ۲۰px، بقیه صفر) — این‌جا فقط یک
+ * شبکهٔ ایمنی برایِ زمانی است که ویجت بیرونِ المنتورِ واقعی رندر شود.
+ */
+.zig-description__body h2,
+.zig-description__body h3,
+.zig-description__body h4,
+.zig-description__body h5,
+.zig-description__body h6 {
+	margin-block: 20px 0;
+	line-height: 1.4;
+}
+
+/* بولد بدونِ کنترل هم باید از رنگِ متنِ اطرافش قابلِ تمایز بماند */
+.zig-description__body strong,
+.zig-description__body b {
+	font-weight: 700;
+}
+
+.zig-description__body a {
+	transition: color 200ms ease;
+}
+
+/*
+ * جدولی که از ‎the_content‎/شورت‌کد می‌آید — افزونه خودش جدول نمی‌سازد،
+ * فقط قابل‌استایل نگه‌اش می‌دارد. ‎border-collapse: collapse‎ برایِ
+ * خطوطِ تک‌پیکسلیِ تمیز بینِ سلول‌ها، نه دوتایی.
+ */
+.zig-description__body table {
+	inline-size: 100%;
+	border-collapse: collapse;
+	margin-block: 16px;
+	border: 1px solid var(--zig-description-table-border, #e2e7f0);
+}
+
+.zig-description__body th,
+.zig-description__body td {
+	border: 1px solid var(--zig-description-table-border, #e2e7f0);
+	padding: 10px 12px;
+	text-align: start;
+	vertical-align: top;
+}
+
+.zig-description__body th {
+	background-color: var(--zig-description-th-bg, #f6f7fb);
+	font-weight: 700;
+}
+
+.zig-description__notice {
+	padding: 12px 16px;
+	border: 1px dashed #cdbaf8;
+	border-radius: 10px;
+	color: #5f27cf;
+	font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   سرچ
+   ========================================================================== */
+
+/*
+ * دربارهٔ وزنِ انتخاب‌گرها — مهم‌ترین تصمیمِ این بخش، و چیزی که یک‌بار
+ * شکست و باعث شد ویجت رویِ سایتِ واقعی شبیهِ طرح در نیاید:
+ *
+ * قواعدِ اینجا نمی‌توانند تک‌کلاسی باشند. یک ورودیِ ساده در وردپرس هم‌زمان
+ * زیرِ آتشِ چند قاعدهٔ دیگر است — ‎.elementor input[type="text"]‎،
+ * ‎.woocommerce input.input-text‎، استایلِ فرمِ خودِ قالب — که همه
+ * ‎(0,1,1)‎ یا بیشترند و از ‎.zig-search__input‎ی ‎(0,1,0)‎ می‌چربند.
+ * نتیجه‌اش این بود: قرصِ خاکستریِ طرح سر جایش می‌ماند ولی داخلش یک کادرِ
+ * سفیدِ حاشیه‌دارِ قالب می‌نشست، و لینک‌ها آبیِ زیرخط‌دار می‌شدند.
+ *
+ * پس هر قاعده با ریشهٔ ‎.zig-search‎ شروع می‌شود و روی تگ‌هایی که قالب‌ها
+ * واقعاً استایلشان می‌دهند (‎input‎/‎button‎/‎a‎/‎p‎) نامِ تگ هم به کلاس
+ * می‌چسبد.
+ *
+ * سقفِ این بازه ‎(0,3,2)‎ است و این عدد از یک شکستِ واقعی درآمده، نه از
+ * حدس. «استایلِ سراسریِ» المنتور (Theme Style) برایِ فیلدهایِ فرم این را
+ * تولید می‌کند:
+ *
+ *   .elementor-kit-8 input:not([type="button"]):not([type="submit"])
+ *
+ * که ‎:not()‎ وزنِ آرگومانش را می‌گیرد، پس می‌شود ‎(0,3,1)‎ — دقیقاً
+ * برابرِ ‎.zig-search .zig-search__field input.zig-search__input‎. در
+ * تساوی، ترتیبِ بارگذاری تصمیم می‌گیرد و شیتِ کیت بعد از ما می‌آید؛
+ * یعنی نه‌فقط ‎box-shadow‎، که پس‌زمینه و حاشیه و پدینگِ کیت هم رویِ
+ * ورودی می‌نشست. برایِ همین ‎.zig-search__field‎ نامِ تگش (‎form‎) را
+ * گرفت: یک عنصرِ بیشتر، ‎(0,3,2)‎، و تساوی شکست.
+ *
+ * پس بازهٔ کاری ‎(0,2,0)‎ تا ‎(0,3,2)‎ است:
+ *
+ *   • از قواعدِ قالب و کیت (تا ‎(0,3,1)‎) قوی‌تر است → ظاهرِ طرح برنده
+ *     می‌شود.
+ *   • از کنترل‌هایِ المنتور ضعیف‌تر است — آن‌ها ‎{{WRAPPER}} .x‎ یعنی
+ *     ‎(0,4,0)‎، و در مقایسه اول تعدادِ کلاس‌ها شمرده می‌شود نه عنصرها →
+ *     تبِ استایل همچنان بر همه‌چیز می‌چربد.
+ *
+ * همین بازه است که هم‌زمان «شبیهِ طرح» و «کاملاً قابلِ شخصی‌سازی» را
+ * ممکن می‌کند؛ یک درجه بالاتر یا پایین‌تر، یکی از این دو می‌شکند. اگر
+ * روزی قالبی از این هم بالاتر رفت، راهِ درست بالا بردنِ کلاس نیست —
+ * چون آن‌وقت تبِ استایل می‌میرد — بلکه افزودنِ نامِ تگ به همان زنجیره‌ای
+ * است که هنوز نگرفته.
+ *
+ * قاعدهٔ ارتفاع هم همان‌طور که قفل شد: ارتفاعِ پایه فقط مالِ حالتِ بستهٔ
+ * پیش‌فرض است و آن هم ‎min-height‎ است نه ‎height‎ی سفت. از لحظه‌ای که
+ * پنل باز می‌شود هیچ ارتفاعِ ثابتی نوشته نمی‌شود — گرید + gap + padding +
+ * خودِ محتوا ارتفاع را می‌سازند.
+ *
+ * هر مقدارِ دیداری از یک ‎--zig-search-*‎ می‌آید که تبِ استایل رویش
+ * می‌نویسد و پیش‌فرضِ داخلِ ‎var()‎ همان طرحِ تأییدشده است.
+ */
+
+.zig-search {
+	position: relative;
+	width: var(--zig-search-width, 100%);
+	max-width: 100%;
+	/* فضایِ فیلد را رزرو می‌کند تا بازشدنِ پنلِ اورلی صفحه را نپراند */
+	min-height: var(--zig-search-field-height, 46px);
+	box-sizing: border-box;
+}
+
+.zig-search *,
+.zig-search *::before,
+.zig-search *::after {
+	box-sizing: border-box;
+}
+
+/*
+ * لایهٔ تیره پشتِ اورلی.
+ *
+ * ‎fixed‎ است نه ‎absolute‎، و همین نکته‌اش است: ویجت معمولاً داخلِ یک
+ * هدرِ باریک می‌نشیند و یک لایهٔ ‎absolute‎ فقط به‌اندازهٔ همان هدر تیره
+ * می‌شد. ‎fixed‎ کلِ ویوپورت را می‌گیرد، مستقل از اینکه ویجت کجا باشد.
+ *
+ * ‎z-index‎ش یک پله زیرِ پوسته است تا پوسته رویش بماند.
+ */
+.zig-search .zig-search__backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 59;
+	background-color: var(--zig-search-backdrop-bg, rgba(16, 19, 26, 0.35));
+	opacity: 0;
+	transition: opacity var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search.is-open:not(.is-closing) .zig-search__backdrop {
+	opacity: 1;
+}
+
+.zig-search .zig-search__backdrop[hidden] {
+	display: none;
+}
+
+/*
+ * پوسته دو زندگیِ متفاوت دارد و همین است که «یک سطحِ سفیدِ واحد» را ممکن
+ * می‌کند بدونِ اینکه در حالتِ بسته کارتی سفید دورِ فیلد بیفتد:
+ *
+ *   بسته  هیچ ظاهری ندارد — فقط قرصِ خاکستریِ فیلد دیده می‌شود.
+ *   باز   کارتِ سفید می‌شود و *رویِ* محتوایِ صفحه می‌نشیند (اورلی)، با
+ *         فیلد در بالا و پنل بلافاصله زیرش، داخلِ همان یک کارت.
+ */
+/*
+ * پوسته فقط جعبه است؛ هیچ‌وقت خودش چیزی نمی‌کشد.
+ *
+ * پوستِ کارت رویِ ‎__surface‎ است — یک لایهٔ ‎inset: 0‎ی بی‌محتوا که
+ * شفافیتش محو می‌شود. جدا بودنشان کلِ ماجرا را ممکن می‌کند: کلاسِ حالت
+ * تا آخرِ گذار سرِ جایش می‌ماند، پس پدینگ و لبه‌هایی که تبِ استایل نوشته
+ * هیچ‌وقت وسطِ انیمیشن نمی‌پرند.
+ *
+ * سطح اولین فرزند است و فیلد/پنل ‎position: relative‎ دارند، پس بدونِ
+ * هیچ ‎z-index‎ی زیرشان می‌ماند — عنصرهایِ جای‌گرفته به ترتیبِ سند کشیده
+ * می‌شوند.
+ */
+.zig-search .zig-search__shell {
+	display: flex;
+	flex-direction: column;
+}
+
+.zig-search .zig-search__surface {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	pointer-events: none;
+	background-color: var(--zig-search-shell-bg, #ffffff);
+	border-radius: var(--zig-search-shell-radius, 24px);
+	box-shadow: var(--zig-search-shell-shadow, 0 8px 15px rgba(0, 0, 0, 0.12));
+	transition: opacity var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search.is-open:not(.is-closing) .zig-search__surface {
+	opacity: 1;
+}
+
+/*
+ * پدینگِ افقیِ پوسته *بیرون* اضافه می‌شود، نه اینکه از عرضِ فیلد کم شود.
+ *
+ * قبلاً ‎inset-inline: 0‎ بود، یعنی پوسته دقیقاً هم‌عرضِ ریشه می‌شد و
+ * پدینگ از داخل می‌خورد: با عرضِ ۵۰۰، فیلدِ باز ۴۸۴ می‌شد و لحظهٔ باز
+ * شدن آب می‌رفت. در طرح برعکس است — فیلد در هر دو حالت ۵۰۰ است و
+ * قابِ سفید ۵۱۶.
+ *
+ * پس دو لبه به‌اندازهٔ پدینگِ همان سمت به بیرون کشیده می‌شوند. با
+ * ‎left/right‎ی منفی و ‎width: auto‎، عرضِ محتوا خودش دقیقاً برابرِ
+ * عرضِ ریشه در می‌آید و هیچ عددی دوبار نوشته نمی‌شود.
+ *
+ * متغیرها را همان کنترلِ «فاصلهٔ داخلی»ِ تبِ استایل هم می‌نویسد، پس اگر
+ * مدیر پدینگ را عوض کند، جبرانِ بیرونی خودبه‌خود با آن جلو می‌رود.
+ * عمداً ‎left/right‎ی فیزیکی است نه منطقی: چیزی که جبران می‌شود
+ * ‎padding-left/right‎ی فیزیکی است.
+ */
+/*
+ * جعبهٔ اورلی در حالتِ بسته‌شدن هم می‌ماند، نه فقط در حالتِ باز — و این
+ * همان چیزی است که یک‌بار شکست:
+ *
+ * لحظه‌ای که کلاسِ ‎is-open‎ برداشته می‌شد، پوسته در همان فریم
+ * ‎position: absolute‎ و ‎z-index: 60‎ را از دست می‌داد، در حالی که
+ * لایهٔ تیره هنوز کاملاً مات بود و تازه داشت محو می‌شد. نتیجه این بود که
+ * کلِ ویجت — فیلد و چیپ‌ها و کارت — برایِ چند فریم *زیرِ* آن لایه
+ * می‌افتاد و خاکستری می‌شد؛ چیزی که در چشم، پرشِ فیلد دیده می‌شد نه
+ * محوشدن.
+ *
+ * پس هندسه و ترتیبِ لایه به هر دو حالت داده می‌شود و فقط *ظاهرِ* کارت
+ * (پس‌زمینه و سایه) به ‎is-open‎ گره می‌خورد — چون دقیقاً همان است که
+ * باید محو شود.
+ *
+ * پدینگ هم از همان چهار متغیری خوانده می‌شود که جبرانِ لبه‌ها از آن
+ * می‌خوانَد. یک منبعِ حقیقت یعنی این دو هیچ‌وقت نمی‌توانند از هم جدا
+ * بیفتند — اگر پدینگ از یک جا و جبران از جایی دیگر می‌آمد، هر اختلافی
+ * بینشان مستقیماً فیلد را جابه‌جا می‌کرد.
+ */
+.zig-search.is-open .zig-search__shell {
+	position: absolute;
+	inset-block-start: calc(var(--zig-search-shell-pad-top, 8px) * -1);
+	left: calc(var(--zig-search-shell-pad-left, 8px) * -1);
+	right: calc(var(--zig-search-shell-pad-right, 8px) * -1);
+	z-index: 60;
+	gap: var(--zig-search-shell-gap, 24px);
+	padding: var(--zig-search-shell-pad-top, 8px) var(--zig-search-shell-pad-right, 8px)
+		var(--zig-search-shell-pad-bottom, 16px) var(--zig-search-shell-pad-left, 8px);
+}
+
+/* ---------------------------- فیلد ---------------------------- */
+
+.zig-search form.zig-search__field {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--zig-search-field-gap, 16px);
+	width: 100%;
+	margin: 0;
+	min-height: var(--zig-search-field-height, 46px);
+	padding-block: 0;
+	padding-inline: var(--zig-search-field-padding-inline, 16px);
+	background-color: var(--zig-search-field-bg, #f3f4f6);
+	border: 0;
+	border-radius: var(--zig-search-field-radius, 999px);
+	box-shadow: none;
+}
+
+.zig-search form.zig-search__field button.zig-search__icon-btn,
+.zig-search form.zig-search__field button.zig-search__clear {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: auto;
+	min-width: 0;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: var(--zig-search-field-icon-color, #687083);
+	line-height: 0;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.zig-search form.zig-search__field button.zig-search__icon-btn {
+	cursor: default;
+}
+
+/*
+ * ‎[hidden]‎ به خودِ کلاس چسبیده تا از قاعدهٔ ‎display‎ی بالا قوی‌تر باشد.
+ * بدونِ این، ‎display: inline-flex‎ رویِ ‎[hidden] { display: none }‎ی
+ * کارگزارِ کاربر می‌چربد — نه به‌خاطرِ وزن، بلکه چون قواعدِ نویسنده همیشه
+ * بر قواعدِ UA اولویت دارند — و عنصری که جاوااسکریپت پنهانش کرده همچنان
+ * دیده می‌شود.
+ */
+.zig-search form.zig-search__field button.zig-search__clear[hidden] {
+	display: none;
+}
+
+.zig-search form.zig-search__field button.zig-search__icon-btn svg,
+.zig-search form.zig-search__field button.zig-search__icon-btn i,
+.zig-search form.zig-search__field button.zig-search__clear svg,
+.zig-search form.zig-search__field button.zig-search__clear i {
+	width: var(--zig-search-icon-size, 22px);
+	height: var(--zig-search-icon-size, 22px);
+	font-size: var(--zig-search-icon-size, 22px);
+}
+
+.zig-search form.zig-search__field button.zig-search__clear {
+	color: var(--zig-search-clear-icon-color, #a1a3a8);
+}
+
+.zig-search form.zig-search__field button.zig-search__clear svg,
+.zig-search form.zig-search__field button.zig-search__clear i {
+	width: var(--zig-search-clear-icon-size, 16px);
+	height: var(--zig-search-clear-icon-size, 16px);
+	font-size: var(--zig-search-clear-icon-size, 16px);
+}
+
+/*
+ * ورودی کلِ ارتفاعِ قرص را می‌گیرد، نه یک جعبهٔ کوتاه‌ترِ وسط‌چین.
+ *
+ * ‎align-self: stretch‎ جلوی ‎align-items: center‎ی ظرف را می‌گیرد؛
+ * بدونش ورودی فقط به‌اندازهٔ خطِ متنش بلند بود و باقیِ ۴۶ پیکسل ناحیهٔ
+ * غیرِقابلِ‌کلیک می‌ماند — یعنی کلیک نزدیکِ لبهٔ بالا/پایینِ قرص اصلاً
+ * فوکوس نمی‌داد. ارتفاعِ خودش ‎auto‎ می‌ماند تا کشش را همان
+ * ‎stretch‎ بدهد نه یک عددِ ثابت.
+ *
+ * وسط‌چینیِ عمودیِ متن دستی نیست: خودِ ‎input‎ متنش را در ارتفاعش وسط
+ * می‌گذارد، پس ‎padding: 0‎ سرِ جایش می‌ماند و لازم نیست ارتفاع را با
+ * پدینگ بسازیم.
+ */
+.zig-search form.zig-search__field input.zig-search__input {
+	flex: 1 1 auto;
+	align-self: stretch;
+	background-image: none;
+	width: auto;
+	min-width: 0;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	outline: 0;
+	box-shadow: none;
+	font: inherit;
+	font-size: var(--zig-search-text-size, 14px);
+	line-height: normal;
+	color: var(--zig-search-text-color, #171923);
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.zig-search form.zig-search__field input.zig-search__input:focus {
+	background: transparent;
+	border: 0;
+	outline: 0;
+	box-shadow: none;
+}
+
+.zig-search form.zig-search__field input.zig-search__input::placeholder {
+	color: var(--zig-search-placeholder-color, #8d96a8);
+	opacity: 1;
+}
+
+/* ---------------------------- پنل ---------------------------- */
+
+.zig-search .zig-search__panel {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-search-panel-gap, 29px);
+	padding: var(--zig-search-panel-padding, 0 8px);
+	opacity: 0;
+	transition: opacity var(--zig-search-anim, 150ms) ease-out;
+}
+
+.zig-search.is-open:not(.is-closing) .zig-search__panel {
+	opacity: 1;
+}
+
+.zig-search .zig-search__panel[hidden] {
+	display: none;
+}
+
+.zig-search .zig-search__section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-search-section-gap, 12px);
+}
+
+.zig-search .zig-search__section[hidden] {
+	display: none;
+}
+
+.zig-search .zig-search__section-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.zig-search .zig-search__section-title {
+	font-size: var(--zig-search-heading-size, 14px);
+	font-weight: 700;
+	line-height: 24px;
+	color: var(--zig-search-heading-color, #171923);
+}
+
+.zig-search div.zig-search__section-head button.zig-search__clear-history {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font: inherit;
+	font-size: var(--zig-search-clear-history-size, 12px);
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--zig-search-clear-history-color, #81858b);
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* ---------------------------- چیپ‌ها ---------------------------- */
+
+.zig-search .zig-search__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--zig-search-chips-gap, 8px);
+}
+
+.zig-search a.zig-search__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--zig-search-chip-icon-gap, 4px);
+	padding: var(--zig-search-chip-padding, 4px 12px);
+	background-color: var(--zig-search-chip-bg, transparent);
+	border: 1px solid var(--zig-search-chip-border, #e0e0e2);
+	border-radius: var(--zig-search-chip-radius, 100000px);
+	color: var(--zig-search-chip-color, #344054);
+	text-decoration: none;
+	box-shadow: none;
+	font-size: var(--zig-search-chip-size, 12px);
+	line-height: 20px;
+}
+
+/*
+ * آیکون بعد از متن می‌آید (هم در مارک‌آپ هم اینجا) — در راست‌به‌چپ یعنی
+ * سمتِ چپِ چیپ، دقیقاً همان‌جایی که در طرح نشسته.
+ */
+.zig-search a.zig-search__chip svg,
+.zig-search a.zig-search__chip i {
+	width: var(--zig-search-chip-icon-size, 12px);
+	height: var(--zig-search-chip-icon-size, 12px);
+	font-size: var(--zig-search-chip-icon-size, 12px);
+	flex: none;
+	color: var(--zig-search-chip-icon-color, #756e8d);
+}
+
+/* ---------------------------- محصولات ---------------------------- */
+
+.zig-search .zig-search__products {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.zig-search a.zig-search__product {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--zig-search-product-gap, 12px);
+	width: 100%;
+	/*
+	 * نامتقارن، دقیقاً مثلِ طرح: سمتِ تصویر ۸ و سمتِ فلش ۱۶. با
+	 * ‎padding-inline-*‎ نوشته شده تا در چیدمانِ چپ‌به‌راست هم خودش
+	 * برعکس شود، نه اینکه دستی وارونه‌اش کنیم.
+	 */
+	padding-block: var(--zig-search-product-padding-block, 8px);
+	padding-inline-start: var(--zig-search-product-padding-start, 8px);
+	padding-inline-end: var(--zig-search-product-padding-end, 16px);
+	background-color: var(--zig-search-product-bg, #f7f8fb);
+	border: 1px solid var(--zig-search-product-border, #eef0f5);
+	border-radius: var(--zig-search-product-radius, 18px);
+	color: inherit;
+	text-decoration: none;
+	box-shadow: none;
+}
+
+.zig-search .zig-search__product-image {
+	flex: none;
+	width: var(--zig-search-product-image, 48px);
+	height: var(--zig-search-product-image, 48px);
+	object-fit: cover;
+	border-radius: var(--zig-search-product-image-radius, 12px);
+	background-color: var(--zig-search-product-image-bg, #d9d9d9);
+}
+
+.zig-search .zig-search__product-body {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-search-product-body-gap, 4px);
+}
+
+.zig-search .zig-search__product-title {
+	font-size: var(--zig-search-product-title-size, 14px);
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--zig-search-product-title-color, #10131a);
+	text-decoration: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.zig-search .zig-search__product-meta {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-search-product-meta-gap, 4px);
+	font-size: var(--zig-search-product-meta-size, 12px);
+	line-height: 20px;
+	color: var(--zig-search-product-meta-color, #7a8393);
+	text-decoration: none;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* جداکنندهٔ دسته و برند — در طرح یک دایرهٔ ۵ پیکسلی است، نه نویسهٔ «•» */
+.zig-search .zig-search__product-meta-dot {
+	flex: none;
+	width: var(--zig-search-product-dot-size, 5px);
+	height: var(--zig-search-product-dot-size, 5px);
+	border-radius: 50%;
+	background-color: var(--zig-search-product-dot-color, #d7dce5);
+}
+
+.zig-search .zig-search__product-meta > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.zig-search .zig-search__product-chevron {
+	flex: none;
+	display: inline-flex;
+	line-height: 0;
+	color: var(--zig-search-product-chevron-color, #111827);
+}
+
+/*
+ * تنها آیکونِ غیرمربعِ طرح همین است (۶٫۸۹ در ۱۲). پس اندازه فقط روی
+ * ارتفاع نوشته می‌شود و عرض خودش از ‎viewBox‎ درمی‌آید؛ اگر مثلِ بقیه
+ * هر دو را می‌نوشتیم، فلش با هر تغییرِ اندازه پهن و کشیده می‌شد.
+ */
+.zig-search .zig-search__product-chevron svg {
+	height: var(--zig-search-chevron-size, 12px);
+	width: auto;
+}
+
+.zig-search .zig-search__product-chevron i {
+	font-size: var(--zig-search-chevron-size, 12px);
+}
+
+/* ---------------------------- دکمهٔ بیشتر ---------------------------- */
+
+.zig-search a.zig-search__more {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--zig-search-more-gap, 24px);
+	align-self: center;
+	/*
+	 * طرح بینِ فهرستِ محصولات و این دکمه ۱۶ می‌گذارد، ولی فاصلهٔ خودِ
+	 * بخش ۱۲ است (همان که عنوان را از فهرست جدا می‌کند). این ۴ اختلافِ
+	 * همان دو عدد است.
+	 */
+	margin-block-start: var(--zig-search-more-offset, 4px);
+	padding: var(--zig-search-more-padding, 12px 24px);
+	border: 0;
+	border-radius: var(--zig-search-more-radius, 10000000px);
+	background-image: var(--zig-search-more-bg, linear-gradient(139.73deg, #7b5cff 33.55%, #5d2ccb 66.45%));
+	color: var(--zig-search-more-color, #ffffff);
+	text-decoration: none;
+	box-shadow: none;
+	font: inherit;
+	font-size: var(--zig-search-more-size, 12px);
+	font-weight: 600;
+	line-height: 20px;
+	cursor: pointer;
+}
+
+.zig-search a.zig-search__more[hidden] {
+	display: none;
+}
+
+.zig-search a.zig-search__more svg,
+.zig-search a.zig-search__more i {
+	width: var(--zig-search-more-icon-size, 16px);
+	height: var(--zig-search-more-icon-size, 16px);
+	font-size: var(--zig-search-more-icon-size, 16px);
+	flex: none;
+}
+
+/* ---------------------------- بدونِ نتیجه ---------------------------- */
+
+.zig-search .zig-search__section--empty {
+	align-items: center;
+	text-align: center;
+	gap: var(--zig-search-empty-gap, 12px);
+}
+
+.zig-search .zig-search__empty-icon {
+	display: inline-flex;
+	line-height: 0;
+	color: var(--zig-search-empty-icon-color, #687083);
+}
+
+.zig-search .zig-search__empty-icon svg,
+.zig-search .zig-search__empty-icon i {
+	width: var(--zig-search-empty-icon-size, 22px);
+	height: var(--zig-search-empty-icon-size, 22px);
+	font-size: var(--zig-search-empty-icon-size, 22px);
+}
+
+.zig-search p.zig-search__empty-text {
+	margin: 0;
+	font-size: var(--zig-search-empty-text-size, 14px);
+	font-weight: 600;
+	line-height: 24px;
+	color: var(--zig-search-empty-text-color, #000000);
+}
+
+/* ---------------------------- خطا و بارگذاری ---------------------------- */
+
+.zig-search .zig-search__section--error {
+	align-items: center;
+	text-align: center;
+	gap: var(--zig-search-empty-gap, 12px);
+}
+
+.zig-search p.zig-search__error-text {
+	margin: 0;
+	font-size: var(--zig-search-error-text-size, 14px);
+	font-weight: 600;
+	line-height: 24px;
+	color: var(--zig-search-error-text-color, #b42318);
+}
+
+/*
+ * بارگذاری فقط یک نشانهٔ آرام رویِ خودِ آیکونِ سرچ است، نه یک اسپینرِ
+ * تمام‌صفحه: پنل در این لحظه هنوز نتیجهٔ قبلی را نشان می‌دهد و پاک‌کردنش
+ * یعنی هر کاراکترِ تازه محتوا را می‌پراند.
+ */
+.zig-search.is-loading .zig-search__icon-btn {
+	animation: zig-search-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes zig-search-pulse {
+	0%, 100% { opacity: 1; }
+	50%      { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-search.is-loading .zig-search__icon-btn {
+		animation: none;
+		opacity: 0.5;
+	}
+
+	/*
+	 * صفر شدنِ *مدت* است نه حذفِ گذار، و این عمدی است: جاوااسکریپت برایِ
+	 * اینکه بداند کِی پنل را پنهان کند همین مدت را از مرورگر می‌پرسد. با
+	 * ‎transition: none‎ آن عدد اصلاً وجود نمی‌داشت؛ با صفر، هم حرکتی
+	 * دیده نمی‌شود و هم بستن بلافاصله انجام می‌شود.
+	 */
+	.zig-search .zig-search__surface,
+	.zig-search .zig-search__panel,
+	.zig-search .zig-search__backdrop {
+		transition-duration: 0s;
+	}
+}
+
+/* ---------------------------- موبایل: شیتِ پایین ---------------------------- */
+
+/*
+ * دکمهٔ موبایل و دستگیره همیشه رندر می‌شوند و اینجا پنهانند؛ فقط زیرِ
+ * بریک‌پوینت دیده می‌شوند. برعکسش — رندرِ شرطی سمتِ سرور — یعنی کشِ
+ * صفحه برایِ یک عرضِ اشتباه ذخیره می‌شود.
+ */
+.zig-search .zig-search__trigger,
+.zig-search .zig-search__handle,
+.zig-search .zig-search__back {
+	display: none;
+}
+
+/*
+ * ۷۶۷ همان مرزی است که خودِ المنتور «موبایل» می‌داند. عدد اینجا ثابت
+ * نوشته شده و نه از یک متغیر، چون رسانه‌کوئری نمی‌تواند مقدارش را از
+ * ‎var()‎ بگیرد — تا وقتی که پشتیبانیِ ‎@custom-media‎ بیاید، هر راهِ
+ * دیگری یعنی تشخیصِ عرض با جاوااسکریپت و یک پرشِ دیداری تا وقتی که
+ * اسکریپت برسد.
+ */
+@media (max-width: 767px) {
+
+	.zig-search {
+		min-height: 0;
+		width: auto;
+	}
+
+	.zig-search .zig-search__trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: var(--zig-search-trigger-size, 40px);
+		height: var(--zig-search-trigger-size, 40px);
+		margin: 0;
+		padding: 0;
+		background: var(--zig-search-trigger-bg, transparent);
+		border: 0;
+		border-radius: var(--zig-search-trigger-radius, 999px);
+		box-shadow: none;
+		color: var(--zig-search-trigger-color, #687083);
+		line-height: 0;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-search .zig-search__trigger svg,
+	.zig-search .zig-search__trigger i {
+		width: var(--zig-search-trigger-icon-size, 22px);
+		height: var(--zig-search-trigger-icon-size, 22px);
+		font-size: var(--zig-search-trigger-icon-size, 22px);
+	}
+
+	/*
+	 * شیت همیشه ‎fixed‎ است، نه فقط وقتی باز است.
+	 *
+	 * اگر در حالتِ بسته ‎display: none‎ می‌بود، مرورگر مقدارِ شروعِ
+	 * ‎transform‎ را نمی‌داشت و لغزش اصلاً اجرا نمی‌شد. پس به‌جایش با
+	 * ‎translateY(100%)‎ بیرونِ صفحه می‌ماند و ‎visibility‎ از دسترسِ
+	 * فوکوس و کلیک درش می‌آورد.
+	 *
+	 * تأخیرِ ‎visibility‎ عمدی است: موقعِ بستن باید تا آخرِ لغزش دیده
+	 * شود، ولی موقعِ باز شدن همان لحظه.
+	 */
+	.zig-search .zig-search__shell {
+		position: fixed;
+		inset: auto 0 0 0;
+		z-index: 60;
+		height: var(--zig-search-sheet-height, 100dvh);
+		max-height: 100%;
+		transform: translateY(100%);
+		visibility: hidden;
+		transition: transform var(--zig-search-anim, 150ms) ease-out,
+			visibility 0s linear var(--zig-search-anim, 150ms);
+	}
+
+	.zig-search.is-open .zig-search__shell {
+		position: fixed;
+		inset: auto 0 0 0;
+		/*
+		 * ‎--zig-search-sheet-drag‎ را جاوااسکریپت هنگامِ کشیدن می‌نویسد؛
+		 * بقیهٔ وقت‌ها صفر است و شیت سرِ جایش می‌ماند.
+		 */
+		transform: translateY(var(--zig-search-sheet-drag, 0px));
+		visibility: visible;
+		transition: transform var(--zig-search-anim, 150ms) ease-out, visibility 0s;
+		border-radius: var(--zig-search-sheet-radius, 24px) var(--zig-search-sheet-radius, 24px) 0 0;
+	}
+
+	/* بسته‌شدن: همان لغزش، برعکس */
+	.zig-search.is-open.is-closing .zig-search__shell {
+		transform: translateY(100%);
+		transition: transform var(--zig-search-anim, 150ms) ease-in, visibility 0s linear var(--zig-search-anim, 150ms);
+	}
+
+	/*
+	 * انگشت باید بدونِ تأخیر زیرِ شیت باشد. با گذارِ فعال، هر جابه‌جایی
+	 * ‎150ms‎ عقب می‌افتاد و کشیدن چسبناک حس می‌شد.
+	 */
+	.zig-search.is-dragging .zig-search__shell {
+		transition: none;
+	}
+
+	/*
+	 * در شیت، قاب و پنل محو نمی‌شوند — خودِ لغزش کارِ ورود و خروج را
+	 * می‌کند و محوشدنِ هم‌زمان، حرکت را گِل‌آلود نشان می‌دهد. لایهٔ تیره
+	 * ولی همچنان محو می‌شود.
+	 */
+	.zig-search .zig-search__surface,
+	.zig-search .zig-search__panel {
+		opacity: 1;
+		transition: none;
+	}
+
+	.zig-search .zig-search__surface {
+		border-radius: var(--zig-search-sheet-radius, 24px) var(--zig-search-sheet-radius, 24px) 0 0;
+	}
+
+	.zig-search .zig-search__handle {
+		position: relative;
+		display: block;
+		flex: none;
+		align-self: center;
+		width: var(--zig-search-handle-width, 44px);
+		height: var(--zig-search-handle-height, 4px);
+		margin-block-end: var(--zig-search-handle-gap, 8px);
+		border-radius: 999px;
+		background-color: var(--zig-search-handle-color, #d7dce5);
+		/*
+		 * بدونِ این، مرورگر کشیدنِ عمودی را اسکرولِ صفحه می‌فهمد و رویداد
+		 * را از ما می‌گیرد؛ آن‌وقت شیت فقط گاهی حرکت می‌کند.
+		 */
+		touch-action: none;
+		cursor: grab;
+	}
+
+	.zig-search.is-dragging .zig-search__handle {
+		cursor: grabbing;
+	}
+
+	/*
+	 * ناحیهٔ گرفتن از خودِ خط بزرگ‌تر است: یک نوارِ چهار برابرِ ارتفاع،
+	 * بدونِ اینکه چیزی دیده شود. خطِ ۴ پیکسلی با انگشت عملاً قابلِ گرفتن
+	 * نیست.
+	 */
+	.zig-search .zig-search__handle::before {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		inset-block-start: 0;
+		height: var(--zig-search-handle-hit, 32px);
+	}
+
+	/*
+	 * در طرحِ موبایل ذره‌بینی در فیلد نیست؛ جایش فلشِ بازگشت نشسته که
+	 * شیت را می‌بندد. پس این دو با هم عوض می‌شوند، نه اینکه کنارِ هم
+	 * بنشینند.
+	 */
+	.zig-search form.zig-search__field button.zig-search__icon-btn {
+		display: none;
+	}
+
+	.zig-search form.zig-search__field button.zig-search__back {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		width: auto;
+		min-width: 0;
+		min-height: 0;
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		color: var(--zig-search-back-color, #687083);
+		line-height: 0;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-search form.zig-search__field button.zig-search__back svg,
+	.zig-search form.zig-search__field button.zig-search__back i {
+		width: var(--zig-search-back-size, 22px);
+		height: var(--zig-search-back-size, 22px);
+		font-size: var(--zig-search-back-size, 22px);
+	}
+
+	/* محتوا اسکرول می‌شود، نه خودِ شیت — وگرنه دستگیره هم بالا می‌رود */
+	.zig-search .zig-search__panel {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/*
+	 * نشانهٔ بارگذاری در شیت، خودِ متنِ جست‌وجوست.
+	 *
+	 * در دسکتاپ ذره‌بین می‌تپد، ولی اینجا ذره‌بینی وجود ندارد و جایش
+	 * فلشِ بازگشت نشسته — تپاندنِ آن یعنی «دارد برمی‌گردد»، که پیامِ
+	 * غلطی است. متن هم همان‌جایی است که چشمِ کاربر بعدِ تایپ روی آن
+	 * است، پس نشانه دقیقاً جایی می‌افتد که نگاه هست.
+	 */
+	.zig-search.is-loading .zig-search__input {
+		animation: zig-search-pulse 900ms ease-in-out infinite;
+	}
+}
+
+/*
+ * جدا از بلوکِ بالا و نه داخلِ ‎prefers-reduced-motion‎ی مشترک: آن یکی
+ * روی همهٔ عرض‌ها اثر می‌گذارد و در دسکتاپ متنِ ورودی اصلاً نمی‌تپد،
+ * پس کم‌رنگ کردنش آنجا فقط یک تیرگیِ بی‌دلیل بود.
+ */
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+
+	.zig-search.is-loading .zig-search__input {
+		animation: none;
+		opacity: 0.5;
+	}
+}
+
+/*
+ * صفحه پشتِ شیت نباید اسکرول شود. کلاس رویِ ‎<html>‎ می‌نشیند نه ‎<body>‎،
+ * چون بعضی قالب‌ها خودشان رویِ بادی ‎overflow‎ می‌نویسند.
+ */
+.zig-search-sheet-open,
+.zig-search-sheet-open body {
+	overflow: hidden;
+}
+
+/*
+ * ناحیهٔ اعلام: دیده نمی‌شود ولی خوانده می‌شود.
+ *
+ * ‎display: none‎ یا ‎visibility: hidden‎ اینجا کار نمی‌کند — صفحه‌خوان‌ها
+ * چنین عنصری را از درختِ دسترسی‌پذیری بیرون می‌گذارند و اعلام هیچ‌وقت
+ * شنیده نمی‌شود. الگویِ زیر همان چیزی است که برایِ همین کار جا افتاده.
+ */
+.zig-search .zig-search__status {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* عنوان و متایِ محصول ترکیبِ فارسی/لاتین‌اند — ایزوله لازم دارند */
+.zig-search bdi {
+	unicode-bidi: isolate;
+}
+
+/* قالب‌هایِ آیکونِ داینامیک — هیچ‌وقت خودشان دیده نمی‌شوند، فقط clone می‌شوند */
+.zig-search template {
+	display: none;
+}
+
+/* ==========================================================================
+   اطلاعاتِ تماس
+   ========================================================================== */
+
+/*
+ * همان بازهٔ وزنی که در بخشِ سرچ توضیحش رفت: ریشهٔ ‎.zig-contact‎ و نامِ
+ * تگ رویِ ‎ul‎/‎li‎/‎a‎ — چیزهایی که قالب‌ها واقعاً استایلشان می‌دهند.
+ *
+ * فاصله‌ها از طرح: بینِ آیکون و متن ۴، بینِ هر آیتم و نقطهٔ کنارش ۲۰.
+ * پس فاصلهٔ دیداریِ دو آیتم می‌شود ۲۰ + ۵ + ۲۰ — و همین است که ‎gap‎
+ * روی هر دو سطح (ظرف و آیتم) یک عدد است، نه دو عددِ جدا.
+ */
+/*
+ * کلاس عمداً دوبار آمده. ریشهٔ این ویجت خودش ‎<ul>‎ است، پس جدِ دیگری
+ * نیست که وزن را بالا ببرد، و ‎ul.zig-contact‎ی ساده ‎(0,1,1)‎ می‌شود —
+ * هم‌وزنِ ‎.elementor ul‎ی که ‎padding‎ و ‎list-style‎ی خودش را دارد، و
+ * در تساوی هرکه دیرتر لود شود می‌برد. تکرارِ کلاس ‎(0,2,1)‎ می‌دهد:
+ * بالایِ قالب، پایینِ کنترل‌هایِ المنتور.
+ */
+ul.zig-contact.zig-contact {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-contact-gap, 20px);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-contact li.zig-contact__item {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-contact-gap, 20px);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * نقطه جداکنندهٔ دیداری است، نه یک موردِ فهرست. اگر عنصرِ واقعی می‌شد،
+ * صفحه‌خوان «فهرست، ۵ مورد» می‌گفت که دوتاش هیچ محتوایی ندارند.
+ */
+.zig-contact li.zig-contact__item::before {
+	content: '';
+	flex: none;
+	width: var(--zig-contact-dot-size, 5px);
+	height: var(--zig-contact-dot-size, 5px);
+	border-radius: 50%;
+	background-color: var(--zig-contact-dot-color, #d7dce5);
+}
+
+.zig-contact li.zig-contact__item:first-child::before {
+	display: none;
+}
+
+.zig-contact .zig-contact__link,
+.zig-contact a.zig-contact__link {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--zig-contact-icon-gap, 4px);
+	color: var(--zig-contact-text-color, #344054);
+	text-decoration: none;
+	box-shadow: none;
+	/*
+	 * عددِ طرح، مستقیم و بدونِ متغیر: اندازهٔ متن را گروهِ «تایپوگرافی»ِ
+	 * تبِ استایل می‌نویسد و آن رویِ ‎.zig-contact__label‎ می‌نشیند که
+	 * وزنش بیشتر است. متغیرِ جدا فقط یک منبعِ دومِ بی‌کنترل می‌ساخت.
+	 */
+	font-size: 15px;
+	line-height: normal;
+}
+
+/*
+ * آیکون‌ها در طرح تیره‌ترند از متن (‎#17171b‎ در برابرِ ‎#344054‎) — یک
+ * تفاوتِ عمدی که با ارث‌بردنِ رنگ از دست می‌رفت.
+ */
+.zig-contact .zig-contact__icon {
+	flex: none;
+	display: inline-flex;
+	line-height: 0;
+	color: var(--zig-contact-icon-color, #17171b);
+}
+
+.zig-contact .zig-contact__icon svg,
+.zig-contact .zig-contact__icon i {
+	width: var(--zig-contact-icon-size, 14px);
+	height: var(--zig-contact-icon-size, 14px);
+	font-size: var(--zig-contact-icon-size, 14px);
+}
+
+.zig-contact .zig-contact__label {
+	color: inherit;
+}
+
+/* در طرح فقط شماره نیم‌ضخیم است؛ بقیه عادی */
+.zig-contact .zig-contact__item--emphasis .zig-contact__label {
+	font-weight: var(--zig-contact-emphasis-weight, 600);
+}
+
+/* ==========================================================================
+   منویِ اصلی
+   ========================================================================== */
+
+/*
+ * باز شدنِ زیرمنو هیچ جاوااسکریپتی ندارد و این تصمیمِ اصلیِ این بخش است:
+ * ‎:hover‎ برایِ موس و ‎:focus-within‎ برایِ کیبورد. کلیک دست‌نخورده به
+ * مقصدِ خودِ آیتم می‌رود، همان‌طور که قرار شد.
+ *
+ * مزیتش فقط «بدونِ JS» نبودن نیست — کاربرِ کیبورد بدونِ هیچ کدی زیرمنو
+ * را می‌بیند و ‎Enter‎ همچنان می‌بَرد. با جاوااسکریپت باید همین را دستی
+ * می‌ساختیم و معمولاً یکی از دو حالت از قلم می‌افتد.
+ */
+.zig-menu nav.zig-menu,
+nav.zig-menu {
+	position: relative;
+}
+
+.zig-menu ul.zig-menu__bar {
+	display: flex;
+	/*
+	 * بالاتر از پرده و پایین‌تر از پنل. بدونِ این، پرده رویِ خودِ نوار هم
+	 * می‌افتد و آیتم‌ها با آن تیره می‌شوند — رویِ هدرِ تیرهٔ این طرح به
+	 * چشم نمی‌آمد ولی رویِ هر هدرِ روشنی می‌آمد.
+	 */
+	position: relative;
+	z-index: 55;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--zig-menu-gap, 4px);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-menu li.zig-menu__item {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-menu a.zig-menu__link {
+	display: flex;
+	align-items: center;
+	gap: var(--zig-menu-chevron-gap, 16px);
+	padding-block: var(--zig-menu-item-pad-block, 24px);
+	padding-inline: var(--zig-menu-item-pad-inline, 16px);
+	border-radius: var(--zig-menu-item-radius, 6px);
+	background-color: transparent;
+	color: var(--zig-menu-color, #ffffff);
+	text-decoration: none;
+	box-shadow: none;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 20px;
+	white-space: nowrap;
+}
+
+/*
+ * پیش‌فرضِ رنگِ هاور و فعال، *همان رنگِ پایه* است نه سفید.
+ *
+ * سفیدِ ثابت فقط رویِ هدرِ تیرهٔ این طرح درست بود؛ رویِ هر هدرِ روشنی
+ * آیتم در لحظهٔ هاور کاملاً ناپدید می‌شد — سفید رویِ سفید. چون در طرح
+ * رنگِ پایه هم سفید است، ظاهرِ خودِ طرح ذره‌ای عوض نمی‌شود.
+ */
+.zig-menu li.zig-menu__item:hover > a.zig-menu__link,
+.zig-menu li.zig-menu__item:focus-within > a.zig-menu__link {
+	background-color: var(--zig-menu-item-bg-hover, transparent);
+	color: var(--zig-menu-color-hover, var(--zig-menu-color, #ffffff));
+}
+
+.zig-menu li.zig-menu__item--current > a.zig-menu__link {
+	color: var(--zig-menu-color-active, var(--zig-menu-color, #ffffff));
+}
+
+/*
+ * زیرخط. عرضش از خودِ متن می‌آید نه از عددِ ثابتِ طرح: ۸۸ فقط برایِ
+ * «محصولات» درست بود و بقیهٔ آیتم‌ها زیرخطِ بریده می‌گرفتند.
+ *
+ * خط همیشه در DOM است و فقط محو/پیدا می‌شود — نه اینکه در حالتِ هاور
+ * ساخته شود. اگر ساخته می‌شد، گذاری در کار نبود و خط جهشی ظاهر می‌شد.
+ */
+.zig-menu a.zig-menu__link .zig-menu__label::after {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	inset-block-end: calc(var(--zig-menu-item-pad-block, 24px) * -1 + 2px);
+	height: var(--zig-menu-underline-height, 4px);
+	border-radius: 999px;
+	/* پیش‌فرض از رنگِ خودِ متن می‌آید، به همان دلیلِ بالا */
+	background: var(--zig-menu-underline-color, currentColor);
+	opacity: 0;
+	transform: scaleX(var(--zig-menu-underline-grow, 0.4));
+	transform-origin: center;
+	transition: opacity var(--zig-menu-anim, 300ms) ease-out,
+		transform var(--zig-menu-anim, 300ms) ease-out;
+}
+
+/*
+ * سه حالت یک خط را روشن می‌کنند: صفحهٔ جاری، هاور، و فوکوسِ کیبورد.
+ * سومی لازم است وگرنه کاربرِ کیبورد هیچ نشانه‌ای از جایِ خودش ندارد.
+ */
+.zig-menu li.zig-menu__item--current > a.zig-menu__link .zig-menu__label::after,
+.zig-menu li.zig-menu__item:hover > a.zig-menu__link .zig-menu__label::after,
+.zig-menu li.zig-menu__item:focus-within > a.zig-menu__link .zig-menu__label::after {
+	opacity: 1;
+	transform: scaleX(1);
+}
+
+.zig-menu .zig-menu__label {
+	position: relative;
+}
+
+.zig-menu .zig-menu__chevron {
+	display: inline-flex;
+	flex: none;
+	line-height: 0;
+	color: inherit;
+}
+
+.zig-menu .zig-menu__chevron svg {
+	width: var(--zig-menu-chevron-size, 12px);
+	height: auto;
+}
+
+/*
+ * آیتمِ اول (لبهٔ شروع — در راست‌چین یعنی راست) پدینگِ همان لبه را
+ * ندارد، چون هیچ آیتمِ دیگری آن‌طرفش نیست تا این پدینگ جدایشان کند؛
+ * نگه‌داشتنش فقط یک فاصلهٔ بی‌دلیل تا لبهٔ نوار می‌ساخت.
+ *
+ * ‎:first-child‎ و نه یک کلاس، چون این آیتم با جابه‌جاییِ ترتیب در
+ * فهرستِ وردپرس عوض می‌شود؛ کلاس باید دستی جابه‌جا می‌شد.
+ */
+.zig-menu li.zig-menu__item:first-child > a.zig-menu__link {
+	padding-inline-start: 0;
+}
+
+/* ---------------------------- پنل ---------------------------- */
+
+/*
+ * پنل همیشه در DOM است و با ‎visibility‎ پنهان می‌شود، نه
+ * ‎display: none‎ — تا گذارِ محوشدن مقدارِ شروع داشته باشد. تأخیرِ
+ * ‎visibility‎ فقط در بسته‌شدن است تا تا آخرِ محو دیده شود.
+ */
+/*
+ * باز شدن یک «تا خوردن» است: پنل از بالا لولا می‌خورد و پایین می‌آید.
+ *
+ * چند چیز که آن را از یک ‎rotateX‎ی خام جدا می‌کند:
+ *
+ *   • ‎perspective()‎ داخلِ خودِ ‎transform‎. بدونش ‎rotateX‎ فقط ارتفاع را
+ *     له می‌کند و شبیهِ باز شدنِ یک در نیست. چون پنلِ مگا ‎fixed‎ است،
+ *     ‎perspective‎ی والد به آن نمی‌رسد و باید همین‌جا باشد.
+ *   • جابه‌جاییِ افقی از پیش‌فرضِ صفر جدا شده (‎--zig-menu-panel-shift‎)
+ *     تا مگامنو بتواند هم وسط‌چین بماند هم تا بخورد؛ وگرنه هر کدام
+ *     ‎transform‎ی دیگری را پاک می‌کرد.
+ *   • ‎backface-visibility‎ برایِ نیم‌فریمِ سوسویی که در وسطِ چرخش
+ *     دیده می‌شد.
+ *   • منحنیِ شتاب کمی «بیرون‌زن» است تا ته حرکت نرم بنشیند، نه اینکه
+ *     ناگهان بایستد.
+ */
+.zig-menu .zig-menu__panel {
+	position: absolute;
+	inset-block-start: 100%;
+	z-index: 60;
+	padding-block-end: var(--zig-menu-panel-pad-block, 28px);
+	padding-inline: var(--zig-menu-panel-pad-inline, 28px);
+	background-color: var(--zig-menu-panel-bg, #ffffff);
+	border-end-start-radius: var(--zig-menu-panel-radius, 28px);
+	border-end-end-radius: var(--zig-menu-panel-radius, 28px);
+	transform-origin: top center;
+	transform: translateX(var(--zig-menu-panel-shift, 0))
+		perspective(var(--zig-menu-perspective, 1400px))
+		rotateX(var(--zig-menu-fold, 90deg));
+	backface-visibility: hidden;
+	opacity: 0;
+	visibility: hidden;
+	transition: transform var(--zig-menu-anim, 300ms) cubic-bezier(0.22, 1, 0.36, 1),
+		opacity var(--zig-menu-anim, 300ms) ease-out,
+		visibility 0s linear var(--zig-menu-anim, 300ms);
+}
+
+.zig-menu li.zig-menu__item:hover > .zig-menu__panel,
+.zig-menu li.zig-menu__item:focus-within > .zig-menu__panel {
+	transform: translateX(var(--zig-menu-panel-shift, 0))
+		perspective(var(--zig-menu-perspective, 1400px))
+		rotateX(0deg);
+	opacity: 1;
+	visibility: visible;
+	transition: transform var(--zig-menu-anim, 300ms) cubic-bezier(0.22, 1, 0.36, 1),
+		opacity var(--zig-menu-anim, 300ms) ease-out, visibility 0s;
+}
+
+/*
+ * پردهٔ پشتِ زیرمنو: صفحه پشتش تیره می‌شود تا چشم رویِ خودِ زیرمنو
+ * بنشیند.
+ *
+ * ‎:has()‎ لازم است چون پرده خواهرِ نوار است نه فرزندِ آیتم، و باید به
+ * هاورِ *هر* آیتمِ پنل‌دار واکنش بدهد. اگر مرورگری ‎:has()‎ نداشته باشد
+ * فقط پرده نمی‌آید و بقیهٔ منو دست‌نخورده کار می‌کند.
+ *
+ * ‎pointer-events: none‎ حتمی است: پرده تمامِ عرضِ صفحه را می‌گیرد و بدونِ
+ * آن، همان لحظه که ظاهر می‌شود جلویِ هاورِ خودِ منو را می‌گرفت و منو
+ * بی‌وقفه باز و بسته می‌شد.
+ *
+ * پرده از *زیرِ* نوار شروع می‌شود، نه از بالایِ صفحه. همان ترفندِ پنلِ
+ * مگا: در ‎fixed‎، ‎inset-block-start: auto‎ یعنی «همان جایِ طبیعیِ خودت
+ * در جریان» — و چون پرده بلافاصله بعد از نوار می‌آید، آن جا دقیقاً لبهٔ
+ * پایینِ نوار است. با ‎inset: 0‎ی قبلی، پرده کلِ هدر را هم می‌گرفت و
+ * ردیف‌هایِ بالایِ منو تیره می‌شدند.
+ *
+ * ارتفاعِ ‎100vh‎ از همان‌جا به پایین کافی است و چون عنصر ‎fixed‎ است،
+ * بیرون‌زدنش هیچ اسکرولی به صفحه اضافه نمی‌کند.
+ */
+.zig-menu .zig-menu__scrim {
+	position: fixed;
+	inset-block-start: auto;
+	inset-inline: auto;
+	left: 0;
+	right: 0;
+	height: 100vh;
+	z-index: 50;
+	background-color: var(--zig-menu-scrim, rgba(16, 24, 40, 0.5));
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity var(--zig-menu-anim, 300ms) ease-out,
+		visibility 0s linear var(--zig-menu-anim, 300ms);
+}
+
+.zig-menu:has(li.zig-menu__item--has-panel:hover) .zig-menu__scrim,
+.zig-menu:has(li.zig-menu__item--has-panel:focus-within) .zig-menu__scrim {
+	opacity: 1;
+	visibility: visible;
+	transition: opacity var(--zig-menu-anim, 300ms) ease-out, visibility 0s;
+}
+
+/*
+ * زیرمنویِ ساده لبه‌اش با لبهٔ عنوانِ خودِ آیتم یکی می‌شود، نه با لبهٔ
+ * جعبه‌اش — برایِ همین به‌اندازهٔ پدینگِ آیتم به داخل کشیده می‌شود.
+ *
+ * لبهٔ هم‌ترازشونده ‎inset-inline-start‎ است: در راست‌چین یعنی لبهٔ راستِ
+ * پنل رویِ لبهٔ راستِ عنوان بنشیند، و در چپ‌چین آینه‌اش. اگر
+ * ‎inset-inline-end‎ می‌بود پنل از لبهٔ *مخالف* آویزان می‌شد و ۱۵۶ پیکسل
+ * آن‌طرف‌تر می‌افتاد.
+ */
+.zig-menu .zig-menu__panel--list,
+.zig-menu .zig-menu__panel--template {
+	inset-inline-end: auto;
+	inset-inline-start: var(--zig-menu-item-pad-inline, 16px);
+	width: var(--zig-menu-list-width, 270px);
+}
+
+/*
+ * مگامنو از جعبهٔ آیتم بیرون می‌زند و وسطِ خودِ ویوپورت می‌نشیند — برایِ
+ * همین ‎fixed‎ است. دو نکته که هر دو یک‌بار اشتباه شدند و اندازه‌گیری
+ * لوشان داد:
+ *
+ * ۱. ‎left‎ و ‎translateX‎ عمداً فیزیکی‌اند نه منطقی. وسط‌چینی قرینه است و
+ *    جهتِ نوشتار در آن معنایی ندارد؛ با ‎inset-inline-start: 50%‎ در
+ *    راست‌چین لبهٔ *راست* وسط می‌نشست و ترجمهٔ منفی پنل را کامل بیرونِ
+ *    صفحه می‌بُرد (‎x = -1200‎).
+ * ۲. ‎inset-block-start‎ باید ‎auto‎ بماند. در ‎fixed‎ مقدارِ ‎100%‎ یعنی صد
+ *    درصدِ *ویوپورت* (ته صفحه)، ولی ‎auto‎ یعنی همان جایِ طبیعیِ خودش در
+ *    جریان — یعنی دقیقاً زیرِ نوار.
+ */
+.zig-menu .zig-menu__panel--mega {
+	position: fixed;
+	inset-block-start: auto;
+	inset-inline: auto;
+	left: 50%;
+	/*
+	 * وسط‌چینی به متغیر داده می‌شود نه مستقیم به ‎transform‎: قاعدهٔ پایه
+	 * همین‌جا تا خوردنِ پنل را هم در همان ‎transform‎ دارد و نوشتنِ
+	 * دوباره‌اش یکی از آن دو را پاک می‌کرد.
+	 */
+	--zig-menu-panel-shift: -50%;
+	width: min(var(--zig-menu-mega-width, 1280px), 100vw);
+	padding-block-end: var(--zig-menu-mega-pad, 32px);
+	padding-inline: var(--zig-menu-mega-pad, 32px);
+	padding-block-start: var(--zig-menu-mega-pad, 32px);
+}
+
+.zig-menu .zig-menu__mega {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+	gap: var(--zig-menu-mega-gap, 32px);
+}
+
+.zig-menu .zig-menu__col {
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-menu-col-gap, 16px);
+	width: var(--zig-menu-col-width, 272px);
+	flex: none;
+}
+
+/*
+ * سرتیتر و ردیف‌ها با فاصلهٔ خودشان، که از فاصلهٔ ستون کمتر است.
+ */
+.zig-menu .zig-menu__col-body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--zig-menu-col-body-gap, 9px);
+}
+
+.zig-menu .zig-menu__col--cards {
+	flex: 1 1 0;
+	min-width: 0;
+	width: auto;
+}
+
+/* ---------------------------- ردیف‌هایِ زیرمنو ---------------------------- */
+
+.zig-menu ul.zig-menu__sub {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.zig-menu li.zig-menu__sub-item {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
+ * خطِ جداکننده با ‎border‎ رویِ ردیف است نه با ‎gap‎ی روی یک پس‌زمینهٔ
+ * خاکستری (کاری که فیگما کرده): آن روش برایِ ردیفِ آخر هم خط می‌کشد و
+ * باید جدا خنثی می‌شد.
+ *
+ * و فقط در زیرمنویِ ساده — ستون‌هایِ مگامنو در طرح هیچ خطِ میانی ندارند،
+ * تنها خطشان زیرِ سرتیتر است.
+ */
+.zig-menu .zig-menu__panel--list li.zig-menu__sub-item + li.zig-menu__sub-item,
+.zig-menu .zig-menu__panel--template li.zig-menu__sub-item + li.zig-menu__sub-item {
+	border-block-start: 1px solid var(--zig-menu-sub-divider, #f0f0f3);
+}
+
+.zig-menu a.zig-menu__sub-link {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-block: var(--zig-menu-sub-pad, 18px);
+	color: var(--zig-menu-sub-color, #111827);
+	text-decoration: none;
+	box-shadow: none;
+	font-size: 14px;
+	/*
+	 * صریح، وگرنه قالب می‌تواند ردیف‌ها را ضخیم کند. کنترلِ تایپوگرافیِ
+	 * ردیف رویِ ‎.zig-menu__sub-label‎ می‌نشیند که فرزندِ همین است، پس
+	 * انتخابِ مدیر بر این پیش‌فرض می‌چربد.
+	 */
+	font-weight: 400;
+	line-height: 20px;
+}
+
+/*
+ * ردیف‌هایِ مگامنو کوتاه‌ترند (‎۱۲‎ به‌جایِ ‎۱۸‎): آنجا ستون سه‌تایی است و
+ * ارتفاع باید جمع‌وجورتر بماند.
+ */
+.zig-menu .zig-menu__panel--mega a.zig-menu__sub-link {
+	padding-block: var(--zig-menu-mega-sub-pad, 12px);
+}
+
+.zig-menu .zig-menu__sub-chevron {
+	display: inline-flex;
+	flex: none;
+	line-height: 0;
+	color: inherit;
+}
+
+.zig-menu .zig-menu__sub-chevron svg {
+	height: var(--zig-menu-sub-chevron-size, 12px);
+	width: auto;
+}
+
+/* ---------------------------- دکمهٔ ستون ---------------------------- */
+
+.zig-menu a.zig-menu__cta {
+	display: flex;
+	/*
+	 * دکمه به اندازهٔ متنش است، نه به عرضِ ستون، و به لبهٔ شروعِ ستون
+	 * می‌چسبد — در طرح ۲۱۳ از ۲۷۲ را گرفته و راست‌چین است.
+	 */
+	align-self: flex-start;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--zig-menu-cta-gap, 24px);
+	padding-block: var(--zig-menu-cta-pad-block, 12px);
+	padding-inline: var(--zig-menu-cta-pad-inline, 24px);
+	border-radius: 999px;
+	/*
+	 * بدونِ متغیر، چون کنترلِ گروهیِ پس‌زمینه خودش مستقیم رویِ همین
+	 * ویژگی می‌نویسد — و انتخاب‌گرش عمداً ‎.zig-menu a.zig-menu__cta‎
+	 * است تا از این قاعده وزنِ بیشتری داشته باشد. اگر متغیر می‌ماند،
+	 * دو راهِ موازی برایِ یک چیز داشتیم که یکی‌شان بی‌اثر بود.
+	 */
+	background-image: linear-gradient(46.928deg, #7b5cff 33.548%, #5d2ccb 66.452%);
+	box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+	color: var(--zig-menu-cta-color, #ffffff);
+	text-decoration: none;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 20px;
+}
+
+.zig-menu .zig-menu__cta-icon {
+	display: inline-flex;
+	flex: none;
+	line-height: 0;
+}
+
+.zig-menu .zig-menu__cta-icon svg {
+	width: var(--zig-menu-cta-icon-size, 16px);
+	height: var(--zig-menu-cta-icon-size, 16px);
+}
+
+/* ---------------------------- سرتیترِ ستون ---------------------------- */
+
+.zig-menu .zig-menu__col-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 42px;
+	border-block-end: 1px solid var(--zig-menu-sub-divider, #f0f0f3);
+}
+
+.zig-menu .zig-menu__col-title {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	color: var(--zig-menu-col-title-color, #000000);
+}
+
+.zig-menu .zig-menu__count {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--zig-menu-count-color, #667085);
+}
+
+/* ---------------------------- کارت‌هایِ محصول ---------------------------- */
+
+.zig-menu .zig-menu__cards {
+	display: grid;
+	grid-template-columns: repeat(var(--zig-menu-card-cols, 3), minmax(0, 1fr));
+	gap: var(--zig-menu-card-gap, 16px);
+}
+
+/*
+ * کارتِ بی‌پیوند ‎span‎ است، پس هر دو تگ باید یک شکل باشند — همان
+ * قراردادِ ویجتِ اطلاعاتِ تماس.
+ */
+.zig-menu a.zig-menu__card,
+.zig-menu span.zig-menu__card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--zig-menu-card-inner-gap, 16px);
+	padding-block: var(--zig-menu-card-pad-top, 40px) var(--zig-menu-card-pad-bottom, 8px);
+	padding-inline: var(--zig-menu-card-pad-inline, 8px);
+	background-color: var(--zig-menu-card-bg, rgba(247, 243, 255, 0.58));
+	/*
+	 * شبکهٔ نقشه‌کشیِ پشتِ کارت. در فیگما دو دسته خطِ برداری است؛ اینجا
+	 * دو گرادیانِ تکرارشونده — همان قدمِ ۱۶ پیکسلی و همان رنگ، ولی بدونِ
+	 * ۴۴ نودِ SVG برایِ هر کارت.
+	 */
+	background-image:
+		repeating-linear-gradient(to right, var(--zig-menu-card-grid, rgba(220, 212, 255, 0.32)) 0 1px, transparent 1px var(--zig-menu-card-grid-step, 16px)),
+		repeating-linear-gradient(to bottom, var(--zig-menu-card-grid, rgba(220, 212, 255, 0.32)) 0 1px, transparent 1px var(--zig-menu-card-grid-step, 16px));
+	border: 1px solid var(--zig-menu-card-border, #d7c8f4);
+	border-radius: var(--zig-menu-card-radius, 13px);
+	box-shadow: 0 14px 28px -12px rgba(16, 24, 40, 0.06);
+	text-decoration: none;
+	overflow: hidden;
+}
+
+.zig-menu .zig-menu__card-media {
+	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+	width: 100%;
+}
+
+.zig-menu .zig-menu__card-image {
+	max-width: 100%;
+	height: auto;
+	object-fit: contain;
+}
+
+.zig-menu .zig-menu__card-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: var(--zig-menu-card-title-pad, 10px);
+	background-color: var(--zig-menu-card-title-bg, #ffffff);
+	border-radius: var(--zig-menu-card-title-radius, 12px);
+	color: var(--zig-menu-card-title-color, #111827);
+	font-size: 14px;
+	line-height: 20px;
+	text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	/*
+	 * با حرکتِ کم، تا خوردن و کشیدنِ زیرخط هر دو برداشته می‌شوند و فقط
+	 * محو شدن می‌مانَد. زاویه باید صفر شود نه فقط مدت: با مدتِ صفر و
+	 * زاویهٔ ۹۰، پنل بسته جهشی و لبه‌به‌لبه ظاهر می‌شد.
+	 */
+	.zig-menu {
+		--zig-menu-fold: 0deg;
+		--zig-menu-underline-grow: 1;
+	}
+
+	.zig-menu .zig-menu__panel,
+	.zig-menu .zig-menu__scrim,
+	.zig-menu a.zig-menu__link .zig-menu__label::after {
+		transition-duration: 0s;
+	}
+}
+
+/* ---------------------------- کشویِ موبایل ---------------------------- */
+
+/*
+ * نسخهٔ موبایل یک کشویِ تمام‌ارتفاع است که لایه‌به‌لایه تو می‌رود.
+ *
+ * دو تصمیم که بقیه از آن‌ها می‌آید:
+ *
+ * ۱. کدام نسخه دیده شود را *فقط* برک‌پوینت تعیین می‌کند — نه یک کلاسِ
+ *    جاوااسکریپتی. برایِ همین عددِ برک‌پوینت هم متغیر است و جاوااسکریپت
+ *    به‌جایِ تکرارِ همان عدد، ‎display‎ی محاسبه‌شدهٔ دکمه را می‌خوانَد.
+ *    این همان درسی است که در ویجتِ سرچ گرفته شد: عددِ تکراری دیر یا زود
+ *    از هم واگرا می‌شود.
+ *
+ * ۲. پنهان‌شدن با ‎visibility‎ است نه ‎display: none‎، تا گذار مقدارِ
+ *    شروع داشته باشد. تأخیرش فقط در بسته‌شدن است.
+ */
+.zig-menu .zig-menu__trigger,
+.zig-menu .zig-menu__sheet,
+.zig-menu .zig-menu__backdrop {
+	display: none;
+}
+
+/*
+ * قفلِ اسکرولِ پشتِ کشو. کلاسش جدا از کلاسِ سرچ است تا بستنِ یکی قفلِ
+ * آن یکی را برندارد؛ تا وقتی هر کدام باز باشند صفحه قفل می‌ماند.
+ */
+.zig-menu-sheet-open,
+.zig-menu-sheet-open body {
+	overflow: hidden;
+}
+
+.zig-menu .zig-menu__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+@media (max-width: 1023px) {
+
+	.zig-menu ul.zig-menu__bar {
+		display: none;
+	}
+
+	.zig-menu .zig-menu__trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--zig-menu-trigger-color, #ffffff);
+		cursor: pointer;
+		line-height: 0;
+	}
+
+	.zig-menu .zig-menu__trigger svg {
+		width: var(--zig-menu-trigger-size, 24px);
+		height: var(--zig-menu-trigger-size, 24px);
+	}
+
+	.zig-menu .zig-menu__sheet {
+		display: flex;
+		flex-direction: column;
+		position: fixed;
+		z-index: 90;
+		padding-block: var(--zig-menu-sheet-pad-block, 24px);
+		padding-inline: var(--zig-menu-sheet-pad-inline, 16px);
+		background-color: var(--zig-menu-sheet-bg, #ffffff);
+		opacity: 0;
+		visibility: hidden;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		transition: transform var(--zig-menu-anim, 150ms) ease-out,
+			opacity var(--zig-menu-anim, 150ms) ease-out,
+			visibility 0s linear var(--zig-menu-anim, 150ms);
+	}
+
+	.zig-menu--sheet-start .zig-menu__sheet,
+	.zig-menu--sheet-end .zig-menu__sheet {
+		inset-block: 0;
+		width: min(var(--zig-menu-sheet-width, 368px), 100vw);
+	}
+
+	.zig-menu--sheet-start .zig-menu__sheet {
+		inset-inline-start: 0;
+	}
+
+	.zig-menu--sheet-end .zig-menu__sheet {
+		inset-inline-end: 0;
+	}
+
+	.zig-menu--sheet-bottom .zig-menu__sheet {
+		inset-inline: 0;
+		inset-block-end: 0;
+		block-size: 100dvh;
+		transform: translateY(100%);
+	}
+
+	/*
+	 * جایِ بسته‌بودن با درصدِ خودِ کشو حساب می‌شود نه با عددِ ثابت، چون
+	 * عرضش تنظیم‌شدنی است.
+	 *
+	 * ‎translateX‎ فیزیکی است و معادلِ منطقی ندارد، پس جهت با ‎:dir()‎
+	 * تفکیک می‌شود: کشو باید از همان لبه‌ای بیرون برود که به آن چسبیده،
+	 * وگرنه در راست‌چین از سمتِ مخالف وارد می‌شد و از رویِ کلِ صفحه
+	 * رد می‌شد.
+	 */
+	.zig-menu--sheet-start .zig-menu__sheet {
+		transform: translateX(-100%);
+	}
+
+	.zig-menu--sheet-end .zig-menu__sheet {
+		transform: translateX(100%);
+	}
+
+	.zig-menu--sheet-start .zig-menu__sheet:dir(rtl) {
+		transform: translateX(100%);
+	}
+
+	.zig-menu--sheet-end .zig-menu__sheet:dir(rtl) {
+		transform: translateX(-100%);
+	}
+
+	.zig-menu .zig-menu__sheet.is-open,
+	.zig-menu .zig-menu__sheet.is-open:dir(rtl) {
+		opacity: 1;
+		visibility: visible;
+		transform: translate(0, 0);
+		transition: transform var(--zig-menu-anim, 150ms) ease-out,
+			opacity var(--zig-menu-anim, 150ms) ease-out, visibility 0s;
+	}
+
+	.zig-menu .zig-menu__backdrop {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 89;
+		background-color: var(--zig-menu-sheet-backdrop, rgba(16, 24, 40, 0.45));
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity var(--zig-menu-anim, 150ms) ease-out,
+			visibility 0s linear var(--zig-menu-anim, 150ms);
+	}
+
+	.zig-menu .zig-menu__backdrop.is-open {
+		opacity: 1;
+		visibility: visible;
+		transition: opacity var(--zig-menu-anim, 150ms) ease-out, visibility 0s;
+	}
+
+	/* ------------------------- سربرگِ کشو ------------------------- */
+
+	.zig-menu .zig-menu__sheet-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		flex: none;
+		margin-block-end: var(--zig-menu-sheet-gap, 24px);
+	}
+
+	.zig-menu button.zig-menu__sheet-back {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--zig-menu-back-gap, 10px);
+		padding-inline: var(--zig-menu-back-pad, 12px);
+		border: 0;
+		border-radius: var(--zig-menu-back-radius, 8px);
+		block-size: 32px;
+		background-color: var(--zig-menu-back-bg, #f7f8f9);
+		color: var(--zig-menu-back-color, #a1a3a8);
+		cursor: pointer;
+		font-size: 15px;
+		line-height: normal;
+	}
+
+	.zig-menu .zig-menu__sheet-back-icon {
+		display: none;
+		flex: none;
+		line-height: 0;
+		color: inherit;
+	}
+
+	/*
+	 * هر دو آیکون در DOM هستند و فقط یکی دیده می‌شود. ساختنِ آیکون در
+	 * لحظه یعنی نوشتنِ ‎innerHTML‎ از داخلِ جاوااسکریپت، که هم SVGی
+	 * کاربر را دور می‌زد هم یک مسیرِ تزریق باز می‌کرد.
+	 */
+	.zig-menu .zig-menu__sheet:not(.is-nested) .zig-menu__sheet-back-icon[data-icon='close'],
+	.zig-menu .zig-menu__sheet.is-nested .zig-menu__sheet-back-icon[data-icon='back'] {
+		display: inline-flex;
+	}
+
+	.zig-menu .zig-menu__sheet-back-icon svg {
+		width: var(--zig-menu-back-icon-size, 12px);
+		height: var(--zig-menu-back-icon-size, 12px);
+	}
+
+	.zig-menu .zig-menu__sheet-logo {
+		display: inline-flex;
+		flex: none;
+		line-height: 0;
+	}
+
+	.zig-menu .zig-menu__sheet-logo img {
+		block-size: var(--zig-menu-sheet-logo-height, 48px);
+		inline-size: auto;
+		max-inline-size: 100%;
+		object-fit: contain;
+	}
+
+	/* ------------------------- کارتِ فهرست ------------------------- */
+
+	.zig-menu ul.zig-menu__level {
+		margin: 0;
+		padding-block: var(--zig-menu-m-card-pad-block, 8px);
+		padding-inline: var(--zig-menu-m-card-pad-inline, 16px);
+		background-color: var(--zig-menu-m-card-bg, #f9fafc);
+		border-radius: var(--zig-menu-m-card-radius, 16px);
+		list-style: none;
+		overflow: hidden;
+	}
+
+	.zig-menu li.zig-menu__m-item {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.zig-menu li.zig-menu__m-item + li.zig-menu__m-item {
+		border-block-start: 1px solid var(--zig-menu-m-divider, rgba(161, 163, 168, 0.15));
+	}
+
+	/*
+	 * ردیف هم پیوند است هم دکمه — یکی برایِ آیتمِ بی‌فرزند و یکی برایِ
+	 * آیتمی که تو می‌رود — پس هر دو تگ باید یک شکل باشند و هیچ‌کدام
+	 * ظاهرِ پیش‌فرضِ خودش را نگه ندارد.
+	 */
+	.zig-menu a.zig-menu__m-link,
+	.zig-menu button.zig-menu__m-link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		inline-size: 100%;
+		padding-block: var(--zig-menu-m-pad, 18px);
+		padding-inline: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+		color: var(--zig-menu-m-color, #111827);
+		text-align: start;
+		text-decoration: none;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 20px;
+	}
+
+	/*
+	 * چیدمانِ ردیف کارِ ‎space-between‎ است و بس: برچسب لبهٔ شروع، و هرچه
+	 * بعدش بیاید — شمارش یا فلش — لبهٔ پایان. در طرح این دو هیچ‌وقت با
+	 * هم نمی‌آیند، ولی اگر بیایند هم همین قاعده جوابشان را می‌دهد.
+	 */
+	.zig-menu .zig-menu__m-count {
+		color: var(--zig-menu-m-count-color, #a1a3a8);
+		font-size: 12px;
+		font-weight: 400;
+	}
+
+	.zig-menu .zig-menu__m-arrow {
+		display: inline-flex;
+		flex: none;
+		line-height: 0;
+		color: inherit;
+	}
+
+	.zig-menu .zig-menu__m-arrow svg {
+		width: var(--zig-menu-m-arrow-size, 16px);
+		height: var(--zig-menu-m-arrow-size, 16px);
+	}
+
+	/* ------------------------- پایینِ کشو ------------------------- */
+
+	/*
+	 * بلوکِ پایین در طرح به کفِ کشو چسبیده و فاصلهٔ بالایش کشسان است،
+	 * نه یک عددِ ثابت — با فهرستِ کوتاه ته صفحه می‌ماند و با فهرستِ بلند
+	 * هل داده می‌شود.
+	 */
+	.zig-menu .zig-menu__sheet-foot {
+		margin-block-start: auto;
+		padding-block-start: 24px;
+		flex: none;
+	}
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+
+	/*
+	 * ‎transition-duration: 0s‎ و نه ‎transition: none‎ — اسکریپت همین
+	 * مدت را می‌خوانَد تا بداند کِی کشو واقعاً پنهان شده.
+	 */
+	.zig-menu .zig-menu__sheet,
+	.zig-menu .zig-menu__backdrop {
+		transition-duration: 0s;
+	}
+}
+
+/* ==========================================================================
+   کانفیگ محصول
+   ========================================================================== */
+
+/*
+ * رنگ‌ها/جعبه‌ها همان دیزاین‌اند — نه چون این فایل قرار است تصمیمِ نهایی
+ * بگیرد، بلکه چون هر کنترلِ استایلِ متناظر در پنل با {{WRAPPER}} می‌آید و
+ * طبقِ توضیحِ بالای فایل همیشه بر این‌ها می‌چربد؛ این‌ها فقط پیش‌فرضِ
+ * جعبه‌بازنشده‌اند تا ویجت بدونِ دست‌زدن به هیچ کنترلی شبیهِ طرح باشد.
+ */
+.zig-configurator {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+.zig-configurator__card {
+	display: flex;
+	flex-direction: column;
+	gap: 26px;
+	background: rgba(16, 23, 34, 0.96);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(43, 53, 72, 0.9);
+	border-radius: 16px;
+	padding: 24px 18px;
+}
+
+.zig-configurator__header {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.zig-configurator__title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 20px;
+	color: #f6f8ff;
+}
+
+.zig-configurator__subtitle {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 20px;
+	color: #93a0b6;
+}
+
+.zig-configurator__fields {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+/*
+ * قاعدهٔ زوج/فرد: با تعدادِ زوجِ کشو، همیشه دو ستون. با فرد، همهٔ ردیف‌ها
+ * دو ستونی‌اند جز آخری که یک آیتم دارد و آن یکی تمامِ عرض را می‌گیرد. برایِ
+ * یک کشوِ تنها هم همین قاعده جواب می‌دهد: تنها فرزند، آخرین فرزند هم
+ * هست، پس تمامِ عرض می‌شود.
+ */
+.zig-configurator__field:last-child:nth-child(odd) {
+	grid-column: 1 / -1;
+}
+
+.zig-configurator__field {
+	position: relative;
+	min-width: 0;
+}
+
+/*
+ * برچسبِ «شناور رویِ لبه» — طرح دقیقاً همین را می‌دهد: ‎top:-8‎ باعث
+ * می‌شود متن دقیقاً رویِ خطِ کادر بنشیند، و پس‌زمینه‌اش تکه‌ای از خودِ
+ * کادر را می‌پوشاند تا انگار کادر دور برچسب بریده شده. به همین دلیل
+ * ‎.zig-configurator__field‎ چیدمانِ فلکسِ ستونی ندارد — تنها فرزندِ در
+ * جریانش ‎select-wrap‎ است؛ برچسب با ‎position:absolute‎ از جریان بیرون
+ * است و نسبت به همین عنصر جای می‌گیرد.
+ */
+.zig-configurator__label {
+	position: absolute;
+	top: -8px;
+	inset-inline-end: 14px;
+	z-index: 1;
+	padding: 0 8px;
+	background: linear-gradient(180deg, #0f1622 0%, #0c111b 100%);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 16px;
+	color: #d7dde8;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.zig-configurator__select-wrap {
+	position: relative;
+	display: block;
+	background: rgba(12, 17, 27, 0.98);
+	border: 1px solid rgba(48, 58, 78, 0.92);
+	border-radius: 10px;
+}
+
+/*
+ * ‎<select>‎ی بومی، نه یک کمبوباکسِ دستی: پیکرِ موبایل و ناوبریِ صفحه‌کلید
+ * را خودِ مرورگر می‌دهد و اینجا فقط فلشِ پیش‌فرض حذف و جایش با آیکونِ طرح
+ * پر می‌شود.
+ */
+.zig-configurator__select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	display: block;
+	width: 100%;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 16px;
+	color: #d7dde8;
+	background: transparent;
+	cursor: pointer;
+}
+
+.zig-configurator__select:invalid,
+.zig-configurator__select option[value=""] {
+	color: #d7dde8;
+}
+
+.zig-configurator__select::-ms-expand {
+	display: none;
+}
+
+/*
+ * موقعیتِ فلش با جهتِ نوشتار عوض می‌شود؛ در راست‌به‌چپ ‎inset-inline-end‎
+ * سمتِ چپِ فیزیکی است — دقیقاً همان‌جا که طرح فلش را گذاشته.
+ */
+.zig-configurator__chevron {
+	position: absolute;
+	top: 50%;
+	inset-inline-end: 14px;
+	transform: translateY(-50%);
+	display: inline-flex;
+	pointer-events: none;
+	line-height: 0;
+	color: #667085;
+}
+
+/*
+ * فقط عرض ست می‌شود؛ این فلش مربع نیست (نسبتِ خودِ SVG تقریباً ۱۲:۶٫۹
+ * است) و اگر ارتفاع هم برابرِ عرض بشود، آیکون کش می‌آید.
+ */
+.zig-configurator__chevron svg {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+/*
+ * ‎.zig-configurator__card‎ گپِ ۲۶ پیکسل دارد (فاصلهٔ عنوان تا کشوها،
+ * دقیقاً طبقِ طرح). فاصلهٔ کشوها تا این ردیف باید ۴۸ باشد، پس همان ۲۲
+ * اضافه این‌جا با ‎margin-top‎ جبران می‌شود؛ راهی سبک‌تر از یک دیوِ
+ * بسته‌بندیِ اضافه فقط برایِ یک گپِ دوم.
+ */
+.zig-configurator__bottom {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 22px;
+}
+
+.zig-configurator__price {
+	display: flex;
+}
+
+.zig-configurator__value {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--zig-unit-gap, 4px);
+	font-size: 32px;
+	font-weight: 800;
+	line-height: 38px;
+	color: #fff;
+}
+
+.zig-configurator__unit {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 24px;
+	color: rgba(255, 255, 255, 0.75);
+	white-space: nowrap;
+}
+
+.zig-configurator__side {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 10px;
+}
+
+.zig-configurator__stock {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	align-self: flex-end;
+	white-space: nowrap;
+	line-height: 16px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	font-size: 10px;
+	font-weight: 600;
+}
+
+/* رنگِ نقطه از همان رنگِ متنِ حالت می‌آید — برچسب و نقطه همیشه هم‌رنگ‌اند */
+.zig-configurator__stock-dot {
+	width: 2px;
+	height: 2px;
+	border-radius: 9999px;
+	background: currentColor;
+}
+
+.zig-configurator__stock--instock {
+	color: #34d399;
+	background: rgba(16, 185, 129, 0.1);
+}
+
+.zig-configurator__stock--preorder {
+	color: #60a5fa;
+	background: rgba(59, 130, 246, 0.1);
+}
+
+.zig-configurator__stock--outofstock {
+	color: #f87171;
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.zig-configurator__updated {
+	align-self: flex-end;
+	font-size: 10px;
+	font-weight: 400;
+	line-height: 14px;
+	color: #7f8aa0;
+	opacity: 0.9;
+}
+
+/*
+ * پنهان‌شدنِ این دو با اسکریپت (‎hidden‎) باید بر چیدمانِ ‎display‎یِ بالا
+ * بچربد؛ سلکتورِ ترکیبی همان وزنِ کلاس‌ها را دارد ولی دیرتر می‌آید، پس در
+ * تساویِ اختصاصیت این‌ها برنده‌اند.
+ */
+.zig-configurator__stock[hidden],
+.zig-configurator__updated[hidden] {
+	display: none;
+}
+
+.zig-configurator__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: 24px;
+	min-height: 56px;
+}
+
+/*
+ * دو دکمه هم‌عرض نیستند — طرح ۱۹۸px برایِ اول و ۳۵۲px برایِ دوم می‌دهد.
+ * به‌جای عرضِ ثابت (که در باریکه‌های مختلف نمی‌شکند)، همان نسبت با
+ * ‎flex-grow‎ می‌آید تا واکنش‌گرا هم بماند.
+ */
+.zig-configurator__btn {
+	display: inline-flex;
+	flex: 1 1 0;
+	min-height: 56px;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+	font: inherit;
+	font-weight: 700;
+	line-height: 20px;
+	color: #fff;
+	border-radius: 12px;
+	transition: background-color 0.15s ease;
+}
+
+.zig-configurator__btn--secondary {
+	flex-grow: 198;
+	font-size: 14px;
+	background: rgba(8, 12, 20, 0);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.zig-configurator__btn--secondary:hover,
+.zig-configurator__btn--secondary:focus-visible {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.zig-configurator__btn--primary {
+	flex-grow: 352;
+	font-size: 15px;
+	background: #6d28d9;
+	border: 1px solid rgba(139, 92, 255, 0.65);
+}
+
+.zig-configurator__btn--primary:hover,
+.zig-configurator__btn--primary:focus-visible {
+	background: #5c21b8;
+}
+
+/* پیامِ راهنما در ‎product-configurator.php‎ عمداً کلاسِ ‎.zig-price__notice‎ی موجود را دوباره استفاده می‌کند */
+
+/* ==========================================================================
+ * .zig-post-meta — نوارِ متایِ پست: زمانِ مطالعه، دیدگاه، لایک
+ * ======================================================================= */
+
+.zig-post-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 24px;
+}
+
+.zig-post-meta__reading-time {
+	color: #64748b;
+	font-size: 14px;
+}
+
+/* دیدگاه و لایک یک گروهِ جدا — فاصله/چینشِ این دو از بقیهٔ نوار مستقل است */
+.zig-post-meta__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 24px;
+}
+
+/*
+ * پایهٔ مشترکِ دو آیتمِ کلیک‌پذیر — پیوندِ دیدگاه‌ها و دکمهٔ لایک. دومی
+ * چون ‎<button>‎ است، ریست‌های خامِ مرورگر (بوردر/بک‌گراند/فونت/پدینگ)
+ * اینجا صفر می‌شوند تا هر دو دقیقاً یک شکل بیفتند.
+ */
+.zig-post-meta__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	background: transparent;
+	font: inherit;
+	text-decoration: none;
+	cursor: pointer;
+	color: #334155;
+}
+
+.zig-post-meta__count {
+	font-size: 14px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.zig-post-meta__icon {
+	position: relative;
+	display: inline-grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 9999px;
+	color: inherit;
+	background: rgba(15, 23, 42, 0.04);
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.zig-post-meta__icon svg {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+.zig-post-meta__comments:hover,
+.zig-post-meta__comments:focus-visible {
+	color: #10b981;
+}
+
+.zig-post-meta__comments:hover .zig-post-meta__icon,
+.zig-post-meta__comments:focus-visible .zig-post-meta__icon {
+	background: rgba(16, 185, 129, 0.1);
+}
+
+/*
+ * ‎currentColor‎ خودش از ‎color‎ی بالا ارث می‌برد؛ این خط فقط احتیاطِ
+ * اضافه است — رویِ ‎stroke‎ی خودِ SVG صریح می‌نشیند تا اگر جایی (مثلاً
+ * CSSِ قالب) رویِ ‎svg‎ دست برده، رنگِ هاور همچنان برنده باشد.
+ */
+.zig-post-meta__comments:hover .zig-post-meta__icon svg,
+.zig-post-meta__comments:focus-visible .zig-post-meta__icon svg {
+	stroke: #10b981;
+}
+
+.zig-post-meta__like:not(.is-liked):hover,
+.zig-post-meta__like:not(.is-liked):focus-visible {
+	color: #ef4444;
+}
+
+.zig-post-meta__like:not(.is-liked):hover .zig-post-meta__icon,
+.zig-post-meta__like:not(.is-liked):focus-visible .zig-post-meta__icon {
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.zig-post-meta__like:not(.is-liked):hover .zig-post-meta__icon svg,
+.zig-post-meta__like:not(.is-liked):focus-visible .zig-post-meta__icon svg {
+	stroke: #ef4444;
+}
+
+/*
+ * دو آیکونِ لایک (خالی/پر) رویِ هم می‌نشینند — گرید یک‌خانه‌ای، نه دو
+ * عنصرِ کنارِ هم — و فقط یکی با کلاسِ ‎is-liked‎ دیده می‌شود. سوییچ کاملاً
+ * CSS است؛ اسکریپت فقط کلاس را عوض می‌کند، چیزی از جنسِ آیکون نمی‌داند.
+ */
+.zig-post-meta__like .zig-post-meta__icon {
+	display: inline-grid;
+	grid-template-areas: 'stack';
+}
+
+.zig-post-meta__icon-outline,
+.zig-post-meta__icon-filled {
+	grid-area: stack;
+	display: inline-flex;
+}
+
+.zig-post-meta__like:not(.is-liked) .zig-post-meta__icon-filled {
+	display: none;
+}
+
+.zig-post-meta__like.is-liked .zig-post-meta__icon-outline {
+	display: none;
+}
+
+.zig-post-meta__like.is-liked {
+	color: #ef4444;
+}
+
+.zig-post-meta__like.is-liked .zig-post-meta__icon {
+	color: #fff;
+	background: #ef4444;
+}
+
+/*
+ * همان احتیاطِ بالا، برایِ حالتِ لایک‌شده: قلبِ توپر رنگش را از ‎fill‎
+ * می‌گیرد نه ‎stroke‎، پس هر دو صریح می‌نشینند.
+ */
+.zig-post-meta__like.is-liked .zig-post-meta__icon svg {
+	stroke: #fff;
+	fill: #fff;
 }

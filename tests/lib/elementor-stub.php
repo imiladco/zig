@@ -103,13 +103,23 @@ class Widget_Base {
     /** @var array<string,array<string,string[]>> */
     protected array $zig_attributes = [];
 
-    public function add_render_attribute($key, $name = null, $value = null) {
+    /**
+     * رفتارِ پیش‌فرض («افزودن»، نه «جایگزینی») عمداً دقیقاً مثلِ خودِ
+     * المنتور است: ویجتی که در یک حلقه (مثلاً یک کارت به‌ازایِ هر ردیف)
+     * همین یک کلید را دوباره صدا می‌زند، بدونِ ‎overwrite: true‎ باید مقادیرِ
+     * قبلی‌اش را «ببیند» — دقیقاً همان باگی که این تست گرفت.
+     */
+    public function add_render_attribute($key, $name = null, $value = null, $overwrite = false) {
         if (is_array($name)) {
             foreach ($name as $attr => $val) {
-                $this->add_render_attribute($key, $attr, $val);
+                $this->add_render_attribute($key, $attr, $val, $overwrite);
             }
 
             return $this;
+        }
+
+        if ($overwrite) {
+            unset($this->zig_attributes[$key][$name]);
         }
 
         foreach ((array) $value as $single) {
@@ -118,6 +128,25 @@ class Widget_Base {
             }
             $this->zig_attributes[$key][$name][] = (string) $single;
         }
+
+        return $this;
+    }
+
+    /** مطابقِ ‎Element_Base::remove_render_attribute‎ خودِ المنتور. */
+    public function remove_render_attribute($key, $name = null, $value = null) {
+        if (null === $name) {
+            unset($this->zig_attributes[$key]);
+
+            return $this;
+        }
+
+        if (null === $value) {
+            unset($this->zig_attributes[$key][$name]);
+
+            return $this;
+        }
+
+        $this->zig_attributes[$key][$name] = array_values(array_diff($this->zig_attributes[$key][$name] ?? [], (array) $value));
 
         return $this;
     }
@@ -167,6 +196,24 @@ class Widget_Base {
 
     public function get_repeater_setting_key($f, $r, $i) { return $r . '.' . $i . '.' . $f; }
 
+    /**
+     * ‎get_settings()‎ عمداً می‌ترکد، نه اینکه مقداری برگرداند.
+     *
+     * در المنتورِ واقعی این متد برایِ آماده‌کردنِ تنظیمات سراغِ
+     * ‎get_controls()‎ می‌رود و آن هم اگر کنترل‌ها هنوز ثبت نشده باشند
+     * ‎register_controls()‎ را صدا می‌زند. پس هر فراخوانیِ ‎get_settings()‎
+     * از داخلِ ‎register_controls()‎ یک بازگشتِ بی‌پایان است که پنلِ ویجت
+     * را در ویرایشگر کاملاً از کار می‌اندازد — بی‌آنکه PHP خطایی بدهد.
+     *
+     * یک بار همین افتاد (ویجتِ منو: پنل بالا نمی‌آمد و مگامنو هیچ‌وقت
+     * گزینه‌ای برایِ انتخاب نداشت) و هیچ سنجه‌ای نگرفتش. حالا می‌گیرد.
+     */
+    public function get_settings($key = null) {
+        throw new \RuntimeException(
+            'get_settings() هنگامِ ثبتِ کنترل‌ها صدا زده شد؛ در المنتور این یعنی بازگشتِ بی‌پایان.'
+        );
+    }
+
     /** خروجی رندر با تنظیمات داده‌شده — نقطهٔ ورود تست‌ها */
     public function zig_render(array $settings): string {
         $this->zig_attributes = [];
@@ -212,9 +259,59 @@ namespace {
             return ['thumbnail', 'medium', 'large'];
         }
     }
+    /**
+     * تصویر پیوست.
+     *
+     * قبلاً رشتهٔ خالی برمی‌گرداند، و این برای ویجت‌هایی که تصویر جزء
+     * تزئیناتشان بود کافی بود. برای گالری نیست: آنجا کلِ خروجی همین
+     * تصویرهاست و با رشتهٔ خالی، تستِ ترتیبِ اسلایدها روی یک صفحهٔ بی‌عکس
+     * اجرا می‌شد و همیشه سبز می‌ماند.
+     *
+     * شناسه و اندازه در خروجی می‌آیند تا بشود سنجید *کدام* پیوست با
+     * *کدام* اندازه درخواست شده — وگرنه هر ‎<img>‎ی شبیه هر ‎<img>‎ دیگری
+     * است و جابه‌جا شدنِ اندازهٔ صحنه و بندانگشتی دیده نمی‌شود.
+     */
     if (!function_exists('wp_get_attachment_image')) {
-        function wp_get_attachment_image($id, $size = 'thumbnail', $icon = false, $attr = []) { return ''; }
+        function wp_get_attachment_image($id, $size = 'thumbnail', $icon = false, $attr = []) {
+            $out = '<img src="https://zig3d.test/img/' . (int) $id . '.jpg"'
+                . ' data-size="' . htmlspecialchars((string) $size, ENT_QUOTES) . '"';
+
+            foreach ((array) $attr as $key => $value) {
+                $out .= ' ' . $key . '="' . htmlspecialchars((string) $value, ENT_QUOTES) . '"';
+            }
+
+            return $out . ' />';
+        }
     }
+    /** آدرسِ یک پیوست؛ شناسه و اندازه در خودِ رشته می‌آیند تا قابل سنجش باشند */
+    if (!function_exists('wp_get_attachment_image_url')) {
+        function wp_get_attachment_image_url($id, $size = 'thumbnail') {
+            if ((int) $id <= 0) {
+                return false;
+            }
+
+            return 'https://zig3d.test/full/' . (int) $id . '-' . (string) $size . '.jpg';
+        }
+    }
+    /**
+     * رندر یک ویجت بیرون از المنتور.
+     *
+     * اینجا و نه در فایل تست: دو فایل تست به آن نیاز داشتند و هر کدام
+     * نسخهٔ خودش را تعریف کرده بود، تا روزی که هر دو در یک اجرا لود شدند
+     * و PHP با «تعریف دوباره» مرد. یک تعریف، جایی که بقیهٔ استاب‌ها هستند.
+     */
+    if (!function_exists('zig_widget')) {
+        function zig_widget(string $class) {
+            return (new \ReflectionClass($class))->newInstanceWithoutConstructor();
+        }
+    }
+
+    if (!function_exists('zig_render')) {
+        function zig_render(string $class, array $settings): string {
+            return zig_widget($class)->zig_render($settings);
+        }
+    }
+
     if (!function_exists('get_post_mime_type')) {
         function get_post_mime_type($id) { return $GLOBALS['__zig_mime'][$id] ?? false; }
     }
