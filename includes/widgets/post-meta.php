@@ -23,14 +23,15 @@ if (!defined('ABSPATH')) {
  *
  *     div.zig-post-meta
  *       span.zig-post-meta__reading-time
- *       a.zig-post-meta__item.zig-post-meta__comments   پیوندِ واقعی به بخشِ دیدگاه‌ها
- *         span.zig-post-meta__count
- *         span.zig-post-meta__icon
- *       button.zig-post-meta__item.zig-post-meta__like[.is-liked]   دکمهٔ سوییچ، نه پیوند
- *         span.zig-post-meta__count
- *         span.zig-post-meta__icon
- *           span.zig-post-meta__icon-outline
- *           span.zig-post-meta__icon-filled
+ *       div.zig-post-meta__actions                      فقط اگر دیدگاه یا لایک روشن باشد
+ *         a.zig-post-meta__item.zig-post-meta__comments   پیوندِ واقعی به بخشِ دیدگاه‌ها
+ *           span.zig-post-meta__count
+ *           span.zig-post-meta__icon
+ *         button.zig-post-meta__item.zig-post-meta__like[.is-liked]   دکمهٔ سوییچ، نه پیوند
+ *           span.zig-post-meta__count
+ *           span.zig-post-meta__icon
+ *             span.zig-post-meta__icon-outline
+ *             span.zig-post-meta__icon-filled
  *
  * زمانِ مطالعه از رویِ محتوایِ خودِ پست محاسبه می‌شود (‎Reading_Time‎، بدونِ
  * افزونهٔ واسط). دیدگاه از هستهٔ وردپرس می‌آید. لایک تنها بخشی است که این
@@ -335,6 +336,61 @@ final class Post_Meta extends Widget_Base {
             ]
         );
 
+        $this->add_responsive_control(
+            'items_justify',
+            [
+                'label'     => __('چینش افقی', 'zig3d-widgets'),
+                'type'      => Controls_Manager::SELECT,
+                'default'   => 'flex-start',
+                'options'   => [
+                    'flex-start'    => __('راست/چپ (شروع)', 'zig3d-widgets'),
+                    'center'        => __('وسط', 'zig3d-widgets'),
+                    'flex-end'      => __('چپ/راست (پایان)', 'zig3d-widgets'),
+                    'space-between' => __('فاصلهٔ مساوی (دوسر چسبیده)', 'zig3d-widgets'),
+                    'space-around'  => __('فاصلهٔ مساوی دورِ هر آیتم', 'zig3d-widgets'),
+                ],
+                'selectors' => ['{{WRAPPER}} .zig-post-meta' => 'justify-content: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_control(
+            'actions_heading',
+            [
+                'label'     => __('گروهِ دیدگاه و لایک', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
+        $this->add_responsive_control(
+            'actions_gap',
+            [
+                'label'      => __('فاصلهٔ دیدگاه تا لایک', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px', 'em'],
+                'range'      => ['px' => ['min' => 0, 'max' => 60]],
+                'default'    => ['size' => 24, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-post-meta__actions' => 'gap: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'actions_justify',
+            [
+                'label'     => __('چینشِ افقیِ این گروه', 'zig3d-widgets'),
+                'type'      => Controls_Manager::SELECT,
+                'default'   => 'flex-start',
+                'options'   => [
+                    'flex-start'    => __('راست/چپ (شروع)', 'zig3d-widgets'),
+                    'center'        => __('وسط', 'zig3d-widgets'),
+                    'flex-end'      => __('چپ/راست (پایان)', 'zig3d-widgets'),
+                    'space-between' => __('فاصلهٔ مساوی (دوسر چسبیده)', 'zig3d-widgets'),
+                    'space-around'  => __('فاصلهٔ مساوی دورِ هر آیتم', 'zig3d-widgets'),
+                ],
+                'selectors' => ['{{WRAPPER}} .zig-post-meta__actions' => 'justify-content: {{VALUE}};'],
+            ]
+        );
+
         $this->end_controls_section();
     }
 
@@ -433,7 +489,18 @@ final class Post_Meta extends Widget_Base {
             [
                 'label'     => __('رنگ متن و آیکون', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'selectors' => [$selector . ' .zig-post-meta__count' => 'color: {{VALUE}};', $selector . ' .zig-post-meta__icon' => 'color: {{VALUE}};'],
+                'selectors' => [
+                    $selector . ' .zig-post-meta__count' => 'color: {{VALUE}};',
+                    $selector . ' .zig-post-meta__icon'  => 'color: {{VALUE}};',
+                    /*
+                     * ‎currentColor‎ خودش از ‎color‎ی بالا ارث می‌برد، ولی
+                     * روی ‎stroke‎ی خودِ SVG هم صریح نشانده می‌شود — دقیقاً
+                     * همان احتیاطی که ‎chevron_color‎ی کانفیگ‌گر برایِ
+                     * ‎fill‎ دارد؛ اگر جایی (مثلاً CSSِ قالب) رویِ svg
+                     * دست ببرد، این رنگ همچنان برنده است.
+                     */
+                    $selector . ' .zig-post-meta__icon svg' => 'stroke: {{VALUE}};',
+                ],
             ]
         );
 
@@ -506,12 +573,31 @@ final class Post_Meta extends Widget_Base {
     }
 
     private function add_likes_state_controls(string $prefix, string $selector): void {
+        $color_selectors = [
+            $selector . ' .zig-post-meta__count' => 'color: {{VALUE}};',
+            $selector . ' .zig-post-meta__icon'  => 'color: {{VALUE}};',
+            /*
+             * ‎stroke‎ در همهٔ حالت‌ها بی‌ضرر است: رویِ آیکونِ خطیِ قلب
+             * (خالی) اثر می‌کند، رویِ آیکونِ توپرش هیچ (چون stroke ندارد).
+             */
+            $selector . ' .zig-post-meta__icon svg' => 'stroke: {{VALUE}};',
+        ];
+
+        /*
+         * ‎fill‎ فقط برایِ حالتِ «لایک‌شده» — چون آیکونِ توپرِ قلب رنگش را
+         * از ‎fill‎ می‌گیرد، نه ‎stroke‎. اگر این‌جا هم عمومی می‌شد، آیکونِ
+         * خطیِ حالتِ عادی/هاور (که عمداً ‎fill="none"‎ است) توپر می‌شد.
+         */
+        if ('active_' === $prefix) {
+            $color_selectors[$selector . ' .zig-post-meta__icon svg'] = 'stroke: {{VALUE}}; fill: {{VALUE}};';
+        }
+
         $this->add_control(
             $prefix . 'likes_color',
             [
                 'label'     => __('رنگ متن و آیکون', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'selectors' => [$selector . ' .zig-post-meta__count' => 'color: {{VALUE}};', $selector . ' .zig-post-meta__icon' => 'color: {{VALUE}};'],
+                'selectors' => $color_selectors,
             ]
         );
 
@@ -546,8 +632,21 @@ final class Post_Meta extends Widget_Base {
         printf('<div %s>', $this->get_render_attribute_string('root')); // phpcs:ignore WordPress.Security.EscapeOutput -- از get_render_attribute_string، خودش اسکیپ‌شده
 
         $this->render_reading_time($settings, $post_id);
-        $this->render_comments($settings, $post_id);
-        $this->render_likes($settings, $post_id);
+
+        $has_comments = 'yes' === ($settings['show_comments'] ?? 'yes');
+        $has_likes    = 'yes' === ($settings['show_likes'] ?? 'yes');
+
+        /*
+         * دیدگاه و لایک در یک دیوِ مشترک — تا فاصله/چینشِ این دو، جدا از
+         * فاصلهٔ زمانِ مطالعه تا این گروه، قابلِ‌تنظیم باشد. اگر هیچ‌کدام
+         * روشن نباشد، دیوی هم در کار نیست.
+         */
+        if ($has_comments || $has_likes) {
+            echo '<div class="zig-post-meta__actions">';
+            $this->render_comments($settings, $post_id);
+            $this->render_likes($settings, $post_id);
+            echo '</div>';
+        }
 
         echo '</div>';
     }

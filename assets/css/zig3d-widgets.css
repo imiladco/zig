@@ -6980,6 +6980,14 @@ nav.zig-menu {
 	font-size: 14px;
 }
 
+/* دیدگاه و لایک یک گروهِ جدا — فاصله/چینشِ این دو از بقیهٔ نوار مستقل است */
+.zig-post-meta__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 24px;
+}
+
 /*
  * پایهٔ مشترکِ دو آیتمِ کلیک‌پذیر — پیوندِ دیدگاه‌ها و دکمهٔ لایک. دومی
  * چون ‎<button>‎ است، ریست‌های خامِ مرورگر (بوردر/بک‌گراند/فونت/پدینگ)
@@ -7033,6 +7041,16 @@ nav.zig-menu {
 	background: rgba(16, 185, 129, 0.1);
 }
 
+/*
+ * ‎currentColor‎ خودش از ‎color‎ی بالا ارث می‌برد؛ این خط فقط احتیاطِ
+ * اضافه است — رویِ ‎stroke‎ی خودِ SVG صریح می‌نشیند تا اگر جایی (مثلاً
+ * CSSِ قالب) رویِ ‎svg‎ دست برده، رنگِ هاور همچنان برنده باشد.
+ */
+.zig-post-meta__comments:hover .zig-post-meta__icon svg,
+.zig-post-meta__comments:focus-visible .zig-post-meta__icon svg {
+	stroke: #10b981;
+}
+
 .zig-post-meta__like:not(.is-liked):hover,
 .zig-post-meta__like:not(.is-liked):focus-visible {
 	color: #ef4444;
@@ -7041,6 +7059,11 @@ nav.zig-menu {
 .zig-post-meta__like:not(.is-liked):hover .zig-post-meta__icon,
 .zig-post-meta__like:not(.is-liked):focus-visible .zig-post-meta__icon {
 	background: rgba(239, 68, 68, 0.1);
+}
+
+.zig-post-meta__like:not(.is-liked):hover .zig-post-meta__icon svg,
+.zig-post-meta__like:not(.is-liked):focus-visible .zig-post-meta__icon svg {
+	stroke: #ef4444;
 }
 
 /*
@@ -7074,4 +7097,13 @@ nav.zig-menu {
 .zig-post-meta__like.is-liked .zig-post-meta__icon {
 	color: #fff;
 	background: #ef4444;
+}
+
+/*
+ * همان احتیاطِ بالا، برایِ حالتِ لایک‌شده: قلبِ توپر رنگش را از ‎fill‎
+ * می‌گیرد نه ‎stroke‎، پس هر دو صریح می‌نشینند.
+ */
+.zig-post-meta__like.is-liked .zig-post-meta__icon svg {
+	stroke: #fff;
+	fill: #fff;
 }
