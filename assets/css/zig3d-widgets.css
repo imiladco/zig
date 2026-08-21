@@ -7270,3 +7270,51 @@ nav.zig-menu {
 		overflow: visible;
 	}
 }
+
+/* ==========================================================================
+   لیبل محصول
+   ========================================================================== */
+
+/*
+ * ظاهرِ پیش‌فرض دقیقاً طبقِ فیگما (node 1:300 و 1:196): دو نشانِ قرصی، یکی
+ * قرمز برایِ تخفیف و یکی طلایی برایِ پرفروش. رنگ‌ها اینجا فقط پیش‌فرضند —
+ * سلکتورِ المنتور (‎{{WRAPPER}} .zig-label‎) وزنِ بیشتری دارد، پس هر مقداری
+ * که در پنل تنظیم شود رویِ همین می‌چربد.
+ */
+.zig-label {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	line-height: 1;
+	white-space: nowrap;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 6px 12px;
+	border-radius: 999px;
+}
+
+.zig-label--discount {
+	color: #fff;
+	background-color: #a8261a;
+	border: 1px solid #fff;
+}
+
+.zig-label--bestseller {
+	color: #231912;
+	background-color: #dfb370;
+}
+
+/* آیکونِ شعله با ‎stroke="currentColor"‎ رسم می‌شود، پس همیشه هم‌رنگِ متنِ خودِ لیبل است */
+.zig-label__icon {
+	display: inline-flex;
+	flex: none;
+	width: var(--zig-label-icon-size, 14px);
+	height: var(--zig-label-icon-size, 14px);
+}
+
+.zig-label__icon svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}

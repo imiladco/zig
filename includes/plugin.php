@@ -33,6 +33,7 @@ final class Plugin {
         'button'        => Widgets\Button::class,
         'product-price' => Widgets\Product_Price::class,
         'product-stock' => Widgets\Product_Stock::class,
+        'product-label' => Widgets\Product_Label::class,
         'product-configurator' => Widgets\Product_Configurator::class,
         'product-archive' => Widgets\Product_Archive::class,
         'download-archive' => Widgets\Download_Archive::class,

@@ -38,6 +38,8 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/schema-store.php';
+require_once $root . '/includes/widgets/product-label.php';
 require_once $root . '/includes/query-state.php';
 require_once $root . '/includes/facets.php';
 require_once $root . '/includes/filter-schema.php';
@@ -73,6 +75,7 @@ $widgets = [
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
+    'لیبل محصول'    => \Zig3d_Widgets\Widgets\Product_Label::class,
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
