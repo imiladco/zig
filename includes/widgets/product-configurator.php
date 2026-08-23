@@ -1335,7 +1335,7 @@ final class Product_Configurator extends Widget_Base {
             'has_price'   => true,
             'current'     => $price['current'],
             'stock_state' => $stock['state'],
-            'updated_at'  => Rate_Price::updated_at($product->get_id()),
+            'updated_at'  => Rate_Price::updated_at_for($product),
         ];
     }
 
@@ -1531,10 +1531,12 @@ final class Product_Configurator extends Widget_Base {
     /**
      * خط زمانِ به‌روزرسانی.
      *
-     * وقتی نه پیش‌فرض و نه هیچ واریانتی زمانی برای نمایش دارند (محصول اصلاً
-     * نرخ‌محور نیست)، این بخش کلاً چاپ نمی‌شود — نه یک برچسبِ بی‌مقدار.
-     * اگر پیش‌فرض زمان ندارد ولی دست‌کم یک واریانت دارد، عنصر با ‎hidden‎
-     * می‌آید تا اسکریپت با انتخابِ همان ترکیب بتواند نمایانش کند.
+     * ‎Rate_Price::updated_at_for()‎ اول نوسان را می‌خواند، بعد به تاریخِ
+     * ذخیرهٔ خودِ محصول برمی‌گردد — پس تقریباً هر محصول/واریانتِ واقعی یک
+     * زمان دارد و این بخش تقریباً همیشه چاپ می‌شود؛ استثنا فقط محصولی است
+     * که حتی یک‌بار هم ذخیره نشده (که در عمل وجود ندارد، ولی سنجیدنش رایگان
+     * است). اگر پیش‌فرض زمان ندارد ولی دست‌کم یک واریانتِ دیگر دارد، عنصر
+     * با ‎hidden‎ می‌آید تا اسکریپت با انتخابِ همان ترکیب بتواند نمایانش کند.
      */
     private function render_updated(array $settings, array $display, array $variations, bool $persian): void {
         if ('yes' !== ($settings['show_updated'] ?? 'yes')) {
@@ -1543,7 +1545,7 @@ final class Product_Configurator extends Widget_Base {
 
         $default_value = $this->updated_value((int) ($display['updated_at'] ?? 0), $persian);
 
-        if ('' === $default_value && !$this->any_rate_based($variations)) {
+        if ('' === $default_value && !$this->any_variation_has_updated_at($variations)) {
             return;
         }
 
@@ -1560,7 +1562,7 @@ final class Product_Configurator extends Widget_Base {
         echo '</div>';
     }
 
-    private function any_rate_based(array $variations): bool {
+    private function any_variation_has_updated_at(array $variations): bool {
         foreach ($variations as $row) {
             if (((int) $row['updated_at']) > 0) {
                 return true;

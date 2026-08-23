@@ -182,6 +182,36 @@ Tests::same('وضعیتش ناموجود است', $oos_rows[1]['stock_state'], Z
 /* محصولِ ساده هیچ واریانتی ندارد */
 Tests::same('محصولِ ساده واریانت ندارد', Configurator::variations($simple), []);
 
+/*
+ * افزونهٔ نوسان در این فایلِ تست اصلاً بارگذاری نشده (نه استاب، نه کلاسِ
+ * واقعی)، پس ‎Rate_Price::updated_at_for()‎ همیشه به شاخهٔ fallback
+ * می‌رود — دقیقاً همان چیزی که این تست می‌سنجد: محصولِ متغیرِ بدونِ
+ * نوسان هم دیگر ‎updated_at‎ صفر نمی‌دهد، بلکه تاریخِ ذخیرهٔ خودِ واریانت
+ * را می‌گیرد.
+ */
+$modified_variation = new WC_Product([
+    'id'              => ++$GLOBALS['__zig_seq'],
+    'type'            => 'variation',
+    'regular'         => '100',
+    'variation_attrs' => ['config' => 'a'],
+    'modified'        => 1_650_000_000,
+]);
+
+$with_modified = new WC_Product([
+    'id'                   => ++$GLOBALS['__zig_seq'],
+    'type'                 => 'variable',
+    'variation_attributes' => ['config' => ['a']],
+    'children'             => [$modified_variation->get_id()],
+]);
+
+$modified_rows = Configurator::variations($with_modified);
+
+Tests::same(
+    'بدونِ نوسان، واریانت تاریخِ ذخیرهٔ خودش را می‌گیرد',
+    $modified_rows[0]['updated_at'],
+    1_650_000_000
+);
+
 /* ==========================================================================
  * رندر › عنوان فقط وقتی کشویی برای انتخاب هست
  * ======================================================================= */
