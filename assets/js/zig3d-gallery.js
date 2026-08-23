@@ -33,13 +33,24 @@
 			updateProgress();
 		}
 
+		var isRtl = document.documentElement.dir === 'rtl';
+
 		/*
 		 * فلش‌هایِ ناوبریِ تصویرِ شاخص — مستقل از مودال (پیش از return زیر
 		 * می‌آید تا وقتی مودال خاموش است هم کار کند). کلیکِ خودِ تامبنیل‌ها
 		 * دست‌نخورده می‌ماند و فقط مودال را باز می‌کند؛ این فلش‌ها با
 		 * ‎data-large‎ی از پیش در HTML، بدونِ هیچ درخواستِ شبکه‌ای، خودِ
-		 * تصویرِ شاخص را عوض می‌کنند و تامبنیلِ متناظر را (اگر دیده‌شدنی
-		 * باشد) ‎is-active‎ می‌کنند.
+		 * تصویرِ شاخص را با یک اسلایدِ واقعی (نه فقط عوض‌کردنِ src) عوض
+		 * می‌کنند و تامبنیلِ متناظر را (اگر دیده‌شدنی باشد) ‎is-active‎
+		 * می‌کنند.
+		 *
+		 * تکنیک: یک ‎<img>‎ی تازه با مقصدِ جدید ساخته و کنارِ تصویرِ فعلی
+		 * (هر دو ‎position: absolute‎، والدشان ‎.zig-gallery__main‎ از قبل
+		 * ‎overflow: hidden‎ دارد) می‌نشیند؛ با یک reflow، هر دو با
+		 * ‎transform: translateX‎ به سمتِ مقابل می‌لغزند. بعدِ پایانِ
+		 * transition، تصویرِ قدیمی حذف و ‎transform‎یِ اینلاینِ تصویرِ تازه
+		 * پاک می‌شود — وگرنه رویِ هاور با ‎transform: scale()‎یِ CSS تداخل
+		 * می‌کرد.
 		 */
 		var mainEl = root.querySelector('.zig-gallery__main');
 		var mainImg = mainEl ? mainEl.querySelector('img') : null;
@@ -49,29 +60,73 @@
 
 		if (mainImg && navItems.length > 1 && (navPrev || navNext)) {
 			var mainIndex = 0;
+			var sliding = false;
 
-			var showAt = function (index) {
-				mainIndex = (index + navItems.length) % navItems.length;
-				var el = navItems[mainIndex];
-
-				mainImg.src = el.dataset.large;
-				mainImg.alt = el.dataset.alt || '';
-
+			var setActiveThumb = function (el) {
 				Array.prototype.forEach.call(navItems, function (item) {
 					item.classList.toggle('is-active', item === el);
 				});
 			};
 
+			/** isNext: جهتِ منطقی (دکمهٔ بعدی=true، قبلی=false)، نه فیزیکی */
+			var showAt = function (rawIndex, isNext) {
+				if (sliding) {
+					return;
+				}
+
+				var index = (rawIndex + navItems.length) % navItems.length;
+
+				if (index === mainIndex) {
+					return;
+				}
+
+				var el = navItems[index];
+
+				mainIndex = index;
+				setActiveThumb(el);
+
+				// جلو رفتن (بعدی) در راست‌به‌چپ یعنی محتوا به چپ می‌رود و از راست می‌آید
+				var enterFromRight = isRtl ? isNext : !isNext;
+				var enterX = enterFromRight ? '100%' : '-100%';
+				var exitX = enterFromRight ? '-100%' : '100%';
+
+				var incoming = mainImg.cloneNode(false);
+				incoming.removeAttribute('srcset');
+				incoming.removeAttribute('sizes');
+				incoming.src = el.dataset.large;
+				incoming.alt = el.dataset.alt || '';
+				incoming.style.transform = 'translateX(' + enterX + ')';
+				mainEl.appendChild(incoming);
+
+				var outgoing = mainImg;
+
+				sliding = true;
+				// یک reflow کوچک تا transition بعدِ افزودن به DOM درست بازی کند
+				incoming.offsetWidth;
+
+				incoming.style.transform = 'translateX(0)';
+				outgoing.style.transform = 'translateX(' + exitX + ')';
+
+				var cleanup = function () {
+					incoming.removeEventListener('transitionend', cleanup);
+					incoming.style.transform = '';
+					outgoing.remove();
+					mainImg = incoming;
+					sliding = false;
+				};
+				incoming.addEventListener('transitionend', cleanup);
+			};
+
 			if (navPrev) {
 				navPrev.addEventListener('click', function (e) {
 					e.stopPropagation();
-					showAt(mainIndex - 1);
+					showAt(mainIndex - 1, false);
 				});
 			}
 			if (navNext) {
 				navNext.addEventListener('click', function (e) {
 					e.stopPropagation();
-					showAt(mainIndex + 1);
+					showAt(mainIndex + 1, true);
 				});
 			}
 		}
@@ -103,7 +158,6 @@
 		var fetching = null;
 		var current = 0;
 		var isOpen = false;
-		var isRtl = document.documentElement.dir === 'rtl';
 
 		function fetchImages() {
 			if (images) {
