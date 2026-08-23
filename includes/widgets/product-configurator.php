@@ -882,6 +882,42 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        /*
+         * پیش‌فرضِ CSS برایِ این ستون ‎align-items: flex-end‎ است (طرح: بجِ
+         * موجودی و زمان هر دو سمتِ راست می‌نشینند). همان الگویِ کنترلِ
+         * ‎align‎ در ویجتِ موجودیِ محصول اینجا هم به کار می‌رود.
+         */
+        $this->add_responsive_control(
+            'side_align',
+            [
+                'label'     => __('تراز', 'zig3d-widgets'),
+                'type'      => Controls_Manager::CHOOSE,
+                'default'   => 'flex-end',
+                'options'   => [
+                    'flex-start' => ['title' => __('ابتدا', 'zig3d-widgets'), 'icon' => 'eicon-text-align-right'],
+                    'center'     => ['title' => __('وسط', 'zig3d-widgets'), 'icon' => 'eicon-text-align-center'],
+                    'flex-end'   => ['title' => __('انتها', 'zig3d-widgets'), 'icon' => 'eicon-text-align-left'],
+                    'stretch'    => ['title' => __('تمام‌عرض', 'zig3d-widgets'), 'icon' => 'eicon-text-align-justify'],
+                ],
+                'selectors' => ['{{WRAPPER}} .zig-configurator__side' => 'align-items: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'side_wrap',
+            [
+                'label'     => __('شکستن به خط بعد', 'zig3d-widgets'),
+                'type'      => Controls_Manager::SELECT,
+                'default'   => 'nowrap',
+                'options'   => [
+                    'nowrap'       => __('نشکند', 'zig3d-widgets'),
+                    'wrap'         => __('بشکند', 'zig3d-widgets'),
+                    'wrap-reverse' => __('بشکند، معکوس', 'zig3d-widgets'),
+                ],
+                'selectors' => ['{{WRAPPER}} .zig-configurator__side' => 'flex-wrap: {{VALUE}};'],
+            ]
+        );
+
         $this->add_responsive_control(
             'side_gap',
             [
