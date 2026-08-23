@@ -6813,6 +6813,10 @@ nav.zig-menu {
  * دقیقاً طبقِ طرح). فاصلهٔ کشوها تا این ردیف باید ۴۸ باشد، پس همان ۲۲
  * اضافه این‌جا با ‎margin-top‎ جبران می‌شود؛ راهی سبک‌تر از یک دیوِ
  * بسته‌بندیِ اضافه فقط برایِ یک گپِ دوم.
+ *
+ * ‎:not(:first-child)‎ چون محصولِ ساده (یا متغیرِ بدونِ ترکیبِ معتبر) نه
+ * عنوانی دارد نه کشویی — آنجا همین ردیف تنها فرزندِ کارت است و طرح برایش
+ * هیچ فاصلهٔ اضافه‌ای روی گپِ خودِ کارت نمی‌خواهد.
  */
 .zig-configurator__bottom {
 	display: flex;
@@ -6820,6 +6824,9 @@ nav.zig-menu {
 	align-items: center;
 	justify-content: space-between;
 	gap: 16px;
+}
+
+.zig-configurator__bottom:not(:first-child) {
 	margin-top: 22px;
 }
 

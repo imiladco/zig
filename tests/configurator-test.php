@@ -13,6 +13,7 @@
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lib/woocommerce-stub.php';
+require_once __DIR__ . '/lib/elementor-stub.php';
 
 $root = dirname(__DIR__);
 
@@ -20,8 +21,13 @@ require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
 require_once $root . '/includes/rate-price.php';
 require_once $root . '/includes/configurator.php';
+require_once $root . '/includes/markup.php';
+require_once $root . '/includes/design-icons.php';
+require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/widgets/product-configurator.php';
 
 use Zig3d_Widgets\Configurator;
+use Zig3d_Widgets\Widgets\Product_Configurator;
 
 /* --------------------------------------------------------------------------
  * تاکسونومیِ ساختگی — برایِ اتریبیوتِ ‎pa_material‎
@@ -175,3 +181,38 @@ Tests::same('وضعیتش ناموجود است', $oos_rows[1]['stock_state'], Z
 
 /* محصولِ ساده هیچ واریانتی ندارد */
 Tests::same('محصولِ ساده واریانت ندارد', Configurator::variations($simple), []);
+
+/* ==========================================================================
+ * رندر › عنوان فقط وقتی کشویی برای انتخاب هست
+ * ======================================================================= */
+
+/*
+ * طبقِ طرحِ محصولِ ساده (فیگما node 997:945)، کارت فقط قیمت/موجودی دارد؛
+ * نه عنوانی، نه کشویی. پیش از این فیکس، ‎render_header()‎ فقط به کلیدِ
+ * ‎show_header‎ (پیش‌فرض «بله») گوش می‌داد و برایِ محصولِ ساده هم عنوانِ
+ * «انتخاب کانفیگ محصول» را چاپ می‌کرد — چیزی که طرح اصلاً ندارد.
+ */
+
+Tests::group('رندر › کانفیگ محصول، عنوان فقط وقتی قابل‌انتخاب است');
+
+$priced_simple = new WC_Product([
+    'id' => ++$GLOBALS['__zig_seq'], 'type' => 'simple', 'price' => '500000', 'regular' => '500000',
+]);
+
+/*
+ * ‎title‎/‎subtitle‎ صریح پاس داده می‌شوند چون استابِ تست، برخلافِ خودِ
+ * المنتور، مقدارِ پیش‌فرضِ کنترل‌ها را خودکار جایگزین نمی‌کند — دقیقاً
+ * همان قراردادِ بقیهٔ فایل‌هایِ تستِ این افزونه.
+ */
+$header_settings = ['show_header' => 'yes', 'title' => 'انتخاب کانفیگ محصول', 'subtitle' => ''];
+
+$simple_out = zig_render(Product_Configurator::class, $header_settings + ['product_id' => $priced_simple->get_id()]);
+
+Tests::blocks('محصولِ ساده هیچ عنوانی نمی‌گیرد', $simple_out, 'zig-configurator__header');
+Tests::blocks('و هیچ کشویی هم نمی‌گیرد', $simple_out, 'zig-configurator__fields');
+Tests::keeps('ولی خودِ کارت و قیمت هنوز رندر می‌شوند', $simple_out, 'zig-configurator__card');
+
+$variable_out = zig_render(Product_Configurator::class, $header_settings + ['product_id' => $product->get_id()]);
+
+Tests::keeps('محصولِ متغیرِ با ترکیبِ معتبر، عنوان می‌گیرد', $variable_out, 'zig-configurator__header');
+Tests::keeps('و کشوها هم رندر می‌شوند', $variable_out, 'zig-configurator__fields');

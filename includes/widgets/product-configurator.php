@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
  *     div.zig-configurator
  *       script.zig-configurator__data      دادهٔ واریانت‌ها (فقط محصولِ متغیر)
  *       div.zig-configurator__card         جعبهٔ تیره — فقط تا زیرِ قیمت/موجودی
- *         div.zig-configurator__header
+ *         div.zig-configurator__header     فقط وقتی کشویی برای انتخاب هست
  *           h3.zig-configurator__title
  *           p.zig-configurator__subtitle
  *         div.zig-configurator__fields     یک کشو به‌ازای هر ویژگیِ واریانت‌ساز
@@ -202,6 +202,7 @@ final class Product_Configurator extends Widget_Base {
                 'type'         => Controls_Manager::SWITCHER,
                 'default'      => 'yes',
                 'return_value' => 'yes',
+                'description'  => __('فقط وقتی محصول کشوهایی برای انتخاب دارد نمایش داده می‌شود؛ محصولِ ساده — یا محصولِ متغیرِ بدونِ ترکیبِ معتبر — همیشه بدونِ عنوان است، چون چیزی برای «انتخاب کانفیگ» نیست.', 'zig3d-widgets'),
             ]
         );
 
@@ -1354,9 +1355,8 @@ final class Product_Configurator extends Widget_Base {
          */
         echo '<div class="zig-configurator__card">';
 
-        $this->render_header($settings);
-
         if ($can_select) {
+            $this->render_header($settings);
             $this->render_fields($settings, $fields);
         }
 
