@@ -948,11 +948,23 @@ final class Product_Configurator extends Widget_Base {
     private function add_amount_style_controls(string $prefix, string $selector): void {
         $box = '{{WRAPPER}} ' . $selector;
 
+        /*
+         * عددِ قیمت واقعاً رویِ ‎$box‎ (خودِ ‎.zig-configurator__price‎) چاپ
+         * نمی‌شود؛ داخلِ ‎<bdi>‎/‎<span>‎یِ تودرتو است. اگر تایپوگرافی/رنگ فقط
+         * رویِ ‎$box‎ بنشیند، آن مقدار برایِ فرزندها فقط «ارثی» است — و در
+         * وردپرس/المنتور، تایپوگرافیِ پیش‌فرضِ کیت (‎p, span, div { font-size;
+         * font-weight; }‎) مستقیماً رویِ همان ‎<span>‎ می‌نشیند. در CSS مقدارِ
+         * مستقیم همیشه بر مقدارِ ارثی می‌چربد، فارغ از specificity — پس بدونِ
+         * ‎, $box *‎ عدد همیشه فونتِ پیش‌فرضِ سایت را می‌گرفت، نه مقدارِ
+         * انتخابیِ کاربر در پنل.
+         */
+        $text_box = $box . ', ' . $box . ' *';
+
         $this->add_group_control(
             Group_Control_Typography::get_type(),
             [
                 'name'     => $prefix . '_typography',
-                'selector' => $box,
+                'selector' => $text_box,
             ]
         );
 
@@ -961,7 +973,7 @@ final class Product_Configurator extends Widget_Base {
             [
                 'label'     => __('رنگ', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'selectors' => [$box => 'color: {{VALUE}};'],
+                'selectors' => [$text_box => 'color: {{VALUE}};'],
             ]
         );
 
@@ -969,7 +981,7 @@ final class Product_Configurator extends Widget_Base {
             Group_Control_Text_Shadow::get_type(),
             [
                 'name'     => $prefix . '_text_shadow',
-                'selector' => $box,
+                'selector' => $text_box,
             ]
         );
 
@@ -1113,13 +1125,24 @@ final class Product_Configurator extends Widget_Base {
     private function add_stock_state_controls(string $key, array $state): void {
         $box = '{{WRAPPER}} .zig-configurator__stock--' . $key;
 
+        /*
+         * متنِ برچسب رویِ خودِ ‎$box‎ چاپ نمی‌شود، داخلِ
+         * ‎<span class="zig-configurator__stock-label">‎ است. همان دلیلِ
+         * ‎add_amount_style_controls‎: تایپوگرافی/رنگِ فقط-ارثی رویِ
+         * ‎$box‎ در برابرِ تایپوگرافیِ پیش‌فرضِ کیتِ المنتور (که مستقیماً
+         * رویِ ‎span‎ می‌نشیند) می‌بازد، چون مقدارِ مستقیم همیشه بر ارثی
+         * می‌چربد. نقطهٔ موجودی هم از همین رنگ (‎currentColor‎) استفاده
+         * می‌کند، پس مستقیم‌نشستنِ رنگ رویِ خودش هم درست‌تر است.
+         */
+        $text_box = $box . ', ' . $box . ' *';
+
         $this->add_control(
             $key . '_color',
             [
                 'label'     => __('رنگ متن', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => $state['color'],
-                'selectors' => [$box => 'color: {{VALUE}};'],
+                'selectors' => [$text_box => 'color: {{VALUE}};'],
             ]
         );
 
@@ -1165,7 +1188,7 @@ final class Product_Configurator extends Widget_Base {
             Group_Control_Typography::get_type(),
             [
                 'name'     => $key . '_typography',
-                'selector' => $box,
+                'selector' => $text_box,
             ]
         );
 
@@ -1192,11 +1215,21 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        /*
+         * متنِ برچسب/مقدار رویِ خودِ ‎.zig-configurator__updated‎ چاپ
+         * نمی‌شود، داخلِ دو ‎<span>‎ی فرزند است. تایپوگرافی/رنگِ فقط-ارثی
+         * رویِ خودِ دیو در برابرِ تایپوگرافیِ پیش‌فرضِ کیتِ المنتور (که
+         * مستقیماً رویِ ‎span‎ می‌نشیند و مقدارِ مستقیم همیشه بر ارثی
+         * می‌چربد) می‌بازد — همین باعث می‌شد این کنترل‌ها هیچ اثری در
+         * فرانت نداشته باشند.
+         */
+        $updated_text_box = '{{WRAPPER}} .zig-configurator__updated, {{WRAPPER}} .zig-configurator__updated *';
+
         $this->add_group_control(
             Group_Control_Typography::get_type(),
             [
                 'name'     => 'updated_typography',
-                'selector' => '{{WRAPPER}} .zig-configurator__updated',
+                'selector' => $updated_text_box,
             ]
         );
 
@@ -1205,7 +1238,7 @@ final class Product_Configurator extends Widget_Base {
             [
                 'label'     => __('رنگ', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'selectors' => ['{{WRAPPER}} .zig-configurator__updated' => 'color: {{VALUE}};'],
+                'selectors' => [$updated_text_box => 'color: {{VALUE}};'],
             ]
         );
 
