@@ -216,3 +216,33 @@ $variable_out = zig_render(Product_Configurator::class, $header_settings + ['pro
 
 Tests::keeps('محصولِ متغیرِ با ترکیبِ معتبر، عنوان می‌گیرد', $variable_out, 'zig-configurator__header');
 Tests::keeps('و کشوها هم رندر می‌شوند', $variable_out, 'zig-configurator__fields');
+
+/* ==========================================================================
+ * رندر › ترتیبِ DOM در صفحهٔ راست‌به‌چپ
+ * ======================================================================= */
+
+/*
+ * صفحه راست‌به‌چپ است؛ در یک فلکسِ ‎row‎ِ عادی، فرزندِ اول فیزیکاً سمتِ
+ * راست می‌نشیند. طرح قیمت را چپ می‌خواهد و موجودی/زمان را راست، و دکمهٔ
+ * اصلی (بنفش) را راست و دکمهٔ فرعی را چپ — پس در HTML باید همین ترتیب
+ * (موجودی پیش از قیمت، دکمهٔ اصلی پیش از فرعی) رعایت شود، نه ترتیبِ
+ * دیداریِ «طبیعی»ِ چپ‌به‌راست.
+ */
+
+Tests::group('رندر › کانفیگ محصول، ترتیبِ DOM برایِ راست‌به‌چپ');
+
+$order_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'     => $priced_simple->get_id(),
+    'secondary_text' => 'دریافت مشاورهٔ تخصصی',
+    'primary_text'   => 'درخواست پیش‌فاکتور',
+]);
+
+Tests::ok(
+    'موجودی/زمان پیش از قیمت چاپ می‌شود (پس در RTL سمتِ راست است)',
+    strpos($order_out, 'zig-configurator__side') < strpos($order_out, 'zig-configurator__price')
+);
+
+Tests::ok(
+    'دکمهٔ اصلی پیش از دکمهٔ فرعی چاپ می‌شود (پس در RTL سمتِ راست است)',
+    strpos($order_out, 'zig-configurator__btn--primary') < strpos($order_out, 'zig-configurator__btn--secondary')
+);
