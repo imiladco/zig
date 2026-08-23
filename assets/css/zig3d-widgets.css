@@ -6806,9 +6806,16 @@ nav.zig-menu {
 	direction: rtl;
 }
 
+/*
+ * قبلاً همان رنگِ متنِ گزینه‌هایِ واقعی بود (‎#d7dde8‎) — یعنی placeholder
+ * هیچ فرقِ دیداری با بقیهٔ گزینه‌ها نداشت و در پاپ‌آپِ تیره‌شده می‌توانست
+ * گم شود. رنگِ کم‌رنگ‌ترِ همان توکنی که ‎.zig-configurator__updated‎ دارد
+ * (متنِ فرعیِ ویجت) اینجا هم استفاده می‌شود تا placeholder همیشه به‌عنوانِ
+ * «هنوز انتخابی نشده» خوانا و متمایز بماند، نه یک گزینهٔ عادی.
+ */
 .zig-configurator__select:invalid,
 .zig-configurator__select option[value=""] {
-	color: #d7dde8;
+	color: #7f8aa0;
 }
 
 /*
