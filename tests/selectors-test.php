@@ -66,6 +66,9 @@ require_once $root . '/includes/widgets/product-feature-showcase.php';
 require_once $root . '/includes/video-gallery-field.php';
 require_once $root . '/includes/widgets/product-video-gallery.php';
 require_once $root . '/includes/widgets/toc.php';
+require_once $root . '/includes/rate-price.php';
+require_once $root . '/includes/configurator.php';
+require_once $root . '/includes/widgets/product-configurator.php';
 
 use Zig3d_Widgets\Selector;
 
@@ -86,6 +89,7 @@ $widgets = [
     'گالری محیط نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class,
     'جدول مشخصات نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Info_Table::class,
     'فهرست مطالب'   => \Zig3d_Widgets\Widgets\Toc::class,
+    'کانفیگ محصول'  => \Zig3d_Widgets\Widgets\Product_Configurator::class,
 ];
 
 /*
