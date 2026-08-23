@@ -300,11 +300,17 @@ final class Product_Gallery extends Widget_Base {
             ],
         ]);
 
+        /*
+         * نامتقارن — طبقِ فیگما: بالا صفر (تصویرِ شاخص لبه‌به‌لبه)، کناره‌ها
+         * و پایین ۲۴px. اگر این عدد را عوض کنی، ‎margin-inline: -24px‎ی
+         * ‎.zig-gallery__main‎ (که برایِ لبه‌به‌لبه‌کردنش دقیقاً همین ۲۴px
+         * را جبران می‌کند) هم باید دستی هماهنگ شود.
+         */
         $this->add_responsive_control('card_padding', [
             'label'      => __('پدینگ داخلی', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', 'em', '%'],
-            'default'    => ['top' => '24', 'right' => '24', 'bottom' => '24', 'left' => '24', 'unit' => 'px', 'isLinked' => true],
+            'default'    => ['top' => '0', 'right' => '24', 'bottom' => '24', 'left' => '24', 'unit' => 'px', 'isLinked' => false],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
