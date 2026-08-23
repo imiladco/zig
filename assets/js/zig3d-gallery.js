@@ -33,6 +33,59 @@
 			updateProgress();
 		}
 
+		/*
+		 * فلش‌هایِ ناوبریِ تصویرِ شاخص — مستقل از مودال (پیش از return زیر
+		 * می‌آید تا وقتی مودال خاموش است هم کار کند). کلیکِ خودِ تامبنیل‌ها
+		 * دست‌نخورده می‌ماند و فقط مودال را باز می‌کند؛ این فلش‌ها با
+		 * ‎data-large‎ی از پیش در HTML، بدونِ هیچ درخواستِ شبکه‌ای، خودِ
+		 * تصویرِ شاخص را عوض می‌کنند و تامبنیلِ متناظر را (اگر دیده‌شدنی
+		 * باشد) ‎is-active‎ می‌کنند.
+		 */
+		var mainEl = root.querySelector('.zig-gallery__main');
+		var mainImg = mainEl ? mainEl.querySelector('img') : null;
+		var navPrev = root.querySelector('.zig-gallery__nav--prev');
+		var navNext = root.querySelector('.zig-gallery__nav--next');
+		var navItems = root.querySelectorAll('.zig-gallery__main[data-large], .zig-gallery__thumb[data-large]');
+
+		if (mainImg && navItems.length > 1 && (navPrev || navNext)) {
+			var mainIndex = 0;
+
+			var showAt = function (index) {
+				mainIndex = (index + navItems.length) % navItems.length;
+				var el = navItems[mainIndex];
+
+				mainImg.src = el.dataset.large;
+				mainImg.alt = el.dataset.alt || '';
+
+				Array.prototype.forEach.call(navItems, function (item) {
+					item.classList.toggle('is-active', item === el);
+				});
+			};
+
+			if (navPrev) {
+				navPrev.addEventListener('click', function (e) {
+					e.stopPropagation();
+					showAt(mainIndex - 1);
+				});
+			}
+			if (navNext) {
+				navNext.addEventListener('click', function (e) {
+					e.stopPropagation();
+					showAt(mainIndex + 1);
+				});
+			}
+		}
+
+		// تصویرِ شاخصی که خودش ‎<button>‎ نیست (چون فلش داخلش است) با اینتر/اسپیس هم باز شود
+		if (mainEl && 'BUTTON' !== mainEl.tagName && mainEl.hasAttribute('role')) {
+			mainEl.addEventListener('keydown', function (e) {
+				if ('Enter' === e.key || ' ' === e.key) {
+					e.preventDefault();
+					mainEl.click();
+				}
+			});
+		}
+
 		var modal = root.querySelector('.zig-gallery-modal');
 		var endpoint = root.dataset.endpoint;
 		if (!modal || !endpoint) {

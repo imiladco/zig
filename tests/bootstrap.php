@@ -77,6 +77,9 @@ if (!function_exists('add_query_arg')) {
 if (!function_exists('esc_url_raw')) {
     function esc_url_raw($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }
+if (!function_exists('rest_url')) {
+    function rest_url($path = '') { return 'https://zig3d.test/wp-json/' . ltrim((string) $path, '/'); }
+}
 /**
  * فقط برایِ رشته‌هایِ سریالایزشدهٔ PHP — دقیقاً همان چیزی که Repeaterِ
  * JetEngine در ‎postmeta‎ ذخیره می‌کند. اگر ورودی از قبل آرایه باشد (مثلِ

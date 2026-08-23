@@ -2794,6 +2794,49 @@ a.zig-list__label:focus-visible {
 	transition: all 0.3s ease;
 }
 
+/*
+ * فلش‌هایِ ناوبریِ تصویرِ شاخص — همان ‎.zig-gallery__main‎ی ‎position: relative‎
+ * بالا مرجعِ چیدمانِ این دو دکمه است، پس نیازی به یک wrapperِ اضافه نیست.
+ * رویِ خودِ تصویر می‌نشینند، نه لبهٔ بیرونیِ کارت — دقیقاً همان‌جایی که طرح
+ * گذاشته.
+ */
+.zig-gallery__nav {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border: 0;
+	border-radius: 12px;
+	background-color: #ffffff;
+	color: #1a2b4a;
+	box-shadow: 0 2px 12px rgba(16, 24, 40, 0.12);
+	cursor: pointer;
+	transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.zig-gallery__nav svg {
+	width: 18px;
+	height: 18px;
+	display: block;
+}
+
+.zig-gallery__nav:hover {
+	box-shadow: 0 4px 16px rgba(16, 24, 40, 0.18);
+}
+
+.zig-gallery__nav--prev {
+	inset-inline-start: var(--zig-gal-nav-offset, 12px);
+}
+
+.zig-gallery__nav--next {
+	inset-inline-end: var(--zig-gal-nav-offset, 12px);
+}
+
 @media (max-width: 767px) {
 
 	/* ---- نوار اسکرول افقی یکی‌درمیون ---- */
@@ -2810,6 +2853,16 @@ a.zig-list__label:focus-visible {
 	}
 
 	.zig-gallery--mobile-alt .zig-gallery__strip::-webkit-scrollbar {
+		display: none;
+	}
+
+	/*
+	 * فلش‌ها فقط برایِ دسکتاپ طراحی شده‌اند؛ در حالتِ «یکی‌درمیون» موبایل
+	 * خودِ سوایپِ افقی جایگزینشان است — با هم رویِ یک تصویرِ کوچک شلوغ
+	 * می‌شدند. حالتِ «همان چیدمانِ دسکتاپ» را دست‌نخورده می‌گذاریم، چون
+	 * آنجا نه سوایپی هست نه اسکرولی، رفتارش دقیقاً مثلِ دسکتاپ است.
+	 */
+	.zig-gallery--mobile-alt .zig-gallery__nav {
 		display: none;
 	}
 
@@ -3144,6 +3197,16 @@ body.zig-gallery-noscroll {
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
+	border: 2px solid transparent;
+}
+
+/*
+ * «فعال» یعنی همین تامبنیل الان رویِ تصویرِ شاخص نمایش داده می‌شود — کلاسش
+ * را فلش‌هایِ ناوبری با جاوااسکریپت می‌زنند (‎zig3d-gallery.js‎)، نه کلیکِ
+ * خودِ تامبنیل (که فقط مودال را باز می‌کند).
+ */
+.zig-gallery__thumb.is-active {
+	border-color: #6928d9;
 }
 
 .zig-gallery__more-count {

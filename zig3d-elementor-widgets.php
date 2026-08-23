@@ -3,7 +3,7 @@
  * Plugin Name:       ZIG3D Elementor Widgets
  * Plugin URI:        https://zig3d.com
  * Description:       ویجت‌های اختصاصی المنتور برای وب‌سایت گروه زیگ (ZIG3D)
- * Version:           1.41.2
+ * Version:           1.42.0
  * Author:            imiladco
  * Author URI:        https://zig3d.com
  * Text Domain:       zig3d-widgets
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('ZIG3D_WIDGETS_VERSION', '1.41.2');
+define('ZIG3D_WIDGETS_VERSION', '1.42.0');
 define('ZIG3D_WIDGETS_FILE', __FILE__);
 define('ZIG3D_WIDGETS_PATH', plugin_dir_path(__FILE__));
 define('ZIG3D_WIDGETS_URL', plugin_dir_url(__FILE__));

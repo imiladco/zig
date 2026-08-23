@@ -5,6 +5,7 @@ use Elementor\Controls_Manager;
 use Elementor\Group_Control_Border;
 use Elementor\Group_Control_Box_Shadow;
 use Elementor\Group_Control_Typography;
+use Elementor\Icons_Manager;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Plugin;
 use Zig3d_Widgets\Price;
@@ -76,6 +77,7 @@ final class Product_Gallery extends Widget_Base {
         $this->register_modal_content_controls();
 
         $this->register_main_image_style_controls();
+        $this->register_main_nav_style_controls();
         $this->register_thumbs_style_controls();
         $this->register_modal_style_controls();
     }
@@ -162,6 +164,41 @@ final class Product_Gallery extends Widget_Base {
             'type'        => Controls_Manager::SWITCHER,
             'default'     => '',
             'description' => __('بجی مثل «+۱۸» روی تامبنیل آخر.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('heading_main_nav', [
+            'label'     => __('ناوبری تصویر شاخص', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        /*
+         * این فلش‌ها مستقل از تامبنیل‌هایند: تامبنیل همیشه فقط مودال را باز
+         * می‌کند (خودِ کاربر همین رفتار را خواسته)، ولی این فلش‌ها بدونِ
+         * مودال، خودِ تصویرِ شاخص را بینِ همهٔ تصاویرِ گالری (نه فقط
+         * تامبنیل‌هایِ دیده‌شدنی) عوض می‌کنند.
+         */
+        $this->add_control('show_main_nav', [
+            'label'       => __('فلش‌های قبلی/بعدی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SWITCHER,
+            'default'     => 'yes',
+            'description' => __('کاربر با این فلش‌ها، بدونِ بازکردنِ مودال، بینِ همهٔ تصاویرِ گالری روی خودِ تصویرِ شاخص جابه‌جا می‌شود. کلیکِ خودِ تامبنیل‌ها همچنان فقط مودال را باز می‌کند.', 'zig3d-widgets'),
+        ]);
+
+        $this->add_control('main_nav_prev_icon', [
+            'label'       => __('آیکون فلش قبلی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::ICONS,
+            'default'     => ['value' => '', 'library' => ''],
+            'description' => __('خالی یعنی فلشِ پیش‌فرضِ همین ویجت.', 'zig3d-widgets'),
+            'condition'   => ['show_main_nav' => 'yes'],
+        ]);
+
+        $this->add_control('main_nav_next_icon', [
+            'label'       => __('آیکون فلش بعدی', 'zig3d-widgets'),
+            'type'        => Controls_Manager::ICONS,
+            'default'     => ['value' => '', 'library' => ''],
+            'description' => __('خالی یعنی فلشِ پیش‌فرضِ همین ویجت.', 'zig3d-widgets'),
+            'condition'   => ['show_main_nav' => 'yes'],
         ]);
 
         $this->end_controls_section();
@@ -354,6 +391,91 @@ final class Product_Gallery extends Widget_Base {
         $this->end_controls_section();
     }
 
+    /** استایل — فلش‌های ناوبریِ تصویر شاخص */
+    private function register_main_nav_style_controls(): void {
+        $this->start_controls_section('section_style_main_nav', [
+            'label'     => __('فلش‌های ناوبری تصویر شاخص', 'zig3d-widgets'),
+            'tab'       => Controls_Manager::TAB_STYLE,
+            'condition' => ['show_main_nav' => 'yes'],
+        ]);
+
+        $this->add_responsive_control('main_nav_size', [
+            'label'      => __('اندازه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 24, 'max' => 80]],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-gallery__nav' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('main_nav_icon_size', [
+            'label'      => __('اندازهٔ آیکون', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 8, 'max' => 40]],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-gallery__nav svg, {{WRAPPER}} .zig-gallery__nav i' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}}; font-size: {{SIZE}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('main_nav_offset', [
+            'label'       => __('فاصله از لبه', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'size_units'  => ['px'],
+            'range'       => ['px' => ['min' => 0, 'max' => 60]],
+            'description' => __('فاصلهٔ افقیِ هر فلش تا لبهٔ همان سمتِ تصویرِ شاخص.', 'zig3d-widgets'),
+            'selectors'   => [
+                '{{WRAPPER}} .zig-gallery__nav' => '--zig-gal-nav-offset: {{SIZE}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_control('main_nav_color', [
+            'label'     => __('رنگ آیکون', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery__nav' => 'color: {{VALUE}};',
+            ],
+        ]);
+
+        $this->add_control('main_nav_bg', [
+            'label'     => __('رنگ پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery__nav' => 'background-color: {{VALUE}};',
+            ],
+        ]);
+
+        $this->add_control('main_nav_hover_bg', [
+            'label'     => __('رنگ پس‌زمینه در هاور', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery__nav:hover' => 'background-color: {{VALUE}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('main_nav_radius', [
+            'label'      => __('گردی گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', '%'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-gallery__nav' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_group_control(Group_Control_Border::get_type(), [
+            'name'     => 'main_nav_border',
+            'selector' => '{{WRAPPER}} .zig-gallery__nav',
+        ]);
+
+        $this->add_group_control(Group_Control_Box_Shadow::get_type(), [
+            'name'     => 'main_nav_shadow',
+            'selector' => '{{WRAPPER}} .zig-gallery__nav',
+        ]);
+
+        $this->end_controls_section();
+    }
+
     /** استایل — تامبنیل‌ها */
     private function register_thumbs_style_controls(): void {
         $this->start_controls_section('section_style_thumbs', [
@@ -409,7 +531,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('thumb_fit', [
             'label'     => __('نحوه جای‌گیری تصویر', 'zig3d-widgets'),
             'type'      => Controls_Manager::SELECT,
-            'default'   => 'cover',
+            'default'   => 'contain',
             'options'   => [
                 'cover'   => __('کاور (کات از وسط)', 'zig3d-widgets'),
                 'contain' => __('کامل داخل کارت', 'zig3d-widgets'),
@@ -423,6 +545,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('thumb_bg', [
             'label'       => __('رنگ پس‌زمینه کارت', 'zig3d-widgets'),
             'type'        => Controls_Manager::COLOR,
+            'default'     => '#ffffff',
             'description' => __('برای حالت «کامل داخل کارت» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
             'selectors'   => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'background-color: {{VALUE}};',
@@ -433,6 +556,7 @@ final class Product_Gallery extends Widget_Base {
             'label'       => __('پدینگ داخلی کارت', 'zig3d-widgets'),
             'type'        => Controls_Manager::DIMENSIONS,
             'size_units'  => ['px', 'em', '%'],
+            'default'     => ['top' => '10', 'right' => '10', 'bottom' => '10', 'left' => '10', 'unit' => 'px', 'isLinked' => true],
             'description' => __('فاصله تصویر از لبه‌های کارت — برای ظاهر کارتی.', 'zig3d-widgets'),
             'selectors'   => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
@@ -465,6 +589,7 @@ final class Product_Gallery extends Widget_Base {
             'label'      => __('رادیوس کارت', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', '%'],
+            'default'    => ['top' => '12', 'right' => '12', 'bottom' => '12', 'left' => '12', 'unit' => 'px', 'isLinked' => true],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
             ],
@@ -513,6 +638,19 @@ final class Product_Gallery extends Widget_Base {
             'type'      => Controls_Manager::COLOR,
             'selectors' => [
                 '{{WRAPPER}} .zig-gallery__thumb:hover' => 'border-color: {{VALUE}};',
+            ],
+        ]);
+
+        /*
+         * «فعال» یعنی همین تامبنیل الان رویِ تصویرِ شاخص نمایش داده می‌شود —
+         * وضعیتش را جاوااسکریپتِ فلش‌هایِ ناوبری (نه کلیکِ خودِ تامبنیل، که
+         * فقط مودال را باز می‌کند) با کلاسِ ‎is-active‎ مدیریت می‌کند.
+         */
+        $this->add_control('thumb_active_border_color', [
+            'label'     => __('رنگ حاشیه در حالت فعال', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery__thumb.is-active' => 'border-color: {{VALUE}};',
             ],
         ]);
 
@@ -979,6 +1117,24 @@ final class Product_Gallery extends Widget_Base {
         }
         $trigger_tag = $modal_enabled ? 'button' : 'div';
 
+        /*
+         * فلش‌های ناوبری، تصویر شاخص را با کلیک عوض می‌کنند — کاری جدا از
+         * بازکردنِ مودال. اگر تصویرِ شاخص هم برایِ باز کردنِ مودال کلیک‌پذیر
+         * باشد و هم فلش داخلش باشد، تگش نمی‌تواند ‎<button>‎ بماند: تودرتوییِ
+         * ‎<button>‎ داخلِ ‎<button>‎ در HTML نامعتبر است. پس فقط در همین یک
+         * حالت (مودال روشن و فلش هم روشن)، ‎<div role="button" tabindex="0">‎
+         * جای ‎<button>‎ را می‌گیرد — قابل‌کلیک و قابل‌فوکوس هنوز هست، فقط
+         * تگش عوض شده. تامبنیل‌ها این مشکل را ندارند، همان ‎<button>‎ی قبلی‌اند.
+         */
+        $show_main_nav = 'yes' === ($settings['show_main_nav'] ?? 'yes') && $total > 1;
+        $main_tag      = ($modal_enabled && !$show_main_nav) ? 'button' : 'div';
+        $main_attrs    = '';
+
+        if ($modal_enabled) {
+            $main_attrs = ('button' === $main_tag ? ' type="button"' : ' role="button" tabindex="0"')
+                . ' data-index="0" aria-label="' . esc_attr__('بزرگ‌نمایی تصویر', 'zig3d-widgets') . '"';
+        }
+
         $this->add_render_attribute('wrapper', 'class', [
             'zig-gallery',
             'zig-gallery--mobile-' . ('match' === $mobile_layout ? 'match' : 'alt'),
@@ -1007,9 +1163,17 @@ final class Product_Gallery extends Widget_Base {
 
             <div class="zig-gallery__strip">
 
-            <<?php echo $trigger_tag; // phpcs:ignore ?> class="zig-gallery__main" <?php echo $modal_enabled ? 'type="button" data-index="0" aria-label="' . esc_attr__('بزرگ‌نمایی تصویر', 'zig3d-widgets') . '"' : ''; ?>>
+            <<?php echo $main_tag; // phpcs:ignore ?> class="zig-gallery__main"<?php echo $main_attrs; // phpcs:ignore ?><?php if ($show_main_nav) : ?> data-large="<?php echo esc_url(wp_get_attachment_image_url($main_id, 'large') ?: ''); ?>" data-alt="<?php echo esc_attr(get_post_meta($main_id, '_wp_attachment_image_alt', true)); ?>"<?php endif; ?>>
                 <?php echo wp_get_attachment_image($main_id, 'large', false, ['loading' => 'eager']); ?>
-            </<?php echo $trigger_tag; // phpcs:ignore ?>>
+                <?php if ($show_main_nav) : ?>
+                    <button type="button" class="zig-gallery__nav zig-gallery__nav--prev" aria-label="<?php echo esc_attr__('تصویر قبلی', 'zig3d-widgets'); ?>">
+                        <?php echo $this->render_main_nav_icon($settings, 'main_nav_prev_icon', 'm9 6 6 6-6 6'); // phpcs:ignore WordPress.Security.EscapeOutput -- در render_main_nav_icon اسکیپ شده ?>
+                    </button>
+                    <button type="button" class="zig-gallery__nav zig-gallery__nav--next" aria-label="<?php echo esc_attr__('تصویر بعدی', 'zig3d-widgets'); ?>">
+                        <?php echo $this->render_main_nav_icon($settings, 'main_nav_next_icon', 'm15 6-6 6 6 6'); // phpcs:ignore WordPress.Security.EscapeOutput -- در render_main_nav_icon اسکیپ شده ?>
+                    </button>
+                <?php endif; ?>
+            </<?php echo $main_tag; // phpcs:ignore ?>>
 
             <?php
             /*
@@ -1030,7 +1194,7 @@ final class Product_Gallery extends Widget_Base {
                     $classes[] = 'zig-gallery__thumb--more';
                 }
                 ?>
-                <<?php echo $trigger_tag; // phpcs:ignore ?> class="<?php echo esc_attr(implode(' ', $classes)); ?>" <?php echo $modal_enabled ? 'type="button" data-index="' . esc_attr($data_index) . '" aria-label="' . esc_attr__('بزرگ‌نمایی تصویر', 'zig3d-widgets') . '"' : ''; ?>>
+                <<?php echo $trigger_tag; // phpcs:ignore ?> class="<?php echo esc_attr(implode(' ', $classes)); ?>" <?php echo $modal_enabled ? 'type="button" data-index="' . esc_attr($data_index) . '" aria-label="' . esc_attr__('بزرگ‌نمایی تصویر', 'zig3d-widgets') . '"' : ''; ?><?php if ($show_main_nav) : ?> data-large="<?php echo esc_url(wp_get_attachment_image_url($attachment_id, 'large') ?: ''); ?>" data-alt="<?php echo esc_attr(get_post_meta($attachment_id, '_wp_attachment_image_alt', true)); ?>"<?php endif; ?>>
                     <?php echo wp_get_attachment_image($attachment_id, 'medium', false, ['loading' => 'lazy']); ?>
                     <?php if ($is_last_more) : ?>
                         <span class="zig-gallery__more-overlay" aria-hidden="true">
@@ -1120,6 +1284,28 @@ final class Product_Gallery extends Widget_Base {
         $latest = wc_get_products(['limit' => 1, 'orderby' => 'date', 'order' => 'DESC', 'status' => 'publish']);
 
         return $latest ? $latest[0] : null;
+    }
+
+    /**
+     * آیکونِ یکی از فلش‌هایِ ناوبری — کنترلِ ‎ICONS‎ی کاربر اگر ست شده باشد،
+     * وگرنه همان فلشِ ساده‌ای که خودِ مودال هم برایِ ناوبری‌اش دارد
+     * (‎render()‎، دکمه‌هایِ ‎zig-gallery-modal__nav‎) — یک زبانِ بصریِ واحد
+     * برایِ هر دو ناوبری، تا کاربر بدونِ ست‌کردنِ چیزی هم یک فلشِ معنادار ببیند.
+     */
+    private function render_main_nav_icon(array $settings, string $control_key, string $fallback_path): string {
+        $icon = $settings[$control_key] ?? [];
+
+        if (!empty($icon['value'])) {
+            ob_start();
+            Icons_Manager::render_icon($icon, ['aria-hidden' => 'true']);
+
+            return (string) ob_get_clean();
+        }
+
+        return sprintf(
+            '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="%s"/></svg>',
+            esc_attr($fallback_path)
+        );
     }
 
     /**
