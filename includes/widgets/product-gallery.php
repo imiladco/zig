@@ -279,6 +279,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('card_bg', [
             'label'     => __('رنگ پس‌زمینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
+            'default'   => '#f7f8fc',
             'selectors' => [
                 '{{WRAPPER}} .zig-gallery' => 'background-color: {{VALUE}};',
             ],
@@ -293,6 +294,7 @@ final class Product_Gallery extends Widget_Base {
             'label'      => __('گردی گوشه', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', '%'],
+            'default'    => ['top' => '26', 'right' => '26', 'bottom' => '26', 'left' => '26', 'unit' => 'px', 'isLinked' => true],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
@@ -302,6 +304,7 @@ final class Product_Gallery extends Widget_Base {
             'label'      => __('پدینگ داخلی', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', 'em', '%'],
+            'default'    => ['top' => '24', 'right' => '24', 'bottom' => '24', 'left' => '24', 'unit' => 'px', 'isLinked' => true],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
@@ -383,6 +386,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('main_bg', [
             'label'       => __('رنگ پس‌زمینه', 'zig3d-widgets'),
             'type'        => Controls_Manager::COLOR,
+            'default'     => '#fafbfe',
             'description' => __('برای حالت «کامل داخل کادر» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
             'selectors'   => [
                 '{{WRAPPER}} .zig-gallery__main' => 'background-color: {{VALUE}};',
@@ -393,6 +397,7 @@ final class Product_Gallery extends Widget_Base {
             'label'       => __('پدینگ داخلی', 'zig3d-widgets'),
             'type'        => Controls_Manager::DIMENSIONS,
             'size_units'  => ['px', 'em', '%'],
+            'default'     => ['top' => '38', 'right' => '69', 'bottom' => '38', 'left' => '69', 'unit' => 'px', 'isLinked' => false],
             'description' => __('فاصله تصویر از لبه‌های کادر.', 'zig3d-widgets'),
             'selectors'   => [
                 '{{WRAPPER}} .zig-gallery__main' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
@@ -404,6 +409,7 @@ final class Product_Gallery extends Widget_Base {
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px', 'em'],
             'range'      => ['px' => ['min' => 0, 'max' => 100]],
+            'default'    => ['size' => 32, 'unit' => 'px'],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery' => '--zig-gal-rgap: {{SIZE}}{{UNIT}};',
             ],
@@ -464,6 +470,7 @@ final class Product_Gallery extends Widget_Base {
             'type'       => Controls_Manager::SLIDER,
             'size_units' => ['px'],
             'range'      => ['px' => ['min' => 24, 'max' => 80]],
+            'default'    => ['size' => 40, 'unit' => 'px'],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery__nav' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
             ],
@@ -484,6 +491,7 @@ final class Product_Gallery extends Widget_Base {
             'type'        => Controls_Manager::SLIDER,
             'size_units'  => ['px'],
             'range'       => ['px' => ['min' => 0, 'max' => 60]],
+            'default'     => ['size' => 24, 'unit' => 'px'],
             'description' => __('فاصلهٔ افقیِ هر فلش تا لبهٔ همان سمتِ تصویرِ شاخص.', 'zig3d-widgets'),
             'selectors'   => [
                 '{{WRAPPER}} .zig-gallery__nav' => '--zig-gal-nav-offset: {{SIZE}}{{UNIT}};',
@@ -493,6 +501,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('main_nav_color', [
             'label'     => __('رنگ آیکون', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
+            'default'   => '#667085',
             'selectors' => [
                 '{{WRAPPER}} .zig-gallery__nav' => 'color: {{VALUE}};',
             ],
@@ -501,6 +510,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('main_nav_bg', [
             'label'     => __('رنگ پس‌زمینه', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
+            'default'   => '#ffffff',
             'selectors' => [
                 '{{WRAPPER}} .zig-gallery__nav' => 'background-color: {{VALUE}};',
             ],
@@ -518,6 +528,7 @@ final class Product_Gallery extends Widget_Base {
             'label'      => __('گردی گوشه', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', '%'],
+            'default'    => ['top' => '12', 'right' => '12', 'bottom' => '12', 'left' => '12', 'unit' => 'px', 'isLinked' => true],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery__nav' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
@@ -649,7 +660,7 @@ final class Product_Gallery extends Widget_Base {
             'label'      => __('رادیوس کارت', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', '%'],
-            'default'    => ['top' => '16', 'right' => '16', 'bottom' => '16', 'left' => '16', 'unit' => 'px', 'isLinked' => true],
+            'default'    => ['top' => '15', 'right' => '15', 'bottom' => '15', 'left' => '15', 'unit' => 'px', 'isLinked' => true],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
             ],
@@ -659,6 +670,7 @@ final class Product_Gallery extends Widget_Base {
             'label'       => __('رادیوس تصویر', 'zig3d-widgets'),
             'type'        => Controls_Manager::DIMENSIONS,
             'size_units'  => ['px', '%'],
+            'default'     => ['top' => '11', 'right' => '11', 'bottom' => '11', 'left' => '11', 'unit' => 'px', 'isLinked' => true],
             'description' => __('وقتی پدینگِ کارت داده‌اید و تصویر کوچک‌تر از کارت است، رادیوسِ خودِ تصویر را جدا تنظیم کنید.', 'zig3d-widgets'),
             'selectors'   => [
                 '{{WRAPPER}} .zig-gallery__thumb img' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
@@ -709,6 +721,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('thumb_active_border_color', [
             'label'     => __('رنگ حاشیه در حالت فعال', 'zig3d-widgets'),
             'type'      => Controls_Manager::COLOR,
+            'default'   => '#7b5cff',
             'selectors' => [
                 '{{WRAPPER}} .zig-gallery__thumb.is-active' => 'border-color: {{VALUE}};',
             ],

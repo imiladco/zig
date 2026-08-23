@@ -2761,16 +2761,22 @@ a.zig-list__label:focus-visible {
  * گالری یک کارتِ یکپارچه است — پس‌زمینه/بوردر/رادیوس/پدینگ رویِ خودِ
  * ‎.zig-gallery‎ می‌نشیند تا تصویرِ شاخص و تامبنیل‌ها هر دو داخلِ همان یک
  * جعبه باشند، نه دو ناحیهٔ بصریِ جدا.
+ *
+ * فیگما (node 1217-4561) پدینگِ بیرونی را فقط پایین می‌خواهد (تصویرِ
+ * شاخص لبه‌به‌لبه)، ولی آن لبه‌به‌لبه‌شدن رویِ گریدِ ‎repeat(N, 1fr)‎ی این
+ * ویجت پایدار درنیامد (پایین‌تر توضیح داده شده) — پس یکنواخت نگه داشته
+ * شد؛ نزدیک‌ترین معادلِ امنِ همان طرح، بدونِ دست‌کاریِ گرید.
  */
 .zig-gallery {
 	position: relative;
 	box-sizing: border-box;
-	--zig-gal-rgap: 20px;
+	overflow: hidden;
+	--zig-gal-rgap: 32px;
 	--zig-gal-cgap: 12px;
-	background-color: #f8fafc;
-	border: 1px solid rgba(16, 24, 40, 0.06);
-	border-radius: 24px;
-	padding: 20px;
+	background-color: #f7f8fc;
+	border: 1px solid #dce4ef;
+	border-radius: 26px;
+	padding: 24px;
 }
 
 .zig-gallery__strip {
@@ -2783,6 +2789,7 @@ a.zig-list__label:focus-visible {
 .zig-gallery__main,
 .zig-gallery__thumb {
 	position: relative;
+	box-sizing: border-box;
 	display: block;
 	width: 100%;
 	padding: 0;
@@ -2795,12 +2802,34 @@ a.zig-list__label:focus-visible {
 }
 
 /*
- * پیش‌فرضِ خودِ CSS برایِ تصویرِ شاخص — طرح ۴:۳ می‌خواهد، نه مربع. کنترلِ
- * ‎main_ratio‎ در المنتور همین مقدار را پیش‌فرض دارد و رویِ این قاعده
- * می‌چربد؛ این‌جا فقط برایِ جایی است که آن لایه (المنتور) در کار نیست.
+ * تصویرِ خودِ فیگما مربعِ کامل است (۴۶۴×۴۶۴) — نسبتِ ۱:۱ درست بود، چیزی که
+ * حسِ «landscape» می‌ساخت پدینگِ نامتقارنِ ‎.zig-gallery__main‎ است (۶۹
+ * افقی، ۳۸ عمودی)، نه خودِ نسبت. پس اینجا با مقدارِ پایه (بالا) یکی
+ * می‌ماند و override نمی‌شود.
+ *
+ * تامبنیل هم در فیگما مربع نیست — تصویرش ~۵:۴ است (۱۰۳×۸۳)، پس جدا از
+ * شاخص override می‌شود.
+ */
+.zig-gallery__thumb {
+	aspect-ratio: 5 / 4;
+}
+
+/*
+ * پنلِ تصویرِ شاخص خودش یک کارتِ توی‌کارت است — پس‌زمینه‌اش با کارتِ بیرونی
+ * فرق دارد (‎#FAFBFE‎ در برابرِ ‎#F7F8FC‎ِ بیرونی) و سایه‌ای زیرش دارد که
+ * از کارتِ بیرونی جدایش می‌کند.
+ *
+ * در فیگما این پنل لبه‌به‌لبهٔ کارتِ بیرونی است (فقط پایین/تامبنیل‌ها
+ * پدینگ دارند). اینجا عمداً همان پدینگِ یکنواختِ کارت را نگه داشتیم —
+ * راهِ لبه‌به‌لبه‌کردنش (margin منفی رویِ آیتمِ گرید) با سایزدهیِ
+ * ‎repeat(N, 1fr)‎ی خودِ گرید ترکیب می‌شد و اندازهٔ باکس را غیرقابل‌پیش‌بینی
+ * می‌کرد (حتی فلشِ دوم را کاملاً بیرون از دید می‌فرستاد) — بدونِ
+ * دست‌کاریِ ساختارِ گرید (که قرار نبود عوض شود) قابلِ رفعِ امن نبود.
  */
 .zig-gallery__main {
-	aspect-ratio: 4 / 3;
+	padding: 38px 69px;
+	background-color: #fafbfe;
+	box-shadow: 0 20px 40px -20px rgba(100, 116, 139, 0.18);
 }
 
 .zig-gallery__main img,
@@ -2827,13 +2856,13 @@ a.zig-list__label:focus-visible {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 44px;
-	height: 44px;
-	border: 1px solid rgba(16, 24, 40, 0.08);
-	border-radius: 14px;
+	width: 40px;
+	height: 40px;
+	border: 1px solid #d8e0ec;
+	border-radius: 12px;
 	background-color: #ffffff;
-	color: #1a2b4a;
-	box-shadow: 0 4px 14px rgba(16, 24, 40, 0.1);
+	color: #667085;
+	box-shadow: 0 8px 22px -8px rgba(15, 23, 42, 0.1);
 	cursor: pointer;
 	transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2849,11 +2878,11 @@ a.zig-list__label:focus-visible {
 }
 
 .zig-gallery__nav--prev {
-	inset-inline-start: var(--zig-gal-nav-offset, 12px);
+	inset-inline-start: var(--zig-gal-nav-offset, 24px);
 }
 
 .zig-gallery__nav--next {
-	inset-inline-end: var(--zig-gal-nav-offset, 12px);
+	inset-inline-end: var(--zig-gal-nav-offset, 24px);
 }
 
 @media (max-width: 767px) {
@@ -3211,25 +3240,23 @@ body.zig-gallery-noscroll {
 
 /* ---------- استایل کارتی تامبنیل + بج تعداد ---------- */
 
-/*
- * ضخامتِ بوردر همیشه ۲پیکسل است — چه غیرفعال (رنگِ کم‌رنگ) چه فعال (بنفش) —
- * تا فعال‌شدنِ یک تامبنیل هیچ تغییرِ اندازه‌ای در کارت نسازد.
- */
 .zig-gallery__thumb {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
-	border: 2px solid rgba(16, 24, 40, 0.08);
+	border: 1px solid #e3e9f2;
 }
 
 /*
  * «فعال» یعنی همین تامبنیل الان رویِ تصویرِ شاخص نمایش داده می‌شود — کلاسش
  * را فلش‌هایِ ناوبری با جاوااسکریپت می‌زنند (‎zig3d-gallery.js‎)، نه کلیکِ
- * خودِ تامبنیل (که فقط مودال را باز می‌کند).
+ * خودِ تامبنیل (که فقط مودال را باز می‌کند). طبقِ فیگما، بوردرِ فعال هم
+ * پررنگ‌تر است (۲px، نه ۱px) — با ‎box-sizing: border-box‎ همین یک‌پیکسلِ
+ * اضافه فقط عکس را کمی می‌فشارد، اندازهٔ خودِ کارت را عوض نمی‌کند.
  */
 .zig-gallery__thumb.is-active {
-	border-color: #6928d9;
+	border: 2px solid #7b5cff;
 }
 
 .zig-gallery__more-count {
