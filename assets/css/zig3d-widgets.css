@@ -6742,10 +6742,15 @@ nav.zig-menu {
  * جریانش ‎select-wrap‎ است؛ برچسب با ‎position:absolute‎ از جریان بیرون
  * است و نسبت به همین عنصر جای می‌گیرد.
  */
+/*
+ * ‎inset-inline-start‎، نه ‎end‎: طرح لیبل را سمتِ راست می‌خواهد و در
+ * راست‌به‌چپ این ‎start‎ است، نه ‎end‎ (که فلشِ کشو رویش می‌نشیند — همان
+ * سمتِ چپ). قبلاً هر دو از ‎end‎ استفاده می‌کردند و هر دو چپ درمی‌آمدند.
+ */
 .zig-configurator__label {
 	position: absolute;
 	top: -8px;
-	inset-inline-end: 14px;
+	inset-inline-start: 14px;
 	z-index: 1;
 	padding: 0 8px;
 	background: linear-gradient(180deg, #0f1622 0%, #0c111b 100%);
@@ -6782,6 +6787,13 @@ nav.zig-menu {
 	line-height: 16px;
 	color: #d7dde8;
 	background: transparent;
+	/*
+	 * ‎appearance: none‎ ظاهرِ بومیِ مرورگر را حذف می‌کند ولی حاشیهٔ
+	 * پیش‌فرضِ فرم‌المنت‌ها را نه — بدونِ این، همان حاشیه کنارِ حاشیهٔ
+	 * قصدشدهٔ ‎.zig-configurator__select-wrap‎ می‌نشست و کادر دوتایی به
+	 * نظر می‌رسید.
+	 */
+	border: none;
 	/* برخی مرورگرها ‎text-align‎ِ ارثی را رویِ متنِ خودِ ‎<select>‎ اعمال نمی‌کنند */
 	text-align: right;
 	cursor: pointer;
@@ -6879,8 +6891,14 @@ nav.zig-menu {
 	gap: 10px;
 }
 
+/*
+ * ‎row-reverse‎: در HTML برچسبِ متنی پیش از نقطه می‌آید (طبقِ ترتیبِ طبیعیِ
+ * خواندن)، ولی طرح نقطه را سمتِ راستِ برچسب می‌خواهد — دقیقاً همان
+ * استدلالِ ‎.zig-configurator__bottom‎/‎__actions‎.
+ */
 .zig-configurator__stock {
 	display: inline-flex;
+	flex-direction: row-reverse;
 	align-items: center;
 	gap: 4px;
 	align-self: flex-end;
