@@ -6663,10 +6663,20 @@ nav.zig-menu {
  * طبقِ توضیحِ بالای فایل همیشه بر این‌ها می‌چربد؛ این‌ها فقط پیش‌فرضِ
  * جعبه‌بازنشده‌اند تا ویجت بدونِ دست‌زدن به هیچ کنترلی شبیهِ طرح باشد.
  */
+/*
+ * جهت و ترازِ متن صریح‌اند، نه امانتی به ‎dir‎ِ صفحه — دقیقاً همان راهی که
+ * ‎.zig-download-archive‎ هم رفته. طرح فیزیکاً راست‌چین است (‎textAlign:
+ * 'right'‎ رویِ تک‌تکِ متن‌ها در دیتای فیگما)؛ بدونِ این، روی صفحه/قالبی که
+ * ‎dir="rtl"‎ روی ریشه ندارد یا استایلِ سراسری‌اش ‎text-align‎ را ریست
+ * می‌کند، متن و چیدمانِ فلکس (که ترتیبِ راست/چپِ قیمت-موجودی و دکمه‌ها به
+ * همین جهت بند است) به سمتِ چپ می‌افتند.
+ */
 .zig-configurator {
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
+	direction: rtl;
+	text-align: right;
 }
 
 .zig-configurator__card {
@@ -6771,6 +6781,8 @@ nav.zig-menu {
 	line-height: 16px;
 	color: #d7dde8;
 	background: transparent;
+	/* برخی مرورگرها ‎text-align‎ِ ارثی را رویِ متنِ خودِ ‎<select>‎ اعمال نمی‌کنند */
+	text-align: right;
 	cursor: pointer;
 }
 
