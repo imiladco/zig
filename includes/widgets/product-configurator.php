@@ -35,21 +35,21 @@ if (!defined('ABSPATH')) {
  *             span.zig-configurator__select-wrap
  *               select.zig-configurator__select
  *               span.zig-configurator__chevron
- *         div.zig-configurator__bottom     ردیفِ موجودی/زمان (راست) و قیمت (چپ)
- *           div.zig-configurator__side      اول در DOM، پس در RTL راست می‌نشیند
+ *         div.zig-configurator__bottom     ترتیبِ HTML؛ CSS با row-reverse چپ/راستش می‌کند
+ *           div.zig-configurator__price
+ *             bdi.zig-configurator__value
+ *               span.zig-configurator__amount
+ *               span.zig-configurator__unit
+ *           div.zig-configurator__side
  *             div.zig-configurator__stock.zig-configurator__stock--{bucket}
  *               span.zig-configurator__stock-label
  *               span.zig-configurator__stock-dot
  *             div.zig-configurator__updated
  *               span.zig-configurator__updated-label
  *               span.zig-configurator__updated-value
- *           div.zig-configurator__price
- *             bdi.zig-configurator__value
- *               span.zig-configurator__amount
- *               span.zig-configurator__unit
- *       div.zig-configurator__actions      بیرونِ جعبهٔ تیره — اصلی (راست) پیش از فرعی (چپ)
- *         a|button.zig-configurator__btn.zig-configurator__btn--primary
+ *       div.zig-configurator__actions      بیرونِ جعبهٔ تیره؛ همینطور row-reverse
  *         a|button.zig-configurator__btn.zig-configurator__btn--secondary
+ *         a|button.zig-configurator__btn.zig-configurator__btn--primary
  *
  * هیچ «افزودن به سبد خرید»ی اینجا نیست؛ دو دکمهٔ پایین فقط پیوندند، رفتار
  * کلیکشان بعداً مشخص می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
@@ -1361,18 +1361,17 @@ final class Product_Configurator extends Widget_Base {
         }
 
         /*
-         * موجودی/زمانِ به‌روزرسانی پیش از قیمت چاپ می‌شود، نه بعدش — طرح
-         * قیمت را سمتِ چپ می‌خواهد و بجِ موجودی را سمتِ راست. صفحه راست‌به‌چپ
-         * است، پس فرزندِ اولِ یک فلکسِ ‎row‎ِ عادی فیزیکاً سمتِ راست می‌نشیند؛
-         * اگر قیمت اول چاپ می‌شد (که پیش از این فیکس همین‌طور بود)، دقیقاً
-         * جایِ این دو با طرح برعکس می‌شد.
+         * قیمت پیش از موجودی/زمان چاپ می‌شود — همان ترتیبِ طبیعیِ خواندن.
+         * جابه‌جاییِ چپ/راستِ طرح (قیمت چپ، موجودی راست) کارِ خودِ CSS است:
+         * ‎.zig-configurator__bottom‎ با ‎flex-direction: row-reverse‎ همین
+         * دو را بدونِ نیاز به دستکاریِ ترتیبِ HTML جابه‌جا می‌کند.
          */
         echo '<div class="zig-configurator__bottom">';
+        $this->render_price($settings, $display, $persian, $currency);
         echo '<div class="zig-configurator__side">';
         $this->render_stock($settings, $display, $can_select);
         $this->render_updated($settings, $display, $variations, $persian);
         echo '</div>';
-        $this->render_price($settings, $display, $persian, $currency);
         echo '</div>';
 
         echo '</div>';
@@ -1590,19 +1589,19 @@ final class Product_Configurator extends Widget_Base {
         }
 
         /*
-         * دکمهٔ اصلی پیش از دکمهٔ فرعی چاپ می‌شود — همان استدلالِ ردیفِ
-         * قیمت/موجودی: طرح دکمهٔ فرعی را چپ می‌خواهد و دکمهٔ اصلی (بنفش)
-         * را راست، و در صفحهٔ راست‌به‌چپ فرزندِ اولِ فلکس فیزیکاً راست
-         * می‌نشیند.
+         * دکمهٔ فرعی پیش از دکمهٔ اصلی چاپ می‌شود. جابه‌جاییِ چپ/راستِ طرح
+         * (فرعی چپ، اصلی/بنفش راست) کارِ خودِ CSS است: ‎.zig-configurator__actions‎
+         * با ‎flex-direction: row-reverse‎ همین دو را بدونِ نیاز به دستکاریِ
+         * ترتیبِ HTML جابه‌جا می‌کند.
          */
         echo '<div class="zig-configurator__actions">';
 
-        if ($has_primary) {
-            $this->render_button($settings, 'primary');
-        }
-
         if ($has_secondary) {
             $this->render_button($settings, 'secondary');
+        }
+
+        if ($has_primary) {
+            $this->render_button($settings, 'primary');
         }
 
         echo '</div>';

@@ -6664,18 +6664,19 @@ nav.zig-menu {
  * جعبه‌بازنشده‌اند تا ویجت بدونِ دست‌زدن به هیچ کنترلی شبیهِ طرح باشد.
  */
 /*
- * جهت و ترازِ متن صریح‌اند، نه امانتی به ‎dir‎ِ صفحه — دقیقاً همان راهی که
- * ‎.zig-download-archive‎ هم رفته. طرح فیزیکاً راست‌چین است (‎textAlign:
- * 'right'‎ رویِ تک‌تکِ متن‌ها در دیتای فیگما)؛ بدونِ این، روی صفحه/قالبی که
- * ‎dir="rtl"‎ روی ریشه ندارد یا استایلِ سراسری‌اش ‎text-align‎ را ریست
- * می‌کند، متن و چیدمانِ فلکس (که ترتیبِ راست/چپِ قیمت-موجودی و دکمه‌ها به
- * همین جهت بند است) به سمتِ چپ می‌افتند.
+ * ترازِ متن صریح است، نه امانتی به ‎dir‎ِ صفحه — طرح فیزیکاً راست‌چین است
+ * (‎textAlign: 'right'‎ رویِ تک‌تکِ متن‌ها در دیتای فیگما)؛ بدونِ این، روی
+ * صفحه/قالبی که استایلِ سراسری‌اش ‎text-align‎ را ریست می‌کند، متن به چپ
+ * می‌افتد. جهتِ کلی (‎direction‎) عمداً اینجا ست نمی‌شود — چیدمانِ راست/چپِ
+ * ردیف‌ها کاملاً کارِ خودِ فلکس است (نگاه کنید به ‎flex-direction:
+ * row-reverse‎ رویِ ‎.zig-configurator__bottom‎ و ‎.zig-configurator__actions‎)،
+ * نه یک ‎direction‎ِ اعمال‌شده روی کل ویجت که رفتارِ فرم/بیدیِ متن را هم
+ * دست‌کاری کند.
  */
 .zig-configurator {
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
-	direction: rtl;
 	text-align: right;
 }
 
@@ -6830,8 +6831,15 @@ nav.zig-menu {
  * عنوانی دارد نه کشویی — آنجا همین ردیف تنها فرزندِ کارت است و طرح برایش
  * هیچ فاصلهٔ اضافه‌ای روی گپِ خودِ کارت نمی‌خواهد.
  */
+/*
+ * ‎row-reverse‎، نه ‎direction‎: قیمت در HTML پیش از موجودی/زمان می‌آید
+ * (ترتیبِ طبیعیِ خواندن — اول قیمت، بعد جزئیات)، ولی طرح می‌خواهدش سمتِ
+ * چپ و موجودی را سمتِ راست. ‎row-reverse‎ همین جابه‌جایی را کاملاً با
+ * فلکس انجام می‌دهد، بدونِ دست‌کاریِ جهتِ کلیِ ویجت.
+ */
 .zig-configurator__bottom {
 	display: flex;
+	flex-direction: row-reverse;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
@@ -6926,8 +6934,14 @@ nav.zig-menu {
 	display: none;
 }
 
+/*
+ * ‎row-reverse‎، همان استدلالِ ‎.zig-configurator__bottom‎: دکمهٔ فرعی در
+ * HTML پیش از اصلی می‌آید، طرح می‌خواهدش سمتِ چپ و دکمهٔ اصلی (بنفش) را
+ * سمتِ راست.
+ */
 .zig-configurator__actions {
 	display: flex;
+	flex-direction: row-reverse;
 	flex-wrap: wrap;
 	align-items: stretch;
 	gap: 24px;

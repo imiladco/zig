@@ -218,18 +218,18 @@ Tests::keeps('محصولِ متغیرِ با ترکیبِ معتبر، عنوا�
 Tests::keeps('و کشوها هم رندر می‌شوند', $variable_out, 'zig-configurator__fields');
 
 /* ==========================================================================
- * رندر › ترتیبِ DOM در صفحهٔ راست‌به‌چپ
+ * رندر › ترتیبِ HTML، جدا از چپ/راستِ دیداری
  * ======================================================================= */
 
 /*
- * صفحه راست‌به‌چپ است؛ در یک فلکسِ ‎row‎ِ عادی، فرزندِ اول فیزیکاً سمتِ
- * راست می‌نشیند. طرح قیمت را چپ می‌خواهد و موجودی/زمان را راست، و دکمهٔ
- * اصلی (بنفش) را راست و دکمهٔ فرعی را چپ — پس در HTML باید همین ترتیب
- * (موجودی پیش از قیمت، دکمهٔ اصلی پیش از فرعی) رعایت شود، نه ترتیبِ
- * دیداریِ «طبیعی»ِ چپ‌به‌راست.
+ * جابه‌جاییِ چپ/راستِ طرح (قیمت چپ/موجودی راست، فرعی چپ/اصلی راست) کارِ
+ * ‎flex-direction: row-reverse‎ در CSS است، نه ترتیبِ HTML — پس اینجا فقط
+ * ترتیبِ طبیعیِ چاپ (قیمت پیش از موجودی، فرعی پیش از اصلی) سنجیده می‌شود؛
+ * جابه‌جاییِ دیداری خودش قابلِ‌سنجش با این تست‌ها نیست (نه مرورگری در کار
+ * است، نه اجرایِ CSS).
  */
 
-Tests::group('رندر › کانفیگ محصول، ترتیبِ DOM برایِ راست‌به‌چپ');
+Tests::group('رندر › کانفیگ محصول، ترتیبِ HTML');
 
 $order_out = zig_render(Product_Configurator::class, $header_settings + [
     'product_id'     => $priced_simple->get_id(),
@@ -238,11 +238,11 @@ $order_out = zig_render(Product_Configurator::class, $header_settings + [
 ]);
 
 Tests::ok(
-    'موجودی/زمان پیش از قیمت چاپ می‌شود (پس در RTL سمتِ راست است)',
-    strpos($order_out, 'zig-configurator__side') < strpos($order_out, 'zig-configurator__price')
+    'قیمت پیش از موجودی/زمان چاپ می‌شود',
+    strpos($order_out, 'zig-configurator__price') < strpos($order_out, 'zig-configurator__side')
 );
 
 Tests::ok(
-    'دکمهٔ اصلی پیش از دکمهٔ فرعی چاپ می‌شود (پس در RTL سمتِ راست است)',
-    strpos($order_out, 'zig-configurator__btn--primary') < strpos($order_out, 'zig-configurator__btn--secondary')
+    'دکمهٔ فرعی پیش از دکمهٔ اصلی چاپ می‌شود',
+    strpos($order_out, 'zig-configurator__btn--secondary') < strpos($order_out, 'zig-configurator__btn--primary')
 );
