@@ -851,6 +851,58 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        $this->add_control(
+            'side_heading',
+            [
+                'label' => __('چیدمانِ موجودی و زمان', 'zig3d-widgets'),
+                'type'  => Controls_Manager::HEADING,
+            ]
+        );
+
+        /*
+         * ‎.zig-configurator__side‎ ستونِ کنارِ قیمت است (بجِ موجودی +
+         * زمانِ به‌روزرسانی)؛ پیش‌فرضِ CSS عمودی است ولی کاربر باید بتواند
+         * جهتش را از تنظیماتِ ویجت عوض کند — همان الگویِ کنترلِ ‎list_direction‎
+         * در ویجتِ TOC.
+         */
+        $this->add_responsive_control(
+            'side_direction',
+            [
+                'label'     => __('جهت', 'zig3d-widgets'),
+                'type'      => Controls_Manager::CHOOSE,
+                'default'   => 'column',
+                'options'   => [
+                    'column'         => ['title' => __('عمودی', 'zig3d-widgets'), 'icon' => 'eicon-arrow-down'],
+                    'column-reverse' => ['title' => __('عمودیِ معکوس', 'zig3d-widgets'), 'icon' => 'eicon-arrow-up'],
+                    'row'            => ['title' => __('افقی', 'zig3d-widgets'), 'icon' => 'eicon-arrow-left'],
+                    'row-reverse'    => ['title' => __('افقیِ معکوس', 'zig3d-widgets'), 'icon' => 'eicon-arrow-right'],
+                ],
+                'toggle'    => false,
+                'selectors' => ['{{WRAPPER}} .zig-configurator__side' => 'flex-direction: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'side_gap',
+            [
+                'label'      => __('فاصله', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px', 'em'],
+                'range'      => ['px' => ['min' => 0, 'max' => 40]],
+                'default'    => ['size' => 10, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-configurator__side' => 'gap: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'amount_heading',
+            [
+                'label'     => __('قیمت', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
         $this->add_amount_style_controls('amount', '.zig-configurator__price');
 
         $this->end_controls_section();
