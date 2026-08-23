@@ -2794,6 +2794,15 @@ a.zig-list__label:focus-visible {
 	aspect-ratio: 1 / 1;
 }
 
+/*
+ * پیش‌فرضِ خودِ CSS برایِ تصویرِ شاخص — طرح ۴:۳ می‌خواهد، نه مربع. کنترلِ
+ * ‎main_ratio‎ در المنتور همین مقدار را پیش‌فرض دارد و رویِ این قاعده
+ * می‌چربد؛ این‌جا فقط برایِ جایی است که آن لایه (المنتور) در کار نیست.
+ */
+.zig-gallery__main {
+	aspect-ratio: 4 / 3;
+}
+
 .zig-gallery__main img,
 .zig-gallery__thumb img {
 	width: 100%;

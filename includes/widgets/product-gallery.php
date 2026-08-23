@@ -332,7 +332,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_responsive_control('main_ratio', [
             'label'     => __('نسبت ابعاد', 'zig3d-widgets'),
             'type'      => Controls_Manager::SELECT,
-            'default'   => '1 / 1',
+            'default'   => '4 / 3',
             'options'   => [
                 'auto'   => __('خودکار (ابعاد اصلی)', 'zig3d-widgets'),
                 '1 / 1'  => __('مربع (۱:۱)', 'zig3d-widgets'),
