@@ -2757,10 +2757,20 @@ a.zig-list__label:focus-visible {
    باشند: شاخص(۱) بزرگ، ۲تای بعد کوچک، جایگاه ۴ بزرگ، … یکی‌درمیون.
    ======================================================================= */
 
+/*
+ * گالری یک کارتِ یکپارچه است — پس‌زمینه/بوردر/رادیوس/پدینگ رویِ خودِ
+ * ‎.zig-gallery‎ می‌نشیند تا تصویرِ شاخص و تامبنیل‌ها هر دو داخلِ همان یک
+ * جعبه باشند، نه دو ناحیهٔ بصریِ جدا.
+ */
 .zig-gallery {
 	position: relative;
-	--zig-gal-rgap: 8px;
-	--zig-gal-cgap: 8px;
+	box-sizing: border-box;
+	--zig-gal-rgap: 20px;
+	--zig-gal-cgap: 12px;
+	background-color: #f8fafc;
+	border: 1px solid rgba(16, 24, 40, 0.06);
+	border-radius: 24px;
+	padding: 20px;
 }
 
 .zig-gallery__strip {
@@ -2810,11 +2820,11 @@ a.zig-list__label:focus-visible {
 	justify-content: center;
 	width: 44px;
 	height: 44px;
-	border: 0;
-	border-radius: 12px;
+	border: 1px solid rgba(16, 24, 40, 0.08);
+	border-radius: 14px;
 	background-color: #ffffff;
 	color: #1a2b4a;
-	box-shadow: 0 2px 12px rgba(16, 24, 40, 0.12);
+	box-shadow: 0 4px 14px rgba(16, 24, 40, 0.1);
 	cursor: pointer;
 	transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -3192,12 +3202,16 @@ body.zig-gallery-noscroll {
 
 /* ---------- استایل کارتی تامبنیل + بج تعداد ---------- */
 
+/*
+ * ضخامتِ بوردر همیشه ۲پیکسل است — چه غیرفعال (رنگِ کم‌رنگ) چه فعال (بنفش) —
+ * تا فعال‌شدنِ یک تامبنیل هیچ تغییرِ اندازه‌ای در کارت نسازد.
+ */
 .zig-gallery__thumb {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
-	border: 2px solid transparent;
+	border: 2px solid rgba(16, 24, 40, 0.08);
 }
 
 /*

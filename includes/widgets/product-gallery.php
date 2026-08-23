@@ -76,6 +76,7 @@ final class Product_Gallery extends Widget_Base {
         $this->register_images_content_controls();
         $this->register_modal_content_controls();
 
+        $this->register_card_style_controls();
         $this->register_main_image_style_controls();
         $this->register_main_nav_style_controls();
         $this->register_thumbs_style_controls();
@@ -262,6 +263,65 @@ final class Product_Gallery extends Widget_Base {
         $this->end_controls_section();
     }
 
+    /**
+     * استایل — کارتِ گالری.
+     *
+     * تصویرِ شاخص و تامبنیل‌ها هر دو داخلِ همین یک جعبه‌اند (‎.zig-gallery‎
+     * خودش)، نه دو ناحیهٔ بصریِ جدا — پس، پس‌زمینه/بوردر/رادیوس/پدینگ اینجا
+     * رویِ خودِ ریشه می‌نشیند.
+     */
+    private function register_card_style_controls(): void {
+        $this->start_controls_section('section_style_card', [
+            'label' => __('کارت گالری', 'zig3d-widgets'),
+            'tab'   => Controls_Manager::TAB_STYLE,
+        ]);
+
+        $this->add_control('card_bg', [
+            'label'     => __('رنگ پس‌زمینه', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .zig-gallery' => 'background-color: {{VALUE}};',
+            ],
+        ]);
+
+        $this->add_group_control(Group_Control_Border::get_type(), [
+            'name'     => 'card_border',
+            'selector' => '{{WRAPPER}} .zig-gallery',
+        ]);
+
+        $this->add_responsive_control('card_radius', [
+            'label'      => __('گردی گوشه', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', '%'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-gallery' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_responsive_control('card_padding', [
+            'label'      => __('پدینگ داخلی', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'em', '%'],
+            'selectors'  => [
+                '{{WRAPPER}} .zig-gallery' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ]);
+
+        $this->add_group_control(Group_Control_Box_Shadow::get_type(), [
+            'name'     => 'card_shadow',
+            'selector' => '{{WRAPPER}} .zig-gallery',
+        ]);
+
+        $this->end_controls_section();
+    }
+
+    /*
+     * فاصلهٔ تصویرِ شاخص تا تامبنیل‌ها همچنان یک کنترلِ مجزاست
+     * (‎main_spacing‎، تویِ بخشِ «تصویر شاخص»)، نه اینجا — همان
+     * ‎--zig-gal-rgap‎ را می‌نویسد؛ دوباره‌نویسیِ همان متغیر با اسمِ دیگر در
+     * این بخش فقط دو کنترل برایِ یک اثر می‌ساخت.
+     */
+
     /** استایل — تصویر شاخص */
     private function register_main_image_style_controls(): void {
         $this->start_controls_section('section_style_main', [
@@ -288,7 +348,7 @@ final class Product_Gallery extends Widget_Base {
         $this->add_control('main_fit', [
             'label'     => __('نحوه جای‌گیری تصویر', 'zig3d-widgets'),
             'type'      => Controls_Manager::SELECT,
-            'default'   => 'cover',
+            'default'   => 'contain',
             'options'   => [
                 'cover'   => __('کاور (کات از وسط)', 'zig3d-widgets'),
                 'contain' => __('کامل داخل کادر', 'zig3d-widgets'),
@@ -589,7 +649,7 @@ final class Product_Gallery extends Widget_Base {
             'label'      => __('رادیوس کارت', 'zig3d-widgets'),
             'type'       => Controls_Manager::DIMENSIONS,
             'size_units' => ['px', '%'],
-            'default'    => ['top' => '12', 'right' => '12', 'bottom' => '12', 'left' => '12', 'unit' => 'px', 'isLinked' => true],
+            'default'    => ['top' => '16', 'right' => '16', 'bottom' => '16', 'left' => '16', 'unit' => 'px', 'isLinked' => true],
             'selectors'  => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
             ],
