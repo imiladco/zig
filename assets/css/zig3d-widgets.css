@@ -6797,10 +6797,26 @@ nav.zig-menu {
 	/* برخی مرورگرها ‎text-align‎ِ ارثی را رویِ متنِ خودِ ‎<select>‎ اعمال نمی‌کنند */
 	text-align: right;
 	cursor: pointer;
+	/*
+	 * پاپ‌آپِ بومیِ لیستِ گزینه‌ها را مرورگر (نه صفحه) رندر می‌کند و آن‌جا
+	 * ‎text-align‎ اثر ندارد — فقط ‎direction‎ باعث می‌شود گزینه‌ها هم‌جهتِ
+	 * خودِ کنترل راست‌چین بمانند (وگرنه placeholder گاهی چپ می‌افتد، بقیه راست).
+	 * این استثنا رویِ خودِ کنترلِ فرمِ بومی است، نه دست‌کاریِ چیدمانِ ویجت.
+	 */
+	direction: rtl;
 }
 
 .zig-configurator__select:invalid,
 .zig-configurator__select option[value=""] {
+	color: #d7dde8;
+}
+
+/*
+ * بدونِ این، پاپ‌آپِ گزینه‌ها پس‌زمینهٔ پیش‌فرضِ سفیدِ مرورگر را نگه می‌داشت —
+ * دقیقاً همان چیزی که در دیزاین/موضوعِ تیرهٔ ویجت جا نمی‌افتد.
+ */
+.zig-configurator__select option {
+	background: #131a27;
 	color: #d7dde8;
 }
 
@@ -6896,12 +6912,16 @@ nav.zig-menu {
  * خواندن)، ولی طرح نقطه را سمتِ راستِ برچسب می‌خواهد — دقیقاً همان
  * استدلالِ ‎.zig-configurator__bottom‎/‎__actions‎.
  */
+/*
+ * بدونِ ‎align-self‎: زائد بود — ‎.zig-configurator__side‎ خودش
+ * ‎align-items: flex-end‎ دارد و همین را رویِ همهٔ فرزندهایش (‎__stock‎ و
+ * ‎__updated‎) اعمال می‌کند. تکرارش اینجا چیدمانِ ردیف را به‌هم می‌زد.
+ */
 .zig-configurator__stock {
 	display: inline-flex;
 	flex-direction: row-reverse;
 	align-items: center;
 	gap: 4px;
-	align-self: flex-end;
 	white-space: nowrap;
 	line-height: 16px;
 	padding: 4px 8px;

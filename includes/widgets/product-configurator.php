@@ -991,6 +991,24 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        /*
+         * سایزِ نقطه یک کنترلِ مشترک است، نه per-state: رنگش خودش از
+         * ‎currentColor‎ِ همان تبِ حالت می‌آید (‎.zig-configurator__stock-dot‎
+         * در CSS)، پس تکرارش در هر سه تب فقط سه کنترلِ یک‌رفتار می‌ساخت.
+         */
+        $this->add_responsive_control(
+            'stock_dot_size',
+            [
+                'label'      => __('سایز نقطه', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 20]],
+                'selectors'  => [
+                    '{{WRAPPER}} .zig-configurator__stock-dot' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+                ],
+            ]
+        );
+
         $this->start_controls_tabs('stock_tabs');
 
         foreach ($this->stock_states() as $key => $state) {
