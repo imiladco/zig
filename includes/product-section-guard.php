@@ -151,6 +151,24 @@ final class Product_Section_Guard {
             return $html;
         }
 
+        /*
+         * ‎DOMDocument::loadHTML()‎ رویِ کلِ HTMLِ صفحه (نه فقط ناحیهٔ
+         * محصول) چند برابرِ حجمِ همین رشته حافظه می‌گیرد — رویِ صفحاتِ
+         * سنگین (هدر/مگامنو/محصولاتِ مرتبط/فوتر) این می‌تواند از سقفِ
+         * ‎memory_limit‎ رد شود. فاتالِ حافظهٔ گزارش‌شده معمولاً جایِ دیگری
+         * (مثلاً یک کوئریِ ‎wpdb‎یِ بعدی) ظاهر می‌شود، چون PHP فاتال را
+         * همان‌جا گزارش می‌کند که آخرین ‎emalloc‎ شکست خورده، نه جایی که
+         * واقعاً حافظه مصرف شد. بدونِ دسترسیِ زنده به سایت نمی‌شود این
+         * پارس را با اطمینان به یک ناحیهٔ کوچک‌تر محدود کرد (نمی‌دانیم
+         * ساختارِ دقیقِ خروجیِ المنتور/تم را)، پس به‌جایِ ریسکِ فاتال، وقتی
+         * حاشیهٔ حافظهٔ کافی نیست این حذفِ خودکار را فقط برایِ همین
+         * درخواست ساکت کنار می‌گذاریم — صفحه با سکشن‌هایِ خالی (نه خراب)
+         * رندر می‌شود، که همیشه بهتر از صفحهٔ سفید است.
+         */
+        if (!self::has_memory_headroom($html)) {
+            return $html;
+        }
+
         $doc = new \DOMDocument();
 
         $previous = libxml_use_internal_errors(true);
@@ -213,6 +231,57 @@ final class Product_Section_Guard {
         $out = mb_convert_encoding($out, 'UTF-8', 'HTML-ENTITIES');
 
         return self::strip_wrapper($out);
+    }
+
+    /**
+     * آیا به‌اندازهٔ کافی حاشیهٔ حافظه برایِ پارسِ امنِ این HTML هست؟
+     *
+     * ‎DOMDocument::loadHTML()‎ در عمل حدودِ ۵ تا ۱۰ برابرِ حجمِ رشتهٔ
+     * ورودی حافظه می‌گیرد (گرهِ درخت + attribute mapها)، بعلاوهٔ یک
+     * کپیِ کاملِ خروجی در ‎saveHTML()‎/‎mb_convert_encoding()‎. ضریبِ ۱۲
+     * عمداً سخاوتمندانه است — هدف جلوگیریِ قطعی از فاتال است، نه
+     * تخمینِ دقیق.
+     *
+     * پارامترهایِ اختیاریِ آخر فقط برایِ تست‌اند؛ در استفادهٔ واقعی همیشه
+     * از ‎ini_get('memory_limit')‎ و ‎memory_get_usage(true)‎یِ واقعی
+     * استفاده می‌شود.
+     */
+    private static function has_memory_headroom(string $html, ?string $memory_limit = null, ?int $current_usage = null): bool {
+        $memory_limit ??= (string) ini_get('memory_limit');
+        $limit_bytes = self::parse_memory_limit($memory_limit);
+
+        // نامحدود (‎-1‎) یا مقدارِ نامفهوم/صفر: بررسی معنا ندارد، اجازه بده.
+        if ($limit_bytes <= 0) {
+            return true;
+        }
+
+        $current_usage ??= memory_get_usage(true);
+        $estimated_need = strlen($html) * 12;
+
+        // ۱۵٪ حاشیهٔ اضافه برایِ بقیهٔ درخواست (چیزی که بعدِ این فیلتر هنوز اجرا می‌شود).
+        $safety_ceiling = (int) ($limit_bytes * 0.85);
+
+        return ($current_usage + $estimated_need) < $safety_ceiling;
+    }
+
+    /** رشتهٔ ‎memory_limit‎یِ php.ini (مثلِ ‎"256M"‎، ‎"1G"‎، ‎"-1"‎) را به بایت تبدیل می‌کند. */
+    private static function parse_memory_limit(string $memory_limit): int {
+        $memory_limit = trim($memory_limit);
+
+        if ('' === $memory_limit || '-1' === $memory_limit) {
+            return -1;
+        }
+
+        if (!preg_match('/^(\d+)([KMG]?)$/i', $memory_limit, $matches)) {
+            return -1;
+        }
+
+        $value = (int) $matches[1];
+        $unit = strtoupper($matches[2] ?? '');
+
+        $multiplier = ['K' => 1024, 'M' => 1024 ** 2, 'G' => 1024 ** 3][$unit] ?? 1;
+
+        return $value * $multiplier;
     }
 
     /**

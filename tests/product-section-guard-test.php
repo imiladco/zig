@@ -144,3 +144,31 @@ $mixed_filtered = Product_Section_Guard::filter_html($mixed);
 Tests::keeps('مشخصاتِ پر می‌ماند', $mixed_filtered, 'zig-specs');
 Tests::blocks('قابلیتِ خالی می‌رود', $mixed_filtered, 'zig-product-ability');
 Tests::keeps('توضیحاتِ پر می‌ماند', $mixed_filtered, 'zig-description');
+
+Tests::group('نگهبانِ سکشن › حاشیهٔ حافظه — جلوگیری از فاتال به‌جایِ ریسک‌کردن');
+
+$headroom = new ReflectionMethod(Product_Section_Guard::class, 'has_memory_headroom');
+$headroom->setAccessible(true);
+
+Tests::ok(
+    'وقتی حافظهٔ کافی هست، اجازهٔ پارس داده می‌شود',
+    true === $headroom->invoke(null, str_repeat('x', 1000), '256M', 10 * 1024 * 1024)
+);
+
+Tests::ok(
+    'وقتی مصرفِ فعلی + حجمِ HTML به سقف نزدیک است، پارس رد می‌شود',
+    false === $headroom->invoke(null, str_repeat('x', 5 * 1024 * 1024), '64M', 60 * 1024 * 1024)
+);
+
+Tests::ok(
+    'memory_limit نامحدود (-1) همیشه اجازه می‌دهد',
+    true === $headroom->invoke(null, str_repeat('x', 50 * 1024 * 1024), '-1', 500 * 1024 * 1024)
+);
+
+$parse_limit = new ReflectionMethod(Product_Section_Guard::class, 'parse_memory_limit');
+$parse_limit->setAccessible(true);
+
+Tests::same('پارسِ "256M"', $parse_limit->invoke(null, '256M'), 256 * 1024 * 1024);
+Tests::same('پارسِ "1G"', $parse_limit->invoke(null, '1G'), 1024 * 1024 * 1024);
+Tests::same('پارسِ "512K"', $parse_limit->invoke(null, '512K'), 512 * 1024);
+Tests::same('پارسِ "-1" یعنی نامحدود', $parse_limit->invoke(null, '-1'), -1);
