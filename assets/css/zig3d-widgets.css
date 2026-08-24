@@ -8188,30 +8188,37 @@ a.zig-configurator__btn:active {
 	transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
-.zig-consultation-modal__duplicate-edit {
+/*
+ * ‎color‎/‎background‎/‎font-weight‎ عمداً با همان زنجیرِ سه‌کلاسیِ بالا
+ * (اختصاصیتِ ۰٬۳٬۰) می‌آیند، نه در یک قاعدهٔ تک‌کلاسی — وگرنه قاعدهٔ
+ * سراسریِ کیتِ المنتور رویِ خودِ تگ (‎.elementor-kit-8 button‎، اختصاصیتِ
+ * ۰٬۱٬۱) رنگ/پس‌زمینه را برمی‌گرداند و «حذف درخواست...» ظاهرِ اشتباه
+ * می‌گیرد.
+ */
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-edit {
 	font-weight: 400;
 	color: var(--zig-consult-purple);
 	background: transparent;
 }
 
-.zig-consultation-modal__duplicate-edit:hover,
-.zig-consultation-modal__duplicate-edit:focus-visible {
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-edit:hover,
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-edit:focus-visible {
 	background: var(--zig-consult-purple-soft);
 }
 
-.zig-consultation-modal__duplicate-edit:disabled,
-.zig-consultation-modal__duplicate-close:disabled {
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-edit:disabled,
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-close:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 }
 
-.zig-consultation-modal__duplicate-close {
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-close {
 	font-weight: 600;
 	color: #fff;
 	background: rgba(109, 40, 217, 0.8);
 }
 
-.zig-consultation-modal__duplicate-close:hover,
-.zig-consultation-modal__duplicate-close:focus-visible {
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-close:hover,
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-close:focus-visible {
 	background: var(--zig-consult-purple-hover);
 }
