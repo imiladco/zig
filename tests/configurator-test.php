@@ -274,3 +274,53 @@ Tests::ok(
     'دکمهٔ فرعی پیش از دکمهٔ اصلی چاپ می‌شود',
     strpos($order_out, 'zig-configurator__btn--secondary') < strpos($order_out, 'zig-configurator__btn--primary')
 );
+
+/* ==========================================================================
+ * رندر › دکمهٔ اصلی به واتساپ
+ * ======================================================================= */
+
+Tests::group('رندر › دکمهٔ اصلی، پیامِ واتساپ');
+
+$whatsapp_product = new WC_Product([
+    'id' => ++$GLOBALS['__zig_seq'], 'type' => 'simple', 'price' => '750000', 'regular' => '750000',
+    'name' => 'محفظهٔ آکواریوم مدل A',
+]);
+
+$whatsapp_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $whatsapp_product->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'primary_link'      => ['url' => 'https://example.com/should-be-ignored'],
+    'whatsapp_number'   => '+98 910 808 7105',
+    'whatsapp_template' => "سلام وقت بخیر\n\n[نام محصول]\n[لینک محصول]",
+]);
+
+Tests::keeps('شمارهٔ واتساپ فقط رقمی در href می‌آید', $whatsapp_out, 'https://wa.me/989108087105?text=');
+Tests::blocks('پیوندِ primary_link وقتی الگو پر است نادیده گرفته می‌شود', $whatsapp_out, 'example.com');
+
+Tests::ok(
+    'نامِ محصول اینکودشده در href هست',
+    false !== strpos($whatsapp_out, rawurlencode('محفظهٔ آکواریوم مدل A'))
+);
+
+Tests::ok(
+    'لینکِ کوتاهِ محصول (بر پایهٔ شناسه) اینکودشده در href هست',
+    false !== strpos($whatsapp_out, rawurlencode((string) wp_get_shortlink($whatsapp_product->get_id())))
+);
+
+Tests::ok(
+    'خطِ بعدیِ الگو به‌صورتِ %0A اینکود شده، نه \n خام یا <br>',
+    false !== strpos($whatsapp_out, '%0A') && false === strpos($whatsapp_out, '<br>')
+);
+
+Tests::keeps('دکمهٔ اصلیِ واتساپ در تبِ جدید باز می‌شود', $whatsapp_out, 'target="_blank"');
+Tests::keeps('و rel="noopener" دارد', $whatsapp_out, 'rel="noopener"');
+
+$no_template_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $whatsapp_product->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'primary_link'      => ['url' => 'https://example.com/still-used'],
+    'whatsapp_template' => '',
+]);
+
+Tests::keeps('با الگویِ خالی، دکمهٔ اصلی به پیوندِ عادی برمی‌گردد', $no_template_out, 'example.com');
+Tests::blocks('و دیگر لینکِ واتساپ نیست', $no_template_out, 'wa.me');

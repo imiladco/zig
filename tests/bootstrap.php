@@ -102,6 +102,13 @@ if (!function_exists('remove_query_arg')) {
 if (!function_exists('rest_url')) {
     function rest_url($path = '') { return 'https://zig3d.test/wp-json/' . ltrim((string) $path, '/'); }
 }
+if (!function_exists('home_url')) {
+    function home_url($path = '') { return 'https://zig3d.test' . ('' !== (string) $path ? '/' . ltrim((string) $path, '/') : ''); }
+}
+/** همتایِ سبک‌شدهٔ رفتارِ پیش‌فرضِ وردپرس: ‎?p={id}‎ روی خانه */
+if (!function_exists('wp_get_shortlink')) {
+    function wp_get_shortlink($id = 0) { return home_url('/?p=' . (int) $id); }
+}
 /**
  * فقط برایِ رشته‌هایِ سریالایزشدهٔ PHP — دقیقاً همان چیزی که Repeaterِ
  * JetEngine در ‎postmeta‎ ذخیره می‌کند. اگر ورودی از قبل آرایه باشد (مثلِ

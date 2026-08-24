@@ -51,8 +51,10 @@ if (!defined('ABSPATH')) {
  *         a|button.zig-configurator__btn.zig-configurator__btn--secondary
  *         a|button.zig-configurator__btn.zig-configurator__btn--primary
  *
- * هیچ «افزودن به سبد خرید»ی اینجا نیست؛ دو دکمهٔ پایین فقط پیوندند، رفتار
- * کلیکشان بعداً مشخص می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
+ * هیچ «افزودن به سبد خرید»ی اینجا نیست؛ دکمهٔ فرعی فقط پیوند است. دکمهٔ
+ * اصلی هم پیوند است، مگر اینکه الگویِ پیامِ واتساپ (‎whatsapp_template‎) پر
+ * باشد — آن‌وقت به‌جایِ ‎primary_link‎، آدرسِ ‎wa.me‎ با پیامِ جایگزین‌شده
+ * (نامِ محصول، لینکِ کوتاهِ محصول) باز می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
  * محصول برای واریانت‌سازی استفاده کرده — یکی، دوتا، یا بیشتر، نه لزوماً
  * «کانفیگ» و «متریال». منطقِ محاسبه در ‎Zig3d_Widgets\Configurator‎،
  * ‎Price‎، ‎Stock‎ و ‎Rate_Price‎ است تا بدون بالا آوردن المنتور قابل
@@ -497,6 +499,49 @@ final class Product_Configurator extends Widget_Base {
         );
 
         $this->add_link_control('primary_link');
+
+        $this->add_control(
+            'whatsapp_heading',
+            [
+                'label'     => __('واتساپ برای دکمهٔ اصلی', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
+        $this->add_control(
+            'whatsapp_note',
+            [
+                'type'            => Controls_Manager::RAW_HTML,
+                'raw'             => __('وقتی الگوی پیام پر باشد، دکمهٔ اصلی به‌جایِ پیوندِ بالا، همین پیام را در واتساپ باز می‌کند. برایِ برگشتن به پیوندِ عادی، الگو را خالی کنید.', 'zig3d-widgets'),
+                'content_classes' => 'elementor-descriptor',
+            ]
+        );
+
+        $this->add_control(
+            'whatsapp_number',
+            [
+                'label'       => __('شمارهٔ واتساپ', 'zig3d-widgets'),
+                'type'        => Controls_Manager::TEXT,
+                'default'     => '+989108087105',
+                'placeholder' => '+989108087105',
+                'label_block' => true,
+            ]
+        );
+
+        $this->add_control(
+            'whatsapp_template',
+            [
+                'label'       => __('الگوی پیام', 'zig3d-widgets'),
+                'type'        => Controls_Manager::TEXTAREA,
+                'rows'        => 8,
+                'dynamic'     => ['active' => true],
+                'default'     => '',
+                'placeholder' => "سلام وقت بخیر\n\nدرخواست مشاوره و دریافت پیش‌فاکتور در رابطه با محصول زیر را دارم. لطفاً شرایط و اطلاعات تکمیلی را ارسال بفرمایید.\n\n[نام محصول]\n[لینک محصول]",
+                'description' => __('دو جایگزین قابلِ استفاده: [نام محصول] و [لینک محصول] (پیوندِ کوتاهِ محصول، بر پایهٔ شناسهٔ آن).', 'zig3d-widgets'),
+                'label_block' => true,
+            ]
+        );
 
         $this->end_controls_section();
     }
@@ -1432,7 +1477,7 @@ final class Product_Configurator extends Widget_Base {
             return;
         }
 
-        $this->render_card($settings, $fields, $variations, $display, $can_select);
+        $this->render_card($settings, $fields, $variations, $display, $can_select, $product);
     }
 
     /**
@@ -1478,7 +1523,7 @@ final class Product_Configurator extends Widget_Base {
         ];
     }
 
-    private function render_card(array $settings, array $fields, array $variations, array $display, bool $can_select): void {
+    private function render_card(array $settings, array $fields, array $variations, array $display, bool $can_select, \WC_Product $product): void {
         $persian  = 'yes' === ($settings['persian_digits'] ?? 'yes');
         $currency = Price::currency((string) ($settings['currency_text'] ?? ''));
 
@@ -1515,7 +1560,7 @@ final class Product_Configurator extends Widget_Base {
 
         echo '</div>';
 
-        $this->render_actions($settings);
+        $this->render_actions($settings, $product);
 
         echo '</div>';
     }
@@ -1721,7 +1766,7 @@ final class Product_Configurator extends Widget_Base {
         return $persian ? Price::persian($text) : $text;
     }
 
-    private function render_actions(array $settings): void {
+    private function render_actions(array $settings, \WC_Product $product): void {
         $has_secondary = '' !== trim((string) ($settings['secondary_text'] ?? ''));
         $has_primary   = '' !== trim((string) ($settings['primary_text'] ?? ''));
 
@@ -1738,11 +1783,11 @@ final class Product_Configurator extends Widget_Base {
         echo '<div class="zig-configurator__actions">';
 
         if ($has_secondary) {
-            $this->render_button($settings, 'secondary');
+            $this->render_button($settings, 'secondary', $product);
         }
 
         if ($has_primary) {
-            $this->render_button($settings, 'primary');
+            $this->render_button($settings, 'primary', $product);
         }
 
         echo '</div>';
@@ -1751,19 +1796,31 @@ final class Product_Configurator extends Widget_Base {
     /**
      * یکی از دو دکمه.
      *
-     * پیوندِ واقعی وقتی آدرسی داده شده — ‎add_link_attributes()‎ خودش
-     * ‎target‎/‎rel‎/ویژگی‌های دلخواه را می‌سازد. بدونِ آدرس، ‎<button>‎ی
-     * غیرفعال از نظرِ ناوبری می‌آید تا رفتارِ کلیک بعداً (وقتی مشخص شود)
-     * رویش سوار شود — نه یک ‎<a>‎ بدونِ ‎href‎ که نه فوکوس می‌گیرد نه لینکی
-     * برایِ صفحه‌خوان است.
+     * دکمهٔ اصلی یک راهِ سوم هم دارد: اگر الگویِ پیامِ واتساپ پر باشد،
+     * جایِ پیوندِ ‎primary_link‎ را می‌گیرد — همان چیزی که ‎whatsapp_url()‎
+     * تصمیمش را می‌گیرد. بدونِ آدرس (نه پیوند، نه واتساپ)، ‎<button>‎ی
+     * غیرفعال از نظرِ ناوبری می‌آید — نه یک ‎<a>‎ بدونِ ‎href‎ که نه فوکوس
+     * می‌گیرد نه لینکی برایِ صفحه‌خوان است.
      */
-    private function render_button(array $settings, string $key): void {
+    private function render_button(array $settings, string $key, \WC_Product $product): void {
         $text       = trim((string) ($settings[$key . '_text'] ?? ''));
         $render_key = 'btn_' . $key;
 
         $this->add_render_attribute($render_key, 'class', ['zig-configurator__btn', 'zig-configurator__btn--' . $key]);
 
-        $tag = $this->apply_link($settings, $render_key, 'button', $key . '_link');
+        $whatsapp_url = 'primary' === $key ? $this->whatsapp_url($settings, $product) : null;
+
+        if (null !== $whatsapp_url) {
+            $this->add_render_attribute($render_key, [
+                'href'   => $whatsapp_url,
+                'target' => '_blank',
+                'rel'    => 'noopener',
+            ]);
+
+            $tag = 'a';
+        } else {
+            $tag = $this->apply_link($settings, $render_key, 'button', $key . '_link');
+        }
 
         if ('button' === $tag) {
             $this->add_render_attribute($render_key, 'type', 'button');
@@ -1772,6 +1829,42 @@ final class Product_Configurator extends Widget_Base {
         printf('<%s %s>', $tag, $this->get_render_attribute_string($render_key)); // phpcs:ignore WordPress.Security.EscapeOutput -- تگ ثابت، ویژگی‌ها از رندرِ المنتور
         echo esc_html($text);
         printf('</%s>', $tag); // phpcs:ignore WordPress.Security.EscapeOutput -- تگ ثابت
+    }
+
+    /**
+     * آدرسِ ‎wa.me‎ برایِ دکمهٔ اصلی، یا ‎null‎ اگر الگو خالی باشد.
+     *
+     * نکتهٔ فنی‌ای که اینجا باید رعایت شود: خطِ بعدی در پیامِ واتساپ فقط
+     * وقتی درست کار می‌کند که در رشتهٔ PHP کاراکترِ واقعیِ خط‌ِ‌جدید باشد و
+     * *کلِ* پیام یک‌جا با ‎rawurlencode()‎ اینکود شود — آن‌وقت هر ‎"\n"‎
+     * خودش به ‎%0A‎ تبدیل می‌شود. جایگزینیِ دستیِ ‎<br>‎ یا اینکودِ
+     * جداگانهٔ هر خط، همان چیزی است که معمولاً این الگوها را در واتساپ
+     * خراب می‌کند.
+     *
+     * لینکِ محصول از همان مکانیزمِ پیش‌فرضِ وردپرس/ووکامرس می‌آید —
+     * ‎wp_get_shortlink()‎ — که برایِ یک پستِ عادی به ‎?p={ID}‎ می‌رسد: کوتاه،
+     * و مستقیماً از رویِ شناسهٔ محصول قابلِ شناسایی.
+     */
+    private function whatsapp_url(array $settings, \WC_Product $product): ?string {
+        $template = trim((string) ($settings['whatsapp_template'] ?? ''));
+
+        if ('' === $template) {
+            return null;
+        }
+
+        $number = preg_replace('/\D+/', '', (string) ($settings['whatsapp_number'] ?? ''));
+
+        if (null === $number || '' === $number) {
+            return null;
+        }
+
+        $message = str_replace(
+            ['[نام محصول]', '[لینک محصول]'],
+            [$product->get_name(), wp_get_shortlink($product->get_id())],
+            $template
+        );
+
+        return 'https://wa.me/' . $number . '?text=' . rawurlencode($message);
     }
 
     /**
