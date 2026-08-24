@@ -2926,8 +2926,6 @@ a.zig-list__label:focus-visible {
 	 * دقیقاً به مقادیرِ ‎.amw-pg‎ی اصلی برمی‌گرداند.
 	 */
 	.zig-gallery {
-		--zig-gal-rgap: 8px;
-		--zig-gal-cgap: 8px;
 		background-color: transparent;
 		border: 0;
 		border-radius: 0;
@@ -2960,19 +2958,28 @@ a.zig-list__label:focus-visible {
 		display: none;
 	}
 
-	/* ---- نوار اسکرول افقی یکی‌درمیون ---- */
+	/*
+	 * ---- نوار اسکرول افقی یکی‌درمیون ----
+	 *
+	 * گپِ این حالت عمداً عددِ ثابتِ ۸px است، نه ‎var(--zig-gal-rgap)‎/
+	 * ‎var(--zig-gal-cgap)‎: آن دو متغیر مالِ کنترل‌هایِ استایلِ دسکتاپ‌اند
+	 * («فاصله تا تامبنیل‌ها (سطر)»/«فاصله بین تامبنیل‌ها (ستون)»، پیش‌فرضِ
+	 * ۳۲px/۱۲px) و المنتور رویِ ‎{{WRAPPER}} .zig-gallery‎ می‌نویسدشان —
+	 * دو کلاس، اختصاصیتش از ‎.zig-gallery‎ی تنهایِ اینجا بیشتر است، پس هر
+	 * تلاشی برایِ ریست‌کردنِ خودِ متغیر برایِ موبایل (نسخهٔ قبلی همین فایل)
+	 * می‌باخت — نه به‌خاطرِ ترتیب یا مدیاکوئری، فقط به‌خاطرِ اختصاصیت.
+	 * راه‌حل این نیست که با آن اختصاصیت رقابت کنیم؛ این عددها اصلاً نباید
+	 * از آن متغیرها بیایند — همان‌طور که در almasara-elementor-widgets هم
+	 * این گپ یک عددِ ثابتِ پیاده‌سازی است، نه چیزی که کاربر از پنل عوض کند.
+	 */
 	.zig-gallery--mobile-alt .zig-gallery__strip {
 		display: flex;
 		flex-direction: column;
 		flex-wrap: wrap;
 		height: var(--zig-gal-mh, 85vw);
-		/*
-		 * گپِ عمودی (بینِ دو آیتمِ روی‌همِ یک ستون) اینجا صفر می‌شود چون
-		 * دستی با ‎margin-block-end‎ی زیر داده می‌شود، نه گپِ بومیِ فلکس؛
-		 * ‎column-gap‎ (فاصلهٔ افقیِ بینِ ستون‌ها) دست‌نخورده از قاعدهٔ
-		 * مشترکِ بالا می‌ماند.
-		 */
+		/* گپِ عمودی صفر است چون دستی با ‎margin-block-end‎ی زیر داده می‌شود، نه گپِ بومیِ فلکس */
 		row-gap: 0;
+		column-gap: 8px;
 		overflow-x: auto;
 		overflow-y: hidden;
 		scroll-snap-type: x proximity;
@@ -2992,8 +2999,8 @@ a.zig-list__label:focus-visible {
 	 */
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb {
 		flex: 0 0 auto;
-		height: calc((var(--zig-gal-mh, 85vw) - var(--zig-gal-rgap, 8px)) / 2);
-		width: calc((var(--zig-gal-mh, 85vw) - var(--zig-gal-rgap, 8px)) / 2);
+		height: calc((var(--zig-gal-mh, 85vw) - 8px) / 2);
+		width: calc((var(--zig-gal-mh, 85vw) - 8px) / 2);
 		scroll-snap-align: center;
 	}
 
@@ -3004,7 +3011,7 @@ a.zig-list__label:focus-visible {
 	 * به‌هم می‌ریخت (ارتفاعِ مؤثرِ ستون از ‎--zig-gal-mh‎ رد می‌شد).
 	 */
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb:nth-child(3n + 2) {
-		margin-block-end: var(--zig-gal-rgap, 8px);
+		margin-block-end: 8px;
 	}
 
 	/* آیتم‌های جایگاه 3n+1 (شاخص، تامبنیل ۳، ۶، ...) تمام‌ارتفاع و مربع بزرگ */
