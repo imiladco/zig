@@ -2710,6 +2710,297 @@ a.zig-list__label:focus-visible {
 	}
 }
 
+/* ==========================================================================
+   آرشیو محصولات › چرومِ موبایل (نوارِ فیلتر/ترتیب + شیت‌ها)
+
+   طرحِ موبایل (node 263:28018): به‌جایِ سایدبار و نوارِ ترتیب، یک نوارِ
+   قرصیِ واحد — راست «فیلتر ها»، چپ برچسبِ ترتیبِ فعال. کلیک روی هرکدام یک
+   شیت را از پایین بالا می‌آورد (همان الگویِ ویجتِ سرچ). شیتِ فیلتر
+   تمام‌ارتفاع است، شیتِ ترتیب به‌اندازهٔ محتوا و چسبیده به پایین.
+
+   همه‌چیز همیشه رندر می‌شود؛ این‌ها فقط زیرِ ۷۶۷px دیده می‌شوند — همان
+   بریک‌پوینتی که خودِ المنتور و سرچ «موبایل» می‌دانند.
+   ========================================================================== */
+
+.zig-archive__mbar,
+.zig-archive__sheet-handle,
+.zig-archive__sheet--sort,
+.zig-archive__sheet-backdrop {
+	display: none;
+}
+
+@media (max-width: 767px) {
+
+	/* نوارِ قرصی جایِ نوارِ ترتیبِ دسکتاپ را می‌گیرد */
+	.zig-archive__toolbar {
+		display: none;
+	}
+
+	.zig-archive__mbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 20px 24px;
+		background: var(--zig-mbar-bg, #fbfafd);
+		border-style: solid;
+		/* از فیگما: ۲ بالا/راست، ۱ چپ/پایین */
+		border-width: 2px 2px 1px 1px;
+		border-color: var(--zig-mbar-border, rgba(0, 15, 15, 0.12));
+		border-radius: var(--zig-mbar-radius, 48px);
+	}
+
+	.zig-archive__mbar-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		background: none;
+		border: 0;
+		box-shadow: none;
+		font: inherit;
+		font-weight: 600;
+		line-height: 1;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-archive__mbar-btn--filter {
+		gap: 10px;
+		font-size: 15px;
+		color: var(--zig-mbar-filter-color, #5a23b5);
+	}
+
+	.zig-archive__mbar-btn--sort {
+		gap: 8px;
+		font-size: 14px;
+		color: var(--zig-mbar-sort-color, #686673);
+	}
+
+	.zig-archive__mbar-icon {
+		flex: none;
+		width: 1.2em;
+		height: 1.2em;
+	}
+
+	/* ---- لایهٔ تیرهٔ مشترکِ هر دو شیت ---- */
+	.zig-archive__sheet-backdrop {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		background: var(--zig-sheet-scrim, rgba(17, 12, 46, 0.5));
+		opacity: 0;
+		transition: opacity var(--zig-sheet-anim, 200ms) ease;
+	}
+
+	.zig-archive.is-sheet-open:not(.is-sheet-closing) .zig-archive__sheet-backdrop {
+		opacity: 1;
+	}
+
+	.zig-archive__sheet-backdrop[hidden] {
+		display: none;
+	}
+
+	/* ---- دستگیرهٔ کشیدن (بالایِ هر دو شیت) ---- */
+	.zig-archive__sheet-handle {
+		display: block;
+		position: relative;
+		flex: none;
+		align-self: center;
+		width: 44px;
+		height: 4px;
+		margin: 8px auto;
+		border-radius: 999px;
+		background: var(--zig-sheet-handle, #d7dce5);
+		/* بدونِ این، مرورگر کشیدنِ عمودی را اسکرول می‌فهمد و رویداد را می‌گیرد */
+		touch-action: none;
+		cursor: grab;
+	}
+
+	.zig-archive.is-sheet-dragging .zig-archive__sheet-handle {
+		cursor: grabbing;
+	}
+
+	/* ناحیهٔ گرفتن از خطِ ۴px بزرگ‌تر است تا با انگشت قابلِ گرفتن باشد */
+	.zig-archive__sheet-handle::before {
+		content: "";
+		position: absolute;
+		inset-inline: 0;
+		inset-block-start: -8px;
+		height: 32px;
+	}
+
+	/* ---- شیتِ فیلتر: همان اسایدِ دسکتاپ، حالا تمام‌ارتفاع از پایین ---- */
+	.zig-archive__filters {
+		position: fixed;
+		inset: auto 0 0 0;
+		z-index: 61;
+		width: auto;
+		max-width: none;
+		height: 100dvh;
+		max-height: 100%;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		border-radius: var(--zig-sheet-radius, 20px) var(--zig-sheet-radius, 20px) 0 0;
+		background: var(--zig-sheet-bg, #fff);
+		box-shadow: 0 -8px 30px rgba(17, 12, 46, 0.18);
+		transform: translateY(100%);
+		visibility: hidden;
+		transition: transform var(--zig-sheet-anim, 200ms) ease-out,
+			visibility 0s linear var(--zig-sheet-anim, 200ms);
+	}
+
+	/* کلاهِ بنفشِ دسکتاپ در شیت جایی ندارد — جایش دستگیره است */
+	.zig-archive__filters::before {
+		content: none;
+	}
+
+	.zig-archive.is-sheet-filters .zig-archive__filters {
+		transform: translateY(var(--zig-archive-sheet-drag, 0px));
+		visibility: visible;
+		transition: transform var(--zig-sheet-anim, 200ms) ease-out, visibility 0s;
+	}
+
+	.zig-archive.is-sheet-filters.is-sheet-closing .zig-archive__filters {
+		transform: translateY(100%);
+		transition: transform var(--zig-sheet-anim, 200ms) ease-in,
+			visibility 0s linear var(--zig-sheet-anim, 200ms);
+	}
+
+	/*
+	 * همان «دیوایدِ ۱۶px پدینگ + پس‌زمینه» که خواسته شده: ساختارِ دقیقِ
+	 * سایدبارِ دسکتاپ (‎.zig-filters__card‎) بی‌تغییر داخلش می‌نشیند و فقط
+	 * همین ناحیه اسکرول می‌شود، نه کلِ شیت — وگرنه دستگیره هم بالا می‌رفت.
+	 */
+	.zig-archive__filters > .zig-archive__facets {
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 16px;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* ---- شیتِ ترتیب: به‌اندازهٔ محتوا، چسبیده به پایین ---- */
+	.zig-archive__sheet--sort {
+		display: block;
+		position: fixed;
+		inset: auto 0 0 0;
+		z-index: 61;
+		transform: translateY(100%);
+		visibility: hidden;
+		transition: transform var(--zig-sheet-anim, 200ms) ease-out,
+			visibility 0s linear var(--zig-sheet-anim, 200ms);
+	}
+
+	.zig-archive.is-sheet-sort .zig-archive__sheet--sort {
+		transform: translateY(var(--zig-archive-sheet-drag, 0px));
+		visibility: visible;
+		transition: transform var(--zig-sheet-anim, 200ms) ease-out, visibility 0s;
+	}
+
+	.zig-archive.is-sheet-sort.is-sheet-closing .zig-archive__sheet--sort {
+		transform: translateY(100%);
+		transition: transform var(--zig-sheet-anim, 200ms) ease-in,
+			visibility 0s linear var(--zig-sheet-anim, 200ms);
+	}
+
+	.zig-archive.is-sheet-dragging .zig-archive__filters,
+	.zig-archive.is-sheet-dragging .zig-archive__sheet--sort {
+		transition: none;
+	}
+
+	.zig-archive__sheet-card {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		max-height: 80dvh;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+		background: var(--zig-sheet-bg, #fff);
+		border-radius: var(--zig-sheet-radius, 20px) var(--zig-sheet-radius, 20px) 0 0;
+		box-shadow: 0 -8px 30px rgba(17, 12, 46, 0.18);
+	}
+
+	.zig-archive__sheet-title {
+		margin: 0 0 4px;
+		font-size: 16px;
+		font-weight: 700;
+		text-align: start;
+		color: var(--zig-ink);
+	}
+
+	/*
+	 * گزینه‌هایِ ترتیب در شیت: ردیف‌هایِ تمام‌عرض با لهجهٔ برندِ زیگ روی
+	 * گزینهٔ فعال — همان ‎render_sorts()‎ی مشترک، فقط با چیدمانِ عمودی.
+	 */
+	.zig-archive__sheet--sort .zig-sorts__wrap {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
+	}
+
+	.zig-archive__sheet--sort .zig-sorts__label {
+		display: none;
+	}
+
+	.zig-archive__sheet--sort .zig-sorts {
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.zig-archive__sheet--sort .zig-sorts__item {
+		width: 100%;
+	}
+
+	.zig-archive__sheet--sort .zig-sorts__pill {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 14px 16px;
+		font-size: 15px;
+		font-weight: 600;
+		border: 1px solid transparent;
+		border-radius: 14px;
+		background: transparent;
+		color: var(--zig-ink);
+	}
+
+	.zig-archive__sheet--sort .zig-sorts__pill.is-active {
+		color: var(--zig-sheet-accent, var(--zig-brand));
+		background: var(--zig-sheet-accent-soft, var(--zig-brand-soft));
+		border-color: var(--zig-sheet-accent, var(--zig-brand));
+	}
+
+	.zig-archive__sheet--sort .zig-sorts__pill.is-active::after {
+		content: "✓";
+		font-size: 15px;
+		line-height: 1;
+		color: inherit;
+	}
+}
+
+/* صفحه پشتِ شیت اسکرول نشود — کلاس رویِ ‎<html>‎، مثلِ ویجتِ سرچ */
+.zig-archive-sheet-open,
+.zig-archive-sheet-open body {
+	overflow: hidden;
+}
+
+/* در حرکتِ کم‌شده، شیت‌ها بی‌گذار باز/بسته می‌شوند */
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+	.zig-archive__filters,
+	.zig-archive__sheet--sort,
+	.zig-archive__sheet-backdrop {
+		transition-duration: 0s;
+	}
+}
+
 /*
  * در چاپ، فیلتر و ترتیب و صفحه‌بندی معنایی ندارند — کاغذ صفحهٔ بعدی
  * ندارد. جعبهٔ خطا هم اگر باز باشد، روی متن چاپ می‌افتد.
@@ -2717,6 +3008,8 @@ a.zig-list__label:focus-visible {
 @media print {
 	.zig-archive__filters,
 	.zig-archive__toolbar,
+	.zig-archive__mbar,
+	.zig-archive__sheet--sort,
 	.zig-archive__pagination,
 	.zig-archive__error {
 		display: none;

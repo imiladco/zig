@@ -114,6 +114,7 @@ final class Product_Archive extends Widget_Base {
         $this->section_style_stock();
         $this->section_style_price();
         $this->section_style_chrome();
+        $this->section_style_mobile();
     }
 
     private function section_query(): void {
@@ -424,6 +425,17 @@ final class Product_Archive extends Widget_Base {
                 ['label' => __('ارزان‌ترین', 'zig3d-widgets'), 'type' => 'price'],
                 ['label' => __('گران‌ترین', 'zig3d-widgets'), 'type' => 'price-desc'],
             ],
+        ]);
+
+        /*
+         * فقط در موبایل دیده می‌شود: عنوانِ بالایِ شیتِ مرتب‌سازی. خالی
+         * یعنی بدونِ عنوان — همان الگویِ بقیهٔ متن‌هایِ اختیاریِ این ویجت.
+         */
+        $this->add_control('sort_sheet_title', [
+            'label'     => __('عنوانِ شیتِ ترتیب (موبایل)', 'zig3d-widgets'),
+            'type'      => Controls_Manager::TEXT,
+            'default'   => __('مرتب‌سازی', 'zig3d-widgets'),
+            'condition' => ['sorting_on' => 'yes'],
         ]);
 
         $this->end_controls_section();
@@ -1775,6 +1787,90 @@ final class Product_Archive extends Widget_Base {
         $this->end_controls_section();
     }
 
+    /**
+     * استایلِ چرومِ موبایل — نوارِ قرصیِ فیلتر/ترتیب و دو شیت.
+     *
+     * همهٔ مقادیر متغیرند و پیش‌فرض‌ها دقیقاً از فیگما (node 263:28018)
+     * می‌آیند: پس‌زمینهٔ ‎#FBFAFD‎، رادیوسِ ۴۸، رنگِ برچسبِ فیلتر ‎#5A23B5‎
+     * (رنگِ برندِ زیگ) و برچسبِ ترتیب ‎#686673‎. کنترل‌ها فقط زیرِ موبایل
+     * اثر دیداری دارند، ولی همیشه ثبت می‌شوند — رندرِ ادیتور برای هر
+     * دستگاهی یک‌جور است.
+     */
+    private function section_style_mobile(): void {
+        $this->start_controls_section('sty_mobile', [
+            'label' => __('نوارِ موبایل (فیلتر/ترتیب)', 'zig3d-widgets'),
+            'tab'   => Controls_Manager::TAB_STYLE,
+        ]);
+
+        $bar = '{{WRAPPER}} .zig-archive__mbar';
+
+        $this->add_control('mbar_bg', [
+            'label'     => __('پس‌زمینهٔ نوار', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$bar => '--zig-mbar-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('mbar_border', [
+            'label'     => __('رنگِ حاشیهٔ نوار', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$bar => '--zig-mbar-border: {{VALUE}};'],
+        ]);
+
+        $this->add_responsive_control('mbar_radius', [
+            'label'      => __('گردیِ گوشهٔ نوار', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 60]],
+            'selectors'  => [$bar => '--zig-mbar-radius: {{SIZE}}{{UNIT}};'],
+        ]);
+
+        $this->add_responsive_control('mbar_padding', [
+            'label'      => __('فاصلهٔ داخلیِ نوار', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px'],
+            'selectors'  => [$bar => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+        ]);
+
+        $this->add_control('mbar_filter_color', [
+            'label'     => __('رنگِ «فیلتر ها»', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$bar => '--zig-mbar-filter-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('mbar_sort_color', [
+            'label'     => __('رنگِ برچسبِ ترتیب', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$bar => '--zig-mbar-sort-color: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_heading', [
+            'label'     => __('شیت‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+        ]);
+
+        $this->add_control('sheet_bg', [
+            'label'     => __('پس‌زمینهٔ شیت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}}' => '--zig-sheet-bg: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_handle_color', [
+            'label'     => __('رنگِ دستگیرهٔ کشیدن', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => ['{{WRAPPER}}' => '--zig-sheet-handle: {{VALUE}};'],
+        ]);
+
+        $this->add_control('sheet_accent', [
+            'label'       => __('رنگِ برندِ گزینهٔ فعال', 'zig3d-widgets'),
+            'type'        => Controls_Manager::COLOR,
+            'selectors'   => ['{{WRAPPER}}' => '--zig-sheet-accent: {{VALUE}};'],
+            'description' => __('برایِ گزینهٔ ترتیبِ انتخاب‌شده در شیتِ موبایل.', 'zig3d-widgets'),
+        ]);
+
+        $this->end_controls_section();
+    }
+
     /* =====================================================================
      * رندر
      * =================================================================== */
@@ -1831,14 +1927,37 @@ final class Product_Archive extends Widget_Base {
 
         echo '<div ' . $this->get_render_attribute_string('root') . '>';
 
-        if ($this->has_sidebar($settings, $facets)) {
-            echo '<aside class="zig-archive__filters" aria-label="'
-                . esc_attr($settings['filters_title'] ?? '') . '" data-zig-part="facets">';
-            echo $this->fragment('facets', $context);
+        $has_sidebar = $this->has_sidebar($settings, $facets);
+        $show_sorts  = 'yes' === ($settings['sorting_on'] ?? '') && $sorts;
+
+        /*
+         * شناسه‌هایِ یکتا برایِ ‎aria-controls‎: دکمه‌هایِ نوارِ موبایل باید
+         * به شیتِ متناظرشان اشاره کنند، و در یک صفحه می‌شود چند آرشیو بود.
+         */
+        $filters_id = 'zig-archive-filters-' . $this->get_id();
+        $sort_id    = 'zig-archive-sort-' . $this->get_id();
+
+        if ($has_sidebar) {
+            /*
+             * دستگیرهٔ کشیدن، خواهرِ اسلاتِ ‎facets‎ است نه فرزندش —
+             * ‎swap('facets')‎ محتوایِ ‎[data-zig-part=facets]‎ را با
+             * ‎innerHTML‎ عوض می‌کند و اگر دستگیره داخلش بود، بعدِ اولین
+             * فیلتر پاک می‌شد. پس اسلات به یک ‎<div>‎ی درونی منتقل شده و
+             * دستگیره کنارش می‌ماند.
+             */
+            printf(
+                '<aside id="%s" class="zig-archive__filters" aria-label="%s">',
+                esc_attr($filters_id),
+                esc_attr($settings['filters_title'] ?? '')
+            );
+            echo '<span class="zig-archive__sheet-handle" aria-hidden="true"></span>';
+            echo '<div class="zig-archive__facets" data-zig-part="facets">' . $this->fragment('facets', $context) . '</div>';
             echo '</aside>';
         }
 
         echo '<div class="zig-archive__main">';
+
+        $this->render_mobile_bar($settings, $sorts, $state, $has_sidebar, (bool) $show_sorts, $filters_id, $sort_id);
 
         $this->render_toolbar($settings, $sorts, $state, (int) $query->found_posts, $operators);
 
@@ -1847,7 +1966,18 @@ final class Product_Archive extends Widget_Base {
 
         $this->render_error($settings);
 
-        echo '</div></div>';
+        echo '</div>';
+
+        if ($show_sorts) {
+            $this->render_sort_sheet($settings, $sorts, $state, $sort_id, $operators);
+        }
+
+        if ($has_sidebar || $show_sorts) {
+            // لایهٔ تیرهٔ مشترکِ هر دو شیت — فقط در موبایل دیده می‌شود.
+            echo '<div class="zig-archive__sheet-backdrop" data-zig-sheet-backdrop hidden></div>';
+        }
+
+        echo '</div>';
 
         wp_reset_postdata();
     }
@@ -2563,6 +2693,78 @@ final class Product_Archive extends Widget_Base {
         }
 
         echo '</ul></div>';
+    }
+
+    /* =====================================================================
+     * موبایل: نوارِ فیلتر/مرتب‌سازی + شیتِ مرتب‌سازی
+     *
+     * در دسکتاپ، سایدبارِ فیلتر و نوارِ ترتیب همان‌جا که بودند می‌مانند —
+     * این‌ها فقط زیرِ ۷۶۷px دیده می‌شوند (‎display:none‎ بالاتر) و همان
+     * بریک‌پوینتی است که خودِ المنتور و ویجتِ سرچ «موبایل» می‌دانند.
+     *
+     * چرا رندرِ همیشگی و نه شرطی سمتِ سرور: کشِ صفحه برایِ یک عرض ذخیره
+     * می‌شود؛ اگر مارک‌آپ به عرض وابسته بود، بازدیدکنندهٔ بعدی با عرضِ دیگر
+     * نسخهٔ اشتباه را می‌گرفت. پس همه‌چیز چاپ می‌شود و CSS تصمیم می‌گیرد.
+     * =================================================================== */
+
+    /**
+     * نوارِ موبایل: قرصی با دو دکمه — راست «فیلتر ها»، چپ برچسبِ ترتیبِ
+     * فعال. هر دو ‎<button>‎اند نه ‎<a>‎، چون کنش‌اند (بازکردنِ شیت) نه
+     * ناوبری — همان تمایزی که در سرتاسرِ این افزونه رعایت شده. خودِ
+     * گزینه‌هایِ ترتیب داخلِ شیت پیوندِ واقعی می‌مانند.
+     */
+    private function render_mobile_bar(array $settings, array $sorts, Query_State $state, bool $has_sidebar, bool $show_sorts, string $filters_id, string $sort_id): void {
+        if (!$has_sidebar && !$show_sorts) {
+            return;
+        }
+
+        echo '<div class="zig-archive__mbar" data-zig-mbar>';
+
+        if ($has_sidebar) {
+            printf(
+                '<button type="button" class="zig-archive__mbar-btn zig-archive__mbar-btn--filter" data-zig-open="filters" aria-expanded="false" aria-controls="%s">%s<span class="zig-archive__mbar-text">%s</span></button>',
+                esc_attr($filters_id),
+                Markup::svg_icon('filter', 'zig-archive__mbar-icon'),
+                esc_html($settings['filters_title'] ?? __('فیلتر ها', 'zig3d-widgets'))
+            );
+        }
+
+        if ($show_sorts) {
+            $current = Sorting::resolve($sorts, $state->sort());
+            $label   = $current ? (string) $current['label'] : '';
+
+            printf(
+                '<button type="button" class="zig-archive__mbar-btn zig-archive__mbar-btn--sort" data-zig-open="sort" aria-expanded="false" aria-controls="%s"><span class="zig-archive__mbar-text" data-zig-sort-label>%s</span>%s</button>',
+                esc_attr($sort_id),
+                esc_html($label),
+                Markup::svg_icon('sort', 'zig-archive__mbar-icon')
+            );
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * شیتِ مرتب‌سازیِ موبایل — از پایین بالا می‌آید، اما برخلافِ شیتِ فیلتر
+     * تمام‌ارتفاع نیست: ارتفاعش به‌اندازهٔ محتواست و به پایین چسبیده. خودِ
+     * فهرستِ گزینه‌ها همان ‎render_sorts()‎ است — پس ‎swap('sorts')‎ که در
+     * جاوااسکریپت روی *همهٔ* اسلات‌هایِ ‎sorts‎ اجرا می‌شود، این و نوارِ
+     * دسکتاپ را با هم به‌روز نگه می‌دارد.
+     */
+    private function render_sort_sheet(array $settings, array $sorts, Query_State $state, string $sort_id, array $operators): void {
+        printf('<div id="%s" class="zig-archive__sheet zig-archive__sheet--sort" data-zig-sheet="sort" hidden>', esc_attr($sort_id));
+        echo '<div class="zig-archive__sheet-card">';
+        echo '<span class="zig-archive__sheet-handle" aria-hidden="true"></span>';
+
+        $title = trim((string) ($settings['sort_sheet_title'] ?? ''));
+
+        if ('' !== $title) {
+            printf('<h2 class="zig-archive__sheet-title">%s</h2>', esc_html($title));
+        }
+
+        echo '<div class="zig-archive__sheet-body" data-zig-part="sorts">';
+        $this->render_sorts($sorts, $state, $operators);
+        echo '</div></div></div>';
     }
 
     /* ---------------------------------------------------------------- */
