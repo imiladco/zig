@@ -7787,9 +7787,15 @@ a.zig-configurator__btn:active {
 /*
  * رویِ صفحهٔ موفقیت نه دکمهٔ بستنِ گردِ بالا لازم است (فرم دیگر باز
  * نیست) نه عنوان/زیرعنوانِ فرم — خودِ صفحهٔ موفقیت عنوان/متنِ خودش
- * (‎__success-title‎/‎__success-text‎) را دارد.
+ * (‎__success-title‎/‎__success-text‎) را دارد. خطِ دکمهٔ بستن دو کلاسِ
+ * ‎.zig-consultation-modal‎/‎--success‎ی هم‌عنصر را با هم می‌گیرد
+ * (اختصاصیتش باید از زنجیرِ سه‌کلاسیِ رولِ پایهٔ ‎__close‎ی پایین‌تر
+ * بالاتر بماند، وگرنه ‎display: inline-flex‎ی همان رول دوباره می‌بَرد).
  */
-.zig-consultation-modal--success .zig-consultation-modal__close,
+.zig-consultation-modal.zig-consultation-modal--success .zig-consultation-modal__stage .zig-consultation-modal__close {
+	display: none;
+}
+
 .zig-consultation-modal--success .zig-consultation-modal__title,
 .zig-consultation-modal--success .zig-consultation-modal__subtitle {
 	display: none;
