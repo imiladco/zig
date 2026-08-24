@@ -39,6 +39,7 @@
 				'</button>' +
 				'<div class="zig-consultation-modal__body">' +
 					'<h2 id="zig-consultation-title" class="zig-consultation-modal__title">ثبت درخواست مشاوره</h2>' +
+					'<p class="zig-consultation-modal__subtitle">اطلاعات شما فقط برایِ تماسِ کارشناسانِ زیگ استفاده می‌شود.</p>' +
 					'<form class="zig-consultation-modal__form" novalidate>' +
 						'<div class="zig-consultation-modal__fields">' +
 							'<div class="zig-consultation-modal__field">' +
@@ -80,10 +81,24 @@
 						'<button type="submit" class="zig-consultation-modal__submit">ثبت درخواست</button>' +
 					'</form>' +
 					'<div class="zig-consultation-modal__success" hidden>' +
+						/*
+						 * چند تیک/نقطهٔ کوچکِ سبز، پراکنده دورِ نشانِ اصلی —
+						 * همان چاشنیِ جشن که در طرحِ کاربر دیده می‌شود، فقط
+						 * با چند عنصر به‌جایِ ده‌ها ‎div‎ی موقعیتِ مطلقِ خودِ
+						 * فایلِ فیگما.
+						 */
+						'<span class="zig-consultation-modal__confetti zig-consultation-modal__confetti--check-1" aria-hidden="true">' +
+							'<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5L5.5 11L12 3" stroke="#7CC282" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+						'</span>' +
+						'<span class="zig-consultation-modal__confetti zig-consultation-modal__confetti--check-2" aria-hidden="true">' +
+							'<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7.5L5.5 11L12 3" stroke="#7CC282" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+						'</span>' +
+						'<span class="zig-consultation-modal__confetti zig-consultation-modal__confetti--dot-1" aria-hidden="true"></span>' +
+						'<span class="zig-consultation-modal__confetti zig-consultation-modal__confetti--dot-2" aria-hidden="true"></span>' +
 						'<span class="zig-consultation-modal__success-icon" aria-hidden="true">' +
 							'<svg width="64" height="64" viewBox="0 0 64 64" fill="none">' +
-								'<circle cx="32" cy="32" r="32" fill="#42A64B"/>' +
-								'<path d="M20.5 32.5L28 40L43.5 23.5" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+								'<circle cx="32" cy="32" r="30" stroke="#42A64B" stroke-width="2.5"/>' +
+								'<path d="M20.5 32.5L28 40L43.5 23.5" stroke="#42A64B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
 							'</svg>' +
 						'</span>' +
 						'<p class="zig-consultation-modal__success-title">درخواست شما ثبت شد!</p>' +
