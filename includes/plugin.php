@@ -118,7 +118,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree', 'product-section-guard'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
@@ -149,6 +149,13 @@ final class Plugin {
          */
         if (!is_admin()) {
             Archive_Head::boot();
+
+            /*
+             * حذفِ سکشن‌هایِ خالیِ صفحهٔ محصول (مشخصات/قابلیت/توضیحات/چرا/
+             * ویدیو/دانلود) — فقط در سایت، همان دلیلِ بالا؛ ادیتور/پیش‌نمایشِ
+             * المنتور را خودِ کلاس جدا کنار می‌گذارد.
+             */
+            Product_Section_Guard::boot();
         }
     }
 
