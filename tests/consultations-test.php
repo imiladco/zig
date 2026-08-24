@@ -103,3 +103,18 @@ Tests::same(
     Consultations::sanitize_source(['product_id' => 'abc'])['product_id'],
     0
 );
+
+/* ==========================================================================
+ * sanitize_ids
+ * ======================================================================= */
+
+Tests::group('مشاوره › پاک‌سازیِ شناسه‌هایِ حذفِ گروهی');
+
+Tests::same('اعدادِ رشته‌ای هم عدد می‌شوند', Consultations::sanitize_ids(['3', '5', '1']), [3, 5, 1]);
+Tests::same('تکراری‌ها یک‌بار می‌مانند', Consultations::sanitize_ids(['4', '4', '4']), [4]);
+Tests::same(
+    'صفر/غیرعددی حذف می‌شوند؛ منفی مطلق‌شان می‌ماند (absint)',
+    Consultations::sanitize_ids(['0', '-3', 'abc', '7']),
+    [3, 7]
+);
+Tests::same('آرایهٔ خالی ⇒ آرایهٔ خالی', Consultations::sanitize_ids([]), []);

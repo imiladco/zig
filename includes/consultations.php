@@ -117,6 +117,19 @@ final class Consultations {
         ];
     }
 
+    /**
+     * پاک‌سازیِ فهرستِ شناسه‌ها برایِ حذفِ گروهی — فقط اعدادِ مثبت، بدونِ
+     * تکرار، بدونِ صفر.
+     *
+     * @return array<int,int>
+     */
+    public static function sanitize_ids(array $raw): array {
+        $ids = array_map('absint', $raw);
+        $ids = array_values(array_unique(array_filter($ids)));
+
+        return $ids;
+    }
+
     /* =====================================================================
      * نوشتن/خواندن — دیتابیسِ واقعی
      * =================================================================== */
@@ -174,5 +187,31 @@ final class Consultations {
         );
 
         return ['rows' => is_array($rows) ? $rows : [], 'total' => $total];
+    }
+
+    /**
+     * حذفِ یک یا چند ردیف. شناسه‌هایِ نامعتبر/تکراری خودشان اینجا هم
+     * دوباره پاک می‌شوند تا این متد بدونِ عبور از ‎sanitize_ids()‎ هم امن
+     * بماند.
+     *
+     * @return int تعدادِ ردیفِ واقعاً حذف‌شده
+     */
+    public static function delete(array $ids): int {
+        $ids = self::sanitize_ids($ids);
+
+        if (!$ids) {
+            return 0;
+        }
+
+        self::maybe_upgrade();
+
+        global $wpdb;
+
+        $table        = self::table();
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+
+        $deleted = $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE id IN ({$placeholders})", $ids)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- نامِ جدول، نه ورودیِ کاربر؛ شناسه‌ها با prepare() جای‌گذاری می‌شوند
+
+        return false !== $deleted ? (int) $deleted : 0;
     }
 }
