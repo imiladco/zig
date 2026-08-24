@@ -33,8 +33,15 @@ final class Consultation_Endpoint {
     public const ACTION_DELETE = 'zig3d_consultation_delete';
     public const NONCE         = 'zig3d_consultation';
 
+    /*
+     * سقفِ پیش‌فرض عمداً سخاوتمند است، نه ۵ تایِ قبلی: با قابلیتِ «ثبتِ
+     * خودکار در هر صفحه»، یک کاربرِ واقعی که چند محصول را می‌بیند و رویِ
+     * هرکدام درخواست می‌دهد، به‌سرعت به سقفِ پایین می‌خورد؛ ضمناً کاربرانِ
+     * موبایل پشتِ یک NATِ اپراتور IP مشترک دارند. با فیلترِ
+     * ‎zig3d_consultation_rate_limit_max‎ قابلِ تنظیم است.
+     */
     private const RATE_LIMIT_WINDOW = 300;
-    private const RATE_LIMIT_MAX    = 5;
+    private const RATE_LIMIT_MAX    = 30;
 
     public static function boot(): void {
         if (self::$booted) {
@@ -157,8 +164,9 @@ final class Consultation_Endpoint {
 
         $key   = 'zig3d_consult_rl_' . md5($ip);
         $count = (int) get_transient($key);
+        $max   = (int) apply_filters('zig3d_consultation_rate_limit_max', self::RATE_LIMIT_MAX);
 
-        if ($count >= self::RATE_LIMIT_MAX) {
+        if ($max > 0 && $count >= $max) {
             return true;
         }
 
