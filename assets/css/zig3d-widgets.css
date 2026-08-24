@@ -7784,6 +7784,17 @@ a.zig-configurator__btn:active {
 	background-image: none;
 }
 
+/*
+ * رویِ صفحهٔ موفقیت نه دکمهٔ بستنِ گردِ بالا لازم است (فرم دیگر باز
+ * نیست) نه عنوان/زیرعنوانِ فرم — خودِ صفحهٔ موفقیت عنوان/متنِ خودش
+ * (‎__success-title‎/‎__success-text‎) را دارد.
+ */
+.zig-consultation-modal--success .zig-consultation-modal__close,
+.zig-consultation-modal--success .zig-consultation-modal__title,
+.zig-consultation-modal--success .zig-consultation-modal__subtitle {
+	display: none;
+}
+
 .zig-consultation-modal.is-open .zig-consultation-modal__stage {
 	transform: none;
 }
