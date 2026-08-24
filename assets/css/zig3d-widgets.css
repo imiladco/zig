@@ -2966,6 +2966,13 @@ a.zig-list__label:focus-visible {
 		flex-direction: column;
 		flex-wrap: wrap;
 		height: var(--zig-gal-mh, 85vw);
+		/*
+		 * گپِ عمودی (بینِ دو آیتمِ روی‌همِ یک ستون) اینجا صفر می‌شود چون
+		 * دستی با ‎margin-block-end‎ی زیر داده می‌شود، نه گپِ بومیِ فلکس؛
+		 * ‎column-gap‎ (فاصلهٔ افقیِ بینِ ستون‌ها) دست‌نخورده از قاعدهٔ
+		 * مشترکِ بالا می‌ماند.
+		 */
+		row-gap: 0;
 		overflow-x: auto;
 		overflow-y: hidden;
 		scroll-snap-type: x proximity;
@@ -2977,20 +2984,35 @@ a.zig-list__label:focus-visible {
 		display: none;
 	}
 
-	/* پیش‌فرض: مربع کوچک، دوتا در هر ستون */
+	/*
+	 * مربعِ کوچک، دوتا در هر ستون. عرض هم مثلِ ارتفاع صریحاً با همان
+	 * فرمول محاسبه می‌شود — نه ‎width: auto‎ + ‎aspect-ratio‎، که وابسته
+	 * به این است که هیچ CSSِ دیگری (قالب/افزونهٔ دیگر) رویِ عرض دست
+	 * نبرده باشد. این‌طور مربع‌بودن تضمینی است، نه اتکایی.
+	 */
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb {
 		flex: 0 0 auto;
-		height: calc((100% - var(--zig-gal-rgap, 8px)) / 2);
-		width: auto;
+		height: calc((var(--zig-gal-mh, 85vw) - var(--zig-gal-rgap, 8px)) / 2);
+		width: calc((var(--zig-gal-mh, 85vw) - var(--zig-gal-rgap, 8px)) / 2);
 		scroll-snap-align: center;
+	}
+
+	/*
+	 * اولین تای هر جفتِ روی‌هم (جایگاه‌های ۲، ۵، ۸، …) — فاصله‌اش تا
+	 * تایِ بعدی دقیقاً همان یک گپ است، نه بیشتر. دومیِ هر جفت مارجین
+	 * نمی‌گیرد چون آخرِ ستون است؛ مارجینِ اضافه آنجا محاسبهٔ wrap را
+	 * به‌هم می‌ریخت (ارتفاعِ مؤثرِ ستون از ‎--zig-gal-mh‎ رد می‌شد).
+	 */
+	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb:nth-child(3n + 2) {
+		margin-block-end: var(--zig-gal-rgap, 8px);
 	}
 
 	/* آیتم‌های جایگاه 3n+1 (شاخص، تامبنیل ۳، ۶، ...) تمام‌ارتفاع و مربع بزرگ */
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__main,
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb:nth-child(3n + 1) {
 		flex: 0 0 auto;
-		height: 100%;
-		width: auto;
+		height: var(--zig-gal-mh, 85vw);
+		width: var(--zig-gal-mh, 85vw);
 		scroll-snap-align: center;
 	}
 

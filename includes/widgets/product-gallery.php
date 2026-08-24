@@ -921,6 +921,111 @@ final class Product_Gallery extends Widget_Base {
             'condition' => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
         ]);
 
+        $this->add_group_control(Group_Control_Typography::get_type(), [
+            'name'      => 'counter_typography',
+            'selector'  => '{{WRAPPER}} .zig-gallery__counter',
+            'condition' => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_padding', [
+            'label'      => __('فاصلهٔ داخلی پیل', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', 'em'],
+            'default'    => ['top' => '7', 'right' => '12', 'bottom' => '7', 'left' => '12', 'unit' => 'px', 'isLinked' => false],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery__counter' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+            'condition'  => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_radius', [
+            'label'      => __('گردی گوشهٔ پیل', 'zig3d-widgets'),
+            'type'       => Controls_Manager::DIMENSIONS,
+            'size_units' => ['px', '%'],
+            'default'    => ['top' => '999', 'right' => '999', 'bottom' => '999', 'left' => '999', 'unit' => 'px', 'isLinked' => true],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery__counter' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+            'condition'  => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_gap', [
+            'label'      => __('فاصلهٔ نوار تا عدد', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 30]],
+            'default'    => ['size' => 8, 'unit' => 'px'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery__counter' => 'gap: {{SIZE}}{{UNIT}};'],
+            'condition'  => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_group_control(Group_Control_Box_Shadow::get_type(), [
+            'name'      => 'counter_shadow',
+            'selector'  => '{{WRAPPER}} .zig-gallery__counter',
+            'condition' => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_control('counter_position_heading', [
+            'label'     => __('جای‌گذاری', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+            'condition' => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_offset_bottom', [
+            'label'      => __('فاصله از پایین', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 0, 'max' => 80]],
+            'default'    => ['size' => 12, 'unit' => 'px'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery__counter' => 'bottom: {{SIZE}}{{UNIT}};'],
+            'condition'  => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_offset_start', [
+            'label'       => __('فاصله از لبهٔ شروع', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SLIDER,
+            'size_units'  => ['px'],
+            'range'       => ['px' => ['min' => 0, 'max' => 80]],
+            'default'     => ['size' => 12, 'unit' => 'px'],
+            'selectors'   => ['{{WRAPPER}} .zig-gallery__counter' => 'inset-inline-start: {{SIZE}}{{UNIT}};'],
+            'description' => __('در راست‌به‌چپ یعنی از سمتِ راست.', 'zig3d-widgets'),
+            'condition'   => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_control('counter_bar_heading', [
+            'label'     => __('نوارِ پیشرفت', 'zig3d-widgets'),
+            'type'      => Controls_Manager::HEADING,
+            'separator' => 'before',
+            'condition' => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_bar_width', [
+            'label'      => __('عرض نوار', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 10, 'max' => 200]],
+            'default'    => ['size' => 44, 'unit' => 'px'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery__counter-bar' => 'width: {{SIZE}}{{UNIT}};'],
+            'condition'  => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_bar_height', [
+            'label'      => __('ارتفاع نوار', 'zig3d-widgets'),
+            'type'       => Controls_Manager::SLIDER,
+            'size_units' => ['px'],
+            'range'      => ['px' => ['min' => 2, 'max' => 20]],
+            'default'    => ['size' => 5, 'unit' => 'px'],
+            'selectors'  => ['{{WRAPPER}} .zig-gallery__counter-bar' => 'height: {{SIZE}}{{UNIT}};'],
+            'condition'  => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
+        $this->add_responsive_control('counter_bar_radius', [
+            'label'       => __('گردی گوشهٔ نوار', 'zig3d-widgets'),
+            'type'        => Controls_Manager::DIMENSIONS,
+            'size_units'  => ['px', '%'],
+            'default'     => ['top' => '999', 'right' => '999', 'bottom' => '999', 'left' => '999', 'unit' => 'px', 'isLinked' => true],
+            'selectors'   => ['{{WRAPPER}} .zig-gallery__counter-bar' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};'],
+            'description' => __('نوارِ پرشدنِ داخلی همیشه از همین گردی ارث می‌برد.', 'zig3d-widgets'),
+            'condition'   => ['show_mobile_counter' => 'yes', 'mobile_layout' => 'alternating'],
+        ]);
+
         $this->end_controls_section();
     }
 
