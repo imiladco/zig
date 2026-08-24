@@ -502,9 +502,47 @@ final class Description extends Widget_Base {
         }
 
         // 'post_content' — پیش‌فرض/fallback.
+        if (self::is_builder_post($post_id)) {
+            return null;
+        }
+
         $raw = (string) get_post_field('post_content', $post_id);
 
         return $this->finish($raw, $title, $render_filters);
+    }
+
+    /**
+     * آیا ‎post_content‎ـِ این پست را خودِ المنتور می‌نویسد؟
+     *
+     * این تابع یک حلقهٔ بازخوردی را می‌بندد که سایت را از پا درآورد. زنجیره:
+     *
+     *   ۱) ویجت داخلِ سندِ المنتور (قالبِ Single Product) است. در ادیتور
+     *      محصولی در کار نیست، پس ‎resolve()‎ به ‎post_content‎ می‌افتد — و
+     *      ‎current_post_id()‎ همان *سند* را برمی‌گرداند، نه یک نوشتهٔ عادی.
+     *   ۲) ویجت آن ‎post_content‎ را می‌خواند و رندر می‌کند.
+     *   ۳) المنتور هنگامِ ذخیره ‎DB::save_plain_text()‎ را صدا می‌زند: رندرِ
+     *      *همهٔ* ویجت‌ها را می‌گیرد و حاصل را در ‎post_content‎ـِ همان سند
+     *      می‌نویسد.
+     *   ۴) یعنی خروجیِ این ویجت — که خودش شاملِ ‎post_content‎ـِ قبلی است —
+     *      دوباره در ‎post_content‎ نوشته می‌شود. هر ذخیره تقریباً دو برابرش
+     *      می‌کند.
+     *
+     * رویِ سایتِ واقعی این ‎post_content‎ به ۱۵۰ مگابایت رسید (لاگ:
+     * «ورودِ the_content — طول=150.0MB»). از آن به بعد هر درخواستی که آن
+     * پست را لود می‌کرد ~۴۵۰ مگابایت می‌خورد، و کوئریِ بازبینی‌ها — که
+     * ‎wp_update_post‎ در هر ذخیره یکی می‌سازد، هرکدام هم‌اندازه — ~۹۰۰
+     * مگابایت، تا فاتالِ «Allowed memory size exhausted» در ۲ گیگابایت.
+     *
+     * برایِ پستی که المنتور می‌سازدش، ‎post_content‎ اصلاً «محتوا» نیست؛ یک
+     * نسخهٔ متنیِ ماشین‌ساخت است که فقط به دردِ جست‌وجویِ وردپرس می‌خورد.
+     * نمایشش هیچ‌وقت درست نبوده — مستقل از این حلقه.
+     */
+    private static function is_builder_post(int $post_id): bool {
+        if ($post_id <= 0) {
+            return false;
+        }
+
+        return 'builder' === (string) get_post_meta($post_id, '_elementor_edit_mode', true);
     }
 
     /**
@@ -512,9 +550,25 @@ final class Description extends Widget_Base {
      */
     private static bool $applying_content_filters = false;
 
+    /**
+     * سقفِ اندازهٔ محتوایِ خام — کلیدِ برق، نه تنظیم.
+     *
+     * هیچ توضیحِ محصول یا نوشته‌ای نیم‌مگابایت نیست. اگر رشته از این
+     * بزرگ‌تر بود، یعنی چیزی خراب است — نه اینکه کاربر متنِ بلندی نوشته.
+     * ‎is_builder_post()‎ همان حلقه‌ای را که این اندازه را ساخت می‌بندد،
+     * ولی این سقف مستقل از آن است: هر مسیرِ دیگری هم که روزی رشتهٔ غول‌آسا
+     * بدهد، همین‌جا می‌ایستد و به ‎the_content‎/‎wp_kses_post‎ نمی‌رسد —
+     * دو تابعی که رویِ رشتهٔ چندمگابایتی حافظه را صدها برابر می‌کنند.
+     */
+    private const MAX_RAW_BYTES = 524288;
+
     /** @return array{html:string,title:string}|null */
     private function finish(string $raw, string $title, bool $render_filters): ?array {
         if (!Markup::filled($raw)) {
+            return null;
+        }
+
+        if (strlen($raw) > self::MAX_RAW_BYTES) {
             return null;
         }
 

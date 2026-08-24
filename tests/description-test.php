@@ -228,3 +228,72 @@ Tests::same(
 );
 
 zig_reset_filters();
+
+Tests::group('Description › حلقهٔ بازخوردیِ post_content (علتِ فاتالِ حافظه)');
+
+/*
+ * بازسازیِ دقیقِ چیزی که سایت را از پا درآورد.
+ *
+ * ویجت داخلِ سندِ المنتور (قالبِ Single Product، پستِ ۱۵۲۷۷) بود. در آنجا
+ * محصولی در کار نیست، پس ‎resolve()‎ به ‎post_content‎ می‌افتاد و
+ * ‎current_post_id()‎ همان *سند* را برمی‌گرداند. المنتور هم هنگامِ ذخیره
+ * خروجیِ رندرِ همهٔ ویجت‌ها را در ‎post_content‎ـِ همان سند می‌نویسد — یعنی
+ * خروجیِ این ویجت دوباره واردِ ورودی‌اش می‌شد و هر ذخیره دو برابرش می‌کرد.
+ * رویِ سایت به ۱۵۰ مگابایت رسید.
+ */
+zig_reset_filters();
+$GLOBALS['__zig_posts'] = [];
+$GLOBALS['__zig_post_meta'] = [];
+
+zig_register_post(15277, ['title' => 'المنتور Single Product', 'content' => 'متنِ ماشین‌ساختِ المنتور']);
+zig_register_post_meta(15277, ['_elementor_edit_mode' => 'builder']);
+$GLOBALS['__zig_post'] = 15277;
+$GLOBALS['__zig_queried'] = 15277;
+
+$html = $render(['source' => 'post_content', 'render_filters' => 'no']);
+
+Tests::blocks(
+    'سندِ ساخته‌شده با المنتور به‌عنوانِ منبعِ محتوا خوانده نمی‌شود',
+    $html,
+    'متنِ ماشین‌ساختِ المنتور'
+);
+Tests::blocks('و اصلاً چیزی رندر نمی‌شود', $html, 'zig-description__body');
+
+/* پستِ عادی (نه سندِ المنتور) باید مثلِ قبل کار کند */
+zig_register_post(720, ['title' => 'نوشتهٔ عادی', 'content' => 'متنِ واقعیِ نوشته']);
+$GLOBALS['__zig_post'] = 720;
+$GLOBALS['__zig_queried'] = 720;
+
+$html = $render(['source' => 'post_content', 'render_filters' => 'no']);
+
+Tests::keeps('پستِ عادی همچنان رندر می‌شود', $html, 'متنِ واقعیِ نوشته');
+
+Tests::group('Description › سقفِ اندازهٔ محتوایِ خام');
+
+/*
+ * لایهٔ دومِ دفاع، مستقل از حلقهٔ بالا: رشتهٔ غول‌آسا هرگز نباید به
+ * ‎the_content‎/‎wp_kses_post‎ برسد — هر دو رویِ چند مگابایت حافظه را
+ * صدها برابر می‌کنند (در لاگِ سایت: ورودیِ ۱۵۰ مگابایتی → اوجِ ۶۶۰ مگابایت
+ * فقط در یک کالبک).
+ */
+zig_register_post(730, ['title' => 'متورم', 'content' => str_repeat('ا', 600000)]);
+$GLOBALS['__zig_post'] = 730;
+$GLOBALS['__zig_queried'] = 730;
+
+Tests::blocks(
+    'محتوایِ بزرگ‌تر از سقف رندر نمی‌شود',
+    $render(['source' => 'post_content', 'render_filters' => 'no']),
+    'zig-description__body'
+);
+
+zig_register_post(731, ['title' => 'عادی', 'content' => str_repeat('ب', 1000)]);
+$GLOBALS['__zig_post'] = 731;
+$GLOBALS['__zig_queried'] = 731;
+
+Tests::keeps(
+    'محتوایِ زیرِ سقف عادی رندر می‌شود',
+    $render(['source' => 'post_content', 'render_filters' => 'no']),
+    'zig-description__body'
+);
+
+zig_reset_filters();
