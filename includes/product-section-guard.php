@@ -204,63 +204,115 @@ final class Product_Section_Guard {
         }
 
         $xpath = new \DOMXPath($doc);
-        $removed = false;
+        $empty = [];
 
         foreach (self::WIDGET_MARKERS as $key => $marker_selector) {
             if (!self::section_enabled($config, $key)) {
                 continue;
             }
 
-            foreach (self::find_by_class($xpath, self::section_class($config, $key)) as $section) {
+            $class = self::section_class($config, $key);
+
+            foreach (self::find_by_class($xpath, $class) as $section) {
                 if (self::has_descendant_class($xpath, $section, ltrim($marker_selector, '.'))) {
                     continue;
                 }
 
-                $section->parentNode->removeChild($section);
-                $removed = true;
+                $empty[$class] = true;
             }
         }
 
         if (self::section_enabled($config, self::WHY_KEY)) {
-            foreach (self::find_by_class($xpath, self::section_class($config, self::WHY_KEY)) as $section) {
+            $class = self::section_class($config, self::WHY_KEY);
+
+            foreach (self::find_by_class($xpath, $class) as $section) {
                 if (self::why_section_has_content($section)) {
                     continue;
                 }
 
-                $section->parentNode->removeChild($section);
-                $removed = true;
+                $empty[$class] = true;
             }
         }
 
-        if (!$removed) {
+        if (!$empty) {
             return $html;
         }
 
-        $out = $doc->saveHTML();
+        return $html . self::hide_style(array_keys($empty));
+    }
 
-        if (false === $out) {
-            return $html;
+    /**
+     * چرا «هایدکردن با CSS» و نه «حذف از DOM»؟
+     *
+     * نسخهٔ اول سکشن را از درخت حذف می‌کرد و بعد کلِ سند را دوباره
+     * سریالایز می‌کرد (‎saveHTML()‎). آن مسیر رویِ سایت متنِ صفحه را خراب
+     * کرد و مجبور شدیم دو بار کلِ این کلاس را غیرفعال کنیم. علتش —
+     * برخلافِ چیزی که اول فکر می‌کردیم — «انکودینگ» نبود، *بازکردنِ
+     * بیش‌ازحدِ* موجودیت‌ها بود:
+     *
+     *   ‎saveHTML()‎ کاراکترهایِ غیرِASCII را به موجودیت تبدیل می‌کند
+     *   (‎&#1602;‎، ‎&laquo;‎)، و برایِ برگرداندنشان از
+     *   ‎mb_convert_encoding($out, 'UTF-8', 'HTML-ENTITIES')‎ استفاده
+     *   می‌شد. ولی آن تابع *همهٔ* موجودیت‌ها را باز می‌کند، از جمله
+     *   آن‌هایی که باید اسکیپ بمانند:
+     *
+     *     ‎&quot;‎ داخلِ ‎data-settings‎یِ المنتور  →  ‎"‎   (اسکیپِ JSON می‌شکند)
+     *     ‎&amp;‎  داخلِ URL                        →  ‎&‎
+     *     ‎&lt;۵٪&gt;‎ در متن                       →  ‎<۵٪>‎ (براکتِ خام واردِ HTML)
+     *
+     *   یعنی خروجی فقط «عجیب» نمی‌شد؛ ساختارِ HTML می‌شکست. و چون هر
+     *   صفحهٔ المنتوری پر از JSON در ‎data-attribute‎ است، این روی
+     *   *هر* صفحه رخ می‌داد.
+     *
+     * راهِ درست این است که اصلاً دوباره سریالایز نکنیم. حالا ‎DOMDocument‎
+     * فقط *خوانده* می‌شود تا تصمیم بگیرد کدام سکشن خالی است، و خروجی یک
+     * الحاقِ محض است: بایت‌هایِ اصلیِ صفحه دست‌نخورده می‌مانند و این کلِ
+     * ردهٔ باگ را از بین می‌برد، نه یک نمونه‌اش را.
+     *
+     * کاربر هم از اول «حذف یا هاید» را خواسته بود، پس این انتخاب در
+     * چارچوبِ همان درخواست است.
+     *
+     * ‎!important‎ اینجا لازم است و در فایلِ استایلِ افزونه نیست (پس سقفِ
+     * CIـِ آن فایل را هم مصرف نمی‌کند): سلکتورِ خودِ المنتور برایِ یک
+     * سکشن ‎.elementor-element.elementor-element-xxxx‎ است — دو کلاس،
+     * اختصاصیتش از ‎.zig-product-ability‎یِ تک‌کلاسه بیشتر است.
+     *
+     * @param string[] $classes
+     */
+    private static function hide_style(array $classes): string {
+        $selectors = [];
+
+        foreach ($classes as $class) {
+            /*
+             * کلاس‌ها از تنظیماتِ ادمین می‌آیند، پس مستقیم داخلِ CSS
+             * نمی‌روند: هر چیزی جز حروف/عدد/خط‌تیره/آندرلاین می‌تواند از
+             * سلکتور بیرون بزند و بلوکِ استایل را چیزِ دیگری کند.
+             */
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $class)) {
+                continue;
+            }
+
+            $selectors[] = '.' . $class;
         }
 
-        /*
-         * ‎libxml‎ بدونِ این، حروفِ غیرِ ASCII (یعنی تقریباً کلِ متنِ فارسیِ
-         * صفحه) را به‌جایِ UTF-8 به موجودیتِ عددی (‎&#1576;‎...) تبدیل
-         * می‌کند. معتبر است، ولی حجم را چند برابر می‌کند و خروجی را از
-         * آنچه خودِ وردپرس قبلاً چاپ کرده بود عوض می‌کند؛ اینجا برمی‌گردانیمش.
-         */
-        $out = mb_convert_encoding($out, 'UTF-8', 'HTML-ENTITIES');
+        if (!$selectors) {
+            return '';
+        }
 
-        return self::strip_wrapper($out);
+        return sprintf(
+            '<style id="zig-empty-sections">%s{display:none !important}</style>',
+            implode(',', $selectors)
+        );
     }
 
     /**
      * آیا به‌اندازهٔ کافی حاشیهٔ حافظه برایِ پارسِ امنِ این HTML هست؟
      *
      * ‎DOMDocument::loadHTML()‎ در عمل حدودِ ۵ تا ۱۰ برابرِ حجمِ رشتهٔ
-     * ورودی حافظه می‌گیرد (گرهِ درخت + attribute mapها)، بعلاوهٔ یک
-     * کپیِ کاملِ خروجی در ‎saveHTML()‎/‎mb_convert_encoding()‎. ضریبِ ۱۲
-     * عمداً سخاوتمندانه است — هدف جلوگیریِ قطعی از فاتال است، نه
-     * تخمینِ دقیق.
+     * ورودی حافظه می‌گیرد (گرهِ درخت + attribute mapها). ضریبِ ۱۲ عمداً
+     * سخاوتمندانه است — هدف جلوگیریِ قطعی از فاتال است، نه تخمینِ دقیق.
+     * (دو کپیِ خروجیِ ‎saveHTML()‎/‎mb_convert_encoding()‎ دیگر در کار
+     * نیست؛ حالا فقط خوانده می‌شود — نگاه کنید به ‎hide_style()‎.)
      *
      * پارامترهایِ اختیاریِ آخر فقط برایِ تست‌اند؛ در استفادهٔ واقعی همیشه
      * از ‎ini_get('memory_limit')‎ و ‎memory_get_usage(true)‎یِ واقعی
@@ -393,12 +445,4 @@ final class Product_Section_Guard {
         return false;
     }
 
-    /**
-     * ‎DOMDocument::saveHTML()‎ رویِ کلِ سند، تگِ ‎<?xml ...?>‎یِ کمکیِ بالا
-     * را هم به‌عنوانِ یک کامنت/پردازش‌دستور برمی‌گرداند — باید حذف شود
-     * وگرنه به ابتدایِ هر پاسخِ HTML اضافه می‌شود.
-     */
-    private static function strip_wrapper(string $html): string {
-        return (string) preg_replace('/^<\?xml encoding="utf-8" \?>\s*/', '', $html, 1);
-    }
 }
