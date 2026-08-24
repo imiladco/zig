@@ -154,7 +154,20 @@ final class Product_Section_Settings {
             return $config;
         }
 
-        $document = \Elementor\Plugin::$instance->documents->get_doc_for_frontend();
+        /*
+         * ‎get_doc_for_frontend()‎ در نسخه‌هایِ قدیم‌ترِ المنتور بدونِ
+         * آرگومان هم کار می‌کرد، ولی نسخه‌هایِ تازه‌تر ‎$post_id‎ را
+         * الزامی کرده‌اند (بدونش ‎ArgumentCountError‎ می‌دهد و کل صفحه
+         * سفید می‌شود). ‎get_queried_object_id()‎ همان شناسهٔ محصولی است
+         * که ‎is_singular('product')‎ در ‎should_guard()‎ رویش تأیید شده.
+         */
+        $post_id = get_queried_object_id();
+
+        if ($post_id <= 0) {
+            return $config;
+        }
+
+        $document = \Elementor\Plugin::$instance->documents->get_doc_for_frontend($post_id);
 
         if (!$document) {
             return $config;
