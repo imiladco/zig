@@ -2054,18 +2054,13 @@ a.zig-list__label:focus-visible {
 }
 
 /*
- * سه ستون روی نمایشگر باریک یعنی کارت‌های صد پیکسلی.
- *
- * این با کنترل واکنش‌گرای «تعداد ستون» نمی‌جنگد: سلکتور المنتور
- * ({{WRAPPER}} .zig-archive__grid) وزن بیشتری دارد، پس به‌محض اینکه مدیر
- * مقدار تبلت یا موبایل را بگذارد همان می‌نشیند. این فقط جای خالی را پر
- * می‌کند تا چیدمانِ تنظیم‌نشده نشکند — طرح موبایل جای خودش را دارد.
+ * «سه ستونِ باریک روی موبایل» دیگر با یک ریستِ سختِ رسانه‌کوئری جبران
+ * نمی‌شود — آن ریست ‎grid-template-columns‎ را مستقیم می‌نوشت و متغیرِ
+ * کنترل را نادیده می‌گرفت (مدیر موبایل=۱ می‌گذاشت و ۲ می‌دید). حالا خودِ
+ * کنترلِ «تعداد ستون» با ‎tablet_default:2‎/‎mobile_default:2‎ مقدارِ هر
+ * بریک‌پوینت را می‌نویسد، پس این فایل فقط پیش‌فرضِ دسکتاپِ ‎3‎ را در
+ * ‎var()‎ نگه می‌دارد و بس.
  */
-@media (max-width: 879px) {
-	.zig-archive__grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
 
 /* سلول کشیده می‌شود تا کارت‌های یک ردیف هم‌قد باشند */
 .zig-archive__cell {
@@ -2833,7 +2828,15 @@ a.zig-list__label:focus-visible {
 		height: 32px;
 	}
 
-	/* ---- شیتِ فیلتر: همان اسایدِ دسکتاپ، حالا تمام‌ارتفاع از پایین ---- */
+	/*
+	 * ---- شیتِ فیلتر: *دقیقاً* همان سایدبارِ دسکتاپ، تمام‌ارتفاع از پایین ----
+	 *
+	 * نکتهٔ کلیدی که بارِ اول از دست رفت: پدینگ/پس‌زمینه/کلاهِ بنفشِ
+	 * ‎::before‎/سربرگِ شیشه‌ایِ اساید هیچ‌کدام ریست نمی‌شوند — همان چیزی که
+	 * کاربر در دسکتاپ می‌دید باید در موبایل هم عیناً ببیند. فقط ‎sticky‎ی
+	 * دسکتاپ به ‎fixed‎ی شیت، رادیوسِ فقط‌بالا، سایهٔ رو‌به‌بالا و لغزش
+	 * اضافه می‌شوند.
+	 */
 	.zig-archive__filters {
 		position: fixed;
 		inset: auto 0 0 0;
@@ -2843,21 +2846,14 @@ a.zig-list__label:focus-visible {
 		height: 100dvh;
 		max-height: 100%;
 		margin: 0;
-		padding: 0;
 		display: flex;
 		flex-direction: column;
-		border-radius: var(--zig-sheet-radius, 20px) var(--zig-sheet-radius, 20px) 0 0;
-		background: var(--zig-sheet-bg, #fff);
+		border-radius: var(--zig-filters-outer-radius, 24px) var(--zig-filters-outer-radius, 24px) 0 0;
 		box-shadow: 0 -8px 30px rgba(17, 12, 46, 0.18);
 		transform: translateY(100%);
 		visibility: hidden;
 		transition: transform var(--zig-sheet-anim, 200ms) ease-out,
 			visibility 0s linear var(--zig-sheet-anim, 200ms);
-	}
-
-	/* کلاهِ بنفشِ دسکتاپ در شیت جایی ندارد — جایش دستگیره است */
-	.zig-archive__filters::before {
-		content: none;
 	}
 
 	.zig-archive.is-sheet-filters .zig-archive__filters {
@@ -2873,16 +2869,33 @@ a.zig-list__label:focus-visible {
 	}
 
 	/*
-	 * همان «دیوایدِ ۱۶px پدینگ + پس‌زمینه» که خواسته شده: ساختارِ دقیقِ
-	 * سایدبارِ دسکتاپ (‎.zig-filters__card‎) بی‌تغییر داخلش می‌نشیند و فقط
-	 * همین ناحیه اسکرول می‌شود، نه کلِ شیت — وگرنه دستگیره هم بالا می‌رفت.
+	 * دستگیره روی کلاهِ بنفش شناور می‌شود (‎absolute‎)، پس هیچ فضایی از
+	 * چیدمانِ کارت نمی‌گیرد و سربرگِ شیشه‌ای دقیقاً مثلِ دسکتاپ روی بنفش
+	 * می‌نشیند.
+	 */
+	.zig-archive__filters > .zig-archive__sheet-handle {
+		position: absolute;
+		inset-block-start: 8px;
+		inset-inline: 0;
+		margin: 0 auto;
+		z-index: 2;
+	}
+
+	/*
+	 * ساختارِ دقیقِ سایدبارِ دسکتاپ (‎.zig-filters__card‎) بی‌تغییر داخلش
+	 * می‌نشیند؛ اسکرول را خودِ کارت (‎.zig-filters__groups‎) دارد، پس این
+	 * پوشش فقط فضا را پر می‌کند تا شیت تمام‌ارتفاع بماند و کارت کشیده شود.
 	 */
 	.zig-archive__filters > .zig-archive__facets {
 		flex: 1 1 auto;
 		min-height: 0;
-		padding: 16px;
-		overflow-y: auto;
-		-webkit-overflow-scrolling: touch;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.zig-archive__filters .zig-filters__card {
+		flex: 1 1 auto;
+		max-block-size: none;
 	}
 
 	/* ---- شیتِ ترتیب: به‌اندازهٔ محتوا، چسبیده به پایین ---- */

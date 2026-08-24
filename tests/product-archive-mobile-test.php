@@ -119,3 +119,30 @@ Tests::keeps('گزینهٔ فعال (جدیدترین) در شیت is-active ا�
 
 $sheet_no_title = $call('render_sort_sheet', [['sort_sheet_title' => ''] + $settings, $sorts, $state, 'srt-1', []]);
 Tests::blocks('عنوانِ خالی، تیترِ شیت را حذف می‌کند', $sheet_no_title, 'zig-archive__sheet-title');
+
+Tests::group('آرشیوِ موبایل › رگرسیونِ ستون و چرومِ فیلتر');
+
+$widget_src = file_get_contents($root . '/includes/widgets/product-archive.php');
+$css_src    = file_get_contents($root . '/assets/css/zig3d-widgets.css');
+
+/*
+ * باگِ «موبایل=۱ ولی ۲ ستون»: کنترلِ ستون باید پیش‌فرضِ بریک‌پوینتی
+ * داشته باشد و ریستِ سختِ ‎@media(max-width:879px){...repeat(2)}‎ باید
+ * رفته باشد — وگرنه آن ریست باز متغیرِ کنترل را نادیده می‌گیرد.
+ */
+Tests::ok(
+    'کنترلِ ستون پیش‌فرضِ تبلت/موبایل دارد',
+    false !== strpos($widget_src, "'tablet_default' => 2") && false !== strpos($widget_src, "'mobile_default' => 2")
+);
+Tests::ok(
+    'ریستِ سختِ «۲ ستون در ≤۸۷۹» حذف شده',
+    false === strpos($css_src, 'grid-template-columns: repeat(2, minmax(0, 1fr));')
+        || false === strpos($css_src, '@media (max-width: 879px)')
+);
+
+/*
+ * شیتِ فیلتر باید *همان* سایدبارِ دسکتاپ را نشان دهد — کلاهِ بنفشِ
+ * ‎::before‎ و سربرگِ شیشه‌ای نباید در موبایل خاموش شوند.
+ */
+Tests::blocks('کلاهِ بنفشِ فیلتر در موبایل خاموش نشده', $css_src, '.zig-archive__filters::before {
+		content: none;');

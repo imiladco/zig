@@ -149,12 +149,23 @@ final class Product_Archive extends Widget_Base {
             'max'     => Archive_Query::MAX_PER_PAGE,
         ]);
 
+        /*
+         * ‎tablet_default‎/‎mobile_default‎ جای آن ریستِ سختِ CSS را می‌گیرند
+         * که قبلاً «‎@media(max-width:879px){grid-template-columns:repeat(2)}‎»
+         * بود. آن ریست ‎grid-template-columns‎ را *مستقیم* می‌نوشت، پس متغیرِ
+         * ‎--zig-archive-columns‎ی که این کنترل عوض می‌کرد را نادیده می‌گرفت:
+         * مدیر موبایل را ۱ می‌گذاشت و باز ۲ ستون می‌دید. با پیش‌فرضِ
+         * بریک‌پوینتی، خودِ کنترل مقدارِ هر تیر را می‌نویسد (۲ تبلت، ۲
+         * موبایل، مگر اینکه مدیر عوضش کند) و دیگر هیچ ریستِ سختی لازم نیست.
+         */
         $this->add_responsive_control('columns', [
-            'label'   => __('تعداد ستون', 'zig3d-widgets'),
-            'type'    => Controls_Manager::NUMBER,
-            'default' => 3,
-            'min'     => 1,
-            'max'     => 6,
+            'label'          => __('تعداد ستون', 'zig3d-widgets'),
+            'type'           => Controls_Manager::NUMBER,
+            'default'        => 3,
+            'tablet_default' => 2,
+            'mobile_default' => 2,
+            'min'            => 1,
+            'max'            => 6,
             'selectors' => [
                 '{{WRAPPER}} .zig-archive__grid' => '--zig-archive-columns: {{VALUE}};',
             ],
