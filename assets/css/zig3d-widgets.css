@@ -7723,7 +7723,7 @@ a.zig-configurator__btn:active {
 	--zig-consult-purple: #6d28d9;
 	--zig-consult-purple-hover: #5c21b8;
 	--zig-consult-purple-soft: #f5f1ff;
-	--zig-consult-success: #10b981;
+	--zig-consult-success: #42a64b;
 	--zig-consult-text: #17171b;
 	--zig-consult-muted: #564961;
 	--zig-consult-border: rgba(86, 73, 97, 0.2);
@@ -7869,6 +7869,17 @@ a.zig-configurator__btn:active {
 	color: rgba(23, 23, 27, 0.5);
 }
 
+/*
+ * فقط رنگِ حاشیه قرمز می‌شود — نه پیامِ خطا، نه حبابِ پیش‌فرضِ مرورگر
+ * (فرم ‎novalidate‎ دارد و سنجش سمتِ ‎zig3d-consultation.js‎ است، نه
+ * ‎:invalid‎ی CSS). بعدِ همان رولِ پایه می‌آید تا با اسپسیفیسیتیِ برابر،
+ * ترتیبِ متن تعیین‌کننده باشد.
+ */
+.zig-consultation-modal__field--invalid input,
+.zig-consultation-modal__field--invalid textarea {
+	border-color: #ef4444;
+}
+
 .zig-consultation-modal__field-icon {
 	position: absolute;
 	inset-inline-start: 16px;
@@ -7954,6 +7965,7 @@ a.zig-configurator__btn:active {
 /* ---------- حالتِ موفقیت ---------- */
 
 .zig-consultation-modal__success:not([hidden]) {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -7961,41 +7973,66 @@ a.zig-configurator__btn:active {
 	text-align: center;
 }
 
+/*
+ * چاشنیِ جشن، بدونِ تکرارِ ده‌ها ‎div‎ی مطلق-موقعیتِ فایلِ فیگما —
+ * همان حسِ کانفتیِ سبز، با چند ‎radial-gradient‎ به‌جایِ نشانه‌گذاریِ
+ * دستی.
+ */
+.zig-consultation-modal__success::before {
+	content: '';
+	position: absolute;
+	inset: -32px -24px auto;
+	height: 160px;
+	z-index: -1;
+	background-image:
+		radial-gradient(circle, #7cc282 0 3px, transparent 3px),
+		radial-gradient(circle, #7cc282 0 2px, transparent 2px),
+		radial-gradient(circle, #7cc282 0 4px, transparent 4px),
+		radial-gradient(circle, #7cc282 0 2px, transparent 2px);
+	background-repeat: no-repeat;
+	background-position: 12% 20%, 30% 70%, 72% 15%, 88% 60%;
+	opacity: 0.35;
+}
+
 .zig-consultation-modal__success-icon {
 	display: inline-flex;
 	margin-bottom: 20px;
-	color: var(--zig-consult-success);
 }
 
 .zig-consultation-modal__success-title {
-	margin: 0 0 8px;
-	font-size: 18px;
-	font-weight: 800;
-	color: var(--zig-consult-text);
+	margin: 0 0 14px;
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--zig-consult-success);
 }
 
 .zig-consultation-modal__success-text {
 	margin: 0 0 24px;
 	font-size: 14px;
-	line-height: 1.8;
+	line-height: 24px;
+	opacity: 0.8;
 	color: var(--zig-consult-muted);
 }
 
+/* دکمهٔ شیشه‌ایِ حاشیه‌دار — طبقِ طرح، پرشده نیست */
 .zig-consultation-modal__success-close {
 	width: 100%;
-	padding: 13px;
+	padding: 14px 32px;
 	font: inherit;
-	font-size: 14px;
-	font-weight: 700;
+	font-size: 16px;
+	font-weight: 600;
 	color: var(--zig-consult-purple);
-	background: var(--zig-consult-purple-soft);
-	border: 0;
+	background: rgba(250, 251, 252, 0.47);
+	backdrop-filter: blur(22px);
+	-webkit-backdrop-filter: blur(22px);
+	border: 1px solid var(--zig-consult-purple);
 	border-radius: 12px;
+	box-shadow: 0 6px 16px rgba(140, 88, 58, 0.13);
 	cursor: pointer;
 	transition: background-color 0.15s ease;
 }
 
 .zig-consultation-modal__success-close:hover,
 .zig-consultation-modal__success-close:focus-visible {
-	background: #ece4fb;
+	background: var(--zig-consult-purple-soft);
 }

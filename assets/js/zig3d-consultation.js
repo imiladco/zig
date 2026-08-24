@@ -39,7 +39,7 @@
 				'</button>' +
 				'<div class="zig-consultation-modal__body">' +
 					'<h2 id="zig-consultation-title" class="zig-consultation-modal__title">ثبت درخواست مشاوره</h2>' +
-					'<form class="zig-consultation-modal__form">' +
+					'<form class="zig-consultation-modal__form" novalidate>' +
 						'<div class="zig-consultation-modal__fields">' +
 							'<div class="zig-consultation-modal__field">' +
 								'<input type="text" id="zig-consultation-name" name="name" autocomplete="name" placeholder="نام و نام خانوادگی" aria-label="نام و نام خانوادگی" required>' +
@@ -81,9 +81,9 @@
 					'</form>' +
 					'<div class="zig-consultation-modal__success" hidden>' +
 						'<span class="zig-consultation-modal__success-icon" aria-hidden="true">' +
-							'<svg width="56" height="56" viewBox="0 0 56 56" fill="none">' +
-								'<circle cx="28" cy="28" r="26" stroke="currentColor" stroke-width="3"/>' +
-								'<path d="M18 29L24.5 35.5L38 21" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+							'<svg width="64" height="64" viewBox="0 0 64 64" fill="none">' +
+								'<circle cx="32" cy="32" r="32" fill="#42A64B"/>' +
+								'<path d="M20.5 32.5L28 40L43.5 23.5" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' +
 							'</svg>' +
 						'</span>' +
 						'<p class="zig-consultation-modal__success-title">درخواست شما ثبت شد!</p>' +
@@ -123,6 +123,8 @@
 		elements.submit.disabled = false;
 		elements.submit.classList.remove('is-loading');
 		elements.form.reset();
+		clearInvalid(elements.name);
+		clearInvalid(elements.phone);
 	}
 
 	function bind() {
@@ -136,8 +138,67 @@
 
 		elements.form.addEventListener('submit', function (event) {
 			event.preventDefault();
-			submit();
+
+			if (validate()) {
+				submit();
+			}
 		});
+
+		/*
+		 * فیلدِ شماره فقط حقِ وجودِ شماره دارد — رقم و علامتِ ‎+‎ی ابتدایی،
+		 * نه هیچ کاراکترِ دیگری. عمداً محدودیتی رویِ طول یا پیشوند
+		 * (‎09‎/‎+98‎/‎0098‎) گذاشته نشده تا هر فرمتِ رایجِ ایرانی همچنان
+		 * قابلِ تایپ بماند.
+		 */
+		elements.phone.addEventListener('input', function () {
+			var value = elements.phone.value;
+			var plus = 0 === value.indexOf('+') ? '+' : '';
+
+			elements.phone.value = plus + value.replace(/[^0-9]/g, '');
+		});
+
+		elements.name.addEventListener('input', function () { clearInvalid(elements.name); });
+		elements.phone.addEventListener('input', function () { clearInvalid(elements.phone); });
+	}
+
+	/**
+	 * نام و شماره اجباری‌اند — قبل از هر درخواستِ آژاکس، همین‌جا سنجیده
+	 * می‌شوند تا فیلدِ خالی/بی‌فایده اصلاً به سرور نرسد. بازخورد فقط رنگِ
+	 * قرمزِ حاشیهٔ همان فیلد است، نه حبابِ پیش‌فرضِ مرورگر (به همین دلیل
+	 * فرم ‎novalidate‎ دارد).
+	 */
+	function validate() {
+		var invalid = [];
+
+		if ('' === elements.name.value.trim()) {
+			invalid.push(elements.name);
+		}
+
+		if ('' === elements.phone.value.trim()) {
+			invalid.push(elements.phone);
+		}
+
+		var i;
+
+		for (i = 0; i < invalid.length; i++) {
+			markInvalid(invalid[i]);
+		}
+
+		if (invalid.length) {
+			invalid[0].focus();
+		}
+
+		return 0 === invalid.length;
+	}
+
+	function markInvalid(field) {
+		field.closest('.zig-consultation-modal__field').classList.add('zig-consultation-modal__field--invalid');
+		field.setAttribute('aria-invalid', 'true');
+	}
+
+	function clearInvalid(field) {
+		field.closest('.zig-consultation-modal__field').classList.remove('zig-consultation-modal__field--invalid');
+		field.removeAttribute('aria-invalid');
 	}
 
 	function openModal(trigger) {
