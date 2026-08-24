@@ -71,6 +71,7 @@ if (!defined('ABSPATH')) {
 final class Product_Configurator extends Widget_Base {
 
     use Traits\Link;
+    use Traits\Consultation_Trigger;
 
     /** نگاشتِ آیکونِ فلشِ کشو به فایلِ صادرشده از فیگما */
     private const DESIGN_ICONS = [
@@ -130,7 +131,13 @@ final class Product_Configurator extends Widget_Base {
     }
 
     public function get_script_depends(): array {
-        return ['zig3d-configurator'];
+        $depends = ['zig3d-configurator'];
+
+        if ($this->consultation_active($this->get_settings_for_display(), 'secondary_')) {
+            $depends[] = 'zig3d-consultation';
+        }
+
+        return $depends;
     }
 
     public function has_widget_inner_wrapper(): bool {
@@ -480,6 +487,8 @@ final class Product_Configurator extends Widget_Base {
         );
 
         $this->add_link_control('secondary_link');
+
+        $this->add_consultation_controls('secondary_');
 
         $this->add_control(
             'primary_heading',
@@ -1843,6 +1852,9 @@ final class Product_Configurator extends Widget_Base {
             }
 
             $tag = 'a';
+        } elseif ('secondary' === $key && $this->consultation_active($settings, 'secondary_')) {
+            $this->apply_consultation_attributes($render_key, $product);
+            $tag = 'button';
         } else {
             $tag = $this->apply_link($settings, $render_key, 'button', $key . '_link');
         }

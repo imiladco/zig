@@ -77,6 +77,19 @@ if (!function_exists('add_query_arg')) {
 if (!function_exists('esc_url_raw')) {
     function esc_url_raw($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field($str) {
+        $str = strip_tags((string) $str);
+        $str = preg_replace('/[\r\n\t]+/', ' ', $str);
+
+        return trim(preg_replace('/ {2,}/', ' ', $str));
+    }
+}
+if (!function_exists('sanitize_textarea_field')) {
+    function sanitize_textarea_field($str) {
+        return trim(strip_tags((string) $str));
+    }
+}
 /** جفتِ ‎add_query_arg‎ بالا — پارامتر(ها) را از رشتهٔ کوئری پاک می‌کند */
 if (!function_exists('remove_query_arg')) {
     function remove_query_arg($keys, $url = '') {
@@ -104,6 +117,12 @@ if (!function_exists('rest_url')) {
 }
 if (!function_exists('home_url')) {
     function home_url($path = '') { return 'https://zig3d.test' . ('' !== (string) $path ? '/' . ltrim((string) $path, '/') : ''); }
+}
+if (!function_exists('admin_url')) {
+    function admin_url($path = '') { return 'https://zig3d.test/wp-admin/' . ltrim((string) $path, '/'); }
+}
+if (!function_exists('wp_create_nonce')) {
+    function wp_create_nonce($action = -1) { return 'nonce-' . md5((string) $action); }
 }
 /** همتایِ سبک‌شدهٔ رفتارِ پیش‌فرضِ وردپرس: ‎?p={id}‎ روی خانه */
 if (!function_exists('wp_get_shortlink')) {

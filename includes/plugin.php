@@ -92,9 +92,11 @@ final class Plugin {
         add_action('init', [$this, 'boot_filters'], 5);
         add_action('init', [$this, 'boot_download_archive'], 5);
         add_action('init', [$this, 'boot_post_meta'], 5);
+        add_action('init', [$this, 'boot_consultations'], 5);
 
         if (is_admin()) {
             add_action('init', [$this, 'boot_admin'], 6);
+            add_action('init', [$this, 'boot_consultations_admin'], 6);
         }
 
         $this->watch_facet_cache();
@@ -203,6 +205,29 @@ final class Plugin {
         }
 
         Likes_Endpoint::boot();
+    }
+
+    /**
+     * فرمِ درخواستِ مشاوره — بدونِ ووکامرس هم معنا دارد (ویجتِ عمومیِ
+     * «دکمه» می‌تواند بازکنندهٔ همین فرم باشد)، پس مثلِ ‎boot_post_meta()‎
+     * پشتِ ‎class_exists('WooCommerce')‎ قفل نیست. نقطهٔ آژاکس هم باید
+     * بیرون از شرطِ ادمین ثبت شود، همان استدلالِ Archive/Search/Likes:
+     * ‎admin-ajax.php‎ از نظر وردپرس «پنل» است.
+     */
+    public function boot_consultations(): void {
+        foreach (['consultations', 'consultation-endpoint'] as $file) {
+            require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
+        }
+
+        Consultations::maybe_upgrade();
+        Consultation_Endpoint::boot();
+    }
+
+    /** فهرستِ درخواست‌ها در پنل — جدا از ‎boot_admin()‎ چون به ووکامرس نیازی ندارد. */
+    public function boot_consultations_admin(): void {
+        require_once ZIG3D_WIDGETS_PATH . 'includes/admin/consultations-page.php';
+
+        Admin\Consultations_Page::boot();
     }
 
     /**
@@ -365,6 +390,8 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/reading-time.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/likes.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/likes-endpoint.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/consultations.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/consultation-endpoint.php';
 
         /*
          * بدونِ گیت‌کردن پشتِ ‎WooCommerce‎: منبعِ «دسته‌بندی بلاگ» به
@@ -376,6 +403,7 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/pulse.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/consultation-trigger.php';
 
         /*
          * آرشیو به کل لایهٔ فیلتر تکیه دارد. ‎boot_filters()‎ روی ‎init‎
@@ -469,6 +497,20 @@ final class Plugin {
         wp_register_script(
             'zig3d-gallery',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-gallery.js',
+            ['zig3d-modal'],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * فرمِ مشاوره هم روی همان کنترلرِ مشترکِ مودال سوار می‌شود؛ فقط
+         * دکمه‌هایی که Consultation_Trigger روشن کرده‌اند این فایل را
+         * می‌آورند (نگاه کنید به get_script_depends()ِ Button/Product_Configurator)،
+         * پس بقیهٔ صفحه‌ها دست‌نخورده می‌مانند.
+         */
+        wp_register_script(
+            'zig3d-consultation',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-consultation.js',
             ['zig3d-modal'],
             ZIG3D_WIDGETS_VERSION,
             true

@@ -7700,3 +7700,282 @@ a.zig-configurator__btn:active {
 	border: 1px dashed #e0c25a;
 	border-radius: 6px;
 }
+
+/* ==========================================================================
+ * مودالِ فرمِ درخواستِ مشاوره
+ *
+ * ساختار و مکانیزمِ باز/بسته‌شدن از ‎.zig-gallery-modal‎ (بالاتر) وام
+ * گرفته شده — همان ‎.is-open‎، همان ‎transition‎ی opacity/visibility —
+ * چون هر دو رویِ یک کنترلرِ مشترک (‎zig3d-modal.js‎) سوارند. ظاهر اما جدا
+ * طراحی شده: یک کارتِ سفیدِ محدود روی پس‌زمینهٔ تیره‌شده، نه یک صفحهٔ
+ * تمام‌عرض — چون این یک فرم است، نه یک ویوئرِ تصویر.
+ * ======================================================================= */
+
+.zig-consultation-modal {
+	--zig-consult-dur: 220ms;
+	--zig-consult-purple: #6d28d9;
+	--zig-consult-purple-hover: #5c21b8;
+	--zig-consult-purple-soft: #f5f1ff;
+	--zig-consult-success: #10b981;
+	--zig-consult-text: #171923;
+	--zig-consult-muted: #667085;
+	--zig-consult-border: #e2e7f0;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background-color: rgba(17, 24, 39, 0.6);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity var(--zig-consult-dur) ease,
+		visibility var(--zig-consult-dur);
+}
+
+.zig-consultation-modal.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+}
+
+.zig-consultation-modal__backdrop {
+	position: absolute;
+	inset: 0;
+}
+
+.zig-consultation-modal__stage {
+	position: relative;
+	width: 100%;
+	max-width: 440px;
+	max-height: calc(100vh - 40px);
+	overflow-y: auto;
+	background: #fff;
+	border-radius: 20px;
+	box-shadow: 0 24px 60px rgba(17, 24, 39, 0.25);
+	transform: scale(0.96) translateY(8px);
+	transition: transform var(--zig-consult-dur) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zig-consultation-modal.is-open .zig-consultation-modal__stage {
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zig-consultation-modal,
+	.zig-consultation-modal * {
+		transition-duration: 1ms;
+		animation-duration: 1ms;
+	}
+}
+
+.zig-consultation-modal__close {
+	position: absolute;
+	top: 20px;
+	inset-inline-end: 20px;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: #f5f5f8;
+	color: var(--zig-consult-muted);
+	cursor: pointer;
+}
+
+.zig-consultation-modal__close:hover,
+.zig-consultation-modal__close:focus-visible {
+	background: #ececf1;
+	color: var(--zig-consult-text);
+}
+
+.zig-consultation-modal__body {
+	padding: 32px 28px 28px;
+}
+
+.zig-consultation-modal__title {
+	margin: 0 0 24px;
+	padding-inline-end: 32px;
+	font-size: 19px;
+	font-weight: 800;
+	line-height: 1.5;
+	color: var(--zig-consult-text);
+}
+
+/* ---------- فیلدها ---------- */
+
+.zig-consultation-modal__fields {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.zig-consultation-modal__field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.zig-consultation-modal__field label {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--zig-consult-text);
+}
+
+.zig-consultation-modal__field input,
+.zig-consultation-modal__field textarea {
+	width: 100%;
+	padding: 12px 14px;
+	font: inherit;
+	font-size: 14px;
+	color: var(--zig-consult-text);
+	background: #fafafc;
+	border: 1px solid var(--zig-consult-border);
+	border-radius: 10px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.zig-consultation-modal__field textarea {
+	resize: vertical;
+	min-height: 84px;
+}
+
+.zig-consultation-modal__field input:focus-visible,
+.zig-consultation-modal__field textarea:focus-visible {
+	outline: none;
+	border-color: var(--zig-consult-purple);
+	box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.14);
+	background: #fff;
+}
+
+.zig-consultation-modal__field input::placeholder,
+.zig-consultation-modal__field textarea::placeholder {
+	color: #a1a3a8;
+}
+
+/* هانی‌پات: از دیدِ کاربرِ واقعی و صفحه‌خوان مخفی، ولی در DOM حاضر است */
+.zig-consultation-modal__honeypot {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* ---------- اورلیِ «در حال ثبت» — فقط رویِ فیلدها، نه دکمه ---------- */
+
+.zig-consultation-modal__overlay {
+	position: absolute;
+	inset: -4px;
+	z-index: 3;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	background: rgba(255, 255, 255, 0.92);
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--zig-consult-purple);
+}
+
+.zig-consultation-modal__spinner {
+	width: 18px;
+	height: 18px;
+	border: 2.5px solid rgba(109, 40, 217, 0.2);
+	border-top-color: var(--zig-consult-purple);
+	border-radius: 50%;
+	animation: zig-gallery-spin 0.8s linear infinite;
+}
+
+.zig-consultation-modal__error {
+	margin: 14px 0 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #ef4444;
+}
+
+/* ---------- دکمهٔ ثبت ---------- */
+
+.zig-consultation-modal__submit {
+	width: 100%;
+	margin-top: 20px;
+	padding: 14px;
+	font: inherit;
+	font-size: 15px;
+	font-weight: 700;
+	color: #fff;
+	background: var(--zig-consult-purple);
+	border: 0;
+	border-radius: 12px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.zig-consultation-modal__submit:hover,
+.zig-consultation-modal__submit:focus-visible {
+	background: var(--zig-consult-purple-hover);
+}
+
+.zig-consultation-modal__submit:disabled {
+	background: #cdbaf8;
+	cursor: not-allowed;
+}
+
+/* ---------- حالتِ موفقیت ---------- */
+
+.zig-consultation-modal__success {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 12px 4px 4px;
+	text-align: center;
+}
+
+.zig-consultation-modal__success-icon {
+	display: inline-flex;
+	margin-bottom: 20px;
+	color: var(--zig-consult-success);
+}
+
+.zig-consultation-modal__success-title {
+	margin: 0 0 8px;
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--zig-consult-text);
+}
+
+.zig-consultation-modal__success-text {
+	margin: 0 0 24px;
+	font-size: 14px;
+	line-height: 1.8;
+	color: var(--zig-consult-muted);
+}
+
+.zig-consultation-modal__success-close {
+	width: 100%;
+	padding: 13px;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--zig-consult-purple);
+	background: var(--zig-consult-purple-soft);
+	border: 0;
+	border-radius: 12px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.zig-consultation-modal__success-close:hover,
+.zig-consultation-modal__success-close:focus-visible {
+	background: #ece4fb;
+}

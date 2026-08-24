@@ -24,6 +24,8 @@ require_once $root . '/includes/configurator.php';
 require_once $root . '/includes/markup.php';
 require_once $root . '/includes/design-icons.php';
 require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/consultation-endpoint.php';
+require_once $root . '/includes/widgets/traits/consultation-trigger.php';
 require_once $root . '/includes/widgets/product-configurator.php';
 
 use Zig3d_Widgets\Configurator;
@@ -401,3 +403,43 @@ Tests::same(
     $whatsapp_message->invoke(null, "الف\nب", ['رنگ: قرمز']),
     "الف\nب"
 );
+
+/* ==========================================================================
+ * رندر › دکمهٔ فرعی، فرمِ مشاوره
+ * ======================================================================= */
+
+Tests::group('رندر › دکمهٔ فرعی، فرمِ مشاوره');
+
+$consult_product = new WC_Product([
+    'id' => ++$GLOBALS['__zig_seq'], 'type' => 'simple', 'price' => '500000', 'regular' => '500000',
+    'name' => 'محفظهٔ آکواریوم مدل A',
+]);
+
+$consult_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'                => $consult_product->get_id(),
+    'secondary_text'            => 'دریافت مشاورهٔ تخصصی',
+    'secondary_link'            => ['url' => 'https://zig3d.com/should-be-ignored'],
+    'secondary_consultation_on' => 'yes',
+]);
+
+Tests::keeps('روشن‌بودنِ فرمِ مشاوره، دکمهٔ فرعی را button می‌کند', $consult_out, 'zig-configurator__btn--secondary');
+Tests::blocks('پیوندِ ثانویه نادیده گرفته می‌شود', $consult_out, 'should-be-ignored');
+Tests::keeps('نشانهٔ data-zig-consultation چاپ می‌شود', $consult_out, 'data-zig-consultation="1"');
+Tests::keeps(
+    'شناسهٔ محصول رویِ دکمه می‌آید (برایِ ثبت در دیتابیس)',
+    $consult_out,
+    'data-zig-consultation-product-id="' . $consult_product->get_id() . '"'
+);
+Tests::keeps(
+    'نامِ محصول هم',
+    $consult_out,
+    'data-zig-consultation-product-name="' . $consult_product->get_name() . '"'
+);
+
+$consult_off = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'     => $priced_simple->get_id(),
+    'secondary_text' => 'دریافت مشاورهٔ تخصصی',
+    'secondary_link' => ['url' => 'https://zig3d.com/x'],
+]);
+
+Tests::blocks('خاموش (پیش‌فرض)، هیچ data-zig-consultation-ای نیست', $consult_off, 'data-zig-consultation');

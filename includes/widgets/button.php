@@ -38,6 +38,7 @@ if (!defined('ABSPATH')) {
 final class Button extends Widget_Base {
 
     use Traits\Link;
+    use Traits\Consultation_Trigger;
 
     /**
      * دامنهٔ «هاور یا فوکوس».
@@ -71,6 +72,18 @@ final class Button extends Widget_Base {
 
     public function get_style_depends(): array {
         return ['zig3d-widgets'];
+    }
+
+    /**
+     * تنها حالتی که این ویجت اسکریپت می‌خواهد: فرمِ مشاوره روشن باشد.
+     *
+     * بدونِ این شرط، هر صفحه‌ای که یک دکمهٔ سادهٔ لینک‌دار دارد هم مودالِ
+     * مشاوره را بارگذاری می‌کرد — دقیقاً همان اضافه‌باری که این ویجت از
+     * ابتدا (پنج ویجتِ کاملاً CSSیِ ‎Plugin‎، نگاه کنید به داک‌بلاکِ آن‌جا)
+     * قرار بود نداشته باشد.
+     */
+    public function get_script_depends(): array {
+        return $this->consultation_active($this->get_settings_for_display()) ? ['zig3d-consultation'] : [];
     }
 
     public function has_widget_inner_wrapper(): bool {
@@ -108,6 +121,8 @@ final class Button extends Widget_Base {
         );
 
         $this->add_link_control();
+
+        $this->add_consultation_controls();
 
         $this->add_control(
             'tag',
@@ -596,6 +611,10 @@ final class Button extends Widget_Base {
             $this->add_render_attribute('button', 'type', $this->resolve_button_type($settings));
         }
 
+        if ($this->consultation_active($settings)) {
+            $this->apply_consultation_attributes('button');
+        }
+
         /*
          * برچسب صریح، یا اجباراً وقتی دکمه فقط آیکون دارد.
          *
@@ -650,6 +669,10 @@ final class Button extends Widget_Base {
      * به ‎<button>‎ برمی‌گردیم — یک دکمهٔ بی‌کار، ولی دست‌کم عنصری معتبر.
      */
     private function resolve_tag(array $settings): string {
+        if ($this->consultation_active($settings)) {
+            return 'button';
+        }
+
         $choice = (string) ($settings['tag'] ?? 'auto');
 
         if ('button' === $choice) {

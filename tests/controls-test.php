@@ -24,6 +24,7 @@ require_once $root . '/includes/selector.php';
 require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/widgets/traits/consultation-trigger.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
 require_once $root . '/includes/widgets/traits/pulse.php';
