@@ -9,6 +9,7 @@ use Zig3d_Widgets\Archive_Endpoint;
 use Zig3d_Widgets\Download_Archive_Data;
 use Zig3d_Widgets\Markup;
 use Zig3d_Widgets\Plugin;
+use Zig3d_Widgets\Price;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -75,6 +76,31 @@ final class Download_Archive extends Widget_Base {
         $this->add_control('search_placeholder', ['label' => __('متن جستجو', 'zig3d-widgets'), 'type' => Controls_Manager::TEXT, 'default' => __('جستجوی نام نرم‌افزار یا مدل دستگاه...', 'zig3d-widgets')]);
         $this->add_control('count_on', ['label' => __('نمایش تعداد نتایج', 'zig3d-widgets'), 'type' => Controls_Manager::SWITCHER, 'default' => 'yes']);
         $this->add_control('sorting_on', ['label' => __('نمایش مرتب‌سازی', 'zig3d-widgets'), 'type' => Controls_Manager::SWITCHER, 'default' => 'yes']);
+        $this->end_controls_section();
+
+        $this->start_controls_section('sec_pagination', ['label' => __('صفحه‌بندی', 'zig3d-widgets')]);
+        /*
+         * همان چهار کنترل و همان معنا که در آرشیو محصولات هست — پیمایشِ
+         * این ویجت هم از همان زیرساختِ مشترک (‎zig3d-archive.js‎، همان
+         * ‎data-zig-scroll-max‎/‎data-zig-restore‎) استفاده می‌کند، پس
+         * تنظیماتش هم باید یکی باشد.
+         */
+        $this->add_control('scroll_pages', [
+            'label'       => __('حداکثر صفحات اسکرول خودکار', 'zig3d-widgets'),
+            'type'        => Controls_Manager::NUMBER,
+            'default'     => 2,
+            'min'         => 0,
+            'max'         => 20,
+            'description' => __('صفر یعنی همیشه صفحه‌بندی صریح.', 'zig3d-widgets'),
+        ]);
+        $this->add_control('restore_state', [
+            'label'       => __('بازگرداندن موقعیت هنگام برگشت', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SWITCHER,
+            'default'     => 'yes',
+            'description' => __('صفحه و موقعیت اسکرول، هنگام برگشت از صفحهٔ جزئیات.', 'zig3d-widgets'),
+        ]);
+        $this->add_control('label_prev', ['label' => __('متن «قبلی»', 'zig3d-widgets'), 'type' => Controls_Manager::TEXT, 'default' => __('قبلی', 'zig3d-widgets')]);
+        $this->add_control('label_next', ['label' => __('متن «بعدی»', 'zig3d-widgets'), 'type' => Controls_Manager::TEXT, 'default' => __('بعدی', 'zig3d-widgets')]);
         $this->end_controls_section();
 
         $this->start_controls_section('sec_cta', ['label' => __('محتوای کارت و CTA', 'zig3d-widgets')]);
@@ -268,7 +294,8 @@ final class Download_Archive extends Widget_Base {
             'data-zig-archive' => '1',
             'data-zig-state' => $ctx['found'] > 0 ? 'ok' : 'empty',
             'data-zig-debounce' => (string) (int) ($settings['filters_debounce'] ?? 300),
-            'data-zig-scroll-max' => '0', 'data-zig-restore' => '0',
+            'data-zig-scroll-max' => (string) (int) ($settings['scroll_pages'] ?? 0),
+            'data-zig-restore' => 'yes' === ($settings['restore_state'] ?? '') ? '1' : '0',
             'data-zig-page' => (string) $ctx['page'], 'data-zig-pages' => (string) max(1, $ctx['pages']),
             'data-zig-endpoint' => Archive_Endpoint::url(), 'data-zig-nonce' => Archive_Endpoint::nonce(),
             'data-zig-post' => (string) $this->document_id(), 'data-zig-widget' => $this->get_id(), 'data-zig-term' => '0',
@@ -276,7 +303,13 @@ final class Download_Archive extends Widget_Base {
         echo '<section ' . $this->get_render_attribute_string('root') . '>';
         echo '<button class="zig-download-archive__filter-trigger" type="button" aria-expanded="false" aria-controls="zig-download-filters-' . esc_attr($this->get_id()) . '">' . esc_html__('فیلترها', 'zig3d-widgets') . '</button>';
         echo '<div class="zig-download-archive__layout">';
-        echo '<main class="zig-archive__main zig-download-archive__main"><div class="zig-download-archive__toolbar">' . $this->fragment('toolbar', $ctx) . '</div><div data-zig-part="grid">' . $this->fragment('grid', $ctx) . '</div><nav data-zig-part="pagination">' . $this->fragment('pagination', $ctx) . '</nav></main>';
+        /*
+         * ‎<div data-zig-part="pagination">‎، نه ‎<nav>‎ — دقیقاً مثلِ آرشیوِ
+         * محصولات: خودِ ‎render_pagination()‎ عنصرِ ‎<nav>‎ی واقعی را چاپ
+         * می‌کند (یا وقتی یک صفحه بیشتر نیست، هیچ‌چیز)؛ اگر بیرونش هم
+         * ‎<nav>‎ بود، یک ‎<nav>‎ی تودرتو می‌ساخت.
+         */
+        echo '<main class="zig-archive__main zig-download-archive__main"><div class="zig-download-archive__toolbar">' . $this->fragment('toolbar', $ctx) . '</div><div data-zig-part="grid">' . $this->fragment('grid', $ctx) . '</div><div data-zig-part="pagination">' . $this->fragment('pagination', $ctx) . '</div></main>';
         if ($this->has_sidebar($settings, $ctx['facets'])) echo '<aside id="zig-download-filters-' . esc_attr($this->get_id()) . '" class="zig-archive__filters zig-download-archive__filters" data-zig-part="facets">' . $this->fragment('facets', $ctx) . '</aside>';
         echo '</div><div class="zig-archive__error" hidden><button class="zig-archive__retry" type="button">' . esc_html__('تلاش دوباره', 'zig3d-widgets') . '</button></div></section>';
         wp_reset_postdata();
@@ -375,11 +408,94 @@ final class Download_Archive extends Widget_Base {
         return $out;
     }
 
+    /**
+     * فیلترهای اعمال‌شده، به‌صورت چیپ — همان بخشی که آرشیوِ محصولات دارد
+     * و اینجا نبود (‎Product_Archive::render_active()‎). چیپ‌ها و «پاک‌کردنِ
+     * همه» با کلاس‌هایِ *یکسان* ساخته می‌شوند (‎zig-filters__active‎/
+     * ‎zig-filters__chip‎/‎zig-filters__clear‎)، پس CSSِ مشترکِ همان بخش
+     * بدونِ هیچ تغییری اینجا هم اعمال می‌شود.
+     *
+     * برچسبِ هر چیپ از ‎facet_options()‎ می‌آید (همان چیزی که خودِ گروه
+     * برای نمایشِ گزینه‌ها استفاده می‌کند)، نه از مقدارِ خام — وگرنه چیپِ
+     * یک مدلِ دستگاه مثلاً «up400» نشان می‌داد نه برچسبِ خوانای آن.
+     */
+    private function render_active(array $ctx): void {
+        $filters = $ctx['state']['filters'];
+
+        if (!array_filter($filters)) {
+            return;
+        }
+
+        $chips = [];
+
+        foreach ($ctx['facets'] as $facet) {
+            $selected = $filters[$facet['key']] ?? [];
+
+            if (!$selected) {
+                continue;
+            }
+
+            $options = $this->facet_options($facet);
+
+            foreach ($selected as $value) {
+                $chips[] = [
+                    'key'   => $facet['key'],
+                    'value' => (string) $value,
+                    // مقدارِ بی‌گزینه هم چیپ می‌گیرد، وگرنه قیدی می‌ماند که
+                    // کاربر می‌بیندش ولی نمی‌تواند برش دارد
+                    'label' => (string) ($options[$value]['label'] ?? $value),
+                ];
+            }
+        }
+
+        if (!$chips) {
+            return;
+        }
+
+        echo '<div class="zig-filters__active"><div class="zig-filters__active-head">';
+        printf('<h3 class="zig-filters__active-title">%s</h3>', esc_html__('فیلترهای فعال', 'zig3d-widgets'));
+
+        $cleared = $ctx['state'];
+        $cleared['page'] = 1;
+        $cleared['filters'] = array_fill_keys(array_keys($filters), []);
+
+        printf(
+            '<a class="zig-filters__clear" href="%s" data-zig-clear="1">%s%s</a>',
+            esc_url($this->state_url($cleared)),
+            esc_html__('پاک‌کردنِ همه', 'zig3d-widgets'),
+            Markup::svg_icon('trash', 'zig-filters__clear-icon')
+        );
+
+        echo '</div><ul class="zig-filters__chips">';
+
+        foreach ($chips as $chip) {
+            $next = $ctx['state'];
+            $next['page'] = 1;
+            $next['filters'][$chip['key']] = array_values(array_diff($next['filters'][$chip['key']], [$chip['value']]));
+
+            printf(
+                '<li class="zig-filters__chip"><a href="%1$s" rel="nofollow" data-zig-toggle="filter_%2$s|%3$s">'
+                    . '<span class="zig-filters__chip-text">%4$s</span>%5$s'
+                    . '<span class="zig-sr">%6$s</span></a></li>',
+                esc_url($this->state_url($next)),
+                esc_attr($chip['key']),
+                esc_attr($chip['value']),
+                esc_html($chip['label']),
+                Markup::svg_icon('trash', 'zig-filters__chip-icon'),
+                esc_html__('— حذف این فیلتر', 'zig3d-widgets')
+            );
+        }
+
+        echo '</ul></div>';
+    }
+
     private function render_facets(array $ctx): void {
         $active_count = array_sum(array_map('count', $ctx['state']['filters']));
         echo '<div class="zig-filters__card"><div class="zig-filters__head"><h2 class="zig-filters__title"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>' . esc_html__('فیلترها', 'zig3d-widgets') . '</h2>';
         if ($active_count > 0) printf('<span class="zig-filters__badge">%s</span>', esc_html(sprintf(__('%d فیلتر فعال', 'zig3d-widgets'), $active_count)));
-        echo '</div><div class="zig-filters__groups">';
+        echo '</div>';
+        $this->render_active($ctx);
+        echo '<div class="zig-filters__groups">';
         $group_index = 0;
         foreach ($ctx['facets'] as $facet) {
             $options = $this->facet_options($facet);
@@ -498,7 +614,68 @@ final class Download_Archive extends Widget_Base {
     }
     private function value_direction(string $value): string { return preg_match('/[\x{0600}-\x{06FF}]/u', $value) ? 'rtl' : 'ltr'; }
 
-    private function render_pagination(array $ctx): void { if ($ctx['pages'] < 2) return; echo '<div class="zig-pagination">'; for ($i = 1; $i <= $ctx['pages']; $i++) { $next = $ctx['state']; $next['page'] = $i; printf('<a class="zig-page%s" href="%s" data-zig-goto="%d">%d</a>', $i === $ctx['page'] ? ' is-current' : '', esc_url($this->state_url($next)), $i, $i); } echo '</div>'; }
+    /**
+     * دقیقاً همان مارک‌آپ/کلاس‌هایِ صفحه‌بندیِ آرشیوِ محصولات
+     * (‎Product_Archive::render_pagination()‎) — پیوندِ قبلی/بعدی با
+     * ‎rel=prev/next‎، شمارهٔ صفحهٔ جاری با ‎aria-current‎، و ارقامِ فارسی.
+     * چون هر دو ویجت رویِ همان ‎zig3d-archive.js‎ سوارند، همین شباهتِ
+     * مارک‌آپ کافی است تا CSSِ مشترک (‎.zig-archive__pagination‎/
+     * ‎.zig-page--prev‎/‎.zig-page--next‎) بدونِ هیچ تغییرِ CSSای اعمال شود.
+     */
+    private function render_pagination(array $ctx): void {
+        if ($ctx['pages'] < 2) {
+            return;
+        }
+
+        $s    = $ctx['settings'];
+        $page = $ctx['page'];
+
+        echo '<nav class="zig-archive__pagination" aria-label="' . esc_attr__('صفحه‌بندی', 'zig3d-widgets') . '">';
+
+        if ($page > 1) {
+            $prev = $ctx['state'];
+            $prev['page'] = $page - 1;
+            printf(
+                '<a class="zig-page zig-page--prev" href="%s" rel="prev" data-zig-goto="%s">%s</a>',
+                esc_url($this->state_url($prev)),
+                (string) ($page - 1),
+                esc_html($s['label_prev'] ?? '')
+            );
+        }
+
+        for ($number = 1; $number <= $ctx['pages']; ++$number) {
+            if ($number === $page) {
+                printf(
+                    '<span class="zig-page is-current" aria-current="page">%s</span>',
+                    esc_html(Price::persian((string) $number))
+                );
+
+                continue;
+            }
+
+            $next = $ctx['state'];
+            $next['page'] = $number;
+            printf(
+                '<a class="zig-page" href="%s" data-zig-goto="%s">%s</a>',
+                esc_url($this->state_url($next)),
+                (string) $number,
+                esc_html(Price::persian((string) $number))
+            );
+        }
+
+        if ($page < $ctx['pages']) {
+            $forward = $ctx['state'];
+            $forward['page'] = $page + 1;
+            printf(
+                '<a class="zig-page zig-page--next" href="%s" rel="next" data-zig-goto="%s">%s</a>',
+                esc_url($this->state_url($forward)),
+                (string) ($page + 1),
+                esc_html($s['label_next'] ?? '')
+            );
+        }
+
+        echo '</nav>';
+    }
 
     private function state_url(array $state): string {
         $args = []; if ($state['search']) $args['s'] = $state['search']; if ('updated' !== $state['sort']) $args['orderby'] = $state['sort']; if ($state['page'] > 1) $args['paged'] = $state['page'];

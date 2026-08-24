@@ -5,6 +5,7 @@ require_once __DIR__ . '/lib/woocommerce-stub.php';
 
 $root = dirname(__DIR__);
 require_once $root . '/includes/markup.php';
+require_once $root . '/includes/price.php';
 require_once $root . '/includes/download-archive-data.php';
 require_once $root . '/includes/widgets/download-archive.php';
 
@@ -207,3 +208,70 @@ Tests::ok('Multiple OS values render individually', 2 === substr_count($multiple
 Tests::ok('No OS renders no metadata wrapper', '' === $render_os_meta([]));
 Tests::ok('OS Footer values retain Bidi isolation', false !== strpos($one_os, '<bdi class="zig-download-card__meta-os-value" dir="ltr">'));
 Tests::ok('Old OS body selectors leave no reserved space', false === strpos($css_source, '.zig-download-card__os-group') && false === strpos($css_source, '.zig-download-card__os-token'));
+
+/*
+ * Pagination and active-filters parity with Product Archive.
+ *
+ * render_pagination()/render_active() are exercised directly via
+ * reflection with a hand-built $ctx array — the same technique the file
+ * already uses above for render_compatibility()/meta_values() — because
+ * building a real WP_Query for a full context() call is out of scope for
+ * this stub-driven suite. What matters here is markup/class parity, not
+ * the query itself (already covered by Product Archive's own tests).
+ */
+$render_pagination = new ReflectionMethod($widget, 'render_pagination');
+$render_pagination->setAccessible(true);
+$render_active = new ReflectionMethod($widget, 'render_active');
+$render_active->setAccessible(true);
+
+$base_state = ['page' => 1, 'search' => '', 'sort' => 'updated', 'filters' => ['category' => [], 'os' => []]];
+
+$render_pag = static function (int $page, int $pages) use ($widget, $render_pagination, $base_state): string {
+    $ctx = ['settings' => ['label_prev' => 'قبلی', 'label_next' => 'بعدی'], 'state' => array_merge($base_state, ['page' => $page]), 'page' => $page, 'pages' => $pages];
+    ob_start();
+    $render_pagination->invoke($widget, $ctx);
+    return (string) ob_get_clean();
+};
+
+$single_page = $render_pag(1, 1);
+Tests::same('Single page renders no pagination nav', '', $single_page);
+
+$middle_page = $render_pag(2, 3);
+Tests::ok('Pagination uses the same <nav> landmark as Product Archive', false !== strpos($middle_page, '<nav class="zig-archive__pagination"'));
+Tests::ok('Prev link is present with rel=prev on a middle page', false !== strpos($middle_page, 'zig-page--prev') && false !== strpos($middle_page, 'rel="prev"'));
+Tests::ok('Next link is present with rel=next on a middle page', false !== strpos($middle_page, 'zig-page--next') && false !== strpos($middle_page, 'rel="next"'));
+Tests::ok('Current page is an aria-current span, not a link', false !== strpos($middle_page, '<span class="zig-page is-current" aria-current="page">'));
+Tests::ok('Page numbers render with Persian digits', false !== strpos($middle_page, '۲') && false !== strpos($middle_page, '۳'));
+
+$first_page = $render_pag(1, 3);
+Tests::blocks('First page renders no prev link', $first_page, 'zig-page--prev');
+
+$last_page = $render_pag(3, 3);
+Tests::blocks('Last page renders no next link', $last_page, 'zig-page--next');
+
+$render_active_html = static function (array $filters) use ($widget, $render_active, $base_state): string {
+    $ctx = [
+        'settings' => [],
+        'state'    => array_merge($base_state, ['filters' => $filters]),
+        'facets'   => [
+            ['key' => 'category', 'kind' => 'taxonomy', 'label' => 'نوع نرم‌افزار'],
+            ['key' => 'os', 'kind' => 'meta', 'label' => 'سیستم‌عامل'],
+        ],
+    ];
+    ob_start();
+    $render_active->invoke($widget, $ctx);
+    return (string) ob_get_clean();
+};
+
+Tests::same('No active filters renders nothing', '', $render_active_html(['category' => [], 'os' => []]));
+
+$with_filters = $render_active_html(['category' => ['3d-printer'], 'os' => ['windows-11', 'macos']]);
+Tests::ok('Active filters use the same chip classes as Product Archive', false !== strpos($with_filters, 'zig-filters__active') && false !== strpos($with_filters, 'zig-filters__chips') && false !== strpos($with_filters, 'zig-filters__chip'));
+Tests::same('Every selected value renders exactly one chip', 3, substr_count($with_filters, 'zig-filters__chip"'));
+Tests::ok('A clear-all link is present', false !== strpos($with_filters, 'zig-filters__clear') && false !== strpos($with_filters, 'data-zig-clear="1"'));
+Tests::ok('Each chip toggles its own facet/value off', false !== strpos($with_filters, 'data-zig-toggle="filter_category|3d-printer"') && false !== strpos($with_filters, 'data-zig-toggle="filter_os|windows-11"'));
+
+$widget_source = file_get_contents($root . '/includes/widgets/download-archive.php');
+Tests::ok('Pagination behavior controls exist: scroll_pages/restore_state/label_prev/label_next', in_array('scroll_pages', $controls, true) && in_array('restore_state', $controls, true) && in_array('label_prev', $controls, true) && in_array('label_next', $controls, true));
+Tests::ok('Root attributes wire scroll/restore settings, not hardcoded zeros', false !== strpos($widget_source, "'data-zig-scroll-max' => (string) (int) (\$settings['scroll_pages']") && false !== strpos($widget_source, "'data-zig-restore' => 'yes' === (\$settings['restore_state']"));
+Tests::ok('Pagination outer slot is a plain div, not a nested <nav>', false !== strpos($widget_source, '<div data-zig-part="pagination">') && false === strpos($widget_source, '<nav data-zig-part="pagination">'));

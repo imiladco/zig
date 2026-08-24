@@ -77,6 +77,28 @@ if (!function_exists('add_query_arg')) {
 if (!function_exists('esc_url_raw')) {
     function esc_url_raw($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }
+/** جفتِ ‎add_query_arg‎ بالا — پارامتر(ها) را از رشتهٔ کوئری پاک می‌کند */
+if (!function_exists('remove_query_arg')) {
+    function remove_query_arg($keys, $url = '') {
+        $keys  = (array) $keys;
+        $parts = parse_url((string) $url);
+        $query = [];
+
+        if (isset($parts['query'])) {
+            parse_str($parts['query'], $query);
+
+            foreach ($keys as $key) {
+                unset($query[$key]);
+            }
+        }
+
+        $base = ($parts['scheme'] ?? '') && ($parts['host'] ?? '')
+            ? $parts['scheme'] . '://' . $parts['host'] . ($parts['path'] ?? '')
+            : (string) ($parts['path'] ?? $url);
+
+        return $query ? $base . '?' . http_build_query($query) : $base;
+    }
+}
 if (!function_exists('rest_url')) {
     function rest_url($path = '') { return 'https://zig3d.test/wp-json/' . ltrim((string) $path, '/'); }
 }
