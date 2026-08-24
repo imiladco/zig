@@ -8087,8 +8087,14 @@ a.zig-configurator__btn:active {
 	color: var(--zig-consult-success);
 }
 
+/*
+ * ۵۶ پیکسل، نه ۲۴ — طبقِ خودِ فایلِ فیگما، بلوکِ عنوان/زیرعنوان یک
+ * ‎padding-bottom: 24px‎ی نامرئیِ خودش دارد، بعلاوهٔ ۳۲ پیکسلِ فاصلهٔ
+ * بیرونی تا بلوکِ دکمه(ها) — همان الگویی که رویِ ‎.zig-consultation-modal__subtitle‎
+ * هم اعمال شده.
+ */
 .zig-consultation-modal__success-text {
-	margin: 0 0 24px;
+	margin: 0 0 56px;
 	font-size: 14px;
 	line-height: 24px;
 	opacity: 0.8;
@@ -8110,7 +8116,7 @@ a.zig-configurator__btn:active {
 	-webkit-backdrop-filter: blur(22px);
 	border: 1px solid var(--zig-consult-purple);
 	border-radius: 12px;
-	box-shadow: none;
+	box-shadow: 0 6px 16px rgba(140, 88, 58, 0.13);
 	text-shadow: none;
 	cursor: pointer;
 	-webkit-appearance: none;
@@ -8121,4 +8127,78 @@ a.zig-configurator__btn:active {
 .zig-consultation-modal__success-close:hover,
 .zig-consultation-modal__success-close:focus-visible {
 	background: var(--zig-consult-purple-soft);
+}
+
+/*
+ * ---------- ثبتِ خاموش (نام/شماره از ‎localStorage‎، بدونِ نمایشِ فرم) ----------
+ *
+ * وقتی کاربر قبلاً یک‌بار موفق ثبت کرده، دفعاتِ بعدی — رویِ هر صفحه‌ای —
+ * به‌جایِ فرم، همین بلوکِ سادهٔ «در حال ثبت...» یک لحظه دیده می‌شود و
+ * بعدش مستقیم پیامِ موفقیت (نگاه کنید به ‎__duplicate-actions‎ پایین‌تر).
+ */
+.zig-consultation-modal__loading:not([hidden]) {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	padding: 64px 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--zig-consult-purple);
+}
+
+/* ---------- دو دکمهٔ حالتِ «قبلاً ثبت شده» ---------- */
+
+.zig-consultation-modal__duplicate-actions:not([hidden]) {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+}
+
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-edit,
+.zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__duplicate-close {
+	width: 100%;
+	margin: 0;
+	padding: 8px 32px;
+	font: inherit;
+	font-size: 16px;
+	backdrop-filter: blur(22px);
+	-webkit-backdrop-filter: blur(22px);
+	border: 1px solid var(--zig-consult-purple);
+	border-radius: 12px;
+	box-shadow: 0 6px 16px rgba(140, 88, 58, 0.13);
+	text-shadow: none;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+	transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.zig-consultation-modal__duplicate-edit {
+	font-weight: 400;
+	color: var(--zig-consult-purple);
+	background: transparent;
+}
+
+.zig-consultation-modal__duplicate-edit:hover,
+.zig-consultation-modal__duplicate-edit:focus-visible {
+	background: var(--zig-consult-purple-soft);
+}
+
+.zig-consultation-modal__duplicate-edit:disabled,
+.zig-consultation-modal__duplicate-close:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.zig-consultation-modal__duplicate-close {
+	font-weight: 600;
+	color: #fff;
+	background: rgba(109, 40, 217, 0.8);
+}
+
+.zig-consultation-modal__duplicate-close:hover,
+.zig-consultation-modal__duplicate-close:focus-visible {
+	background: var(--zig-consult-purple-hover);
 }

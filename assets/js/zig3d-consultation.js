@@ -15,6 +15,15 @@
 
 	var SELECTOR = '[data-zig-consultation]';
 	var ACTION = 'zig3d_consultation';
+	var ACTION_DELETE = 'zig3d_consultation_delete';
+
+	/*
+	 * نام/شماره + شناسه/توکنِ حذفِ آخرین درخواستِ ثبت‌شده، در ‎localStorage‎
+	 * (نه کوکی — چیزی نیست که سرور لازم باشد بخواند). هر صفحهٔ دیگری از
+	 * همین دکمه که کاربر بعداً باز کند، همین را می‌بیند و به‌جایِ فرم،
+	 * مستقیم دوباره ثبت می‌کند.
+	 */
+	var STORAGE_KEY = 'zig3d_consultation_saved';
 
 	/*
 	 * ‎09‎ + کدِ اپراتورِ معتبر (‎0[1-5]‎/‎1[0-9]‎/‎2[0-2]‎/‎3[0-9]‎/‎9[0-9]‎) +
@@ -55,6 +64,42 @@
 		}
 
 		return digits;
+	}
+
+	/*
+	 * دورِ هر دسترسی به ‎localStorage‎: حالتِ خصوصیِ سافاری/تنظیماتِ سخت‌گیرِ
+	 * مرورگر می‌تواند حتیِ خواندن/نوشتنِ ساده را هم پرتاب کند؛ نبودِ این
+	 * قابلیت نباید کلِ مودال را بشکند، فقط یعنی «ثبتِ خاموش» را نمی‌شناسد.
+	 */
+	function readSaved() {
+		try {
+			var raw = window.localStorage.getItem(STORAGE_KEY);
+			var data = raw ? JSON.parse(raw) : null;
+
+			if (data && data.name && data.phone && data.id && data.deleteToken) {
+				return data;
+			}
+		} catch (e) {
+			// نادیده — بدونِ ذخیرهٔ قابل‌استفاده، مثلِ کاربرِ تازه رفتار می‌شود
+		}
+
+		return null;
+	}
+
+	function writeSaved(data) {
+		try {
+			window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+		} catch (e) {
+			// نادیده — نبودِ ذخیره‌سازی یعنی دفعهٔ بعد دوباره فرم را می‌بیند، نه خطا
+		}
+	}
+
+	function clearSaved() {
+		try {
+			window.localStorage.removeItem(STORAGE_KEY);
+		} catch (e) {
+			// نادیده
+		}
 	}
 
 	/* ======================================================================
@@ -118,6 +163,14 @@
 						'</div>' +
 						'<button type="submit" class="zig-consultation-modal__submit">ثبت درخواست</button>' +
 					'</form>' +
+					/*
+					 * حالتِ «ثبتِ خاموش» — نه فرم، نه هنوز پیامِ موفقیت؛ فقط تا
+					 * جوابِ آژاکس برسد.
+					 */
+					'<div class="zig-consultation-modal__loading" hidden>' +
+						'<span class="zig-consultation-modal__spinner" aria-hidden="true"></span>' +
+						'<span>در حال ثبت درخواست...</span>' +
+					'</div>' +
 					'<div class="zig-consultation-modal__success" hidden>' +
 						/*
 						 * چاشنیِ جشن — همان گروهِ تیک/نقطه‌هایِ سبزِ خروجی‌گرفته‌شده
@@ -144,6 +197,16 @@
 						'<p class="zig-consultation-modal__success-title">درخواست شما ثبت شد!</p>' +
 						'<p class="zig-consultation-modal__success-text">کارشناسان گروه زیگ پس از بررسی با شما تماس خواهند گرفت.</p>' +
 						'<button type="button" class="zig-consultation-modal__success-close">بستن</button>' +
+						/*
+						 * فقط وقتی نشان داده می‌شود که ثبت از رویِ اطلاعاتِ
+						 * ذخیره‌شده (بدونِ نمایشِ فرم) انجام شده — کاربر باید
+						 * راهی برایِ اصلاحِ نام/شماره یا لغوِ همان ثبتِ خودکار
+						 * داشته باشد.
+						 */
+						'<div class="zig-consultation-modal__duplicate-actions" hidden>' +
+							'<button type="button" class="zig-consultation-modal__duplicate-edit">حذف درخواست و ویرایش مشخصات</button>' +
+							'<button type="button" class="zig-consultation-modal__duplicate-close">بستن</button>' +
+						'</div>' +
 					'</div>' +
 				'</div>' +
 			'</div>';
@@ -156,12 +219,18 @@
 			overlay: wrap.querySelector('.zig-consultation-modal__overlay'),
 			submit: wrap.querySelector('.zig-consultation-modal__submit'),
 			error: wrap.querySelector('.zig-consultation-modal__error'),
+			loading: wrap.querySelector('.zig-consultation-modal__loading'),
 			success: wrap.querySelector('.zig-consultation-modal__success'),
+			successClose: wrap.querySelector('.zig-consultation-modal__success-close'),
+			duplicateActions: wrap.querySelector('.zig-consultation-modal__duplicate-actions'),
+			duplicateEdit: wrap.querySelector('.zig-consultation-modal__duplicate-edit'),
 			name: wrap.querySelector('#zig-consultation-name'),
 			phone: wrap.querySelector('#zig-consultation-phone'),
 			message: wrap.querySelector('#zig-consultation-message'),
 			website: wrap.querySelector('#zig-consultation-website'),
-			closeButtons: wrap.querySelectorAll('.zig-consultation-modal__close, .zig-consultation-modal__success-close')
+			closeButtons: wrap.querySelectorAll(
+				'.zig-consultation-modal__close, .zig-consultation-modal__success-close, .zig-consultation-modal__duplicate-close'
+			)
 		};
 	}
 
@@ -172,7 +241,10 @@
 	function resetForm() {
 		elements.root.classList.remove('zig-consultation-modal--success');
 		elements.form.hidden = false;
+		elements.loading.hidden = true;
 		elements.success.hidden = true;
+		elements.successClose.hidden = false;
+		elements.duplicateActions.hidden = true;
 		elements.overlay.hidden = true;
 		elements.error.hidden = true;
 		elements.error.textContent = '';
@@ -191,6 +263,47 @@
 		}
 
 		elements.root.querySelector('.zig-consultation-modal__backdrop').addEventListener('click', closeModal);
+
+		/*
+		 * «حذف درخواست و ویرایش مشخصات» — همان درخواستِ خودکارِ لحظه‌پیش را
+		 * سمتِ سرور حذف می‌کند (best-effort؛ حتی اگر این تماس شکست بخورد
+		 * کاربر همچنان باید بتواند دوباره ثبت کند)، ‎localStorage‎ را پاک
+		 * می‌کند، و فرم را با همان نام/شماره پر برمی‌گرداند تا کاربر
+		 * اصلاحش کند.
+		 */
+		elements.duplicateEdit.addEventListener('click', function () {
+			var saved = readSaved();
+			var endpoint = activeTrigger ? (activeTrigger.getAttribute('data-zig-consultation-endpoint') || '') : '';
+			var nonce = activeTrigger ? (activeTrigger.getAttribute('data-zig-consultation-nonce') || '') : '';
+
+			if (saved && '' !== endpoint) {
+				var body = new URLSearchParams();
+
+				body.set('action', ACTION_DELETE);
+				body.set('nonce', nonce);
+				body.set('id', saved.id);
+				body.set('delete_token', saved.deleteToken);
+
+				fetch(endpoint, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body: body.toString()
+				}).catch(function () {
+					// نادیده — نگاه کنید به داک‌بلاکِ بالا
+				});
+			}
+
+			clearSaved();
+			resetForm();
+
+			if (saved) {
+				elements.name.value = saved.name;
+				elements.phone.value = saved.phone;
+			}
+
+			elements.name.focus();
+		});
 
 		elements.form.addEventListener('submit', function (event) {
 			event.preventDefault();
@@ -279,12 +392,25 @@
 		activeTrigger = trigger;
 		resetForm();
 
+		var saved = readSaved();
+
 		if (window.Zig3dModal) {
-			window.Zig3dModal.open(elements.root, { initialFocus: elements.name });
+			window.Zig3dModal.open(elements.root, saved ? {} : { initialFocus: elements.name });
 		} else {
 			elements.root.classList.add('is-open');
 			elements.root.removeAttribute('aria-hidden');
-			elements.name.focus();
+
+			if (!saved) {
+				elements.name.focus();
+			}
+		}
+
+		/*
+		 * قبلاً یک‌بار موفق ثبت کرده — این‌بار فرم اصلاً دیده نمی‌شود، فقط
+		 * لحظه‌ای «در حال ثبت...» و بعدش مستقیم پیامِ موفقیت.
+		 */
+		if (saved) {
+			submitSilently(saved);
 		}
 	}
 
@@ -313,7 +439,13 @@
 		elements.error.hidden = false;
 	}
 
-	function submit() {
+	/**
+	 * ‎silent‎ یعنی: فرم اصلاً دیده نشده، نام/شماره از ‎localStorage‎ آمده
+	 * (نگاه کنید به ‎submitSilently()‎) — پس شکست یعنی برگشت به فرمِ خالی،
+	 * نه نشان‌دادنِ خطای «دوباره تلاش کنید» رویِ فرمی که کاربر ندیده، و
+	 * موفقیت یعنی دکمه‌هایِ دوتاییِ «قبلاً ثبت شده»، نه دکمهٔ سادهٔ بستن.
+	 */
+	function submit(silent) {
 		if (!activeTrigger) {
 			return;
 		}
@@ -330,12 +462,14 @@
 		elements.submit.disabled = true;
 		elements.submit.classList.add('is-loading');
 
+		var name = elements.name.value;
+		var phone = elements.phone.value;
 		var body = new URLSearchParams();
 
 		body.set('action', ACTION);
 		body.set('nonce', nonce);
-		body.set('name', elements.name.value);
-		body.set('phone', elements.phone.value);
+		body.set('name', name);
+		body.set('phone', phone);
 		body.set('message', elements.message.value);
 		body.set('website', elements.website.value);
 		body.set('source_url', window.location.href);
@@ -354,7 +488,13 @@
 			});
 		}).then(function (result) {
 			if (!result.ok || !result.json || !result.json.success) {
-				showError('ثبتِ درخواست انجام نشد. لطفاً دوباره تلاش کنید.');
+				if (silent) {
+					clearSaved();
+					resetForm();
+					elements.name.focus();
+				} else {
+					showError('ثبتِ درخواست انجام نشد. لطفاً دوباره تلاش کنید.');
+				}
 
 				return;
 			}
@@ -362,12 +502,37 @@
 			elements.overlay.hidden = true;
 			elements.submit.disabled = false;
 			elements.submit.classList.remove('is-loading');
+			elements.loading.hidden = true;
 			elements.form.hidden = true;
 			elements.success.hidden = false;
+			elements.successClose.hidden = Boolean(silent);
+			elements.duplicateActions.hidden = !silent;
 			elements.root.classList.add('zig-consultation-modal--success');
+
+			writeSaved({
+				name: name,
+				phone: phone,
+				id: result.json.data.id,
+				deleteToken: result.json.data.delete_token
+			});
 		}).catch(function () {
-			showError('مشکلی در اتصال پیش آمد. لطفاً دوباره تلاش کنید.');
+			if (silent) {
+				clearSaved();
+				resetForm();
+				elements.name.focus();
+			} else {
+				showError('مشکلی در اتصال پیش آمد. لطفاً دوباره تلاش کنید.');
+			}
 		});
+	}
+
+	/** فرم را نشان نمی‌دهد؛ فقط بلوکِ «در حال ثبت...» را، تا جوابِ آژاکس برسد. */
+	function submitSilently(saved) {
+		elements.name.value = saved.name;
+		elements.phone.value = saved.phone;
+		elements.form.hidden = true;
+		elements.loading.hidden = false;
+		submit(true);
 	}
 
 	/* ======================================================================

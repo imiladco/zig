@@ -23,16 +23,17 @@ if (!defined('ABSPATH')) {
 final class Consultations {
 
     private const SCHEMA_OPTION  = 'zig3d_consultations_schema_version';
-    private const SCHEMA_VERSION = '1';
+    private const SCHEMA_VERSION = '2';
 
     public const PER_PAGE = 20;
 
     /** بیشترین طولِ هرکدام، برایِ همسانی با ستونِ دیتابیس (نگاه کنید به ‎maybe_upgrade()‎) */
-    private const MAX_NAME    = 190;
-    private const MAX_PHONE   = 32;
-    private const MAX_MESSAGE = 2000;
-    private const MAX_URL     = 500;
-    private const MAX_TITLE   = 255;
+    private const MAX_NAME         = 190;
+    private const MAX_PHONE        = 32;
+    private const MAX_MESSAGE      = 2000;
+    private const MAX_URL          = 500;
+    private const MAX_TITLE        = 255;
+    private const DELETE_TOKEN_LEN = 32;
 
     public static function table(): string {
         global $wpdb;
@@ -69,6 +70,7 @@ final class Consultations {
             source_title VARCHAR(" . self::MAX_TITLE . ") NULL,
             product_id BIGINT UNSIGNED NULL,
             product_name VARCHAR(" . self::MAX_TITLE . ") NULL,
+            delete_token VARCHAR(" . self::DELETE_TOKEN_LEN . ") NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY created_at (created_at)
@@ -176,14 +178,22 @@ final class Consultations {
     /**
      * ثبتِ یک درخواست.
      *
+     * ‎delete_token‎ی تصادفی همراهِ هر ردیف تولید می‌شود — کلاینت این توکن
+     * را (نه فقط شناسهٔ ردیف را) در ‎localStorage‎ نگه می‌دارد تا اگر
+     * کاربر خواست همان درخواستِ خودکارِ «قبلاً ثبت شده» را حذف/ویرایش
+     * کند، بتواند خودش را اثبات کند؛ صرفاً داشتنِ شناسهٔ عددیِ ردیف کافی
+     * نیست وگرنه هر کسی با حدسِ شناسه می‌توانست ردیفِ دیگران را حذف کند.
+     *
      * @param array{name:string,phone:string,message:string}                        $submission
      * @param array{url:string,title:string,product_id:int,product_name:string}     $source
-     * @return int|false شناسهٔ ردیفِ تازه، یا false اگر درج شکست خورد
+     * @return array{id:int,delete_token:string}|false ردیفِ تازه، یا false اگر درج شکست خورد
      */
     public static function insert(array $submission, array $source) {
         self::maybe_upgrade();
 
         global $wpdb;
+
+        $delete_token = wp_generate_password(self::DELETE_TOKEN_LEN, false, false);
 
         $result = $wpdb->insert(
             self::table(),
@@ -195,12 +205,39 @@ final class Consultations {
                 'source_title' => '' !== $source['title'] ? $source['title'] : null,
                 'product_id'   => $source['product_id'] > 0 ? $source['product_id'] : null,
                 'product_name' => '' !== $source['product_name'] ? $source['product_name'] : null,
+                'delete_token' => $delete_token,
                 'created_at'   => current_time('mysql'),
             ],
-            ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+            ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s']
         );
 
-        return $result ? (int) $wpdb->insert_id : false;
+        return $result ? ['id' => (int) $wpdb->insert_id, 'delete_token' => $delete_token] : false;
+    }
+
+    /**
+     * حذفِ یک ردیف با شناسه + توکنِ خودش — مسیرِ عمومی (بدونِ نیازِ
+     * ‎manage_options‎)، برخلافِ ‎delete()‎ی بالا که برایِ پیشخوانِ ادمین
+     * است. تطبیقِ توکن با ‎hash_equals()‎، نه ‎===‎، تا زمان‌سنجیِ مقایسه
+     * دستگیرِ کسی نشود که دارد توکن را حدس می‌زند.
+     */
+    public static function delete_by_token(int $id, string $token): bool {
+        if ($id < 1 || '' === $token) {
+            return false;
+        }
+
+        self::maybe_upgrade();
+
+        global $wpdb;
+
+        $stored = $wpdb->get_var($wpdb->prepare('SELECT delete_token FROM ' . self::table() . ' WHERE id = %d', $id)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- نامِ جدول، نه ورودیِ کاربر
+
+        if (!is_string($stored) || '' === $stored || !hash_equals($stored, $token)) {
+            return false;
+        }
+
+        $deleted = $wpdb->delete(self::table(), ['id' => $id], ['%d']);
+
+        return false !== $deleted && $deleted > 0;
     }
 
     /**

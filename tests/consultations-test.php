@@ -147,3 +147,13 @@ Tests::same(
     [3, 7]
 );
 Tests::same('آرایهٔ خالی ⇒ آرایهٔ خالی', Consultations::sanitize_ids([]), []);
+
+/* ==========================================================================
+ * delete_by_token › مرزِ ورودیِ نامعتبر (بدونِ لمسِ $wpdb)
+ * ======================================================================= */
+
+Tests::group('مشاوره › حذف با توکن › ورودیِ نامعتبر زودتر رد می‌شود');
+
+Tests::same('شناسهٔ صفر ⇒ false', Consultations::delete_by_token(0, 'x'), false);
+Tests::same('شناسهٔ منفی ⇒ false', Consultations::delete_by_token(-1, 'x'), false);
+Tests::same('توکنِ خالی ⇒ false', Consultations::delete_by_token(5, ''), false);

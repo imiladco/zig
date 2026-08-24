@@ -29,8 +29,9 @@ final class Consultation_Endpoint {
 
     private static bool $booted = false;
 
-    public const ACTION = 'zig3d_consultation';
-    public const NONCE  = 'zig3d_consultation';
+    public const ACTION        = 'zig3d_consultation';
+    public const ACTION_DELETE = 'zig3d_consultation_delete';
+    public const NONCE         = 'zig3d_consultation';
 
     private const RATE_LIMIT_WINDOW = 300;
     private const RATE_LIMIT_MAX    = 5;
@@ -44,6 +45,8 @@ final class Consultation_Endpoint {
 
         add_action('wp_ajax_' . self::ACTION, [self::class, 'handle']);
         add_action('wp_ajax_nopriv_' . self::ACTION, [self::class, 'handle']);
+        add_action('wp_ajax_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
+        add_action('wp_ajax_nopriv_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
     }
 
     public static function url(): string {
@@ -91,10 +94,51 @@ final class Consultation_Endpoint {
             return;
         }
 
-        $id = Consultations::insert($submission, Consultations::sanitize_source($post));
+        $row = Consultations::insert($submission, Consultations::sanitize_source($post));
 
-        if (false === $id) {
+        if (false === $row) {
             self::fail('save_failed', 500);
+
+            return;
+        }
+
+        wp_send_json_success(['ok' => true, 'id' => $row['id'], 'delete_token' => $row['delete_token']]);
+    }
+
+    /**
+     * حذفِ همان درخواستی که سمتِ کلاینت خودکار (بدونِ نمایشِ فرم، از رویِ
+     * نام/شمارهٔ ذخیره‌شده در ‎localStorage‎) ثبت شده بود — کاربر رویِ
+     * «حذف درخواست و ویرایش مشخصات» زده. نانس همان نانسِ ثبت است (کنشِ
+     * جداگانه‌ای نیست که نانسِ خودش را بخواهد)؛ اثباتِ مالکیتِ ردیف با
+     * توکنی است که فقط همان درخواست‌کننده در جیبش دارد.
+     */
+    public static function handle_delete(): void {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- نانس دستی چند خط پایین‌تر بررسی می‌شود
+        $post = wp_unslash($_POST);
+
+        if (!is_array($post)) {
+            self::fail('bad_request', 400);
+
+            return;
+        }
+
+        if (!wp_verify_nonce((string) ($post['nonce'] ?? ''), self::NONCE)) {
+            self::fail('bad_nonce', 403);
+
+            return;
+        }
+
+        if (self::rate_limited(self::client_ip())) {
+            self::fail('rate_limited', 429);
+
+            return;
+        }
+
+        $id    = absint($post['id'] ?? 0);
+        $token = sanitize_text_field((string) ($post['delete_token'] ?? ''));
+
+        if (!Consultations::delete_by_token($id, $token)) {
+            self::fail('not_found', 404);
 
             return;
         }
