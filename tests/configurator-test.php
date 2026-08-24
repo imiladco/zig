@@ -443,3 +443,16 @@ $consult_off = zig_render(Product_Configurator::class, $header_settings + [
 ]);
 
 Tests::blocks('خاموش (پیش‌فرض)، هیچ data-zig-consultation-ای نیست', $consult_off, 'data-zig-consultation');
+
+/*
+ * ‎get_script_depends()‎ نباید به تنظیمات نگاه کند — المنتور آن را برایِ
+ * هر ویجتِ ثبت‌شده رویِ یک نمونهٔ خامِ بی‌تنظیمات صدا می‌زند (پیش‌نمایشِ
+ * ادیتور)، نه فقط رویِ نمونه‌هایِ واقعیِ صفحه. نسخه‌ای که اینجا صدا زدنِ
+ * ‎get_settings_for_display()‎ داشت دقیقاً همین‌جا با ‎TypeError‎ی خودِ
+ * المنتور می‌ترکید و کلِ ادیتور را خراب می‌کرد.
+ */
+Tests::same(
+    'فهرستِ اسکریپت‌ها رویِ یک نمونهٔ کاملاً خام هم بدونِ خطا همان مقدارِ ثابت است',
+    (new Product_Configurator())->get_script_depends(),
+    ['zig3d-configurator', 'zig3d-consultation']
+);

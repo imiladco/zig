@@ -130,14 +130,20 @@ final class Product_Configurator extends Widget_Base {
         return ['zig3d-widgets'];
     }
 
+    /**
+     * همیشه هر دو فایل — نه فقط وقتی فرمِ مشاوره روشن است.
+     *
+     * المنتور این متد را برایِ *هر ویجتِ ثبت‌شده* یک‌بار، رویِ یک نمونهٔ
+     * خامِ بی‌دیتا صدا می‌زند (پیش‌نمایشِ ادیتور:
+     * ‎Widgets_Manager::enqueue_widgets_scripts()‎)، جایی که هنوز هیچ
+     * تنظیماتی پارس نشده. نسخهٔ قبلی این متد ‎get_settings_for_display()‎
+     * را همین‌جا صدا می‌زد و روی همان نمونهٔ خام با ‎TypeError‎ی خودِ
+     * المنتور می‌ترکید — فاتالی که کلِ ادیتور را (نه فقط صفحه‌هایی که این
+     * ویجت را دارند) خراب کرد. ‎zig3d-consultation.js‎ سبک است و تا کلیکی
+     * رخ ندهد کاری نمی‌کند، پس بارِ اضافه‌اش قابلِ چشم‌پوشی است.
+     */
     public function get_script_depends(): array {
-        $depends = ['zig3d-configurator'];
-
-        if ($this->consultation_active($this->get_settings_for_display(), 'secondary_')) {
-            $depends[] = 'zig3d-consultation';
-        }
-
-        return $depends;
+        return ['zig3d-configurator', 'zig3d-consultation'];
     }
 
     public function has_widget_inner_wrapper(): bool {

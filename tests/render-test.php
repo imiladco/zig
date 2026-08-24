@@ -251,6 +251,19 @@ $link_only_btn = zig_render(Button::class, ['text' => 'مشاوره بگیرید
 Tests::blocks('خاموش (پیش‌فرض)، هیچ data-zig-consultation-ای نیست', $link_only_btn, 'data-zig-consultation');
 Tests::keeps('و رفتارِ عادیِ لینک دست‌نخورده می‌ماند', $link_only_btn, '<a ');
 
+/*
+ * ‎get_script_depends()‎ نباید به تنظیمات نگاه کند — المنتور آن را برایِ
+ * هر ویجتِ ثبت‌شده رویِ یک نمونهٔ خامِ بی‌تنظیمات صدا می‌زند (پیش‌نمایشِ
+ * ادیتور)، نه فقط رویِ نمونه‌هایِ واقعیِ صفحه. نسخه‌ای که اینجا صدا زدنِ
+ * ‎get_settings_for_display()‎ داشت دقیقاً همین‌جا با ‎TypeError‎ی خودِ
+ * المنتور می‌ترکید و کلِ ادیتور را (نه فقط این ویجت را) خراب می‌کرد.
+ */
+Tests::same(
+    'فهرستِ اسکریپت‌ها رویِ یک نمونهٔ کاملاً خام هم بدونِ خطا همان مقدارِ ثابت است',
+    (new Button())->get_script_depends(),
+    ['zig3d-consultation']
+);
+
 Tests::group('رندر › دکمه، دسترسی‌پذیری');
 
 $icon_only = zig_render(Button::class, [
