@@ -118,25 +118,30 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree', 'product-section-guard'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree', 'product-section-settings', 'product-section-guard'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
         Schema_Store::register();
 
         /*
-         * ‎Product_Section_Settings::boot()‎ عمداً اینجا صدا زده نمی‌شود.
-         * رویِ سایت، ثبتِ کنترل‌هایِ آن روی سندِ Single Product ذخیرهٔ
-         * سند در ادیتور را با خطایِ ۵۰۰ متوقف کرد — احتمالاً به‌خاطرِ
-         * ناسازگاری با نسخهٔ نصب‌شدهٔ المنتور/المنتور‌پرو که نشد بدونِ
-         * دسترسیِ زنده به آن محیط تشخیص/تست شود؛ همان الگویی که یک‌بار
-         * دیگر هم با ‎get_doc_for_frontend()‎ (که ‎$post_id‎ اجباری‌اش
-         * در این نسخه تازه بود) تکرار شد. تا وقتی این ناسازگاریِ دقیق
-         * پیدا نشود، فایل رویِ دیسک می‌ماند ولی هوکش وصل نیست — یعنی
-         * تنظیماتِ تبِ «تنظیمات» غیرفعال است و ‎Product_Section_Guard‎
-         * فقط با پیکربندیِ ثابتِ کدی کار می‌کند (دقیقاً همان چیزی که در
-         * v1.46.0 تست و تأیید شده بود).
+         * تبِ تنظیماتِ سندِ Single Product. در v1.48.0 غیرفعال شد چون
+         * ذخیرهٔ سند در ادیتور خطایِ ۵۰۰ می‌داد و آن‌وقت این تازه‌ترین
+         * چیزی بود که اضافه شده بود — یعنی محکوم شد چون مظنونِ در دسترس
+         * بود، نه چون شواهدی علیهش بود.
+         *
+         * حالا می‌دانیم آن ۵۰۰ چه بود: فاتالِ حافظه از حلقهٔ بازخوردیِ
+         * ویجتِ توضیحات که ‎post_content‎ـِ همین سند را به ۱۵۰ مگابایت
+         * رسانده بود (v1.55.0 + پاک‌سازیِ دیتابیس). یعنی این فایل از
+         * ابتدا بی‌گناه بوده.
+         *
+         * پس دوباره وصل می‌شود — این‌بار با دو محافظ در خودش: ثبتِ
+         * تکراری تشخیص داده می‌شود (وگرنه نوتیسِ «Cannot redeclare
+         * control» واردِ JSONِ ادیتور می‌شود و ذخیره را بی‌صدا می‌شکند)،
+         * و هر خطایِ دیگری هم گرفته می‌شود تا نهایتاً این تب نیاید، نه
+         * اینکه ادیتور از کار بیفتد.
          */
+        Product_Section_Settings::boot();
 
         /*
          * کتابخانهٔ گروه‌هایِ مشخصاتِ فنی؛ خواهرِ Schema_Store برایِ

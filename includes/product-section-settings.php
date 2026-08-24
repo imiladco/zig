@@ -51,6 +51,41 @@ final class Product_Section_Settings {
             return;
         }
 
+        /*
+         * ثبتِ دوباره رویِ همان استکِ کنترل، «Cannot redeclare control» را
+         * صدا می‌زند. آن خودش فاتال نیست — یک ‎_doing_it_wrong‎ است — ولی
+         * رویِ ‎admin-ajax.php‎ی ادیتور به‌مراتب بدتر از فاتال عمل می‌کند:
+         * نوتیسِ چاپ‌شده واردِ بدنهٔ پاسخ می‌شود، JSON را خراب می‌کند و
+         * ادیتور فقط می‌گوید «ذخیره نشد» بدونِ اینکه هیچ‌جا خطایی ثبت شود.
+         * دقیقاً همان الگویی که یک بار در همین پروژه دیدیم.
+         */
+        if (method_exists($document, 'get_controls') && $document->get_controls('zig_guard_enabled')) {
+            return;
+        }
+
+        try {
+            self::add_controls($document);
+        } catch (\Throwable $e) {
+            /*
+             * این بخش یک قابلیتِ جانبی است؛ هیچ خطایی در آن نباید ادیتورِ
+             * کاربر را از کار بیندازد. سکشنِ نیمه‌بازمانده هم بسته می‌شود،
+             * وگرنه کنترل‌هایِ *بعدیِ* خودِ المنتور داخلِ آن می‌افتند.
+             */
+            try {
+                $document->end_controls_section();
+            } catch (\Throwable $ignored) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+            }
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[zig3d] ثبتِ کنترل‌هایِ سکشنِ محصول شکست خورد: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * @param \Elementor\Core\Base\Document $document
+     */
+    private static function add_controls($document): void {
         $document->start_controls_section(
             'zig_section_guard',
             [
