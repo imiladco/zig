@@ -84,6 +84,38 @@ $why_empty = '<html><body><section class="zig-product-why">'
 
 Tests::blocks('آیتمِ کاملاً خالی حذف می‌شود', Product_Section_Guard::filter_html($why_empty), 'zig-product-why');
 
+Tests::group('نگهبانِ سکشن › پیکربندیِ سندِ المنتور (روشن/خاموش + کلاسِ دلخواه)');
+
+$specs_empty = '<html><body><section class="zig-product-Specifications"><div class="elementor-widget"></div></section></body></html>';
+
+Tests::keeps(
+    'سکشنِ خاموش‌شده حتی خالی هم دست‌نخورده می‌ماند',
+    Product_Section_Guard::filter_html($specs_empty, [
+        'specs' => ['enabled' => false, 'class' => 'zig-product-Specifications'],
+    ]),
+    'zig-product-Specifications'
+);
+
+$custom_class_empty = '<html><body><section class="specs-custom"><div class="elementor-widget"></div></section></body></html>';
+
+Tests::blocks(
+    'کلاسِ سفارشی هم شناسایی و حذف می‌شود',
+    Product_Section_Guard::filter_html($custom_class_empty, [
+        'specs' => ['enabled' => true, 'class' => 'specs-custom'],
+    ]),
+    'specs-custom'
+);
+
+$custom_class_full = '<html><body><section class="specs-custom"><div class="zig-specs">x</div></section></body></html>';
+
+Tests::keeps(
+    'کلاسِ سفارشیِ پر نگه داشته می‌شود',
+    Product_Section_Guard::filter_html($custom_class_full, [
+        'specs' => ['enabled' => true, 'class' => 'specs-custom'],
+    ]),
+    'specs-custom'
+);
+
 Tests::group('نگهبانِ سکشن › چند سکشن هم‌زمان');
 
 $mixed = '<html><body>'

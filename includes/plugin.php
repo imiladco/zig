@@ -118,11 +118,19 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree', 'product-section-guard'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree', 'product-section-settings', 'product-section-guard'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
         Schema_Store::register();
+
+        /*
+         * تبِ تنظیماتِ سندِ Single Product در المنتور — هم در ادیتور
+         * (که خودِ کنترل‌ها آنجا رندر می‌شوند) هم در سایت (که ‎get_doc_for_
+         * frontend()‎ همین مقدارها را می‌خواند) لازم است، پس بیرون از
+         * شرطِ ‎is_admin()‎ ثبت می‌شود.
+         */
+        Product_Section_Settings::boot();
 
         /*
          * کتابخانهٔ گروه‌هایِ مشخصاتِ فنی؛ خواهرِ Schema_Store برایِ

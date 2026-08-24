@@ -26,23 +26,28 @@ if (!defined('ABSPATH')) {
 final class Product_Section_Guard {
 
     /**
-     * کلاسِ سکشنِ بیرونی => نشانهٔ «این ویجت واقعاً چیزی رندر کرد».
+     * کلیدِ سکشن (همان کلیدهایِ ‎Product_Section_Settings::SECTION_KEYS‎) =>
+     * نشانهٔ «این ویجت واقعاً چیزی رندر کرد». برای پنج موردِ اول نشانه یک
+     * کلاسِ CSS است (ریشهٔ خروجیِ همان ویجت، ثابت و غیرقابلِ‌تنظیم — این
+     * جزئیاتِ کد است، نه چیزی که ادمین باید عوض کند). موردِ «چرا» ریپیترِ
+     * جت‌اینجینِ خامی است که ما نساخته‌ایم و کلاسِ ریشه‌اش را نمی‌دانیم، پس
+     * با یک تابعِ سنجشِ متفاوت بررسی می‌شود (‎self::why_section_has_content‎).
      *
-     * برای پنج موردِ اول نشانه یک کلاسِ CSS است (ریشهٔ خروجیِ همان ویجت).
-     * موردِ «چرا» ریپیترِ جت‌اینجینِ خامی است که ما نساخته‌ایم و کلاسِ
-     * ریشه‌اش را نمی‌دانیم، پس با یک تابعِ سنجشِ متفاوت بررسی می‌شود
-     * (‎self::WHY_SECTION‎، پایین‌تر).
+     * کلاسِ سکشنِ *بیرونی* (چیزی که این نشانه‌ها را باید داخلش پیدا کند)
+     * و اینکه اصلاً این سنجش برایِ هر کلید فعال باشد یا نه، از بیرون
+     * می‌آید (‎$config‎) — رویِ سندِ Single Product در المنتور تنظیم
+     * می‌شود، نگاه کنید به ‎Product_Section_Settings‎.
      */
-    private const SECTION_MARKERS = [
-        'zig-product-Specifications' => '.zig-specs',
-        'zig-product-ability'        => '.zig-feature',
-        'zig-product-description'    => '.zig-description',
-        'zig-product-video'          => '.zig-product-video',
-        'zig-product-downloads'      => '.zig-documents',
+    private const WIDGET_MARKERS = [
+        'specs'       => '.zig-specs',
+        'ability'     => '.zig-feature',
+        'description' => '.zig-description',
+        'video'       => '.zig-product-video',
+        'downloads'   => '.zig-documents',
     ];
 
-    /** سکشنی که با تابعِ سنجشِ جداگانه بررسی می‌شود، نه با کلاسِ نشانه */
-    private const WHY_SECTION = 'zig-product-why';
+    /** کلیدی که با تابعِ سنجشِ جداگانه بررسی می‌شود، نه با کلاسِ نشانه */
+    private const WHY_KEY = 'why';
 
     public static function boot(): void {
         add_action('template_redirect', [self::class, 'maybe_start_buffer']);
@@ -53,7 +58,11 @@ final class Product_Section_Guard {
             return;
         }
 
-        ob_start([self::class, 'filter_html']);
+        $config = class_exists(__NAMESPACE__ . '\\Product_Section_Settings')
+            ? Product_Section_Settings::resolve()
+            : null;
+
+        ob_start(static fn (string $html): string => self::filter_html($html, $config));
     }
 
     /**
@@ -91,12 +100,45 @@ final class Product_Section_Guard {
     }
 
     /**
-     * بدنهٔ سنجش‌پذیرِ بدونِ وردپرس — امضایش دقیقاً همان چیزی است که
-     * ‎ob_start‎ صدا می‌زند، پس هم به‌عنوانِ کال‌بک و هم مستقیم در تست
-     * قابلِ‌فراخوانی است.
+     * پیکربندیِ پیش‌فرض — همان چیزی که پیش از وجودِ تنظیماتِ سند استفاده
+     * می‌شد؛ وقتی ‎$config‎ در ‎filter_html()‎ داده نشود (مثلاً از تست)
+     * همین به‌کار می‌رود.
+     *
+     * @return array<string,array{enabled:bool,class:string}>
      */
-    public static function filter_html(string $html): string {
-        if ('' === trim($html) || false === stripos($html, 'zig-product-')) {
+    private static function default_config(): array {
+        if (class_exists(__NAMESPACE__ . '\\Product_Section_Settings')) {
+            $config = [];
+
+            foreach (Product_Section_Settings::SECTION_KEYS as $key) {
+                $config[$key] = ['enabled' => true, 'class' => Product_Section_Settings::DEFAULT_CLASSES[$key]];
+            }
+
+            return $config;
+        }
+
+        // نسخهٔ پشتیبان اگر فایلِ تنظیمات به هر دلیلی لود نشده باشد
+        return [
+            'specs'       => ['enabled' => true, 'class' => 'zig-product-Specifications'],
+            'ability'     => ['enabled' => true, 'class' => 'zig-product-ability'],
+            'description' => ['enabled' => true, 'class' => 'zig-product-description'],
+            'why'         => ['enabled' => true, 'class' => 'zig-product-why'],
+            'video'       => ['enabled' => true, 'class' => 'zig-product-video'],
+            'downloads'   => ['enabled' => true, 'class' => 'zig-product-downloads'],
+        ];
+    }
+
+    /**
+     * بدنهٔ سنجش‌پذیرِ بدونِ وردپرس — کالبکِ ‎ob_start‎ همیشه از یک بستارِ
+     * تک‌آرگومانی صدایش می‌زند (نگاه کنید به ‎maybe_start_buffer‎)، ولی
+     * خودِ متد هم مستقیماً در تست، با یا بدونِ ‎$config‎، قابلِ‌فراخوانی است.
+     *
+     * @param array<string,array{enabled:bool,class:string}>|null $config
+     */
+    public static function filter_html(string $html, ?array $config = null): string {
+        $config ??= self::default_config();
+
+        if ('' === trim($html) || !self::may_contain_a_section($html, $config)) {
             return $html;
         }
 
@@ -117,8 +159,12 @@ final class Product_Section_Guard {
         $xpath = new \DOMXPath($doc);
         $removed = false;
 
-        foreach (self::SECTION_MARKERS as $section_class => $marker_selector) {
-            foreach (self::find_by_class($xpath, $section_class) as $section) {
+        foreach (self::WIDGET_MARKERS as $key => $marker_selector) {
+            if (!self::section_enabled($config, $key)) {
+                continue;
+            }
+
+            foreach (self::find_by_class($xpath, self::section_class($config, $key)) as $section) {
                 if (self::has_descendant_class($xpath, $section, ltrim($marker_selector, '.'))) {
                     continue;
                 }
@@ -128,13 +174,15 @@ final class Product_Section_Guard {
             }
         }
 
-        foreach (self::find_by_class($xpath, self::WHY_SECTION) as $section) {
-            if (self::why_section_has_content($section)) {
-                continue;
-            }
+        if (self::section_enabled($config, self::WHY_KEY)) {
+            foreach (self::find_by_class($xpath, self::section_class($config, self::WHY_KEY)) as $section) {
+                if (self::why_section_has_content($section)) {
+                    continue;
+                }
 
-            $section->parentNode->removeChild($section);
-            $removed = true;
+                $section->parentNode->removeChild($section);
+                $removed = true;
+            }
         }
 
         if (!$removed) {
@@ -156,6 +204,43 @@ final class Product_Section_Guard {
         $out = mb_convert_encoding($out, 'UTF-8', 'HTML-ENTITIES');
 
         return self::strip_wrapper($out);
+    }
+
+    /**
+     * پیش‌بررسیِ ارزان قبلِ باز کردنِ ‎DOMDocument‎: اگر هیچ‌کدام از
+     * کلاس‌هایِ سکشنِ فعال حتی به‌صورتِ رشته هم در HTML نیست، پارس‌کردنِ
+     * کلِ صفحه بی‌فایده است. حالا که کلاسِ هر سکشن قابلِ‌تنظیم است (نه
+     * فقط پیشوندِ ثابتِ ‎zig-product-‎)، این بررسی باید رویِ همان کلاس‌هایِ
+     * واقعیِ پیکربندی‌شده انجام شود.
+     *
+     * @param array<string,array{enabled:bool,class:string}> $config
+     */
+    private static function may_contain_a_section(string $html, array $config): bool {
+        $keys = array_merge(array_keys(self::WIDGET_MARKERS), [self::WHY_KEY]);
+
+        foreach ($keys as $key) {
+            if (!self::section_enabled($config, $key)) {
+                continue;
+            }
+
+            if (false !== stripos($html, self::section_class($config, $key))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param array<string,array{enabled:bool,class:string}> $config */
+    private static function section_enabled(array $config, string $key): bool {
+        return (bool) ($config[$key]['enabled'] ?? true);
+    }
+
+    /** @param array<string,array{enabled:bool,class:string}> $config */
+    private static function section_class(array $config, string $key): string {
+        $class = trim((string) ($config[$key]['class'] ?? ''));
+
+        return '' !== $class ? $class : (self::default_config()[$key]['class'] ?? '');
     }
 
     /** @return \DOMElement[] */
