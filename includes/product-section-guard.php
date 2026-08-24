@@ -58,11 +58,20 @@ final class Product_Section_Guard {
             return;
         }
 
-        $config = class_exists(__NAMESPACE__ . '\\Product_Section_Settings')
-            ? Product_Section_Settings::resolve()
-            : null;
-
-        ob_start(static fn (string $html): string => self::filter_html($html, $config));
+        /*
+         * موقتاً همیشه پیکربندیِ پیش‌فرض (‎null‎ → ‎default_config()‎) —
+         * ‎Product_Section_Settings::resolve()‎ که سند/تنظیماتِ المنتور
+         * را می‌خواند فعلاً کنار گذاشته شده (نگاه کنید به توضیحِ
+         * ‎Plugin::boot_filters()‎)، چون رویِ سایت مشکل ایجاد کرد.
+         *
+         * حتماً از یک بستارِ تک‌آرگومانی صدا زده شود، نه ارجاعِ مستقیمِ
+         * ‎[self::class, 'filter_html']‎: ‎ob_start‎ کالبکش را با *دو*
+         * آرگومان صدا می‌زند (‎$buffer, $phase‎)، و چون ‎filter_html‎ حالا
+         * پارامترِ دومش را ‎?array‎ تایپ کرده، آن ‎$phase‎ی عددی مستقیم به
+         * ‎$config‎ می‌رسید و ‎TypeError‎ می‌داد — دقیقاً همان‌جا که خودم
+         * تستش کردم و گرفتم، پیش از اینکه به این نسخه برسد.
+         */
+        ob_start(static fn (string $html): string => self::filter_html($html));
     }
 
     /**

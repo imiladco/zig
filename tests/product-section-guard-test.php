@@ -8,6 +8,22 @@ require_once dirname(__DIR__) . '/includes/product-section-guard.php';
 
 use Zig3d_Widgets\Product_Section_Guard;
 
+Tests::group('نگهبانِ سکشن › سازگاری با کالبکِ واقعیِ ob_start');
+
+/*
+ * ‎ob_start()‎ کالبکش را با *دو* آرگومان صدا می‌زند: ‎(string $buffer, int
+ * $phase)‎. اگر روزی کسی ‎maybe_start_buffer()‎ را طوری عوض کند که دوباره
+ * ‎filter_html‎ (که پارامترِ دومش تایپ‌شدهٔ ‎?array‎ است) را مستقیم به
+ * ‎ob_start‎ بدهد نه از پشتِ یک بستارِ تک‌آرگومانی، آن ‎$phase‎ی عددی به
+ * ‎$config‎ می‌رسد و ‎TypeError‎ می‌دهد — دقیقاً باگی که یک‌بار پیش از پوش
+ * با تست گرفته شد. این تست همان مسیرِ واقعی را شبیه‌سازی می‌کند.
+ */
+ob_start(static fn (string $html): string => Product_Section_Guard::filter_html($html));
+echo '<html><body><section class="zig-product-Specifications"><div class="zig-specs">x</div></section></body></html>';
+$ob_out = ob_get_clean();
+
+Tests::keeps('کالبکِ ob_start بدونِ TypeError اجرا می‌شود', (string) $ob_out, 'zig-specs');
+
 Tests::group('نگهبانِ سکشن › صفحه‌ای بدون سکشنِ زیگ');
 
 Tests::same(
