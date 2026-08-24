@@ -172,3 +172,30 @@ Tests::same('پارسِ "256M"', $parse_limit->invoke(null, '256M'), 256 * 1024 
 Tests::same('پارسِ "1G"', $parse_limit->invoke(null, '1G'), 1024 * 1024 * 1024);
 Tests::same('پارسِ "512K"', $parse_limit->invoke(null, '512K'), 512 * 1024);
 Tests::same('پارسِ "-1" یعنی نامحدود', $parse_limit->invoke(null, '-1'), -1);
+
+Tests::group('نگهبانِ سکشن › تشخیصِ آیفریمِ پیش‌نمایشِ ادیتور (elementor-preview)');
+
+/*
+ * آیفریمِ پیش‌نمایشِ ادیتور نه ‎is_admin()‎ است نه ‎wp_doing_ajax()‎ — یک
+ * لودِ عادیِ فرانتِ همین صفحهٔ محصول است. تنها نشانهٔ قابلِ‌اتکا (بدونِ
+ * وابستگی به initialize‌شدنِ آبجکتِ داخلیِ المنتور) پارامترِ کوئریِ
+ * ‎elementor-preview‎ است که خودِ المنتور رویِ src آیفریم می‌گذارد.
+ */
+$is_editing = new ReflectionMethod(Product_Section_Guard::class, 'is_elementor_editing');
+$is_editing->setAccessible(true);
+
+$original_get = $_GET;
+
+$_GET['elementor-preview'] = '123';
+Tests::ok(
+    'با elementor-preview در کوئری‌استرینگ، بدونِ نیاز به آبجکتِ المنتور، پیش‌نمایش تشخیص داده می‌شود',
+    true === $is_editing->invoke(null)
+);
+
+unset($_GET['elementor-preview']);
+Tests::ok(
+    'بدونِ elementor-preview و بدونِ کلاسِ المنتور، پیش‌نمایش تشخیص داده نمی‌شود',
+    false === $is_editing->invoke(null)
+);
+
+$_GET = $original_get;
