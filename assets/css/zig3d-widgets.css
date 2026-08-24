@@ -7873,7 +7873,17 @@ a.zig-configurator__btn:active {
 
 /* ---------- اورلیِ «در حال ثبت» — فقط رویِ فیلدها، نه دکمه ---------- */
 
-.zig-consultation-modal__overlay {
+/*
+ * ‎display‎ فقط رویِ حالتِ ‎:not([hidden])‎ می‌آید، نه رویِ خودِ کلاس.
+ *
+ * ‎[hidden]‎ی مرورگر پیش‌فرضش ‎display: none‎ است، ولی همان اسپسیفیسیتیِ
+ * یک کلاسِ ساده را دارد (۰,۱,۰) — و چون شیتِ خودِ افزونه بعد از شیتِ
+ * مرورگر می‌آید، ‎display: flex‎ی روی خودِ کلاس همیشه می‌بَرد، حتی وقتی
+ * جاوااسکریپت ‎hidden‎ را گذاشته. نتیجه‌اش دقیقاً همان چیزی بود که کاربر
+ * دید: هر سه حالت (فیلدها، اورلی، موفقیت) همزمان و از همان لحظهٔ بازشدنِ
+ * مودال. ‎:not([hidden])‎ این رقابت را از اول حذف می‌کند.
+ */
+.zig-consultation-modal__overlay:not([hidden]) {
 	position: absolute;
 	inset: -4px;
 	z-index: 3;
@@ -7881,7 +7891,9 @@ a.zig-configurator__btn:active {
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
-	background: rgba(255, 255, 255, 0.92);
+	background: rgba(255, 255, 255, 0.72);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
 	border-radius: 12px;
 	font-size: 13px;
 	font-weight: 700;
@@ -7933,7 +7945,8 @@ a.zig-configurator__btn:active {
 
 /* ---------- حالتِ موفقیت ---------- */
 
-.zig-consultation-modal__success {
+/* همان دلیلِ ‎:not([hidden])‎ی بالا، برایِ ‎.zig-consultation-modal__overlay‎ */
+.zig-consultation-modal__success:not([hidden]) {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
