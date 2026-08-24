@@ -30,39 +30,68 @@ Tests::same(
 );
 
 Tests::same(
-    'دورِ فاصله‌ها بریده می‌شود',
-    Consultations::sanitize_submission(['name' => '  میلاد  ', 'phone' => ' 0912 ', 'message' => '  سلام  ']),
-    ['name' => 'میلاد', 'phone' => '0912', 'message' => 'سلام']
+    'دورِ فاصله‌ها بریده می‌شود؛ شماره هم نرمال می‌شود',
+    Consultations::sanitize_submission(['name' => '  میلاد  ', 'phone' => ' 0912 345 6789 ', 'message' => '  سلام  ']),
+    ['name' => 'میلاد', 'phone' => '09123456789', 'message' => 'سلام']
 );
 
-Tests::same('نامِ خالی ⇒ null', Consultations::sanitize_submission(['name' => '', 'phone' => '0912']), null);
+Tests::same('نامِ خالی ⇒ null', Consultations::sanitize_submission(['name' => '', 'phone' => '09121234567']), null);
 Tests::same('شمارهٔ خالی ⇒ null', Consultations::sanitize_submission(['name' => 'میلاد', 'phone' => '']), null);
+Tests::same('شمارهٔ خیلی کوتاه ⇒ null', Consultations::sanitize_submission(['name' => 'میلاد', 'phone' => '0912']), null);
 Tests::same(
     'نامِ فقط‌فاصله هم خالی حساب می‌شود',
-    Consultations::sanitize_submission(['name' => '   ', 'phone' => '0912']),
+    Consultations::sanitize_submission(['name' => '   ', 'phone' => '09121234567']),
     null
 );
 Tests::same('بدونِ هیچ کلیدی ⇒ null', Consultations::sanitize_submission([]), null);
 
 Tests::same(
     'برچسبِ HTML از نام/توضیحات حذف می‌شود',
-    Consultations::sanitize_submission(['name' => '<b>میلاد</b>', 'phone' => '0912', 'message' => '<script>x</script>سلام'])['name'],
+    Consultations::sanitize_submission(['name' => '<b>میلاد</b>', 'phone' => '09121234567', 'message' => '<script>x</script>سلام'])['name'],
     'میلاد'
 );
 
 $long_name = str_repeat('ا', 300);
 Tests::same(
     'نامِ خیلی بلند به سقف بریده می‌شود',
-    mb_strlen(Consultations::sanitize_submission(['name' => $long_name, 'phone' => '0912'])['name']),
+    mb_strlen(Consultations::sanitize_submission(['name' => $long_name, 'phone' => '09121234567'])['name']),
     190
 );
 
 $long_message = str_repeat('ب', 3000);
 Tests::same(
     'توضیحاتِ خیلی بلند هم به سقفِ خودش بریده می‌شود',
-    mb_strlen(Consultations::sanitize_submission(['name' => 'میلاد', 'phone' => '0912', 'message' => $long_message])['message']),
+    mb_strlen(Consultations::sanitize_submission(['name' => 'میلاد', 'phone' => '09121234567', 'message' => $long_message])['message']),
     2000
 );
+
+/* ==========================================================================
+ * normalize_phone
+ * ======================================================================= */
+
+Tests::group('مشاوره › نرمال‌سازیِ شماره‌یِ موبایل');
+
+Tests::same('با ‎+98‎', Consultations::normalize_phone('+989123456789'), '09123456789');
+Tests::same('با ‎0098‎', Consultations::normalize_phone('00989123456789'), '09123456789');
+Tests::same('با ‎98‎ی بدونِ علامت', Consultations::normalize_phone('989123456789'), '09123456789');
+Tests::same('بدونِ صفرِ ابتدایی', Consultations::normalize_phone('9123456789'), '09123456789');
+Tests::same('از قبل ‎09‎', Consultations::normalize_phone('09123456789'), '09123456789');
+Tests::same('با فاصله/خط‌فاصله', Consultations::normalize_phone('+98 912-345-6789'), '09123456789');
+Tests::same('شمارهٔ خیلی کوتاه دست‌نخورده می‌ماند', Consultations::normalize_phone('0912'), '0912');
+
+/* ==========================================================================
+ * sanitize_submission › اعتبارسنجیِ فرمتِ شماره
+ * ======================================================================= */
+
+Tests::group('مشاوره › اعتبارسنجیِ فرمتِ شماره');
+
+foreach (['09123456789', '09023456789', '09923456789', '09323456789', '+989123456789', '989123456789', '9123456789'] as $valid) {
+    Tests::same("شمارهٔ معتبر ($valid) پذیرفته می‌شود", null !== Consultations::sanitize_submission(['name' => 'میلاد', 'phone' => $valid]), true);
+}
+
+foreach (['0912', '09623456789', '0902345678', '091234567890', 'abc', '0000000000000'] as $invalid) {
+    Tests::same("شمارهٔ نامعتبر ($invalid) رد می‌شود", Consultations::sanitize_submission(['name' => 'میلاد', 'phone' => $invalid]), null);
+}
 
 /* ==========================================================================
  * sanitize_source

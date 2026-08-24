@@ -16,8 +16,46 @@
 	var SELECTOR = '[data-zig-consultation]';
 	var ACTION = 'zig3d_consultation';
 
+	/*
+	 * ‎09‎ + کدِ اپراتورِ معتبر (‎0[1-5]‎/‎1[0-9]‎/‎2[0-2]‎/‎3[0-9]‎/‎9[0-9]‎) +
+	 * ۷ رقمِ آخر — کاملترین الگویِ رایجِ اعتبارسنجیِ شماره‌یِ موبایلِ
+	 * ایرانی (همان که در اکثرِ کتابخانه‌ها/گیست‌هایِ فارسی برایِ همین کار
+	 * به‌کار می‌رود)، نه فقط «۱۱ رقم باشد».
+	 */
+	var IR_MOBILE_RE = /^09(0[1-5]|1[0-9]|2[0-2]|3[0-9]|9[0-9])\d{7}$/;
+
 	var elements = null;
 	var activeTrigger = null;
+
+	/**
+	 * فرمت‌هایِ رایجِ ورودیِ شماره‌یِ موبایلِ ایرانی —‎+98912...‎،
+	 * ‎0098912...‎، ‎98912...‎ی بدونِ ‎+‎، یا حتیِ بدونِ صفرِ ابتدایی
+	 * (‎912...‎) — همه به ساختارِ یکتایِ ‎09xxxxxxxxx‎ برمی‌گردند. رشته‌ای
+	 * که هیچ‌کدام از این‌ها نباشد (یا هنوز نصفه‌کاره است) دست‌نخورده
+	 * برمی‌گردد؛ اعتبارسنجیِ نهایی با ‎IR_MOBILE_RE‎ی بالا انجام می‌شود.
+	 */
+	function normalizeIranianMobile(raw) {
+		var hadPlus = 0 === String(raw).indexOf('+');
+		var digits = String(raw).replace(/[^0-9]/g, '');
+
+		if (hadPlus && 0 === digits.indexOf('98')) {
+			return '0' + digits.slice(2);
+		}
+
+		if (0 === digits.indexOf('0098')) {
+			return '0' + digits.slice(4);
+		}
+
+		if (12 === digits.length && 0 === digits.indexOf('98')) {
+			return '0' + digits.slice(2);
+		}
+
+		if (10 === digits.length && 0 === digits.indexOf('9')) {
+			return '0' + digits;
+		}
+
+		return digits;
+	}
 
 	/* ======================================================================
 	 * ساختِ مودال
@@ -163,10 +201,10 @@
 		});
 
 		/*
-		 * فیلدِ شماره فقط حقِ وجودِ شماره دارد — رقم و علامتِ ‎+‎ی ابتدایی،
-		 * نه هیچ کاراکترِ دیگری. عمداً محدودیتی رویِ طول یا پیشوند
-		 * (‎09‎/‎+98‎/‎0098‎) گذاشته نشده تا هر فرمتِ رایجِ ایرانی همچنان
-		 * قابلِ تایپ بماند.
+		 * حینِ تایپ فقط رقم و علامتِ ‎+‎ی ابتدایی مجازند — نه هیچ کاراکترِ
+		 * دیگری، و نه هنوز نرمال‌سازیِ پیشوند (چون تا کاربر کارش تمام
+		 * نشده، رشته‌ای مثل ‎«98»‎ یا ‎«9»‎ی نصفه‌کاره معلوم نیست قرار است
+		 * به کجا برسد).
 		 */
 		elements.phone.addEventListener('input', function () {
 			var value = elements.phone.value;
@@ -175,15 +213,26 @@
 			elements.phone.value = plus + value.replace(/[^0-9]/g, '');
 		});
 
+		/*
+		 * با خروج از فیلد، هر فرمتِ رایجِ شماره‌یِ موبایلِ ایرانی —
+		 * ‎+98912...‎، ‎0098912...‎، ‎98912...‎، یا حتیِ بدونِ صفرِ ابتدایی
+		 * (‎912...‎) — یکدست به ساختارِ ‎09xxxxxxxxx‎ برمی‌گردد، تا مشتری
+		 * ببیند شماره‌اش به فرمتِ درست تبدیل شده.
+		 */
+		elements.phone.addEventListener('blur', function () {
+			elements.phone.value = normalizeIranianMobile(elements.phone.value);
+		});
+
 		elements.name.addEventListener('input', function () { clearInvalid(elements.name); });
 		elements.phone.addEventListener('input', function () { clearInvalid(elements.phone); });
 	}
 
 	/**
-	 * نام و شماره اجباری‌اند — قبل از هر درخواستِ آژاکس، همین‌جا سنجیده
-	 * می‌شوند تا فیلدِ خالی/بی‌فایده اصلاً به سرور نرسد. بازخورد فقط رنگِ
-	 * قرمزِ حاشیهٔ همان فیلد است، نه حبابِ پیش‌فرضِ مرورگر (به همین دلیل
-	 * فرم ‎novalidate‎ دارد).
+	 * نام اجباری است؛ شماره هم اجباری است و هم باید بعدِ نرمال‌سازی با
+	 * الگویِ شماره‌یِ موبایلِ ایرانی جور باشد (‎09‎ + کدِ اپراتورِ معتبر +
+	 * ۷ رقم) — همان چیزی که فیلدِ خالی/بی‌فرمت اصلاً به سرور نرسد. بازخورد
+	 * فقط رنگِ قرمزِ حاشیهٔ همان فیلد است، نه حبابِ پیش‌فرضِ مرورگر (به
+	 * همین دلیل فرم ‎novalidate‎ دارد).
 	 */
 	function validate() {
 		var invalid = [];
@@ -192,7 +241,9 @@
 			invalid.push(elements.name);
 		}
 
-		if ('' === elements.phone.value.trim()) {
+		elements.phone.value = normalizeIranianMobile(elements.phone.value);
+
+		if (!IR_MOBILE_RE.test(elements.phone.value)) {
 			invalid.push(elements.phone);
 		}
 

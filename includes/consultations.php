@@ -82,17 +82,56 @@ final class Consultations {
      * =================================================================== */
 
     /**
-     * پاک‌سازیِ ورودیِ فرم. نام و شماره اجباری‌اند؛ خالی‌بودنِ هرکدام یعنی
-     * ورودیِ نامعتبر، نه ثبتِ ردیفِ نصفه.
+     * ‎09‎ + کدِ اپراتورِ معتبر + ۷ رقمِ آخر — همان الگویی که سمتِ کلاینت
+     * (‎zig3d-consultation.js‎) هم استفاده می‌شود؛ اینجا هم لازم است چون
+     * این متد باید بدونِ اعتماد به جاوااسکریپت (مثلاً درخواستِ مستقیم به
+     * آژاکس) هم درست کار کند.
+     */
+    private const IR_MOBILE_PATTERN = '/^09(0[1-5]|1[0-9]|2[0-2]|3[0-9]|9[0-9])\d{7}$/';
+
+    /**
+     * تبدیلِ فرمت‌هایِ رایجِ شماره‌یِ موبایلِ ایرانی —‎+98912...‎،
+     * ‎0098912...‎، ‎98912...‎، یا بدونِ صفرِ ابتدایی (‎912...‎) — به
+     * ساختارِ یکتایِ ‎09xxxxxxxxx‎. منطقش عیناً با ‎normalizeIranianMobile‎یِ
+     * سمتِ جاوااسکریپت یکی است.
+     */
+    public static function normalize_phone(string $raw): string {
+        $had_plus = 0 === strpos($raw, '+');
+        $digits   = preg_replace('/[^0-9]/', '', $raw);
+
+        if ($had_plus && 0 === strpos($digits, '98')) {
+            return '0' . substr($digits, 2);
+        }
+
+        if (0 === strpos($digits, '0098')) {
+            return '0' . substr($digits, 4);
+        }
+
+        if (12 === strlen($digits) && 0 === strpos($digits, '98')) {
+            return '0' . substr($digits, 2);
+        }
+
+        if (10 === strlen($digits) && 0 === strpos($digits, '9')) {
+            return '0' . $digits;
+        }
+
+        return $digits;
+    }
+
+    /**
+     * پاک‌سازیِ ورودیِ فرم. نام اجباری است؛ شماره هم اجباری است و هم باید
+     * بعدِ نرمال‌سازی با الگویِ شماره‌یِ موبایلِ ایرانی جور باشد —
+     * خالی‌بودن یا نامعتبربودنِ هرکدام یعنی ورودیِ نامعتبر، نه ثبتِ ردیفِ
+     * نصفه/بی‌فرمت.
      *
      * @return array{name:string,phone:string,message:string}|null
      */
     public static function sanitize_submission(array $raw): ?array {
         $name    = trim(sanitize_text_field((string) ($raw['name'] ?? '')));
-        $phone   = trim(sanitize_text_field((string) ($raw['phone'] ?? '')));
+        $phone   = self::normalize_phone((string) ($raw['phone'] ?? ''));
         $message = trim(sanitize_textarea_field((string) ($raw['message'] ?? '')));
 
-        if ('' === $name || '' === $phone) {
+        if ('' === $name || 1 !== preg_match(self::IR_MOBILE_PATTERN, $phone)) {
             return null;
         }
 

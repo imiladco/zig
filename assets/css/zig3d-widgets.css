@@ -7928,6 +7928,16 @@ a.zig-configurator__btn:active {
 	resize: vertical;
 }
 
+/*
+ * شمارهٔ موبایل باید راست‌چین بماند — مرورگرها معمولاً محتوایِ صِرفاً
+ * عددیِ ‎input[type="tel"]‎ را طبقِ الگوریتمِ بایدیِ یونیکد چپ‌چین
+ * می‌کنند، حتی داخلِ صفحهٔ راست‌به‌چپ.
+ */
+.zig-consultation-modal__field input[type="tel"] {
+	direction: rtl;
+	text-align: right;
+}
+
 .zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__body .zig-consultation-modal__fields .zig-consultation-modal__field input:focus-visible,
 .zig-consultation-modal .zig-consultation-modal__stage .zig-consultation-modal__body .zig-consultation-modal__fields .zig-consultation-modal__field textarea:focus-visible {
 	outline: none;
