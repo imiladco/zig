@@ -38,20 +38,29 @@
 					'</svg>' +
 				'</button>' +
 				'<div class="zig-consultation-modal__body">' +
-					'<h2 id="zig-consultation-title" class="zig-consultation-modal__title">فرم ثبت درخواست مشاوره</h2>' +
+					'<h2 id="zig-consultation-title" class="zig-consultation-modal__title">ثبت درخواست مشاوره</h2>' +
 					'<form class="zig-consultation-modal__form">' +
 						'<div class="zig-consultation-modal__fields">' +
 							'<div class="zig-consultation-modal__field">' +
-								'<label for="zig-consultation-name">نام و نام خانوادگی</label>' +
-								'<input type="text" id="zig-consultation-name" name="name" autocomplete="name" required>' +
+								'<input type="text" id="zig-consultation-name" name="name" autocomplete="name" placeholder="نام و نام خانوادگی" aria-label="نام و نام خانوادگی" required>' +
+								'<span class="zig-consultation-modal__field-icon" aria-hidden="true">' +
+									'<svg width="18" height="18" viewBox="0 0 18 18" fill="none">' +
+										'<circle cx="9" cy="5.75" r="3" stroke="currentColor" stroke-width="1.3"/>' +
+										'<path d="M3.5 15.25C3.5 12.2124 5.96243 9.75 9 9.75C12.0376 9.75 14.5 12.2124 14.5 15.25" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' +
+									'</svg>' +
+								'</span>' +
 							'</div>' +
 							'<div class="zig-consultation-modal__field">' +
-								'<label for="zig-consultation-phone">شماره موبایل</label>' +
-								'<input type="tel" id="zig-consultation-phone" name="phone" autocomplete="tel" inputmode="tel" required>' +
+								'<input type="tel" id="zig-consultation-phone" name="phone" autocomplete="tel" inputmode="tel" placeholder="شماره موبایل" aria-label="شماره موبایل" required>' +
+								'<span class="zig-consultation-modal__field-icon" aria-hidden="true">' +
+									'<svg width="18" height="18" viewBox="0 0 18 18" fill="none">' +
+										'<rect x="5.24" y="1.5" width="7.5" height="15" rx="2" stroke="currentColor" stroke-width="1.2"/>' +
+										'<circle cx="9" cy="13.5" r="0.75" fill="currentColor"/>' +
+									'</svg>' +
+								'</span>' +
 							'</div>' +
-							'<div class="zig-consultation-modal__field">' +
-								'<label for="zig-consultation-message">توضیحات (اختیاری)</label>' +
-								'<textarea id="zig-consultation-message" name="message" rows="4"></textarea>' +
+							'<div class="zig-consultation-modal__field zig-consultation-modal__field--textarea">' +
+								'<textarea id="zig-consultation-message" name="message" rows="4" placeholder="توضیحات ( دلخواه )" aria-label="توضیحات (اختیاری)"></textarea>' +
 							'</div>' +
 							'<div class="zig-consultation-modal__overlay" hidden>' +
 								'<span class="zig-consultation-modal__spinner" aria-hidden="true"></span>' +

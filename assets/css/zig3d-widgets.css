@@ -7701,6 +7701,7 @@ a.zig-configurator__btn:active {
 	border-radius: 6px;
 }
 
+
 /* ==========================================================================
  * مودالِ فرمِ درخواستِ مشاوره
  *
@@ -7709,17 +7710,25 @@ a.zig-configurator__btn:active {
  * چون هر دو رویِ یک کنترلرِ مشترک (‎zig3d-modal.js‎) سوارند. ظاهر اما جدا
  * طراحی شده: یک کارتِ سفیدِ محدود روی پس‌زمینهٔ تیره‌شده، نه یک صفحهٔ
  * تمام‌عرض — چون این یک فرم است، نه یک ویوئرِ تصویر.
+ *
+ * رنگ/فاصله/شعاع‌ها از رویِ طرحِ فیگمایِ خودِ کاربر پیاده شده‌اند. یک
+ * استثنایِ عمدی: بدونِ ‎font-family‎. کلِ این فایل حتی یک‌بار هم فونت را
+ * قفل نکرده (تنها موردِ موجود ‎font-family: inherit‎ است) — تایپ‌فیس
+ * تصمیمِ قالب/تنظیماتِ سراسریِ المنتور است، نه یک ویجتِ منفرد؛ قفل‌کردنش
+ * اینجا یعنی روزی که فونتِ سایت عوض شود، این مودال تنها جایی می‌ماند که
+ * عوض نشده.
  * ======================================================================= */
 
 .zig-consultation-modal {
-	--zig-consult-dur: 220ms;
 	--zig-consult-purple: #6d28d9;
 	--zig-consult-purple-hover: #5c21b8;
 	--zig-consult-purple-soft: #f5f1ff;
 	--zig-consult-success: #10b981;
-	--zig-consult-text: #171923;
-	--zig-consult-muted: #667085;
-	--zig-consult-border: #e2e7f0;
+	--zig-consult-text: #17171b;
+	--zig-consult-muted: #564961;
+	--zig-consult-border: rgba(86, 73, 97, 0.2);
+	--zig-consult-field-bg: rgba(250, 251, 252, 0.47);
+	--zig-consult-dur: 220ms;
 	position: fixed;
 	inset: 0;
 	z-index: 99999;
@@ -7727,7 +7736,7 @@ a.zig-configurator__btn:active {
 	align-items: center;
 	justify-content: center;
 	padding: 20px;
-	background-color: rgba(17, 24, 39, 0.6);
+	background-color: rgba(23, 23, 27, 0.55);
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
@@ -7750,12 +7759,13 @@ a.zig-configurator__btn:active {
 .zig-consultation-modal__stage {
 	position: relative;
 	width: 100%;
-	max-width: 440px;
+	max-width: 460px;
 	max-height: calc(100vh - 40px);
 	overflow-y: auto;
 	background: #fff;
-	border-radius: 20px;
-	box-shadow: 0 24px 60px rgba(17, 24, 39, 0.25);
+	border: 1px solid #eaded6;
+	border-radius: 32px;
+	box-shadow: 0 12px 32px rgba(42, 30, 23, 0.1);
 	transform: scale(0.96) translateY(8px);
 	transition: transform var(--zig-consult-dur) cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -7775,7 +7785,7 @@ a.zig-configurator__btn:active {
 .zig-consultation-modal__close {
 	position: absolute;
 	top: 20px;
-	inset-inline-end: 20px;
+	inset-inline-start: 20px;
 	z-index: 2;
 	display: inline-flex;
 	align-items: center;
@@ -7797,19 +7807,20 @@ a.zig-configurator__btn:active {
 }
 
 .zig-consultation-modal__body {
-	padding: 32px 28px 28px;
+	padding: 48px 40px;
 }
 
 .zig-consultation-modal__title {
-	margin: 0 0 24px;
-	padding-inline-end: 32px;
-	font-size: 19px;
-	font-weight: 800;
-	line-height: 1.5;
+	margin: 0 0 32px;
+	padding-inline-end: 24px;
+	font-size: 24px;
+	font-weight: 700;
+	line-height: 1.4;
+	text-align: center;
 	color: var(--zig-consult-text);
 }
 
-/* ---------- فیلدها ---------- */
+/* ---------- فیلدها: قرصِ شیشه‌ایِ آیکون+ورودی ---------- */
 
 .zig-consultation-modal__fields {
 	position: relative;
@@ -7819,33 +7830,31 @@ a.zig-configurator__btn:active {
 }
 
 .zig-consultation-modal__field {
+	position: relative;
 	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.zig-consultation-modal__field label {
-	font-size: 13px;
-	font-weight: 700;
-	color: var(--zig-consult-text);
+	align-items: center;
 }
 
 .zig-consultation-modal__field input,
 .zig-consultation-modal__field textarea {
 	width: 100%;
-	padding: 12px 14px;
+	padding: 14px 16px;
+	padding-inline-start: 42px;
 	font: inherit;
 	font-size: 14px;
 	color: var(--zig-consult-text);
-	background: #fafafc;
+	background: var(--zig-consult-field-bg);
+	backdrop-filter: blur(22px);
+	-webkit-backdrop-filter: blur(22px);
 	border: 1px solid var(--zig-consult-border);
-	border-radius: 10px;
+	border-radius: 12px;
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.zig-consultation-modal__field textarea {
+.zig-consultation-modal__field--textarea textarea {
+	min-height: 100px;
+	padding-inline-start: 16px;
 	resize: vertical;
-	min-height: 84px;
 }
 
 .zig-consultation-modal__field input:focus-visible,
@@ -7853,12 +7862,19 @@ a.zig-configurator__btn:active {
 	outline: none;
 	border-color: var(--zig-consult-purple);
 	box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.14);
-	background: #fff;
 }
 
 .zig-consultation-modal__field input::placeholder,
 .zig-consultation-modal__field textarea::placeholder {
-	color: #a1a3a8;
+	color: rgba(23, 23, 27, 0.5);
+}
+
+.zig-consultation-modal__field-icon {
+	position: absolute;
+	inset-inline-start: 16px;
+	display: inline-flex;
+	color: #9aa1ae;
+	pointer-events: none;
 }
 
 /* هانی‌پات: از دیدِ کاربرِ واقعی و صفحه‌خوان مخفی، ولی در DOM حاضر است */
@@ -7873,16 +7889,6 @@ a.zig-configurator__btn:active {
 
 /* ---------- اورلیِ «در حال ثبت» — فقط رویِ فیلدها، نه دکمه ---------- */
 
-/*
- * ‎display‎ فقط رویِ حالتِ ‎:not([hidden])‎ می‌آید، نه رویِ خودِ کلاس.
- *
- * ‎[hidden]‎ی مرورگر پیش‌فرضش ‎display: none‎ است، ولی همان اسپسیفیسیتیِ
- * یک کلاسِ ساده را دارد (۰,۱,۰) — و چون شیتِ خودِ افزونه بعد از شیتِ
- * مرورگر می‌آید، ‎display: flex‎ی روی خودِ کلاس همیشه می‌بَرد، حتی وقتی
- * جاوااسکریپت ‎hidden‎ را گذاشته. نتیجه‌اش دقیقاً همان چیزی بود که کاربر
- * دید: هر سه حالت (فیلدها، اورلی، موفقیت) همزمان و از همان لحظهٔ بازشدنِ
- * مودال. ‎:not([hidden])‎ این رقابت را از اول حذف می‌کند.
- */
 .zig-consultation-modal__overlay:not([hidden]) {
 	position: absolute;
 	inset: -4px;
@@ -7920,15 +7926,16 @@ a.zig-configurator__btn:active {
 
 .zig-consultation-modal__submit {
 	width: 100%;
-	margin-top: 20px;
-	padding: 14px;
+	margin-top: 24px;
+	padding: 14px 32px;
 	font: inherit;
-	font-size: 15px;
-	font-weight: 700;
+	font-size: 16px;
+	font-weight: 800;
 	color: #fff;
 	background: var(--zig-consult-purple);
 	border: 0;
 	border-radius: 12px;
+	box-shadow: 0 6px 16px rgba(140, 88, 58, 0.13);
 	cursor: pointer;
 	transition: background-color 0.15s ease, opacity 0.15s ease;
 }
@@ -7940,12 +7947,12 @@ a.zig-configurator__btn:active {
 
 .zig-consultation-modal__submit:disabled {
 	background: #cdbaf8;
+	box-shadow: none;
 	cursor: not-allowed;
 }
 
 /* ---------- حالتِ موفقیت ---------- */
 
-/* همان دلیلِ ‎:not([hidden])‎ی بالا، برایِ ‎.zig-consultation-modal__overlay‎ */
 .zig-consultation-modal__success:not([hidden]) {
 	display: flex;
 	flex-direction: column;
