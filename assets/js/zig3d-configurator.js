@@ -74,6 +74,14 @@
 		this.updatedWrap = root.querySelector('.zig-configurator__updated');
 		this.updatedValue = root.querySelector('.zig-configurator__updated-value');
 
+		/*
+		 * فقط وقتی رویِ دکمهٔ اصلی چاپ شده که الگویِ پیامِ واتساپ به
+		 * ‎[متغیرهای انتخابی]‎ نیاز دارد (‎render_button()‎ سمتِ PHP). نبودش
+		 * یعنی این محصول متغیر نیست یا الگو از این توکن استفاده نمی‌کند —
+		 * در هر دو حالت چیزی برایِ روزآمدسازی نیست.
+		 */
+		this.whatsappBtn = root.querySelector('.zig-configurator__btn--primary[data-zig-wa-template]');
+
 		this.bind();
 		this.refresh();
 	}
@@ -243,6 +251,7 @@
 		var row = this.matched() || this.fallback;
 
 		this.root.setAttribute('data-variation-id', row && row.id ? String(row.id) : '');
+		this.applyWhatsapp();
 
 		if (!row) {
 			return;
@@ -270,6 +279,90 @@
 			this.updatedValue.textContent = row.updated || '';
 		}
 	};
+
+	/**
+	 * روزآمدسازیِ ‎href‎ی دکمهٔ واتساپ با انتخابِ فعلیِ کشوها.
+	 *
+	 * الگو و شمارهٔ واتساپ سمتِ PHP آماده شده‌اند (‎data-zig-wa-base‎/
+	 * ‎data-zig-wa-template‎)؛ اینجا فقط توکنِ ‎[متغیرهای انتخابی]‎ با
+	 * برچسبِ اتریبیوت/گزینهٔ همان چیزی که در ‎<label>‎/‎<option>‎ چاپ شده
+	 * جایگزین می‌شود — دقیقاً همان دو منبعی که خودِ سرور برایِ ساختنِ
+	 * کشوها استفاده کرده، پس چیزی دوباره فرمت نمی‌شود. کشوهایی که هنوز
+	 * انتخابی ندارند بی‌صدا از قلم می‌افتند.
+	 */
+	Configurator.prototype.applyWhatsapp = function () {
+		if (!this.whatsappBtn) {
+			return;
+		}
+
+		var template = this.whatsappBtn.getAttribute('data-zig-wa-template') || '';
+		var base = this.whatsappBtn.getAttribute('data-zig-wa-base') || '';
+		var lines = [];
+		var i;
+		var select;
+		var field;
+		var label;
+		var option;
+
+		for (i = 0; i < this.selects.length; i++) {
+			select = this.selects[i];
+
+			if (!select.value) {
+				continue;
+			}
+
+			field = select.closest('.zig-configurator__field');
+			label = field ? field.querySelector('.zig-configurator__label') : null;
+			option = select.options[select.selectedIndex];
+
+			if (!label || !option) {
+				continue;
+			}
+
+			lines.push(label.textContent + ': ' + option.textContent);
+		}
+
+		this.whatsappBtn.setAttribute('href', base + zigWhatsappEncode(zigWhatsappMessage(template, lines)));
+	};
+
+	/**
+	 * همتایِ سمتِ کلاینتِ ‎Product_Configurator::whatsapp_message()‎ی PHP —
+	 * دو منطق باید عیناً یکی بمانند، وگرنه پیامِ اولیه (رندرِ سرور) و پیامِ
+	 * بعد از اولین تغییرِ کشو (این تابع) از هم واگرا می‌شوند.
+	 */
+	var ZIG_WA_VARIANTS_TOKEN = '[متغیرهای انتخابی]';
+
+	function zigWhatsappMessage(template, lines) {
+		var block = lines.join('\n');
+		var rows = template.split('\n');
+		var out = [];
+		var i;
+
+		for (i = 0; i < rows.length; i++) {
+			if (ZIG_WA_VARIANTS_TOKEN === rows[i].trim()) {
+				if ('' !== block) {
+					out.push(block);
+				}
+
+				continue;
+			}
+
+			out.push(rows[i].split(ZIG_WA_VARIANTS_TOKEN).join(block));
+		}
+
+		return out.join('\n');
+	}
+
+	/**
+	 * همتایِ ‎rawurlencode()‎ی PHP: بر خلافِ ‎encodeURIComponent‎ی خودِ
+	 * جاوااسکریپت، ‎! ' ( ) *‎ را هم اینکود می‌کند — تا آدرسِ ساخته‌شدهٔ
+	 * اینجا با آدرسِ اولیهٔ رندرشدهٔ سرور، بایت‌به‌بایت یکی بماند.
+	 */
+	function zigWhatsappEncode(text) {
+		return encodeURIComponent(text).replace(/[!'()*]/g, function (char) {
+			return '%' + char.charCodeAt(0).toString(16).toUpperCase();
+		});
+	}
 
 	/* ======================================================================
 	 * راه‌اندازی

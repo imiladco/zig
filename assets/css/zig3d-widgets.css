@@ -7256,6 +7256,25 @@ nav.zig-menu {
 	transition: background-color 0.15s ease;
 }
 
+/*
+ * دکمهٔ اصلی وقتی آدرسی دارد (پیوندِ عادی یا واتساپ) به ‎<a>‎ تبدیل
+ * می‌شود، نه ‎<button>‎. رنگِ سفید و بدونِ خط‌زیرِ بالا رویِ کلاسِ ساده
+ * تنها با استایلِ سراسریِ قالب (اغلبِ قالب‌ها ‎a‎ را رنگ می‌کنند) یا با
+ * حالتِ ‎:visited‎ی خودِ مرورگر رقابت می‌کند و می‌بازد — چون
+ * ‎a:visited‎ در اسپسیفیسیتی از یک کلاسِ تنها بالاتر است. این قانون‌ها
+ * دقیقاً همان انتخابگر (‎a‎ + کلاس) را با هر حالتی تکرار می‌کنند تا هر
+ * جا لینک است، رنگ و دکوراسیون قطعی بماند.
+ */
+a.zig-configurator__btn,
+a.zig-configurator__btn:link,
+a.zig-configurator__btn:visited,
+a.zig-configurator__btn:hover,
+a.zig-configurator__btn:focus-visible,
+a.zig-configurator__btn:active {
+	color: #fff;
+	text-decoration: none;
+}
+
 .zig-configurator__btn--secondary {
 	flex-grow: 198;
 	font-size: 14px;

@@ -54,7 +54,10 @@ if (!defined('ABSPATH')) {
  * هیچ «افزودن به سبد خرید»ی اینجا نیست؛ دکمهٔ فرعی فقط پیوند است. دکمهٔ
  * اصلی هم پیوند است، مگر اینکه الگویِ پیامِ واتساپ (‎whatsapp_template‎) پر
  * باشد — آن‌وقت به‌جایِ ‎primary_link‎، آدرسِ ‎wa.me‎ با پیامِ جایگزین‌شده
- * (نامِ محصول، لینکِ کوتاهِ محصول) باز می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
+ * (نامِ محصول، لینکِ کوتاهِ محصول، و برایِ محصولِ متغیر، ویژگی‌هایِ
+ * انتخاب‌شدهٔ کاربر) باز می‌شود. توکنِ ویژگی‌ها تنها موردی است که سمتِ
+ * سرور رندر نمی‌شود — چون انتخابِ کاربر خودش سمتِ کلاینت است — و با هر
+ * تغییرِ کشو در ‎zig3d-configurator.js‎ روزآمد می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
  * محصول برای واریانت‌سازی استفاده کرده — یکی، دوتا، یا بیشتر، نه لزوماً
  * «کانفیگ» و «متریال». منطقِ محاسبه در ‎Zig3d_Widgets\Configurator‎،
  * ‎Price‎، ‎Stock‎ و ‎Rate_Price‎ است تا بدون بالا آوردن المنتور قابل
@@ -513,7 +516,15 @@ final class Product_Configurator extends Widget_Base {
             'whatsapp_note',
             [
                 'type'            => Controls_Manager::RAW_HTML,
-                'raw'             => __('وقتی الگوی پیام پر باشد، دکمهٔ اصلی به‌جایِ پیوندِ بالا، همین پیام را در واتساپ باز می‌کند. برایِ برگشتن به پیوندِ عادی، الگو را خالی کنید.', 'zig3d-widgets'),
+                'raw'             => sprintf(
+                    '<p>%s</p><ul style="margin:.5em 0 0;padding-inline-start:1.2em;list-style:disc;">%s</ul>',
+                    esc_html__('وقتی الگوی پیام پر باشد، دکمهٔ اصلی به‌جایِ پیوندِ بالا، همین پیام را در واتساپ باز می‌کند. برایِ برگشتن به پیوندِ عادی، الگو را خالی کنید. جایگزین‌هایِ قابلِ استفاده در الگو:', 'zig3d-widgets'),
+                    implode('', [
+                        sprintf('<li><code>[نام محصول]</code> — %s</li>', esc_html__('نامِ محصول.', 'zig3d-widgets')),
+                        sprintf('<li><code>[لینک محصول]</code> — %s</li>', esc_html__('پیوندِ کوتاهِ محصول، بر پایهٔ شناسه (همان کوتاه‌کنندهٔ پیش‌فرضِ خودِ وردپرس/ووکامرس).', 'zig3d-widgets')),
+                        sprintf('<li><code>[متغیرهای انتخابی]</code> — %s</li>', esc_html__('فقط برایِ محصولِ متغیر: هر ویژگیِ انتخاب‌شدهٔ کاربر (مثلاً «رنگ: قرمز») در یک خطِ جدا. تا وقتی کاربر چیزی انتخاب نکرده یا ویژگی‌ای انتخاب نشده، آن خط بی‌صدا حذف می‌شود — نه اینکه جایِ خالی یا دونقطهٔ بی‌مقدار بگذارد. این یکی، برخلافِ دو موردِ بالا، سمتِ مرورگر و با هر تغییرِ کشو به‌روز می‌شود.', 'zig3d-widgets')),
+                    ])
+                ),
                 'content_classes' => 'elementor-descriptor',
             ]
         );
@@ -537,8 +548,7 @@ final class Product_Configurator extends Widget_Base {
                 'rows'        => 8,
                 'dynamic'     => ['active' => true],
                 'default'     => '',
-                'placeholder' => "سلام وقت بخیر\n\nدرخواست مشاوره و دریافت پیش‌فاکتور در رابطه با محصول زیر را دارم. لطفاً شرایط و اطلاعات تکمیلی را ارسال بفرمایید.\n\n[نام محصول]\n[لینک محصول]",
-                'description' => __('دو جایگزین قابلِ استفاده: [نام محصول] و [لینک محصول] (پیوندِ کوتاهِ محصول، بر پایهٔ شناسهٔ آن).', 'zig3d-widgets'),
+                'placeholder' => "سلام وقت بخیر\n\nدرخواست مشاوره و دریافت پیش‌فاکتور در رابطه با محصول زیر را دارم. لطفاً شرایط و اطلاعات تکمیلی را ارسال بفرمایید.\n\n[نام محصول]\n[متغیرهای انتخابی]\n[لینک محصول]",
                 'label_block' => true,
             ]
         );
@@ -1808,14 +1818,29 @@ final class Product_Configurator extends Widget_Base {
 
         $this->add_render_attribute($render_key, 'class', ['zig-configurator__btn', 'zig-configurator__btn--' . $key]);
 
-        $whatsapp_url = 'primary' === $key ? $this->whatsapp_url($settings, $product) : null;
+        $whatsapp = 'primary' === $key ? $this->whatsapp_data($settings, $product) : null;
 
-        if (null !== $whatsapp_url) {
+        if (null !== $whatsapp) {
             $this->add_render_attribute($render_key, [
-                'href'   => $whatsapp_url,
+                'href'   => $whatsapp['url'],
                 'target' => '_blank',
                 'rel'    => 'noopener',
             ]);
+
+            /*
+             * دو ویژگیِ data-* فقط وقتی چاپ می‌شوند که الگو واقعاً به
+             * ویژگی‌هایِ انتخابیِ کاربر نیاز دارد — چیزی که فقط سمتِ
+             * کلاینت (بعد از انتخابِ کشوها) معلوم می‌شود؛ ‎zig3d-configurator.js‎
+             * با همین دو، ‎href‎ را با هر تغییرِ کشو دوباره می‌سازد. الگویی
+             * که این توکن را ندارد، هیچ‌وقت نیازی به روزآمدسازیِ سمتِ کلاینت
+             * ندارد — همان آدرسِ اینجا کافی و همیشه درست است.
+             */
+            if (false !== strpos($whatsapp['template'], self::WHATSAPP_VARIANTS_TOKEN)) {
+                $this->add_render_attribute($render_key, [
+                    'data-zig-wa-base'     => $whatsapp['base'],
+                    'data-zig-wa-template' => $whatsapp['template'],
+                ]);
+            }
 
             $tag = 'a';
         } else {
@@ -1831,8 +1856,17 @@ final class Product_Configurator extends Widget_Base {
         printf('</%s>', $tag); // phpcs:ignore WordPress.Security.EscapeOutput -- تگ ثابت
     }
 
+    /** توکنی که در الگو با ویژگی‌هایِ انتخاب‌شدهٔ کاربر (فقط محصولِ متغیر) جایگزین می‌شود. */
+    private const WHATSAPP_VARIANTS_TOKEN = '[متغیرهای انتخابی]';
+
     /**
-     * آدرسِ ‎wa.me‎ برایِ دکمهٔ اصلی، یا ‎null‎ اگر الگو خالی باشد.
+     * دادهٔ لازم برایِ دکمهٔ واتساپِ اصلی، یا ‎null‎ اگر الگو/شماره خالی باشد.
+     *
+     * ‎url‎ همان آدرسِ کاملِ ‎wa.me‎ برایِ حالتِ اولیه است — پیش از آنکه
+     * کاربر چیزی از کشوها انتخاب کند، پس بدونِ هیچ خطِ ویژگی. ‎base‎/‎template‎
+     * فقط وقتی لازم‌اند که الگو به ‎[متغیرهای انتخابی]‎ نیاز داشته باشد؛
+     * ‎render_button()‎ آن‌ها را رویِ ‎data-*‎ی دکمه می‌گذارد تا جاوااسکریپت
+     * با هر تغییرِ انتخاب، ‎href‎ را دوباره بسازد.
      *
      * نکتهٔ فنی‌ای که اینجا باید رعایت شود: خطِ بعدی در پیامِ واتساپ فقط
      * وقتی درست کار می‌کند که در رشتهٔ PHP کاراکترِ واقعیِ خط‌ِ‌جدید باشد و
@@ -1844,8 +1878,10 @@ final class Product_Configurator extends Widget_Base {
      * لینکِ محصول از همان مکانیزمِ پیش‌فرضِ وردپرس/ووکامرس می‌آید —
      * ‎wp_get_shortlink()‎ — که برایِ یک پستِ عادی به ‎?p={ID}‎ می‌رسد: کوتاه،
      * و مستقیماً از رویِ شناسهٔ محصول قابلِ شناسایی.
+     *
+     * @return array{url:string,base:string,template:string}|null
      */
-    private function whatsapp_url(array $settings, \WC_Product $product): ?string {
+    private function whatsapp_data(array $settings, \WC_Product $product): ?array {
         $template = trim((string) ($settings['whatsapp_template'] ?? ''));
 
         if ('' === $template) {
@@ -1858,13 +1894,50 @@ final class Product_Configurator extends Widget_Base {
             return null;
         }
 
-        $message = str_replace(
+        $partial = str_replace(
             ['[نام محصول]', '[لینک محصول]'],
-            [$product->get_name(), wp_get_shortlink($product->get_id())],
+            [$product->get_name(), (string) wp_get_shortlink($product->get_id())],
             $template
         );
 
-        return 'https://wa.me/' . $number . '?text=' . rawurlencode($message);
+        $base = 'https://wa.me/' . $number . '?text=';
+
+        return [
+            'url'      => $base . rawurlencode(self::whatsapp_message($partial, [])),
+            'base'     => $base,
+            'template' => $partial,
+        ];
+    }
+
+    /**
+     * جایگزینیِ توکنِ ویژگی‌ها با خط‌هایِ داده‌شده — یا حذفِ کاملِ خط، اگر
+     * توکن تنها چیزِ آن خط بوده و هیچ ویژگی‌ای انتخاب نشده.
+     *
+     * تشخیصِ «تنها چیزِ خط» عمدی است: همینی که تضمین می‌کند نبودِ انتخاب،
+     * جایِ خالی یا دونقطهٔ بی‌مقدار در پیام نمی‌گذارد، بلکه کلِ خط را
+     * بی‌صدا برمی‌دارد. اگر توکن کنارِ متنِ دیگری در همان خط بود (حالتِ
+     * غیرمعمول)، فقط خودِ توکن جایگزین می‌شود، نه کل خط.
+     *
+     * @param string[] $variant_lines
+     */
+    private static function whatsapp_message(string $partial_template, array $variant_lines): string {
+        $block = implode("\n", $variant_lines);
+        $rows  = explode("\n", $partial_template);
+        $out   = [];
+
+        foreach ($rows as $row) {
+            if (self::WHATSAPP_VARIANTS_TOKEN === trim($row)) {
+                if ('' !== $block) {
+                    $out[] = $block;
+                }
+
+                continue;
+            }
+
+            $out[] = str_replace(self::WHATSAPP_VARIANTS_TOKEN, $block, $row);
+        }
+
+        return implode("\n", $out);
     }
 
     /**

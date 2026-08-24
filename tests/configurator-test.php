@@ -324,3 +324,80 @@ $no_template_out = zig_render(Product_Configurator::class, $header_settings + [
 
 Tests::keeps('با الگویِ خالی، دکمهٔ اصلی به پیوندِ عادی برمی‌گردد', $no_template_out, 'example.com');
 Tests::blocks('و دیگر لینکِ واتساپ نیست', $no_template_out, 'wa.me');
+
+/* ==========================================================================
+ * رندر › دکمهٔ اصلی، ویژگی‌هایِ انتخابیِ محصولِ متغیر (سمتِ کلاینت)
+ * ======================================================================= */
+
+Tests::group('رندر › واتساپ، توکنِ ویژگی‌هایِ انتخابی');
+
+/*
+ * محصولِ متغیرِ همین فایل (‎$product‎) که بالاتر با ترکیبِ ‎config‎ ساخته
+ * شده کافی است؛ اینجا فقط رفتارِ چاپِ ‎data-*‎ سنجیده می‌شود، نه خودِ
+ * منطقِ واریانت‌ها که در گروه‌هایِ بالاتر پوشش دارد.
+ */
+$plain_whatsapp_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $priced_simple->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'whatsapp_number'   => '+989108087105',
+    'whatsapp_template' => "سلام\n[نام محصول]\n[لینک محصول]",
+]);
+
+Tests::blocks(
+    'بدونِ توکنِ ویژگی‌ها در الگو، هیچ data-zig-wa-* چاپ نمی‌شود',
+    $plain_whatsapp_out,
+    'data-zig-wa-'
+);
+
+$variant_whatsapp_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $product->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'whatsapp_number'   => '+989108087105',
+    'whatsapp_template' => "سلام\n[نام محصول]\n[متغیرهای انتخابی]\n[لینک محصول]",
+]);
+
+Tests::keeps('با توکنِ ویژگی‌ها در الگو، data-zig-wa-base چاپ می‌شود', $variant_whatsapp_out, 'data-zig-wa-base=');
+Tests::keeps('و data-zig-wa-template هم', $variant_whatsapp_out, 'data-zig-wa-template=');
+Tests::keeps(
+    'الگویِ خام (با نام/لینکِ جایگزین‌شده و توکنِ ویژگی‌ها دست‌نخورده) در data-zig-wa-template هست',
+    $variant_whatsapp_out,
+    esc_attr("سلام\n" . $product->get_name() . "\n[متغیرهای انتخابی]\n" . wp_get_shortlink($product->get_id()))
+);
+Tests::blocks(
+    'href اولیه (پیش از هر انتخابی) دیگر خطِ توکن را ندارد',
+    $variant_whatsapp_out,
+    rawurlencode('متغیرهای انتخابی')
+);
+
+/* ==========================================================================
+ * whatsapp_message() › جایگزینی یا حذفِ کاملِ خطِ توکن
+ * ======================================================================= */
+
+Tests::group('whatsapp_message › ساختِ پیامِ نهایی');
+
+$whatsapp_message = new ReflectionMethod(Product_Configurator::class, 'whatsapp_message');
+$whatsapp_message->setAccessible(true);
+
+Tests::same(
+    'توکن روی خطِ خودش، با انتخاب: کلِ خط با بلوکِ ویژگی‌ها جایگزین می‌شود',
+    $whatsapp_message->invoke(null, "الف\n[متغیرهای انتخابی]\nب", ['رنگ: قرمز', 'سایز: بزرگ']),
+    "الف\nرنگ: قرمز\nسایز: بزرگ\nب"
+);
+
+Tests::same(
+    'توکن روی خطِ خودش، بدونِ هیچ انتخابی: کلِ خط بی‌صدا حذف می‌شود',
+    $whatsapp_message->invoke(null, "الف\n[متغیرهای انتخابی]\nب", []),
+    "الف\nب"
+);
+
+Tests::same(
+    'توکن کنارِ متنِ دیگر روی همان خط: فقط خودِ توکن جایگزین می‌شود',
+    $whatsapp_message->invoke(null, 'مشخصات: [متغیرهای انتخابی]', ['رنگ: قرمز']),
+    'مشخصات: رنگ: قرمز'
+);
+
+Tests::same(
+    'بدونِ توکن در الگو، هیچ چیز تغییر نمی‌کند',
+    $whatsapp_message->invoke(null, "الف\nب", ['رنگ: قرمز']),
+    "الف\nب"
+);
