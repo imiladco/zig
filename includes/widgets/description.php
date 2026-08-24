@@ -507,15 +507,86 @@ final class Description extends Widget_Base {
         return $this->finish($raw, $title, $render_filters);
     }
 
+    /**
+     * قفلِ ورودِ دوباره — نگاه کنید به ‎apply_content_filters()‎.
+     */
+    private static bool $applying_content_filters = false;
+
     /** @return array{html:string,title:string}|null */
     private function finish(string $raw, string $title, bool $render_filters): ?array {
         if (!Markup::filled($raw)) {
             return null;
         }
 
-        $html = $render_filters ? (string) apply_filters('the_content', $raw) : wpautop($raw);
+        $html = $render_filters ? self::apply_content_filters($raw) : wpautop($raw);
 
         return ['html' => wp_kses_post($html), 'title' => $title];
+    }
+
+    /**
+     * ‎the_content‎ را اجرا می‌کند، ولی *بدونِ* رندرِ بازگشتیِ سندِ المنتور.
+     *
+     * المنتور ‎Frontend::apply_builder_in_content()‎ را رویِ ‎the_content‎
+     * می‌نشاند. آن متد، اگر پستِ جاری دادهٔ المنتوری داشته باشد، یک سندِ
+     * *کامل* را از نو رندر می‌کند. یعنی هر بار که این ویجت محتوایش را از
+     * فیلترها می‌گذراند، عملاً کلِ یک صفحهٔ المنتوری دوباره ساخته می‌شود —
+     * و اگر آن صفحه خودش گریدی (مثلِ Listing Grid جت‌اینجین) داشته باشد،
+     * آن گرید رویِ ده‌ها پست حلقه می‌زند و هر آیتم باز محتوایِ المنتوریِ
+     * دیگری رندر می‌کند؛ آیتم‌هایی که می‌توانند دوباره همین ویجت را داشته
+     * باشند. رشدِ حاصل نمایی است، نه خطی.
+     *
+     * این دقیقاً همان چیزی بود که رویِ سایت، هنگامِ ذخیرهٔ سندِ Single
+     * Product در ادیتور، حافظه را از ~۱۷۰ مگابایت به بیش از ۲ گیگابایت
+     * می‌رساند و درخواست را با فاتالِ حافظه می‌کشت (خطایِ ۵۰۰). مسیرِ
+     * ذخیره حساس‌تر هم هست: المنتور برایِ ساختنِ نسخهٔ متنیِ صفحه
+     * (‎DB::save_plain_text()‎) رندرِ *همهٔ* ویجت‌ها را صدا می‌زند، پس این
+     * انفجار در هر ذخیره تکرار می‌شد.
+     *
+     * راهِ حل، حذفِ موقتِ همان یک کالبک است — نه دور زدنِ کلِ ‎the_content‎:
+     * شورت‌کدها، ‎wpautop‎، امبدها و بقیهٔ فیلترها باید سرِ جایشان بمانند،
+     * چون کاربر از این ویجت همان‌ها را انتظار دارد. اولویتِ واقعی هم با
+     * ‎has_filter()‎ خوانده می‌شود، نه فرضِ ۱۰، تا اگر کسی جای دیگری
+     * دوباره‌اش نشانده باشد همان‌جا برگردد.
+     *
+     * قفلِ ‎$applying_content_filters‎ لایهٔ دومِ دفاع است: اگر با هر مسیرِ
+     * دیگری (فیلترِ شخصِ ثالث، شورت‌کدی که خودش محتوا رندر می‌کند) باز هم
+     * تودرتو شویم، لایهٔ داخلی به ‎wpautop‎ ساده برمی‌گردد به‌جایِ اینکه
+     * زنجیره را عمیق‌تر کند.
+     */
+    private static function apply_content_filters(string $raw): string {
+        if (self::$applying_content_filters) {
+            return wpautop($raw);
+        }
+
+        $frontend = (class_exists('\Elementor\Plugin') && isset(\Elementor\Plugin::$instance->frontend))
+            ? \Elementor\Plugin::$instance->frontend
+            : null;
+
+        $callback = null;
+        $priority = false;
+
+        if ($frontend && method_exists($frontend, 'apply_builder_in_content')) {
+            $callback = [$frontend, 'apply_builder_in_content'];
+            $priority = has_filter('the_content', $callback);
+
+            if (false !== $priority) {
+                remove_filter('the_content', $callback, (int) $priority);
+            }
+        }
+
+        self::$applying_content_filters = true;
+
+        try {
+            $html = (string) apply_filters('the_content', $raw);
+        } finally {
+            self::$applying_content_filters = false;
+
+            if (null !== $callback && false !== $priority) {
+                add_filter('the_content', $callback, (int) $priority);
+            }
+        }
+
+        return $html;
     }
 
     private function current_post_id(): int {
