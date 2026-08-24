@@ -276,11 +276,23 @@ final class Product_Gallery extends Widget_Base {
             'tab'   => Controls_Manager::TAB_STYLE,
         ]);
 
-        $this->add_control('card_bg', [
-            'label'     => __('رنگ پس‌زمینه', 'zig3d-widgets'),
-            'type'      => Controls_Manager::COLOR,
-            'default'   => '#f7f8fc',
-            'selectors' => [
+        /*
+         * ریسپانسیو — چون طرحِ موبایل اصلاً کارت ندارد (پس‌زمینه‌اش شفاف
+         * است، طبقِ almasara-elementor-widgets)، درحالی‌که دسکتاپ کارتِ
+         * ‎#F7F8FC‎ دارد. یک ‎add_control‎ی سادهٔ COLOR این تفاوت را
+         * نمی‌توانست بدهد — پیش‌فرضش رویِ ‎{{WRAPPER}} .zig-gallery‎
+         * بی‌قیدوشرط می‌نشست و هیچ ریستِ CSSِ خودِ افزونه (پایین‌ترِ همین
+         * فایل، اختصاصیتِ کمتر) نمی‌توانست ببردش — دقیقاً همان باگی که
+         * برایِ ‎--zig-gal-rgap‎/‎--zig-gal-cgap‎ پیدا شد. ‎mobile_default‎
+         * درستش می‌کند: المنتور خودش این مقدار را داخلِ مدیاکوئریِ موبایلِ
+         * خودش می‌نویسد، با همان اختصاصیتِ بالا — دیگر رقابتی در کار نیست.
+         */
+        $this->add_responsive_control('card_bg', [
+            'label'          => __('رنگ پس‌زمینه', 'zig3d-widgets'),
+            'type'           => Controls_Manager::COLOR,
+            'default'        => '#f7f8fc',
+            'mobile_default' => 'transparent',
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery' => 'background-color: {{VALUE}};',
             ],
         ]);
@@ -291,11 +303,12 @@ final class Product_Gallery extends Widget_Base {
         ]);
 
         $this->add_responsive_control('card_radius', [
-            'label'      => __('گردی گوشه', 'zig3d-widgets'),
-            'type'       => Controls_Manager::DIMENSIONS,
-            'size_units' => ['px', '%'],
-            'default'    => ['top' => '26', 'right' => '26', 'bottom' => '26', 'left' => '26', 'unit' => 'px', 'isLinked' => true],
-            'selectors'  => [
+            'label'          => __('گردی گوشه', 'zig3d-widgets'),
+            'type'           => Controls_Manager::DIMENSIONS,
+            'size_units'     => ['px', '%'],
+            'default'        => ['top' => '26', 'right' => '26', 'bottom' => '26', 'left' => '26', 'unit' => 'px', 'isLinked' => true],
+            'mobile_default' => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px', 'isLinked' => true],
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
         ]);
@@ -307,11 +320,12 @@ final class Product_Gallery extends Widget_Base {
          * را جبران می‌کند) هم باید دستی هماهنگ شود.
          */
         $this->add_responsive_control('card_padding', [
-            'label'      => __('پدینگ داخلی', 'zig3d-widgets'),
-            'type'       => Controls_Manager::DIMENSIONS,
-            'size_units' => ['px', 'em', '%'],
-            'default'    => ['top' => '0', 'right' => '24', 'bottom' => '24', 'left' => '24', 'unit' => 'px', 'isLinked' => false],
-            'selectors'  => [
+            'label'          => __('پدینگ داخلی', 'zig3d-widgets'),
+            'type'           => Controls_Manager::DIMENSIONS,
+            'size_units'     => ['px', 'em', '%'],
+            'default'        => ['top' => '0', 'right' => '24', 'bottom' => '24', 'left' => '24', 'unit' => 'px', 'isLinked' => false],
+            'mobile_default' => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px', 'isLinked' => true],
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
         ]);
@@ -389,34 +403,42 @@ final class Product_Gallery extends Widget_Base {
             ],
         ]);
 
-        $this->add_control('main_bg', [
-            'label'       => __('رنگ پس‌زمینه', 'zig3d-widgets'),
-            'type'        => Controls_Manager::COLOR,
-            'default'     => '#fafbfe',
-            'description' => __('برای حالت «کامل داخل کادر» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
-            'selectors'   => [
+        $this->add_responsive_control('main_bg', [
+            'label'          => __('رنگ پس‌زمینه', 'zig3d-widgets'),
+            'type'           => Controls_Manager::COLOR,
+            'default'        => '#fafbfe',
+            'mobile_default' => 'transparent',
+            'description'    => __('برای حالت «کامل داخل کادر» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery__main' => 'background-color: {{VALUE}};',
             ],
         ]);
 
         $this->add_responsive_control('main_padding', [
-            'label'       => __('پدینگ داخلی', 'zig3d-widgets'),
-            'type'        => Controls_Manager::DIMENSIONS,
-            'size_units'  => ['px', 'em', '%'],
-            'default'     => ['top' => '38', 'right' => '69', 'bottom' => '38', 'left' => '69', 'unit' => 'px', 'isLinked' => false],
-            'description' => __('فاصله تصویر از لبه‌های کادر.', 'zig3d-widgets'),
-            'selectors'   => [
+            'label'          => __('پدینگ داخلی', 'zig3d-widgets'),
+            'type'           => Controls_Manager::DIMENSIONS,
+            'size_units'     => ['px', 'em', '%'],
+            'default'        => ['top' => '38', 'right' => '69', 'bottom' => '38', 'left' => '69', 'unit' => 'px', 'isLinked' => false],
+            'mobile_default' => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px', 'isLinked' => true],
+            'description'    => __('فاصله تصویر از لبه‌های کادر.', 'zig3d-widgets'),
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery__main' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
         ]);
 
+        /*
+         * ‎mobile_default: 8px‎ — همان عددی که almasara-elementor-widgets
+         * برایِ این گپ (چه دسکتاپ چه موبایل) دارد؛ ۳۲px فقط بازطراحیِ
+         * دسکتاپ است.
+         */
         $this->add_responsive_control('main_spacing', [
-            'label'      => __('فاصله تا تامبنیل‌ها (سطر)', 'zig3d-widgets'),
-            'type'       => Controls_Manager::SLIDER,
-            'size_units' => ['px', 'em'],
-            'range'      => ['px' => ['min' => 0, 'max' => 100]],
-            'default'    => ['size' => 32, 'unit' => 'px'],
-            'selectors'  => [
+            'label'          => __('فاصله تا تامبنیل‌ها (سطر)', 'zig3d-widgets'),
+            'type'           => Controls_Manager::SLIDER,
+            'size_units'     => ['px', 'em'],
+            'range'          => ['px' => ['min' => 0, 'max' => 100]],
+            'default'        => ['size' => 32, 'unit' => 'px'],
+            'mobile_default' => ['size' => 8, 'unit' => 'px'],
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery' => '--zig-gal-rgap: {{SIZE}}{{UNIT}};',
             ],
         ]);
@@ -589,12 +611,13 @@ final class Product_Gallery extends Widget_Base {
         ]);
 
         $this->add_responsive_control('thumbs_gap', [
-            'label'      => __('فاصله بین تامبنیل‌ها (ستون)', 'zig3d-widgets'),
-            'type'       => Controls_Manager::SLIDER,
-            'size_units' => ['px', 'em'],
-            'range'      => ['px' => ['min' => 0, 'max' => 60]],
-            'default'    => ['size' => 12, 'unit' => 'px'],
-            'selectors'  => [
+            'label'          => __('فاصله بین تامبنیل‌ها (ستون)', 'zig3d-widgets'),
+            'type'           => Controls_Manager::SLIDER,
+            'size_units'     => ['px', 'em'],
+            'range'          => ['px' => ['min' => 0, 'max' => 60]],
+            'default'        => ['size' => 12, 'unit' => 'px'],
+            'mobile_default' => ['size' => 8, 'unit' => 'px'],
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery' => '--zig-gal-cgap: {{SIZE}}{{UNIT}};',
             ],
         ]);
@@ -619,23 +642,25 @@ final class Product_Gallery extends Widget_Base {
             ],
         ]);
 
-        $this->add_control('thumb_bg', [
-            'label'       => __('رنگ پس‌زمینه کارت', 'zig3d-widgets'),
-            'type'        => Controls_Manager::COLOR,
-            'default'     => '#ffffff',
-            'description' => __('برای حالت «کامل داخل کارت» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
-            'selectors'   => [
+        $this->add_responsive_control('thumb_bg', [
+            'label'          => __('رنگ پس‌زمینه کارت', 'zig3d-widgets'),
+            'type'           => Controls_Manager::COLOR,
+            'default'        => '#ffffff',
+            'mobile_default' => 'transparent',
+            'description'    => __('برای حالت «کامل داخل کارت» یا وقتی پدینگ می‌دهید دیده می‌شود.', 'zig3d-widgets'),
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'background-color: {{VALUE}};',
             ],
         ]);
 
         $this->add_responsive_control('thumb_padding', [
-            'label'       => __('پدینگ داخلی کارت', 'zig3d-widgets'),
-            'type'        => Controls_Manager::DIMENSIONS,
-            'size_units'  => ['px', 'em', '%'],
-            'default'     => ['top' => '10', 'right' => '10', 'bottom' => '10', 'left' => '10', 'unit' => 'px', 'isLinked' => true],
-            'description' => __('فاصله تصویر از لبه‌های کارت — برای ظاهر کارتی.', 'zig3d-widgets'),
-            'selectors'   => [
+            'label'          => __('پدینگ داخلی کارت', 'zig3d-widgets'),
+            'type'           => Controls_Manager::DIMENSIONS,
+            'size_units'     => ['px', 'em', '%'],
+            'default'        => ['top' => '10', 'right' => '10', 'bottom' => '10', 'left' => '10', 'unit' => 'px', 'isLinked' => true],
+            'mobile_default' => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px', 'isLinked' => true],
+            'description'    => __('فاصله تصویر از لبه‌های کارت — برای ظاهر کارتی.', 'zig3d-widgets'),
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
             ],
         ]);
@@ -663,11 +688,12 @@ final class Product_Gallery extends Widget_Base {
         ]);
 
         $this->add_responsive_control('thumb_radius', [
-            'label'      => __('رادیوس کارت', 'zig3d-widgets'),
-            'type'       => Controls_Manager::DIMENSIONS,
-            'size_units' => ['px', '%'],
-            'default'    => ['top' => '15', 'right' => '15', 'bottom' => '15', 'left' => '15', 'unit' => 'px', 'isLinked' => true],
-            'selectors'  => [
+            'label'          => __('رادیوس کارت', 'zig3d-widgets'),
+            'type'           => Controls_Manager::DIMENSIONS,
+            'size_units'     => ['px', '%'],
+            'default'        => ['top' => '15', 'right' => '15', 'bottom' => '15', 'left' => '15', 'unit' => 'px', 'isLinked' => true],
+            'mobile_default' => ['top' => '0', 'right' => '0', 'bottom' => '0', 'left' => '0', 'unit' => 'px', 'isLinked' => true],
+            'selectors'      => [
                 '{{WRAPPER}} .zig-gallery__thumb' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
             ],
         ]);

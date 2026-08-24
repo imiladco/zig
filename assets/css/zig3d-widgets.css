@@ -2918,29 +2918,29 @@ a.zig-list__label:focus-visible {
 	/*
 	 * موبایل باید دقیقاً همان چیزی باشد که پلاگینِ منبع (almasara-elementor-
 	 * widgets) داشت — دسکتاپ طبقِ فیگمای تازه (کارت، لبه‌به‌لبه، نسبتِ ۵:۴
-	 * تامبنیل، فلش‌هایِ ناوبری) بازطراحی شد و همان می‌ماند، ولی هیچ‌کدام از
-	 * آن تزئین‌ها مدیاکوئری نداشتند، پس بی‌قیدوشرط روی موبایل هم می‌نشستند:
-	 * مارجینِ منفی/پدینگِ ۶۹px تصویرِ شاخص را ریز و کج می‌کرد، کارتِ
-	 * پس‌زمینه‌دار/بوردردار جایی بود که اصلِ almasara هیچ‌وقت نداشت، و
-	 * فلش‌هایِ این‌خطی رویِ یک تصویرِ کوچک اصلاً معنا نداشتند. اینجا همه را
-	 * دقیقاً به مقادیرِ ‎.amw-pg‎ی اصلی برمی‌گرداند.
+	 * تامبنیل، فلش‌هایِ ناوبری) بازطراحی شد و همان می‌ماند.
+	 *
+	 * اینجا فقط چیزهایی ریست می‌شوند که کنترلِ استایلِ متناظرشان پیش‌فرضِ
+	 * ثابت ندارد (بوردر، فلش، aspect-ratio) — رنگ/پدینگ/رادیوس/گپ همه از
+	 * ‎mobile_default‎یِ خودِ کنترلِ المنتور می‌آیند (تویِ ‎product-gallery.php‎)،
+	 * نه از اینجا. اولین نسخهٔ این فیکس سعی کرد همه را با یک ریستِ ساده‌ی
+	 * ‎.zig-gallery{...}‎ برگرداند — باخت، چون کنترل‌هایِ دسکتاپ (پیش‌فرضِ
+	 * ۳۲px/۲۶px/۳۸px و ...) رویِ ‎{{WRAPPER}} .zig-gallery‎ می‌نویسند: دو
+	 * کلاس، اختصاصیتش از یک ‎.zig-gallery‎ی تنها همیشه بیشتر است، فارغ از
+	 * مدیاکوئری/ترتیب. تنها راهِ درست این بود که خودِ کنترل یک مقدارِ
+	 * پیش‌فرضِ جداگانه برایِ موبایل بدهد.
 	 */
 	.zig-gallery {
-		background-color: transparent;
 		border: 0;
-		border-radius: 0;
-		padding: 0;
 	}
 
 	.zig-gallery__main {
 		margin-inline: 0;
 		width: 100%;
-		padding: 0;
-		background-color: transparent;
 		box-shadow: none;
 	}
 
-	/* اصل هیچ‌وقت تامبنیل را ۵:۴ یا با بوردر نداشت — هر دو مالِ بازطراحیِ دسکتاپ‌اند */
+	/* اصل هیچ‌وقت تامبنیل را ۵:۴ نداشت — مالِ بازطراحیِ دسکتاپ است */
 	.zig-gallery__thumb {
 		aspect-ratio: 1 / 1;
 		border: 0;
@@ -2958,20 +2958,7 @@ a.zig-list__label:focus-visible {
 		display: none;
 	}
 
-	/*
-	 * ---- نوار اسکرول افقی یکی‌درمیون ----
-	 *
-	 * گپِ این حالت عمداً عددِ ثابتِ ۸px است، نه ‎var(--zig-gal-rgap)‎/
-	 * ‎var(--zig-gal-cgap)‎: آن دو متغیر مالِ کنترل‌هایِ استایلِ دسکتاپ‌اند
-	 * («فاصله تا تامبنیل‌ها (سطر)»/«فاصله بین تامبنیل‌ها (ستون)»، پیش‌فرضِ
-	 * ۳۲px/۱۲px) و المنتور رویِ ‎{{WRAPPER}} .zig-gallery‎ می‌نویسدشان —
-	 * دو کلاس، اختصاصیتش از ‎.zig-gallery‎ی تنهایِ اینجا بیشتر است، پس هر
-	 * تلاشی برایِ ریست‌کردنِ خودِ متغیر برایِ موبایل (نسخهٔ قبلی همین فایل)
-	 * می‌باخت — نه به‌خاطرِ ترتیب یا مدیاکوئری، فقط به‌خاطرِ اختصاصیت.
-	 * راه‌حل این نیست که با آن اختصاصیت رقابت کنیم؛ این عددها اصلاً نباید
-	 * از آن متغیرها بیایند — همان‌طور که در almasara-elementor-widgets هم
-	 * این گپ یک عددِ ثابتِ پیاده‌سازی است، نه چیزی که کاربر از پنل عوض کند.
-	 */
+	/* ---- نوار اسکرول افقی یکی‌درمیون ---- */
 	.zig-gallery--mobile-alt .zig-gallery__strip {
 		display: flex;
 		flex-direction: column;
@@ -2979,7 +2966,7 @@ a.zig-list__label:focus-visible {
 		height: var(--zig-gal-mh, 85vw);
 		/* گپِ عمودی صفر است چون دستی با ‎margin-block-end‎ی زیر داده می‌شود، نه گپِ بومیِ فلکس */
 		row-gap: 0;
-		column-gap: 8px;
+		column-gap: var(--zig-gal-cgap, 8px);
 		overflow-x: auto;
 		overflow-y: hidden;
 		scroll-snap-type: x proximity;
@@ -2999,8 +2986,8 @@ a.zig-list__label:focus-visible {
 	 */
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb {
 		flex: 0 0 auto;
-		height: calc((var(--zig-gal-mh, 85vw) - 8px) / 2);
-		width: calc((var(--zig-gal-mh, 85vw) - 8px) / 2);
+		height: calc((var(--zig-gal-mh, 85vw) - var(--zig-gal-rgap, 8px)) / 2);
+		width: calc((var(--zig-gal-mh, 85vw) - var(--zig-gal-rgap, 8px)) / 2);
 		scroll-snap-align: center;
 	}
 
@@ -3011,7 +2998,7 @@ a.zig-list__label:focus-visible {
 	 * به‌هم می‌ریخت (ارتفاعِ مؤثرِ ستون از ‎--zig-gal-mh‎ رد می‌شد).
 	 */
 	.zig-gallery--mobile-alt .zig-gallery__strip > .zig-gallery__thumb:nth-child(3n + 2) {
-		margin-block-end: 8px;
+		margin-block-end: var(--zig-gal-rgap, 8px);
 	}
 
 	/* آیتم‌های جایگاه 3n+1 (شاخص، تامبنیل ۳، ۶، ...) تمام‌ارتفاع و مربع بزرگ */
