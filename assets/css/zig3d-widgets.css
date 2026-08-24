@@ -7637,3 +7637,35 @@ nav.zig-menu {
 	width: 100%;
 	height: 100%;
 }
+
+/* ==========================================================================
+   شمارش‌گر
+   ========================================================================== */
+
+/*
+ * خطِ‌مبنا (baseline) پیش‌فرضِ ترازِ عمودی است، نه وسط — چون متنِ قبل/بعد
+ * و عدد معمولاً اندازهٔ فونتِ متفاوتی دارند و «وسط» باعث می‌شود پایینِ
+ * حروف هم‌تراز نباشد؛ خودِ ویجت این را قابلِ‌تغییر می‌گذارد
+ * (‎--zig-counter-gap‎ و ‎align-items‎ از پنلِ استایل می‌آیند).
+ */
+.zig-counter {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--zig-counter-gap, 6px);
+}
+
+.zig-counter__number {
+	font-variant-numeric: tabular-nums;
+}
+
+/* پیام راهنما، فقط در ادیتور رندر می‌شود */
+.zig-counter__notice {
+	padding: 10px 14px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #7a5c00;
+	background: #fff8e1;
+	border: 1px dashed #e0c25a;
+	border-radius: 6px;
+}

@@ -77,6 +77,8 @@ require_once $root . '/includes/likes.php';
 require_once $root . '/includes/likes-endpoint.php';
 require_once $root . '/includes/widgets/post-meta.php';
 require_once $root . '/includes/widgets/toc.php';
+require_once $root . '/includes/counter-source.php';
+require_once $root . '/includes/widgets/counter.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -103,6 +105,7 @@ $widgets = [
     'منویِ اصلی'    => \Zig3d_Widgets\Widgets\Menu::class,
     'متایِ پست'     => \Zig3d_Widgets\Widgets\Post_Meta::class,
     'فهرست مطالب'   => \Zig3d_Widgets\Widgets\Toc::class,
+    'شمارش‌گر'      => \Zig3d_Widgets\Widgets\Counter::class,
 ];
 
 /*

@@ -635,6 +635,52 @@ namespace {
             ));
         }
     }
+
+    if (!class_exists('WP_Error')) {
+        class WP_Error {
+        }
+    }
+
+    if (!function_exists('is_wp_error')) {
+        function is_wp_error($thing) {
+            return $thing instanceof \WP_Error;
+        }
+    }
+
+    /**
+     * یک ترمِ تکی — از همان رجیستریِ ‎__zig_terms‎ می‌خواند (نه
+     * ‎__zig_wp_terms‎ که آرایه‌ایِ اشیاست؛ این یکی id => داده، چه آرایه
+     * چه شیء). تستی که این را به کار می‌برد، آن رجیستری را خودش پر
+     * می‌کند؛ یک ‎WP_Error‎ی دستی هم مجاز است.
+     *
+     * قبلاً چند فایلِ تست هرکدام نسخهٔ خودشان را با همین اسمِ سراسری
+     * تعریف کرده بودند — تا روزی که ترتیبِ الفباییِ ‎glob()‎ باعث شد
+     * نسخهٔ یک فایل رویِ فایلِ دیگر بنشیند و ده‌ها سنجهٔ بی‌ربط بشکنند.
+     * یک تعریف، جایی که بقیهٔ استاب‌ها هستند.
+     */
+    if (!function_exists('get_term')) {
+        function get_term($id, $taxonomy = '') {
+            $terms = $GLOBALS['__zig_terms'] ?? [];
+            $term  = $terms[(int) $id] ?? null;
+
+            if (null === $term) {
+                return null;
+            }
+
+            return is_object($term) ? $term : (object) array_merge(['term_id' => (int) $id], (array) $term);
+        }
+    }
+
+    /**
+     * شمارشِ پست‌ها به‌ازایِ پست‌تایپ — رجیستریِ ‎__zig_wp_post_counts‎،
+     * کلید = نامِ پست‌تایپ. پست‌تایپی که تستی برایش چیزی ثبت نکرده،
+     * ‎publish: 0‎ می‌گیرد.
+     */
+    if (!function_exists('wp_count_posts')) {
+        function wp_count_posts($post_type = 'post') {
+            return $GLOBALS['__zig_wp_post_counts'][$post_type] ?? (object) ['publish' => 0];
+        }
+    }
     if (!function_exists('get_posts')) {
         function get_posts($args = []) { return []; }
     }

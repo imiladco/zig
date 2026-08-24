@@ -52,6 +52,7 @@ final class Plugin {
         'menu' => Widgets\Menu::class,
         'post-meta' => Widgets\Post_Meta::class,
         'toc' => Widgets\Toc::class,
+        'counter' => Widgets\Counter::class,
     ];
 
     public static function instance(): self {
@@ -364,6 +365,13 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/reading-time.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/likes.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/likes-endpoint.php';
+
+        /*
+         * بدونِ گیت‌کردن پشتِ ‎WooCommerce‎: منبعِ «دسته‌بندی بلاگ» به
+         * ووکامرس نیازی ندارد. منبعِ «دانلودها» خودش داخلِ ‎Counter_Source‎
+         * با ‎class_exists()‎ سراغِ ‎Download_Archive_Data‎ می‌رود، نه اینجا.
+         */
+        require_once ZIG3D_WIDGETS_PATH . 'includes/counter-source.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';

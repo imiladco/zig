@@ -53,9 +53,7 @@ if (!function_exists('get_term_by')) {
         return null === $name ? false : (object) ['slug' => $value, 'name' => $name];
     }
 }
-if (!function_exists('is_wp_error')) {
-    function is_wp_error($thing) { return false; }
-}
+// is_wp_error() از lib/woocommerce-stub.php می‌آید
 
 $GLOBALS['__zig_seq'] = 0;
 
