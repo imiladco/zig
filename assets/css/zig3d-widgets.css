@@ -5966,6 +5966,13 @@ ul.zig-contact.zig-contact {
 .zig-contact .zig-contact__link,
 .zig-contact a.zig-contact__link {
 	display: inline-flex;
+	/*
+	 * دی‌اومِ آیکون قبل از برچسب است (رجوع به ‎render_item()‎)، ولی طبقِ
+	 * طرح آیکون باید در سمتِ چپِ آیتم بنشیند، نه راست — در فلکسِ راست‌به‌چپِ
+	 * بدونِ این خط، اولین فرزند (آیکون) رویِ inline-start می‌نشیند که در
+	 * RTL همان راست است. ‎row-reverse‎ فقط ترتیبِ دیداری را برمی‌گرداند.
+	 */
+	flex-direction: row-reverse;
 	align-items: center;
 	gap: var(--zig-contact-icon-gap, 4px);
 	color: var(--zig-contact-text-color, #344054);
