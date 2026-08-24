@@ -8,8 +8,11 @@ require_once __DIR__ . '/lib/elementor-stub.php';
 require_once __DIR__ . '/lib/woocommerce-stub.php';
 
 $root = dirname(__DIR__);
+require_once $root . '/includes/svg.php';
 require_once $root . '/includes/markup.php';
+require_once $root . '/includes/selector.php';
 require_once $root . '/includes/price.php';
+require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/counter-source.php';
 require_once $root . '/includes/download-archive-data.php';
 require_once $root . '/includes/widgets/counter.php';
@@ -120,3 +123,39 @@ Tests::same(
     $render(['source_type' => 'downloads']),
     ''
 );
+
+Tests::group('شمارش‌گر › آیکون');
+
+/*
+ * ‎icon_source‎ی پیش‌فرضِ کنترل 'icon' است، ولی ‎zig_render()‎ تنظیمات را
+ * دقیقاً همان چیزی می‌دهد که در آرگومان آمده — مقدارِ پیش‌فرضِ کنترل را
+ * خودش پر نمی‌کند (نگاه کنید به تعریفِ ‎get_settings_for_display‎ در
+ * ‎lib/elementor-stub.php‎). پس اینجا صراحتاً ‎icon‎/‎icon_source‎ داده
+ * می‌شود تا مسیرِ واقعیِ رندرِ آیکون سنجیده شود.
+ */
+$with_icon = $render([
+    'source_type'    => 'blog_category',
+    'category_scope' => 'specific',
+    'category_id'    => 5,
+    'icon_source'    => 'icon',
+    'icon'           => ['value' => 'fas fa-star', 'library' => 'fa-solid'],
+]);
+
+Tests::keeps('آیکون رندر می‌شود', $with_icon, 'zig-icon');
+Tests::ok(
+    'آیکون همیشه در DOM پیش از گروهِ متن می‌آید — جای نمایشی‌اش با flex-direction عوض می‌شود، نه با ترتیبِ DOM',
+    strpos($with_icon, 'zig-icon') < strpos($with_icon, 'zig-counter__content')
+);
+
+$icon_none = $render([
+    'source_type'    => 'blog_category',
+    'category_scope' => 'specific',
+    'category_id'    => 5,
+    'icon_source'    => 'none',
+]);
+Tests::blocks('با «بدون آیکون»، هیچ .zig-icon‌ای نمی‌آید', $icon_none, 'zig-icon');
+
+$icon_unset = $render(['source_type' => 'blog_category', 'category_scope' => 'specific', 'category_id' => 5]);
+Tests::blocks('بدونِ تنظیمِ صریحِ آیکون (مقدارِ ‎icon‎ خالی)، چیزی رندر نمی‌شود', $icon_unset, 'zig-icon');
+
+Tests::keeps('گروهِ پیشوند/عدد/پسوند همیشه در .zig-counter__content است', $icon_unset, '<div class="zig-counter__content">');
