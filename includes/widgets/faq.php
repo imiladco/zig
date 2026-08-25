@@ -500,23 +500,23 @@ final class Faq extends Widget_Base {
     }
 
     /**
-     * خواندنِ ریپیتر از متایِ پست و فیلترِ سطرهایِ بدونِ سوال.
+     * خواندنِ ریپیتر از متا و فیلترِ سطرهایِ بدونِ سوال.
      *
      * @return array<int,array{title:string,answer:string}>
      */
     private function rows(array $settings): array {
         $meta_key = trim((string) ($settings['meta_key'] ?? ''));
-        $post_id  = absint($settings['source_post_id'] ?? 0);
 
-        if ($post_id <= 0) {
-            $post_id = $this->current_post_id();
-        }
+        if ('' === $meta_key) {
+            $this->debug('هیچ کاری نشد: کلیدِ متا خالی است.');
 
-        if ('' === $meta_key || $post_id <= 0) {
             return [];
         }
 
-        $raw = maybe_unserialize(get_post_meta($post_id, $meta_key, true));
+        $manual_id = absint($settings['source_post_id'] ?? 0);
+        $raw       = $manual_id > 0
+            ? $this->read_meta('post', $manual_id, $meta_key)
+            : $this->read_current_meta($meta_key);
 
         if (!is_array($raw)) {
             return [];
@@ -525,7 +525,8 @@ final class Faq extends Widget_Base {
         $title_key  = trim((string) ($settings['field_title'] ?? ''));
         $answer_key = trim((string) ($settings['field_answer'] ?? ''));
 
-        $result = [];
+        $result  = [];
+        $skipped = 0;
 
         foreach ($raw as $row) {
             if (!is_array($row)) {
@@ -538,8 +539,24 @@ final class Faq extends Widget_Base {
              * بدونِ سوال، آیتم اصلاً معنا ندارد — چه رسد به اینکه بتوان
              * بازش کرد. این هم‌زمان قانونِ «سطرِ کاملاً خالی → skip» را هم
              * پوشش می‌دهد: سطری که هیچ فیلدی ندارد، سوال هم ندارد.
+             *
+             * علتِ رایجِ «همه‌چیز خالی است» دقیقاً همین‌جاست: کلیدِ
+             * ‎field_title‎ی تنظیمات با کلیدِ واقعیِ سطر یکی نیست (مثلاً
+             * فاصله/دَش اضافه، یا نامِ فیلد در JetEngine چیزِ دیگری است).
+             * چون هر سطر ساختارِ متفاوتی ندارد، فقط سطرِ *اول* را لاگ
+             * می‌کنیم — کلیدهایِ واقعی‌اش را نشان می‌دهد.
              */
             if (!Markup::filled($title)) {
+                if (0 === $skipped) {
+                    $this->debug(sprintf(
+                        'سطر رد شد — کلیدِ عنوانِ تنظیم‌شده «%s» در این سطر مقدار ندارد. کلیدهایِ واقعیِ سطر: %s',
+                        $title_key,
+                        implode(', ', array_map('strval', array_keys($row)))
+                    ));
+                }
+
+                ++$skipped;
+
                 continue;
             }
 
@@ -551,7 +568,102 @@ final class Faq extends Widget_Base {
             ];
         }
 
+        $this->debug(sprintf(
+            'نتیجه: %d سطرِ خام، %d سطرِ معتبر، %d سطرِ بدونِ عنوان رد شد. کلیدِ عنوان=«%s» کلیدِ پاسخ=«%s»',
+            count($raw),
+            count($result),
+            $skipped,
+            $title_key,
+            $answer_key
+        ));
+
         return $result;
+    }
+
+    /**
+     * خواندنِ متایِ ریپیتر از هرچیزی که *واقعاً* «پرسیده‌شده» — پست یا
+     * ترم، هرکدام که ‎get_queried_object()‎ برگرداند.
+     *
+     * چرا این تفکیک لازم است: رویِ آرشیوِ یک دسته/برچسب،
+     * ‎get_queried_object()‎ یک ‎WP_Term‎ می‌دهد، نه ‎WP_Post‎. اگر ریپیترِ
+     * JetEngine رویِ «Taxonomy Meta» ساخته شده باشد (نه «Post Meta»)،
+     * دیتا در ‎wp_termmeta‎ نشسته، نه ‎wp_postmeta‎ — و
+     * ‎get_post_meta($term_id, ...)‎ با شناسهٔ یک ترم همیشه خالی برمی‌گردد،
+     * چون دنبالِ آن شناسه در جدولِ اشتباه می‌گردد. این دقیقاً همان چیزی
+     * است که «سوالات استخراج نشدن» را توضیح می‌دهد وقتی ریپیتر رویِ ترم
+     * تعریف شده (مثلاً کلیدِ متایی مثلِ ‎…-terms‎).
+     */
+    private function read_current_meta(string $meta_key) {
+        $queried = function_exists('get_queried_object') ? get_queried_object() : null;
+
+        if ($queried instanceof \WP_Term) {
+            return $this->read_meta('term', (int) $queried->term_id, $meta_key);
+        }
+
+        return $this->read_meta('post', $this->current_post_id(), $meta_key);
+    }
+
+    /**
+     * @return mixed
+     */
+    private function read_meta(string $kind, int $id, string $meta_key) {
+        if ($id <= 0) {
+            $this->debug(sprintf('شناسهٔ %s معتبر نیست (۰ یا کمتر) — چیزی خوانده نشد.', 'term' === $kind ? 'ترم' : 'پست'));
+
+            return null;
+        }
+
+        $raw = 'term' === $kind
+            ? get_term_meta($id, $meta_key, true)
+            : get_post_meta($id, $meta_key, true);
+
+        $this->debug(sprintf(
+            'خواندنِ متا: نوع=%s شناسه=%d کلید=«%s» → %s',
+            $kind,
+            $id,
+            $meta_key,
+            $this->debug_repr($raw)
+        ));
+
+        return maybe_unserialize($raw);
+    }
+
+    /**
+     * لاگِ دیباگ — فقط وقتی ‎WP_DEBUG‎ روشن است، در ‎debug.log‎ی خودِ
+     * وردپرس. رویِ سایتِ زنده با ‎WP_DEBUG‎ی خاموش (پیش‌فرض) کاملاً بی‌اثر
+     * است؛ هیچ اثری روی خروجیِ فرانت‌اند یا کارآیی ندارد.
+     */
+    private function debug(string $message): void {
+        if (!defined('WP_DEBUG') || !WP_DEBUG) {
+            return;
+        }
+
+        error_log('[zig3d-faq] ' . $message);
+    }
+
+    /**
+     * نمایشِ خلاصهٔ یک مقدارِ خام برایِ لاگ — نه ‎print_r‎ی کامل (که برایِ
+     * ریپیترهایِ بزرگ خطوطِ لاگ را غیرِقابل‌خواندن می‌کند)، فقط نوع و
+     * اندازه/چند کلیدِ اول.
+     */
+    private function debug_repr($raw): string {
+        if (is_array($raw)) {
+            $keys = array_slice(array_map('strval', array_keys($raw)), 0, 5);
+
+            return sprintf('array(%d) [%s%s]', count($raw), implode(', ', $keys), count($raw) > 5 ? ', …' : '');
+        }
+
+        if (is_string($raw)) {
+            $preview = mb_substr($raw, 0, 120);
+
+            return sprintf('string(%d) "%s%s"', strlen($raw), $preview, strlen($raw) > 120 ? '…' : '');
+        }
+
+        if (null === $raw) {
+            return 'NULL';
+        }
+
+        return var_export($raw, true);
     }
 
     /**

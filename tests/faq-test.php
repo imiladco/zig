@@ -17,8 +17,22 @@ require_once $root . '/includes/widgets/faq.php';
 
 use Zig3d_Widgets\Widgets\Faq;
 
+/*
+ * ‎get_queried_object()‎ (نه صرفاً ‎_id‎) — برایِ سنجیدنِ مسیرِ تازهٔ
+ * «ترمِ جاری» در ‎Faq::read_current_meta()‎. پیش‌فرض ‎null‎ می‌ماند
+ * (یعنی «پست») مگر یک سناریو صریحاً آن را به یک ‎WP_Term‎ عوض کند و
+ * بعدش خودش پاک کند — تا فایل‌هایِ تستِ دیگر که این تابع را فقط برایِ
+ * موجودیتش لازم دارند (مثلِ آرشیوِ محصولات) هم‌چنان ‎null‎ ببینند.
+ */
+if (!function_exists('get_queried_object')) {
+    function get_queried_object() {
+        return $GLOBALS['__zig_queried_object'] ?? null;
+    }
+}
+
 $POST_ID = 801;
 $GLOBALS['__zig_queried'] = $POST_ID;
+$GLOBALS['__zig_queried_object'] = null;
 $GLOBALS['__zig_post_meta'][$POST_ID] = [];
 
 Tests::group('ویجتِ سوالات متداول');
@@ -103,6 +117,36 @@ $manual_html = $render(['source_post_id' => $OTHER_ID]);
 Tests::ok('شناسهٔ پستِ دستی از پستِ جاری اولویت دارد', false !== strpos($manual_html, 'سوالِ پستِ دیگر'));
 
 /* ------------------------------------------------------------------
+ * ریپیتر رویِ ترمِ جاری (نه پست) — رفعِ باگِ گزارش‌شده: کاربر ریپیتر را
+ * رویِ «Taxonomy Meta»یِ JetEngine ساخته بود (کلیدی مثلِ
+ * ‎zig3d-faq-terms‎)، پس روی آرشیوِ آن ترم چیزی استخراج نمی‌شد — چون
+ * get_post_meta() با شناسهٔ ترم دنبالِ جدولِ اشتباه می‌گشت.
+ * ---------------------------------------------------------------- */
+$TERM_ID = 55;
+$GLOBALS['__zig_term_meta'][$TERM_ID]['zig3d-faq-terms'] = [
+    ['zig3d-faq-terms-title' => 'سوالِ رویِ ترم', 'zig3d-faq-terms-answere' => 'پاسخِ رویِ ترم'],
+];
+$GLOBALS['__zig_queried_object'] = new WP_Term('دسته‌بندیِ نمونه', 'sample-cat', $TERM_ID);
+
+$term_html = $widget->zig_render([
+    'meta_key'        => 'zig3d-faq-terms',
+    'field_title'     => 'zig3d-faq-terms-title',
+    'field_answer'    => 'zig3d-faq-terms-answere',
+    'source_post_id'  => 0,
+]);
+
+Tests::ok('رویِ آرشیوِ یک ترم، از term_meta خوانده می‌شود نه post_meta', false !== strpos($term_html, 'سوالِ رویِ ترم') && false !== strpos($term_html, 'پاسخِ رویِ ترم'));
+
+// شناسهٔ پستِ دستی هنوز پست را می‌خواهد، حتی وقتی get_queried_object() ترم است
+$GLOBALS['__zig_post_meta'][$OTHER_ID]['faq'] = [
+    ['faq_question' => 'سوالِ پستِ دستی زیرِ آرشیوِ ترم', 'faq_answer' => ''],
+];
+$manual_over_term_html = $render(['source_post_id' => $OTHER_ID]);
+Tests::ok('شناسهٔ پستِ دستی حتی رویِ آرشیوِ ترم هم بر خودِ ترم اولویت دارد', false !== strpos($manual_over_term_html, 'سوالِ پستِ دستی زیرِ آرشیوِ ترم') && false === strpos($manual_over_term_html, 'سوالِ رویِ ترم'));
+
+$GLOBALS['__zig_queried_object'] = null;
+
+/* ------------------------------------------------------------------
  * کنترل‌ها و ثبت
  * ---------------------------------------------------------------- */
 $controls = zig_collect_controls(Faq::class);
@@ -166,3 +210,11 @@ Tests::keeps('باکسِ باز مستقل و با رادیوسِ کامل جد�
 Tests::ok('JS رویِ کلاس‌هایِ خودِ FAQ کار می‌کند، نه specs', false !== strpos($js_source, "':scope > .zig-faq__question'") && false !== strpos($js_source, "':scope > .zig-faq__answer'"));
 Tests::ok('هوکِ المنتور به عنصرِ آماده‌شدنِ همین ویجت گوش می‌دهد', false !== strpos($js_source, "'frontend/element_ready/zig3d-faq.default'"));
 Tests::ok('سوالِ بدونِ پاسخ هم قابلِ باز شدن است (content اختیاری)', false !== strpos($js_source, 'this.content ? this.content.offsetHeight : 0'));
+
+/* ------------------------------------------------------------------
+ * دیباگ: فقط پشتِ WP_DEBUG، بی‌اثر روی سایتِ زنده
+ * ---------------------------------------------------------------- */
+Tests::ok('لاگِ دیباگ پشتِ WP_DEBUG قفل است', false !== strpos($widget_source, "if (!defined('WP_DEBUG') || !WP_DEBUG) {"));
+Tests::ok('لاگ با error_log می‌رود، نه echo رویِ فرانت‌اند', false !== strpos($widget_source, "error_log('[zig3d-faq] '"));
+Tests::ok('لاگ نوع/شناسه/کلید و مقدارِ خام را می‌گوید', false !== strpos($widget_source, "'خواندنِ متا: نوع=%s شناسه=%d کلید=«%s» → %s'"));
+Tests::ok('لاگِ نتیجه تعدادِ سطرهایِ خام/معتبر/ردشده را می‌گوید — کلیدِ عنوانِ اشتباه با اولین نگاه پیدا می‌شود', false !== strpos($widget_source, "'نتیجه: %d سطرِ خام، %d سطرِ معتبر، %d سطرِ بدونِ عنوان رد شد."));
