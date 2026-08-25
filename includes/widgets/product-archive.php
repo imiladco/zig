@@ -1854,6 +1854,17 @@ final class Product_Archive extends Widget_Base {
             'selectors' => [$bar => '--zig-mbar-sort-color: {{VALUE}};'],
         ]);
 
+        /*
+         * رنگِ آیکون از رنگِ متنِ برچسب جداست — طبقِ فیگما آیکونِ قیفِ
+         * فیلتر (کنارِ برچسبِ بنفش) و آیکونِ فهرستِ ترتیب (کنارِ برچسبِ
+         * خاکستری) هر دو یک رنگِ ثابتِ خودشان را دارند، نه رنگِ برچسب.
+         */
+        $this->add_control('mbar_icon_color', [
+            'label'     => __('رنگِ آیکون‌ها', 'zig3d-widgets'),
+            'type'      => Controls_Manager::COLOR,
+            'selectors' => [$bar => '--zig-mbar-icon-color: {{VALUE}};'],
+        ]);
+
         $this->add_control('sheet_heading', [
             'label'     => __('شیت‌ها', 'zig3d-widgets'),
             'type'      => Controls_Manager::HEADING,
@@ -2735,7 +2746,7 @@ final class Product_Archive extends Widget_Base {
             printf(
                 '<button type="button" class="zig-archive__mbar-btn zig-archive__mbar-btn--filter" data-zig-open="filters" aria-expanded="false" aria-controls="%s">%s<span class="zig-archive__mbar-text">%s</span></button>',
                 esc_attr($filters_id),
-                Markup::svg_icon('filter', 'zig-archive__mbar-icon'),
+                Markup::svg_icon_filled('mbar-filter', 'zig-archive__mbar-icon zig-archive__mbar-icon--filter'),
                 esc_html($settings['filters_title'] ?? __('فیلتر ها', 'zig3d-widgets'))
             );
         }
@@ -2748,7 +2759,7 @@ final class Product_Archive extends Widget_Base {
                 '<button type="button" class="zig-archive__mbar-btn zig-archive__mbar-btn--sort" data-zig-open="sort" aria-expanded="false" aria-controls="%s"><span class="zig-archive__mbar-text" data-zig-sort-label>%s</span>%s</button>',
                 esc_attr($sort_id),
                 esc_html($label),
-                Markup::svg_icon('sort', 'zig-archive__mbar-icon')
+                Markup::svg_icon_filled('mbar-sort', 'zig-archive__mbar-icon zig-archive__mbar-icon--sort')
             );
         }
 

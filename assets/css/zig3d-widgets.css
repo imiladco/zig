@@ -2739,8 +2739,8 @@ a.zig-list__label:focus-visible {
 		padding: 20px 24px;
 		background: var(--zig-mbar-bg, #fbfafd);
 		border-style: solid;
-		/* از فیگما: ۲ بالا/راست، ۱ چپ/پایین */
-		border-width: 2px 2px 1px 1px;
+		/* از فیگما (per-side دقیق): بالا ۲، راست ۱، پایین ۱، چپ ۲ */
+		border-width: 2px 1px 1px 2px;
 		border-color: var(--zig-mbar-border, rgba(0, 15, 15, 0.12));
 		border-radius: var(--zig-mbar-radius, 48px);
 	}
@@ -2774,10 +2774,25 @@ a.zig-list__label:focus-visible {
 		color: var(--zig-mbar-sort-color, #686673);
 	}
 
+	/*
+	 * دو آیکونِ این نوار یک شکلِ ثابتِ pill/چروم‌اند (مثلِ بقیهٔ آیکون‌هایِ
+	 * سازه‌ایِ افزونه)، نه محتوایی که کاربر عوض می‌کند؛ پس رنگ استایل‌پذیر
+	 * است ولی اندازه/نسبت دقیقاً همان چیزی می‌ماند که در فیگما ‎path‎ شده —
+	 * قیف و فهرست هر کدام نسبتِ ابعادِ خودشان را دارند، نه یک مربعِ مشترک.
+	 */
 	.zig-archive__mbar-icon {
 		flex: none;
-		width: 1.2em;
-		height: 1.2em;
+		color: var(--zig-mbar-icon-color, rgba(23, 23, 27, 0.9));
+	}
+
+	.zig-archive__mbar-icon--filter {
+		width: 14.927px;
+		height: 13.537px;
+	}
+
+	.zig-archive__mbar-icon--sort {
+		width: 21px;
+		height: 20px;
 	}
 
 	/* ---- لایهٔ تیرهٔ مشترکِ هر دو شیت ---- */

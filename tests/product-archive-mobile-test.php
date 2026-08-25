@@ -92,6 +92,16 @@ Tests::ok(
     strpos($bar, '--filter') < strpos($bar, '--sort')
 );
 
+/*
+ * دو آیکونِ تازه (طبقِ اسپکِ دقیقِ فیگما): filled-path، نه stroke-based
+ * ژنریکِ قبلی — با viewBoxِ خودشان، نه یک شبکهٔ مشترک.
+ */
+Tests::keeps('آیکونِ فیلتر کلاسِ اختصاصی دارد', $bar, 'zig-archive__mbar-icon--filter');
+Tests::keeps('آیکونِ ترتیب کلاسِ اختصاصی دارد', $bar, 'zig-archive__mbar-icon--sort');
+Tests::keeps('آیکونِ فیلتر viewBoxِ دقیقِ فیگما (۱۵×۱۴) را دارد', $bar, 'viewBox="0 0 15 14"');
+Tests::keeps('آیکونِ ترتیب viewBoxِ دقیقِ فیگما (۲۱×۲۰) را دارد', $bar, 'viewBox="0 0 21 20"');
+Tests::keeps('رنگِ آیکون از ‎currentColor‎ می‌آید (کنترل‌پذیر، مستقلِ از رنگِ برچسب)', $bar, 'fill="currentColor"');
+
 $bar_no_filter = $call('render_mobile_bar', [$settings, $sorts, $state, false, true, 'flt-1', 'srt-1']);
 Tests::blocks('بدونِ سایدبار، دکمهٔ فیلتر نمی‌آید', $bar_no_filter, '--filter');
 Tests::keeps('ولی دکمهٔ ترتیب می‌ماند', $bar_no_filter, '--sort');
@@ -146,3 +156,16 @@ Tests::ok(
  */
 Tests::blocks('کلاهِ بنفشِ فیلتر در موبایل خاموش نشده', $css_src, '.zig-archive__filters::before {
 		content: none;');
+
+/*
+ * حاشیهٔ نوارِ قرصی طبقِ اسپکِ دقیقِ فیگما یک‌دست نیست — هر ضلع مقدارِ
+ * خودش را دارد (بالا ۲، راست ۱، پایین ۱، چپ ۲)، نه ‎۲ ۲ ۱ ۱‎ی نسخهٔ اول.
+ */
+Tests::keeps('حاشیهٔ نوار per-side دقیقِ فیگما است', $css_src, 'border-width: 2px 1px 1px 2px;');
+Tests::blocks('حاشیهٔ نادرستِ نسخهٔ اول برنگشته', $css_src, 'border-width: 2px 2px 1px 1px;');
+
+/*
+ * رنگِ آیکون‌هایِ نوار مستقل از رنگِ برچسب و استایل‌پذیر است — نه
+ * ‎currentColor‎ی به‌ارث‌رسیده از دکمهٔ بنفش/خاکستری.
+ */
+Tests::keeps('رنگِ آیکون‌هایِ نوار متغیرِ CSSِ مستقلِ خودش را دارد', $css_src, '--zig-mbar-icon-color, rgba(23, 23, 27, 0.9)');
