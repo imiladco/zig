@@ -53,6 +53,7 @@ final class Plugin {
         'post-meta' => Widgets\Post_Meta::class,
         'toc' => Widgets\Toc::class,
         'counter' => Widgets\Counter::class,
+        'faq' => Widgets\Faq::class,
     ];
 
     public static function instance(): self {
@@ -524,6 +525,20 @@ final class Plugin {
         wp_register_script(
             'zig3d-specs',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-specs.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * آکاردئونِ سوالاتِ متداول هم بدونِ این فایل کار می‌کند — همان دو
+         * رفتاری که ‎zig3d-specs‎ برایِ مشخصاتِ فنی اضافه می‌کند (تک‌بازشو،
+         * انیمیشنِ ارتفاع)، اینجا رویِ کلاس‌هایِ ویجتِ FAQ. فایلِ جدا، نه
+         * اشتراکِ کد، چون هر ویجت مستقل نگه‌داشته می‌شود.
+         */
+        wp_register_script(
+            'zig3d-faq',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-faq.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true

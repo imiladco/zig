@@ -4167,6 +4167,190 @@ details.zig-specs__group > .zig-specs__group-title:focus-visible {
 }
 
 /* ==========================================================================
+   سوالاتِ متداول (FAQ)
+
+   همان مکانیزمِ آکاردئونِ «مشخصاتِ فنی» بالاتر (باکس‌هایِ بستهٔ
+   پشتِ‌سرهم یک کارتِ یکپارچه می‌سازند، باکسِ باز از آن‌ها جدا می‌شود) —
+   فقط بدونِ گروه/ردیفِ تودرتو، چون هر آیتم خودش یک سوال+پاسخِ تخت است.
+   رنگ/فاصله‌ها از فیگمایِ خودِ کاربر پیاده شده‌اند.
+   ========================================================================== */
+
+.zig-faq {
+	--zig-faq-box-bg: #FFFFFF;
+	--zig-faq-box-border: #EAECF0;
+	--zig-faq-box-border-width: 1px;
+	--zig-faq-radius: 16px;
+	--zig-faq-divider: #EEF1F6;
+	--zig-faq-open-gap: 12px;
+	--zig-faq-question-color: #101828;
+	--zig-faq-question-color-open: #101828;
+	--zig-faq-accent: #6D28D9;
+	--zig-faq-toggle-size: 24px;
+	--zig-faq-toggle-icon-size: 16px;
+	--zig-faq-toggle-radius: 999px;
+	--zig-faq-toggle-bg: #FFFFFF;
+	--zig-faq-toggle-bg-open: #F2F4F7;
+	--zig-faq-toggle-border: #E4E7EC;
+	--zig-faq-toggle-icon-color: #475467;
+	--zig-faq-answer-color: #4B5563;
+	--zig-faq-answer-gap: 4px;
+	display: flex;
+	flex-direction: column;
+	direction: rtl;
+}
+
+/*
+ * باکس. مرز به سه تکه (width/style/color) شکسته شده تا استایلِ پهنایِ
+ * مرز بتواند مستقلِ رنگِ مرز کنترل شود — همان الگویِ ‎.zig-specs__group‎.
+ */
+.zig-faq__item {
+	display: flex;
+	flex-direction: column;
+	background: var(--zig-faq-box-bg);
+	border-width: var(--zig-faq-box-border-width, 1px);
+	border-style: solid;
+	border-color: var(--zig-faq-box-border);
+	border-radius: 0;
+	overflow: hidden;
+	position: relative;
+}
+
+/*
+ * باکس‌هایِ بستهٔ پشتِ‌سرهم یک کارتِ یکپارچه می‌سازند، نه نوارهایِ
+ * جداگانه: مرزِ هر کدام رویِ مرزِ قبلی می‌نشیند (پهنایِ مرز overlap) تا
+ * فقط یک خط دیده شود — رنگِ همان خط از متغیرِ جدایِ ‎--zig-faq-divider‎
+ * می‌آید تا مستقل از رنگِ مرزِ بیرونیِ باکس (لبه‌هایِ واقعی) قابلِ تنظیم
+ * باشد. گردیِ گوشه فقط رویِ لبهٔ واقعیِ فهرست می‌آید.
+ */
+.zig-faq__item + .zig-faq__item {
+	margin-top: calc(-1 * var(--zig-faq-box-border-width, 1px));
+	border-top-color: var(--zig-faq-divider, var(--zig-faq-box-border));
+}
+
+.zig-faq__item:first-child {
+	border-top-left-radius: var(--zig-faq-radius, 16px);
+	border-top-right-radius: var(--zig-faq-radius, 16px);
+}
+
+.zig-faq__item:last-child {
+	border-bottom-left-radius: var(--zig-faq-radius, 16px);
+	border-bottom-right-radius: var(--zig-faq-radius, 16px);
+}
+
+/* باکسِ بازشده از بلوکِ بسته‌ها جدا و مستقل می‌شود — همان الگویِ ‎.zig-specs__group[open]‎ */
+.zig-faq__item[open] {
+	border-radius: var(--zig-faq-radius, 16px);
+	margin-block: var(--zig-faq-open-gap, 12px);
+	z-index: 1;
+}
+
+.zig-faq__item[open]:first-child { margin-top: 0; }
+.zig-faq__item[open]:last-child { margin-bottom: 0; }
+
+/* بستهٔ همسایهٔ باکسِ باز، از نگاهِ بصری لبهٔ همان بلوکِ بسته‌هاست — همان‌جا هم گرد می‌شود */
+.zig-faq__item[open] + .zig-faq__item:not([open]) {
+	border-top-left-radius: var(--zig-faq-radius, 16px);
+	border-top-right-radius: var(--zig-faq-radius, 16px);
+}
+
+.zig-faq__item:not([open]):has(+ .zig-faq__item[open]) {
+	border-bottom-left-radius: var(--zig-faq-radius, 16px);
+	border-bottom-right-radius: var(--zig-faq-radius, 16px);
+}
+
+/*
+ * سربرگِ سوال — هم ‎<summary>‎. ‎list-style: none‎ فلشِ پیش‌فرضِ مرورگر را
+ * برمی‌دارد؛ فلشِ خودمان (نشانِ گردِ ‎.zig-faq__toggle‎) جایگزینش می‌شود.
+ */
+.zig-faq__question {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 16px;
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+}
+
+.zig-faq__question::-webkit-details-marker {
+	display: none;
+}
+
+.zig-faq__question:focus-visible {
+	outline: 2px solid var(--zig-faq-accent, #6d28d9);
+	outline-offset: -2px;
+}
+
+.zig-faq__question-text {
+	color: var(--zig-faq-question-color, #101828);
+	font-size: 15px;
+	font-weight: 400;
+	line-height: 20px;
+	transition: color .15s ease, font-weight .15s ease;
+}
+
+/* سوالِ فعال: بزرگ‌تر و پررنگ‌تر — نه رنگِ متفاوت، طبقِ طرح */
+.zig-faq__item[open] > .zig-faq__question .zig-faq__question-text {
+	color: var(--zig-faq-question-color-open, #101828);
+	font-size: 16px;
+	font-weight: 600;
+}
+
+/*
+ * نشانِ گردِ باز-بسته. اندازه/شعاع رویِ متغیر، نه هاردکد — کنترلِ
+ * المنتور هم فقط همین متغیرها را عوض می‌کند.
+ */
+.zig-faq__toggle {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: var(--zig-faq-toggle-size, 24px);
+	height: var(--zig-faq-toggle-size, 24px);
+	aspect-ratio: 1 / 1;
+	border-radius: var(--zig-faq-toggle-radius, 999px);
+	border: 1px solid var(--zig-faq-toggle-border, #E4E7EC);
+	background: var(--zig-faq-toggle-bg, #FFFFFF);
+	color: var(--zig-faq-toggle-icon-color, #475467);
+	transition: background-color .15s ease;
+}
+
+/* رنگِ آیکون یکسان می‌ماند — فقط پس‌زمینهٔ نشان بینِ باز/بسته فرق می‌کند */
+.zig-faq__item[open] > .zig-faq__question .zig-faq__toggle {
+	background: var(--zig-faq-toggle-bg-open, #F2F4F7);
+}
+
+.zig-faq__chevron {
+	width: var(--zig-faq-toggle-icon-size, 16px);
+	height: var(--zig-faq-toggle-icon-size, 16px);
+	transition: transform .18s ease;
+}
+
+/* details[open] یعنی باز است — فلش می‌چرخد تا «رو به بالا» بشود */
+.zig-faq__item[open] > .zig-faq__question .zig-faq__chevron {
+	transform: rotate(180deg);
+}
+
+.zig-faq__answer {
+	margin: 0;
+	margin-top: var(--zig-faq-answer-gap, 4px);
+	padding: 0 16px 14px;
+	color: var(--zig-faq-answer-color, #4B5563);
+	text-align: right;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 26.6px;
+	/* پیش‌فرضِ بدونِ‌جاوااسکریپت: بلافاصله دیده می‌شود؛ JS این را برایِ fade-inِ ۴۵ms موقتاً می‌پوشاند */
+	opacity: 1;
+}
+
+/* بدونِ جاوااسکریپت (یا مرورگرِ بی‌WAAPI)، خودِ ‎<details>‎ نمایش/عدم‌نمایش را مدیریت می‌کند */
+.zig-faq__item:not([open]) > .zig-faq__answer {
+	display: none;
+}
+
+/* ==========================================================================
    نمایشِ قابلیت‌های محصول
    ========================================================================== */
 
