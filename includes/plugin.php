@@ -94,6 +94,7 @@ final class Plugin {
         add_action('init', [$this, 'boot_download_archive'], 5);
         add_action('init', [$this, 'boot_post_meta'], 5);
         add_action('init', [$this, 'boot_consultations'], 5);
+        add_action('init', [$this, 'boot_faq'], 5);
 
         if (is_admin()) {
             add_action('init', [$this, 'boot_admin'], 6);
@@ -229,6 +230,24 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/admin/consultations-page.php';
 
         Admin\Consultations_Page::boot();
+    }
+
+    /**
+     * حذفِ سکشنِ خالیِ FAQ (‎.zig-faq-section‎) وقتی ویجت هیچ سوالی رندر
+     * نکرد — بدونِ ووکامرس هم معنا دارد (خودِ ویجتِ FAQ به آن نیازی
+     * ندارد)، پس مثلِ ‎boot_post_meta()‎/‎boot_consultations()‎ پشتِ
+     * ‎class_exists('WooCommerce')‎ قفل نیست. فقط در سایت: در ادمین
+     * چیزی برایِ هایدکردن نیست، و ‎template_redirect‎ اصلاً آن‌جا شلیک
+     * نمی‌شود.
+     */
+    public function boot_faq(): void {
+        if (is_admin()) {
+            return;
+        }
+
+        require_once ZIG3D_WIDGETS_PATH . 'includes/faq-section-guard.php';
+
+        Faq_Section_Guard::boot();
     }
 
     /**
