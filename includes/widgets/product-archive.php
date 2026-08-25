@@ -335,6 +335,19 @@ final class Product_Archive extends Widget_Base {
         ]);
 
         /*
+         * فقط در شیتِ موبایل دیده می‌شود (زیرِ ۷۶۷px)، چسبیده به پایین —
+         * تنها راهِ بستنِ همیشه‌دیده، برایِ کسی که ته لیستِ فیلترها اسکرول
+         * کرده و دستگیرهٔ بالای شیت از دیدش خارج شده. دسکتاپ همچنان سایدبار
+         * است، این دکمه آنجا اصلاً رندر/دیده نمی‌شود.
+         */
+        $this->add_control('filters_back', [
+            'label'     => __('متن «بازگشت» (شیتِ موبایل)', 'zig3d-widgets'),
+            'type'      => Controls_Manager::TEXT,
+            'default'   => __('بازگشت', 'zig3d-widgets'),
+            'condition' => ['filters_on' => 'yes'],
+        ]);
+
+        /*
          * تأخیر اعمال فیلتر. برای چک‌باکس — که رویدادش گسسته است، نه تایپِ
          * پیوسته — چیزی حدود یک‌چهارم ثانیه کافی است: آن‌قدر که چند تیکِ
          * پشت‌سرهم یک درخواست شوند، و آن‌قدر کوتاه که کاربر منتظر نماند.
@@ -1974,6 +1987,19 @@ final class Product_Archive extends Widget_Base {
             );
             echo '<span class="zig-archive__sheet-handle" aria-hidden="true"></span>';
             echo '<div class="zig-archive__facets" data-zig-part="facets">' . $this->fragment('facets', $context) . '</div>';
+
+            /*
+             * دکمهٔ «بازگشت» — فقط چروم شیتِ موبایل، نه محتوایِ ‎facets‎؛
+             * پس بیرونِ اسلاتِ ‎swap('facets')‎ می‌ماند و با هر فیلتر پاک
+             * نمی‌شود. آیکونِ پیکان با CSS آینه می‌شود چون خودِ گلیف برایِ
+             * جهتِ «جلو»ی راست‌به‌چپ طراحی شده، نه «بازگشت».
+             */
+            printf(
+                '<button type="button" class="zig-archive__sheet-back" data-zig-close>%s<span>%s</span></button>',
+                Markup::svg_icon('arrow', 'zig-archive__sheet-back-icon'),
+                esc_html($settings['filters_back'] ?? __('بازگشت', 'zig3d-widgets'))
+            );
+
             echo '</aside>';
         }
 

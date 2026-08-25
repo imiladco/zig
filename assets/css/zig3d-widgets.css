@@ -2687,7 +2687,8 @@ a.zig-list__label:focus-visible {
 .zig-facet__title:focus-visible,
 .zig-archive__retry:focus-visible,
 .zig-archive__grid .zig-card__title a:focus-visible,
-.zig-archive__mbar-btn:focus-visible {
+.zig-archive__mbar-btn:focus-visible,
+.zig-archive__sheet-back:focus-visible {
 	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
 	outline-offset: var(--zig-focus-offset, 3px);
 }
@@ -2721,7 +2722,8 @@ a.zig-list__label:focus-visible {
 .zig-archive__mbar,
 .zig-archive__sheet-handle,
 .zig-archive__sheet--sort,
-.zig-archive__sheet-backdrop {
+.zig-archive__sheet-backdrop,
+.zig-archive__sheet-back {
 	display: none;
 }
 
@@ -2957,6 +2959,65 @@ a.zig-list__label:focus-visible {
 	.zig-archive__filters .zig-filters__card {
 		flex: 1 1 auto;
 		max-block-size: none;
+	}
+
+	/*
+	 * دکمهٔ «بازگشت» — خواهرِ ‎.zig-archive__facets‎، نه بخشی از آن، پس
+	 * ‎swap('facets')‎ لمسش نمی‌کند. چون ‎.zig-archive__filters‎ ستونِ
+	 * فلکسی با ارتفاعِ ثابت است و ‎.zig-archive__facets‎ (بالا) خودش
+	 * ‎flex:1 1 auto‎ و اسکرولِ داخلیِ خودش را دارد، این دکمه با همان
+	 * ‎flex: none‎ همیشه ته ستون — یعنی همیشه رویِ صفحه — می‌ماند؛ بدونِ
+	 * ‎position: sticky‎ی اضافه.
+	 *
+	 * ‎<button>‎ی خام است، پس همان تکنیکِ زنجیرِ دوکلاسی که برایِ
+	 * ‎.zig-archive__mbar-btn‎ به‌کار رفت اینجا هم لازم است تا ریستِ
+	 * ‎button:hover/:focus‎ی تم را ببرد.
+	 */
+	.zig-archive__filters .zig-archive__sheet-back {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		width: 100%;
+		margin: 0;
+		padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+		border: 0;
+		border-block-start: 1px solid var(--zig-mbar-border, rgba(0, 15, 15, 0.12));
+		background: var(--zig-sheet-bg, #fff);
+		background-color: var(--zig-sheet-bg, #fff);
+		box-shadow: none;
+		text-shadow: none;
+		text-decoration: none;
+		color: var(--zig-sheet-accent, var(--zig-brand));
+		font: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-archive__filters .zig-archive__sheet-back:hover,
+	.zig-archive__filters .zig-archive__sheet-back:focus,
+	.zig-archive__filters .zig-archive__sheet-back:active {
+		background: var(--zig-sheet-bg, #fff);
+		background-color: var(--zig-sheet-bg, #fff);
+		text-shadow: none;
+		text-decoration: none;
+		color: var(--zig-sheet-accent, var(--zig-brand));
+	}
+
+	/* گلیفِ عمومیِ «arrow» برایِ جهتِ راست‌به‌چپِ «جلو» طراحی شده؛ اینجا برایِ «بازگشت» آینه می‌شود */
+	.zig-archive__sheet-back-icon {
+		flex: none;
+		width: 16px;
+		height: 16px;
+		transform: scaleX(-1);
+	}
+
+	[dir="ltr"] .zig-archive__sheet-back-icon {
+		transform: none;
 	}
 
 	/* ---- شیتِ ترتیب: به‌اندازهٔ محتوا، چسبیده به پایین ---- */

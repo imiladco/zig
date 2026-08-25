@@ -210,4 +210,25 @@ Tests::keeps('رنگِ برچسبِ ترتیب رویِ هاور/فوکوس/اک
 	.zig-archive__mbar .zig-archive__mbar-btn--sort:active {
 		color: var(--zig-mbar-sort-color, #686673);
 	}');
-Tests::keeps('دکمه‌هایِ نوار حلقهٔ فوکوسِ کیبورد دارند', $css_src, '.zig-archive__mbar-btn:focus-visible {');
+Tests::keeps('دکمه‌هایِ نوار حلقهٔ فوکوسِ کیبورد دارند', $css_src, '.zig-archive__mbar-btn:focus-visible,
+.zig-archive__sheet-back:focus-visible {');
+
+/*
+ * دکمهٔ «بازگشتِ» ته شیتِ فیلتر (خواستهٔ کاربر بعد از v1.84.2): همیشه
+ * دیده می‌شود، نه فقط دستگیره/پسِ‌زمینه/Escape.
+ */
+Tests::keeps('کنترلِ متنِ «بازگشت» در پنل ثبت شده', $widget_src, "'filters_back'");
+Tests::keeps('برچسبِ دکمهٔ بازگشت از تنظیمات می‌آید', $widget_src, "\$settings['filters_back']");
+Tests::keeps('دکمهٔ بازگشت، دکمه است نه لینک (کنش، نه ناوبری)', $widget_src, '<button type="button" class="zig-archive__sheet-back" data-zig-close>');
+
+/*
+ * ترتیبِ HTML: دکمهٔ بازگشت باید *بعدِ* بستنِ اسلاتِ facets بیاید (خواهرش
+ * باشد، نه فرزندش) — وگرنه ‎swap('facets')‎ با هر تیکِ فیلتر پاکش می‌کرد.
+ */
+Tests::ok(
+    'دکمهٔ بازگشت خارج از اسلاتِ facets است (بعدِ بسته‌شدنش می‌آید)',
+    strpos($widget_src, "data-zig-part=\"facets\"") < strpos($widget_src, 'zig-archive__sheet-back')
+);
+
+$js_src = file_get_contents($root . '/assets/js/zig3d-archive.js');
+Tests::keeps('کلیک روی [data-zig-close] شیت را می‌بندد', $js_src, "closest('[data-zig-close]')");

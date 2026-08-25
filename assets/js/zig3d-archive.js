@@ -177,6 +177,19 @@
 				return;
 			}
 
+			/*
+			 * دکمهٔ «بازگشتِ» ته شیت — همان کاری که دستگیره/پسِ‌زمینه/
+			 * Escape می‌کنند، فقط با یک هدفِ همیشه‌دیده برایِ کسی که ته
+			 * لیستِ فیلترها اسکرول کرده و دستگیرهٔ بالا از دیدش خارج شده.
+			 */
+			var closer = event.target.closest('[data-zig-close]');
+
+			if (closer && self.root.contains(closer)) {
+				event.preventDefault();
+				self.closeSheet();
+				return;
+			}
+
 			var modelsToggle = event.target.closest('.zig-download-card__models-toggle');
 
 			if (modelsToggle && self.root.contains(modelsToggle)) {
