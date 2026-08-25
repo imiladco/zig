@@ -166,6 +166,28 @@ final class Archive_Endpoint {
             return null;
         }
 
+        /*
+         * چرا این خط: ‎create_element_instance()‎ زیر، برخلافِ رندرِ عادیِ
+         * یک سند، از مسیرِ ‎Document::render()‎ی المنتور رد نمی‌شود — یعنی
+         * ‎documents->get_current()‎ اینجا هنوز هرچه بود می‌ماند (روی یک
+         * درخواستِ آژاکسِ تازه، معمولاً ‎null‎). ویجتِ آرشیوِ دانلود آدرسِ
+         * صفحه‌بندی‌اش را از رویِ همان ‎get_current()‎ می‌سازد
+         * (‎Download_Archive::document_id()‎) — بدونِ این سوییچ، آن متد
+         * به ‎get_the_ID()‎ سقوط می‌کند که در ‎admin-ajax.php‎ همیشه ‎۰‎
+         * است، ‎get_permalink(0)‎ هم ‎false‎ می‌دهد، و آدرسِ نهایی به
+         * ‎home_url('/')‎ سقوط می‌کند — همان باگِ گزارش‌شده: کلیکِ «صفحهٔ
+         * بعدی» نوارِ آدرس را به ریشهٔ سایت (‎site.com/?paged=2‎) می‌بَرد،
+         * نه لینکِ واقعیِ همان صفحه.
+         *
+         * ‎switch_to_document()‎ همان APIِ خودِ المنتور برایِ دقیقاً همین
+         * سناریوست — «سندِ جاری» را برایِ محدودهٔ همین درخواست موقتاً
+         * عوض می‌کند، با یک پشته‌یِ داخلی که ‎restore_document()‎ در
+         * ‎respond()‎ از آن برمی‌گردد.
+         */
+        if (method_exists(\Elementor\Plugin::$instance->documents, 'switch_to_document')) {
+            \Elementor\Plugin::$instance->documents->switch_to_document($document);
+        }
+
         $data = \Elementor\Utils::find_element_recursive($document->get_elements_data(), $widget_id);
 
         if (!is_array($data) || 'widget' !== ($data['elType'] ?? '')) {
@@ -224,6 +246,16 @@ final class Archive_Endpoint {
         $url = isset($context['url'])
             ? (string) $context['url']
             : Seo::url((string) $context['base_url'], $state, $context['operators']);
+
+        /*
+         * جفتِ ‎switch_to_document()‎ی ‎widget()‎ — رویِ همین درخواستِ
+         * آژاکس عملاً بی‌اثر است چون ‎wp_send_json_success()‎ زیر با
+         * ‎wp_die()‎ درخواست را همین‌جا تمام می‌کند، ولی برگرداندنِ پشته
+         * قراردادِ درستِ خودِ API است، نه یک جزئیاتِ اختیاری.
+         */
+        if (class_exists('\Elementor\Plugin') && method_exists(\Elementor\Plugin::$instance->documents, 'restore_document')) {
+            \Elementor\Plugin::$instance->documents->restore_document();
+        }
 
         wp_send_json_success(Archive_Response::envelope(
             $context['page_state'],

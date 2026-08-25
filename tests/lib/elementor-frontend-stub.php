@@ -48,18 +48,57 @@ if (!class_exists('\Elementor\Plugin')) {
      * واقعی همیشه هست). استاب باید همان‌قدر کامل باشد وگرنه تست‌هایِ دیگر
      * رویِ چیزی می‌شکنند که در تولید اصلاً مشکل نیست.
      */
+    /** همتایِ ‎Document‎ی واقعیِ المنتور — فقط همان یک متدی که این افزونه صدا می‌زند */
+    class Zig_Stub_Document {
+        private int $id;
+
+        public function __construct(int $id) {
+            $this->id = $id;
+        }
+
+        public function get_main_id(): int {
+            return $this->id;
+        }
+
+        public function get_elements_data(): array {
+            return [];
+        }
+    }
+
     class Zig_Stub_Documents {
 
+        /** @var array<int,Zig_Stub_Document> شناسهٔ پست => سند، برایِ get($post_id) */
+        public static array $registry = [];
+
+        /**
+         * پشتهٔ «سندِ جاری» — عیناً معنایِ ‎switch_to_document()‎/
+         * ‎restore_document()‎ی واقعیِ المنتور: هر سوییچ روی پشته می‌رود،
+         * هر بازگردانی از بالایِ پشته برمی‌دارد.
+         *
+         * @var array<int,Zig_Stub_Document>
+         */
+        private static array $stack = [];
+
         public function get_current() {
-            return null;
+            $top = end(self::$stack);
+
+            return false !== $top ? $top : null;
         }
 
         public function get($post_id) {
-            return null;
+            return self::$registry[(int) $post_id] ?? null;
         }
 
         public function get_doc_for_frontend($post_id) {
             return null;
+        }
+
+        public function switch_to_document($document): void {
+            self::$stack[] = $document;
+        }
+
+        public function restore_document(): void {
+            array_pop(self::$stack);
         }
     }
 
@@ -73,6 +112,22 @@ if (!class_exists('\Elementor\Plugin')) {
     class Zig_Stub_Files_Manager {
 
         public function clear_cache(): void {
+        }
+    }
+
+    /**
+     * همتایِ ‎Preview‎ی واقعیِ المنتور. برخلافِ ‎editor‎ که کدِ افزونه همه‌جا
+     * با ‎isset(...)‎ چکش می‌کند، ‎archive-head.php‎ رویِ
+     * ‎->preview->is_preview_mode()‎ بدونِ ‎isset‎ حساب باز کرده — دقیقاً
+     * مثلِ المنتورِ واقعی که ‎preview‎ همیشه موجود است. پس این ملکِ استاب
+     * هم باید همیشه موجود باشد، وگرنه هر تستی که ‎\Elementor\Plugin‎ را
+     * زودتر بارگذاری کند (ترتیبِ الفباییِ ‎glob()‎ در ‎run.php‎) رویِ این
+     * فراخوانی فاتال می‌گیرد.
+     */
+    class Zig_Stub_Preview {
+
+        public function is_preview_mode(): bool {
+            return false;
         }
     }
 
@@ -92,11 +147,15 @@ if (!class_exists('\Elementor\Plugin')) {
         /** @var Zig_Stub_Files_Manager */
         public $files_manager;
 
+        /** @var Zig_Stub_Preview */
+        public $preview;
+
         public function __construct() {
             $this->frontend = new Zig_Stub_Frontend();
             $this->documents = new Zig_Stub_Documents();
             $this->elements_manager = new Zig_Stub_Elements_Manager();
             $this->files_manager = new Zig_Stub_Files_Manager();
+            $this->preview = new Zig_Stub_Preview();
         }
     }
 
