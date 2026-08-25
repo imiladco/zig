@@ -2685,7 +2685,7 @@ a.zig-list__label:focus-visible {
 .zig-archive__grid .zig-card__title a:focus-visible,
 .zig-archive__mbar-btn:focus-visible,
 .zig-archive__sheet-back:focus-visible,
-.zig-archive__mbar-search input[type="search"]:focus-visible {
+.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"]:focus-visible {
 	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
 	outline-offset: var(--zig-focus-offset, 3px);
 }
@@ -2849,19 +2849,26 @@ a.zig-list__label:focus-visible {
 	.zig-archive__mbar-search {
 		display: flex;
 		align-items: center;
-		gap: 8px;
 		flex: 1 1 auto;
 		min-width: 0;
 	}
 
-	.zig-archive__mbar-search-icon {
-		flex: none;
-		width: 18px;
-		height: 18px;
-		color: var(--zig-mbar-icon-color, rgba(23, 23, 27, 0.9));
-	}
-
-	.zig-archive__mbar-search input[type="search"] {
+	/*
+	 * زنجیرِ سه‌کلاسیِ ‎.zig-archive.zig-download-archive .zig-archive__mbar-search
+	 * input[type="search"]‎ — عیناً همان الگویِ ‎.zig-download-toolbar__search
+	 * input[type="search"]‎ی دسکتاپ بالاتر در همین فایل، نه یک‌کلاسی.
+	 *
+	 * دلیلش: کیتِ المنتور یک قاعدهٔ سراسری برایِ فیلدهای متنی دارد —
+	 * ‎.elementor-kit-8 input:not([type="button"]):not([type="submit"]),
+	 * .elementor-kit-8 textarea, .elementor-kit-8 .elementor-field-textual
+	 * { box-shadow: 0 0 10px rgba(0,0,0,.5); }‎ — که با دو ‎:not()‎
+	 * اختصاصیتش از یک کلاسِ تنها (‎.zig-archive__mbar-search
+	 * input[type="search"]‎) خیلی بالاتر است؛ نتیجه‌اش سایهٔ ناخواستهٔ
+	 * پیش‌فرضِ المنتور بود، همان چیزی که کاربر گزارش داد. سه کلاس
+	 * (‎.zig-archive‎+‎.zig-download-archive‎+‎.zig-archive__mbar-search‎)
+	 * قطعی از آن رد می‌شود.
+	 */
+	.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"] {
 		flex: 1 1 auto;
 		min-width: 0;
 		margin: 0;
@@ -2877,16 +2884,16 @@ a.zig-list__label:focus-visible {
 		appearance: none;
 	}
 
-	.zig-archive__mbar-search input[type="search"]:focus {
+	.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"]:focus {
 		box-shadow: none;
 		text-shadow: none;
 	}
 
-	.zig-archive__mbar-search input[type="search"]::placeholder {
+	.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"]::placeholder {
 		color: var(--zig-mbar-search-placeholder, #a4a3ad);
 	}
 
-	.zig-archive__mbar-search input[type="search"]::-webkit-search-cancel-button {
+	.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"]::-webkit-search-cancel-button {
 		-webkit-appearance: none;
 	}
 

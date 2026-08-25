@@ -212,7 +212,7 @@ Tests::keeps('رنگِ برچسبِ ترتیب رویِ هاور/فوکوس/اک
 	}');
 Tests::keeps('دکمه‌هایِ نوار حلقهٔ فوکوسِ کیبورد دارند', $css_src, '.zig-archive__mbar-btn:focus-visible,
 .zig-archive__sheet-back:focus-visible,
-.zig-archive__mbar-search input[type="search"]:focus-visible {');
+.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"]:focus-visible {');
 
 /*
  * دکمهٔ «بازگشتِ» ته شیتِ فیلتر (خواستهٔ کاربر بعد از v1.84.2): همیشه

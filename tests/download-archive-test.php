@@ -151,6 +151,25 @@ Tests::ok('Toolbar belongs to the main archive column', false !== strpos($widget
 Tests::ok('Mobile bar is rendered with the shared chrome hook', false !== strpos($widget_source, 'class="zig-archive__mbar zig-archive__mbar--search" data-zig-mbar'));
 Tests::ok('Mobile filter button opens the shared filter sheet', false !== strpos($widget_source, 'data-zig-open="filters"'));
 Tests::ok('Mobile search form carries the shared data-zig-search hook', false !== strpos($widget_source, 'class="zig-archive__mbar-search"') && false !== strpos($widget_source, 'data-zig-search>'));
+Tests::ok('Mobile search has no decorative icon (not needed per user feedback)', false === strpos($widget_source, 'mbar-search-icon') && false === strpos($widget_source, "svg_icon('search'"));
+
+/*
+ * Elementor's kit CSS carries a global rule for text-like fields —
+ * .elementor-kit-8 input:not([type="button"]):not([type="submit"]), ...
+ * .elementor-field-textual { box-shadow: ...; } — whose two :not()
+ * clauses out-specify a lone-class selector. The mobile search input
+ * must use the same three-class compound-root chain the desktop search
+ * input already relies on, or the kit's shadow bleeds through.
+ */
+Tests::ok('Mobile search input beats the Elementor kit field defaults on specificity', false !== strpos($css_source, '.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"] {'));
+Tests::ok('Mobile search input resets box-shadow at the same specificity it is set', false !== strpos($css_source, '.zig-archive.zig-download-archive .zig-archive__mbar-search input[type="search"] {
+		flex: 1 1 auto;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;'));
 Tests::ok('Sheet handle and back button are siblings of the facets slot, not inside it', strpos($widget_source, 'data-zig-part="facets"') < strpos($widget_source, 'zig-archive__sheet-back'));
 Tests::ok('Legacy inline filter toggle is fully retired', false === strpos($widget_source, 'filter-trigger') && false === strpos($widget_source, 'is-filters-open'));
 Tests::ok('Legacy inline filter toggle CSS is fully retired', false === strpos($css_source, '.zig-download-archive__filter-trigger') && false === strpos($css_source, '.is-filters-open'));

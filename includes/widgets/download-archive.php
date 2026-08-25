@@ -380,12 +380,10 @@ final class Download_Archive extends Widget_Base {
         printf(
             '<form class="zig-archive__mbar-search" role="search">'
                 . '<label class="screen-reader-text" for="zig-download-search-mobile-%1$s">%2$s</label>'
-                . '%3$s'
-                . '<input id="zig-download-search-mobile-%1$s" type="search" name="s" value="%4$s" placeholder="%5$s" data-zig-search>'
+                . '<input id="zig-download-search-mobile-%1$s" type="search" name="s" value="%3$s" placeholder="%4$s" data-zig-search>'
                 . '</form>',
             esc_attr($this->get_id()),
             esc_html__('جستجوی نرم‌افزار', 'zig3d-widgets'),
-            Markup::svg_icon('search', 'zig-archive__mbar-search-icon'),
             esc_attr($ctx['state']['search']),
             esc_attr($settings['search_placeholder'] ?? '')
         );
