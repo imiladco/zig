@@ -2746,16 +2746,30 @@ a.zig-list__label:focus-visible {
 		border-radius: var(--zig-mbar-radius, 48px);
 	}
 
-	.zig-archive__mbar-btn {
+	/*
+	 * چرا اسمِ ‎.zig-archive__mbar‎ روی همهٔ سلکتورهای زیر تکرار شده (نه
+	 * فقط ‎.zig-archive__mbar-btn‎ تنها): تمِ سایت یک ‎reset.css‎ سراسری
+	 * دارد که مستقیم روی ‎button:hover, button:focus, [type=button]:hover‎
+	 * و … می‌نشیند — سلکتوری با یک شبه‌کلاس + یک انتخابگرِ نوع. یک کلاسِ
+	 * تنها (‎.zig-archive__mbar-btn:hover‎) گاهی از این جفت‌شبه‌کلاس/نوع
+	 * می‌بازد یا (رنگ‌ها) اصلاً رقیب ندارد و رنگِ سفیدِ ریست بی‌رقیب
+	 * می‌ماند. راهِ درست جنگیدن با ‎!important‎ نیست (سقفِ CI همین یکی را
+	 * که برایِ prefers-reduced-motion است اجازه می‌دهد) — زنجیرِ دو کلاس،
+	 * دقیقاً همان راهی است که ‎.zig-consultation-modal__field‎ بالاتر در
+	 * همین فایل برایِ بردنِ زنجیرهٔ چندسطحیِ کیتِ المنتور استفاده کرده.
+	 */
+	.zig-archive__mbar .zig-archive__mbar-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		margin: 0;
 		padding: 0;
 		background: none;
+		background-color: transparent;
 		border: 0;
 		box-shadow: none;
 		text-shadow: none;
+		text-decoration: none;
 		font: inherit;
 		font-weight: 600;
 		line-height: 1;
@@ -2764,33 +2778,45 @@ a.zig-list__label:focus-visible {
 		appearance: none;
 	}
 
-	/*
-	 * چرا صریح: ‎<button>‎ی خام است، و قاعده‌هایِ بالا فقط حالتِ پایه را
-	 * ریست می‌کنند نه ‎:hover‎/‎:focus‎/‎:active‎ را — پس استایلِ پیش‌فرضِ
-	 * دکمهٔ تم/کیتِ المنتور (پس‌زمینهٔ هاور + تکس‌شادو) هنوز رویِ همین
-	 * حالت‌ها اثر می‌گذارد، چون اختصاصیتِ آن‌ها با اختصاصیتِ ریستِ ما برابر
-	 * یا کمتر است ولی سلکتورشان دقیق‌تر (حالت‌محور) است.
-	 */
-	.zig-archive__mbar-btn:hover,
-	.zig-archive__mbar-btn:focus,
-	.zig-archive__mbar-btn:active {
+	.zig-archive__mbar .zig-archive__mbar-btn:hover,
+	.zig-archive__mbar .zig-archive__mbar-btn:focus,
+	.zig-archive__mbar .zig-archive__mbar-btn:active {
 		background: none;
+		background-color: transparent;
+		text-shadow: none;
+		text-decoration: none;
+	}
+
+	.zig-archive__mbar .zig-archive__mbar-text {
 		text-shadow: none;
 	}
 
-	.zig-archive__mbar-text {
-		text-shadow: none;
-	}
-
-	.zig-archive__mbar-btn--filter {
+	.zig-archive__mbar .zig-archive__mbar-btn--filter {
 		gap: 10px;
 		font-size: 15px;
 		color: var(--zig-mbar-filter-color, #5a23b5);
 	}
 
-	.zig-archive__mbar-btn--sort {
+	.zig-archive__mbar .zig-archive__mbar-btn--sort {
 		gap: 8px;
 		font-size: 14px;
+		color: var(--zig-mbar-sort-color, #686673);
+	}
+
+	/*
+	 * ‎color‎ باید روی هاور/فوکوس/اکتیو هم صریح تکرار شود، وگرنه
+	 * ‎button:hover{color:#fff}‎ی تم — که خودش رنگ را رویِ همین حالت‌ها
+	 * تنظیم می‌کند — رقیبی برایِ این پراپرتی نمی‌بیند و برنده می‌ماند.
+	 */
+	.zig-archive__mbar .zig-archive__mbar-btn--filter:hover,
+	.zig-archive__mbar .zig-archive__mbar-btn--filter:focus,
+	.zig-archive__mbar .zig-archive__mbar-btn--filter:active {
+		color: var(--zig-mbar-filter-color, #5a23b5);
+	}
+
+	.zig-archive__mbar .zig-archive__mbar-btn--sort:hover,
+	.zig-archive__mbar .zig-archive__mbar-btn--sort:focus,
+	.zig-archive__mbar .zig-archive__mbar-btn--sort:active {
 		color: var(--zig-mbar-sort-color, #686673);
 	}
 

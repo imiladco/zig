@@ -171,28 +171,43 @@ Tests::blocks('حاشیهٔ نادرستِ نسخهٔ اول برنگشته', $c
 Tests::keeps('رنگِ آیکون‌هایِ نوار متغیرِ CSSِ مستقلِ خودش را دارد', $css_src, '--zig-mbar-icon-color, rgba(23, 23, 27, 0.9)');
 
 /*
- * دکمه‌هایِ نوار ‎<button>‎ی خام‌اند؛ استایلِ پیش‌فرضِ تم/کیتِ المنتور
- * رویِ ‎button‎ معمولاً یک تکس‌شادو و پس‌زمینهٔ هاور دارد که چون ریستِ
- * پایهٔ ما فقط حالتِ عادی را می‌گیرد نه ‎:hover‎/‎:focus‎ را، هنوز دیده
- * می‌شود — باید صریح خاموش شود، نه با اختصاصیتِ تصادفی.
+ * دکمه‌هایِ نوار ‎<button>‎ی خام‌اند؛ ‎reset.css‎ سراسریِ تم مستقیم روی
+ * ‎button:hover/:focus‎ (شبه‌کلاس+نوع) می‌نشیند. یک کلاسِ تنها گاهی از
+ * این جفت می‌بازد یا (رنگ) اصلاً رقیب ندارد — پس هر سلکتورِ ما باید
+ * زنجیرهٔ ‎.zig-archive__mbar .zig-archive__mbar-btn…‎ باشد، نه کلاسِ تنها،
+ * و رنگ باید رویِ هاور/فوکوس/اکتیو هم صریح تکرار شود.
  */
-Tests::keeps('تکس‌شادوی دکمه‌ها صریح خاموش است', $css_src, '.zig-archive__mbar-btn {
+Tests::keeps('ریستِ پایهٔ دکمه با زنجیرِ دو کلاس نوشته شده (نه کلاسِ تنها)', $css_src, '.zig-archive__mbar .zig-archive__mbar-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		margin: 0;
 		padding: 0;
 		background: none;
+		background-color: transparent;
 		border: 0;
 		box-shadow: none;
-		text-shadow: none;');
-Tests::keeps('حالتِ هاور/فوکوس/اکتیوِ دکمه صریح خنثی شده (نه فقط حالتِ پایه)', $css_src, '.zig-archive__mbar-btn:hover,
-	.zig-archive__mbar-btn:focus,
-	.zig-archive__mbar-btn:active {
+		text-shadow: none;
+		text-decoration: none;');
+Tests::keeps('حالتِ هاور/فوکوس/اکتیوِ دکمه هم با همان زنجیر خنثی شده', $css_src, '.zig-archive__mbar .zig-archive__mbar-btn:hover,
+	.zig-archive__mbar .zig-archive__mbar-btn:focus,
+	.zig-archive__mbar .zig-archive__mbar-btn:active {
 		background: none;
+		background-color: transparent;
+		text-shadow: none;
+		text-decoration: none;
+	}');
+Tests::keeps('برچسبِ متنیِ داخلِ دکمه هم تکس‌شادو ندارد', $css_src, '.zig-archive__mbar .zig-archive__mbar-text {
 		text-shadow: none;
 	}');
-Tests::keeps('برچسبِ متنیِ داخلِ دکمه هم تکس‌شادو ندارد', $css_src, '.zig-archive__mbar-text {
-		text-shadow: none;
+Tests::keeps('رنگِ برچسبِ فیلتر رویِ هاور/فوکوس/اکتیو هم صریح تکرار شده', $css_src, '.zig-archive__mbar .zig-archive__mbar-btn--filter:hover,
+	.zig-archive__mbar .zig-archive__mbar-btn--filter:focus,
+	.zig-archive__mbar .zig-archive__mbar-btn--filter:active {
+		color: var(--zig-mbar-filter-color, #5a23b5);
+	}');
+Tests::keeps('رنگِ برچسبِ ترتیب رویِ هاور/فوکوس/اکتیو هم صریح تکرار شده', $css_src, '.zig-archive__mbar .zig-archive__mbar-btn--sort:hover,
+	.zig-archive__mbar .zig-archive__mbar-btn--sort:focus,
+	.zig-archive__mbar .zig-archive__mbar-btn--sort:active {
+		color: var(--zig-mbar-sort-color, #686673);
 	}');
 Tests::keeps('دکمه‌هایِ نوار حلقهٔ فوکوسِ کیبورد دارند', $css_src, '.zig-archive__mbar-btn:focus-visible {');
