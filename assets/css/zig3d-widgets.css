@@ -74,7 +74,6 @@
 .zig-download-archive__layout { display: flex; direction: ltr; gap: 24px; align-items: flex-start; }
 .zig-download-archive__main { direction: rtl; flex: 1 1 auto; min-inline-size: 0; gap: 18px; }
 .zig-download-archive__filters { direction: rtl; flex: 0 0 296px; inline-size: 296px; }
-.zig-download-archive__filter-trigger { display: none; }
 .zig-download-list { display: grid; gap: 16px; }
 
 .zig-download-card {
@@ -252,18 +251,15 @@
 .zig-download-archive :where(a, button, input):focus-visible { outline: 3px solid rgba(105, 40, 217, .28); outline-offset: 2px; }
 
 @media (max-width: 767px) {
-	.zig-download-archive__toolbar { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
-	.zig-download-toolbar__scope { grid-row: 2; }
-	.zig-download-toolbar__sort { overflow-x: auto; flex-wrap: nowrap; padding-block-end: 2px; }
-	.zig-download-sort { flex: 0 0 auto; }
-	.zig-download-archive__filter-trigger {
-		display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px;
-		margin-block-end: 14px; padding-inline: 18px; border: 1px solid #cdbaf8; border-radius: 12px;
-		background: #fff; color: #5f27cf; font-weight: 700;
-	}
-	.zig-download-archive__layout { display: block; }
-	.zig-download-archive__filters { display: none; inline-size: 100%; margin-block-end: 16px; }
-	.zig-download-archive.is-filters-open .zig-download-archive__filters { display: block; }
+	/*
+	 * چرومِ قدیمیِ موبایل (نوار ابزار جمع‌وجورشده + دکمهٔ «فیلترها» + کلاسِ
+	 * تاگل‌شوندهٔ نمایش/پنهانِ فیلترها) رفته — جایش را همان نوارِ قرصی/شیتِ
+	 * فیلترِ آرشیوِ محصولات گرفته (رجوع کنید به «چرومِ موبایلِ آرشیوِ
+	 * محصولات» پایین‌ترِ همین فایل: ‎.zig-archive__mbar‎/‎.zig-archive__filters‎
+	 * بی‌هیچ سلکتورِ اختصاصی، همان‌جا اثر می‌کنند). نوار ابزارِ دسکتاپ
+	 * (سرچ+ترتیب+شمارنده) کلاً زیرِ این بریک‌پوینت خاموش است.
+	 */
+	.zig-download-archive__toolbar { display: none; }
 	.zig-download-card { padding: 17px; }
 	.zig-download-card__title { font-size: 19px; }
 	.zig-download-card__compatibility { margin-block-start: 16px; }
@@ -2688,7 +2684,8 @@ a.zig-list__label:focus-visible {
 .zig-archive__retry:focus-visible,
 .zig-archive__grid .zig-card__title a:focus-visible,
 .zig-archive__mbar-btn:focus-visible,
-.zig-archive__sheet-back:focus-visible {
+.zig-archive__sheet-back:focus-visible,
+.zig-archive__mbar-search input[type="search"]:focus-visible {
 	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
 	outline-offset: var(--zig-focus-offset, 3px);
 }
@@ -2841,6 +2838,56 @@ a.zig-list__label:focus-visible {
 	.zig-archive__mbar-icon--sort {
 		width: 21px;
 		height: 20px;
+	}
+
+	/*
+	 * فرمِ سرچِ نوارِ موبایلِ آرشیوِ دانلود — بخشِ عمدهٔ نوار، چون این
+	 * ویجت مرتب‌سازی ندارد. ‎.zig-archive__mbar‎ی مشترک خودش
+	 * ‎justify-content: space-between‎ دارد؛ ‎flex: 1 1 auto‎ی این فرم
+	 * همان فضایِ خالی را می‌گیرد، بدونِ نیاز به override کردنِ آن قاعده.
+	 */
+	.zig-archive__mbar-search {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.zig-archive__mbar-search-icon {
+		flex: none;
+		width: 18px;
+		height: 18px;
+		color: var(--zig-mbar-icon-color, rgba(23, 23, 27, 0.9));
+	}
+
+	.zig-archive__mbar-search input[type="search"] {
+		flex: 1 1 auto;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+		text-shadow: none;
+		color: inherit;
+		font: inherit;
+		font-size: 14px;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.zig-archive__mbar-search input[type="search"]:focus {
+		box-shadow: none;
+		text-shadow: none;
+	}
+
+	.zig-archive__mbar-search input[type="search"]::placeholder {
+		color: var(--zig-mbar-search-placeholder, #a4a3ad);
+	}
+
+	.zig-archive__mbar-search input[type="search"]::-webkit-search-cancel-button {
+		-webkit-appearance: none;
 	}
 
 	/* ---- لایهٔ تیرهٔ مشترکِ هر دو شیت ---- */

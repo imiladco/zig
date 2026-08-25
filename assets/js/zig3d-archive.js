@@ -62,8 +62,13 @@
 		this.main = root.querySelector('.zig-archive__main') || root;
 		this.error = root.querySelector('.zig-archive__error');
 		this.retry = root.querySelector('.zig-archive__retry');
-		this.search = root.querySelector('[data-zig-search]');
-		this.filterTrigger = root.querySelector('.zig-download-archive__filter-trigger');
+		/*
+		 * می‌تواند دو تا باشد: فرمِ سرچِ دسکتاپ و فرمِ سرچِ نوارِ موبایل
+		 * (آرشیوِ دانلود) — با CSS فقط یکی‌شان دیده می‌شود، ولی هر دو باید
+		 * گوش بدهند و مقدارشان با هم هم‌گام بماند، وگرنه چرخیدنِ اندازهٔ
+		 * پنجره بینِ دو حالت یک فرمِ خالی نشان می‌دهد.
+		 */
+		this.searches = Array.prototype.slice.call(root.querySelectorAll('[data-zig-search]'));
 
 		/* نوارِ موبایل و شیت‌ها — نگاه کنید به bindSheets() */
 		this.mbar = root.querySelector('[data-zig-mbar]');
@@ -237,9 +242,16 @@
 			});
 		}
 
-		if (this.search) {
-			this.search.addEventListener('input', function () {
-				var value = self.search.value.trim();
+		this.searches.forEach(function (input) {
+			input.addEventListener('input', function () {
+				var value = input.value.trim();
+
+				// فرمِ خواهر (دسکتاپ/موبایل) هم همین لحظه همان مقدار را ببیند
+				self.searches.forEach(function (other) {
+					if (other !== input) {
+						other.value = input.value;
+					}
+				});
 
 				if (value) {
 					self.params.set('s', value);
@@ -251,21 +263,13 @@
 				self.go(self.params.toString(), 'filter');
 			});
 
-			if (this.search.form) {
-				this.search.form.addEventListener('submit', function (event) {
+			if (input.form) {
+				input.form.addEventListener('submit', function (event) {
 					event.preventDefault();
 					self.go(self.params.toString(), 'filter', null, true);
 				});
 			}
-		}
-
-		if (this.filterTrigger) {
-			this.filterTrigger.addEventListener('click', function () {
-				var expanded = !self.root.classList.contains('is-filters-open');
-				self.root.classList.toggle('is-filters-open', expanded);
-				self.filterTrigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-			});
-		}
+		});
 
 		/*
 		 * فقط مالکِ تاریخچه به back گوش می‌دهد.

@@ -137,7 +137,24 @@ Tests::ok('Remote size discovery uses a dynamically resolved save hook', false !
 Tests::ok('Archive supports real search, sorts and result count', false !== strpos($widget_source, "'s' => \$state['search']") && false !== strpos($widget_source, 'data-zig-part="count"') && false !== strpos($widget_source, 'data-zig-sort'));
 Tests::ok('No applied-filters duplicate UI exists', false === strpos($widget_source, 'applied-filters'));
 Tests::ok('RTL/LTR values use bidi isolation', false !== strpos($widget_source, '<bdi>') && false !== strpos($widget_source, 'dir="ltr"'));
-Tests::ok('Toolbar belongs to the main archive column', false !== strpos($widget_source, 'zig-download-archive__main"><div class="zig-download-archive__toolbar">'));
+Tests::ok('Toolbar belongs to the main archive column', false !== strpos($widget_source, '<main class="zig-archive__main zig-download-archive__main">') && strpos($widget_source, '<main class="zig-archive__main zig-download-archive__main">') < strpos($widget_source, '<div class="zig-download-archive__toolbar">'));
+
+/*
+ * Mobile chrome, ported from Product_Archive's pill bar + bottom sheet:
+ * a filter button (when a sidebar exists) plus a search form that takes
+ * up most of the bar's width — this widget has no sort, so there is no
+ * sort side to the pill. The old inline show/hide toggle
+ * (.zig-download-archive__filter-trigger / .is-filters-open) is retired
+ * in favor of the shared .zig-archive__mbar / .zig-archive__filters sheet
+ * machinery, which needs no widget-specific CSS or JS of its own.
+ */
+Tests::ok('Mobile bar is rendered with the shared chrome hook', false !== strpos($widget_source, 'class="zig-archive__mbar zig-archive__mbar--search" data-zig-mbar'));
+Tests::ok('Mobile filter button opens the shared filter sheet', false !== strpos($widget_source, 'data-zig-open="filters"'));
+Tests::ok('Mobile search form carries the shared data-zig-search hook', false !== strpos($widget_source, 'class="zig-archive__mbar-search"') && false !== strpos($widget_source, 'data-zig-search>'));
+Tests::ok('Sheet handle and back button are siblings of the facets slot, not inside it', strpos($widget_source, 'data-zig-part="facets"') < strpos($widget_source, 'zig-archive__sheet-back'));
+Tests::ok('Legacy inline filter toggle is fully retired', false === strpos($widget_source, 'filter-trigger') && false === strpos($widget_source, 'is-filters-open'));
+Tests::ok('Legacy inline filter toggle CSS is fully retired', false === strpos($css_source, '.zig-download-archive__filter-trigger') && false === strpos($css_source, '.is-filters-open'));
+Tests::ok('JS binds every [data-zig-search] element, not just the first', false !== strpos($js_source, 'querySelectorAll(\'[data-zig-search]\')') && false === strpos($js_source, "root.querySelector('[data-zig-search]')"));
 Tests::ok('Main and sidebar structural classes remain present', false !== strpos($widget_source, 'zig-download-archive__main') && false !== strpos($widget_source, 'zig-download-archive__filters'));
 Tests::ok('Facet counts are generated from one batched post-id pass', false !== strpos($widget_source, "\$out[\$value]['count']++") && false === strpos($widget_source, 'foreach ($options as $value => $option) { new \\WP_Query'));
 Tests::ok('Primary and label taxonomies cannot duplicate', false !== strpos($widget_source, "\$label_taxonomy !== \$primary_taxonomy"));

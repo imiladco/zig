@@ -301,7 +301,10 @@ final class Download_Archive extends Widget_Base {
             'data-zig-post' => (string) $this->document_id(), 'data-zig-widget' => $this->get_id(), 'data-zig-term' => '0',
         ]);
         echo '<section ' . $this->get_render_attribute_string('root') . '>';
-        echo '<button class="zig-download-archive__filter-trigger" type="button" aria-expanded="false" aria-controls="zig-download-filters-' . esc_attr($this->get_id()) . '">' . esc_html__('فیلترها', 'zig3d-widgets') . '</button>';
+
+        $has_sidebar = $this->has_sidebar($settings, $ctx['facets']);
+        $filters_id  = 'zig-download-filters-' . $this->get_id();
+
         echo '<div class="zig-download-archive__layout">';
         /*
          * ‎<div data-zig-part="pagination">‎، نه ‎<nav>‎ — دقیقاً مثلِ آرشیوِ
@@ -309,10 +312,85 @@ final class Download_Archive extends Widget_Base {
          * می‌کند (یا وقتی یک صفحه بیشتر نیست، هیچ‌چیز)؛ اگر بیرونش هم
          * ‎<nav>‎ بود، یک ‎<nav>‎ی تودرتو می‌ساخت.
          */
-        echo '<main class="zig-archive__main zig-download-archive__main"><div class="zig-download-archive__toolbar">' . $this->fragment('toolbar', $ctx) . '</div><div data-zig-part="grid">' . $this->fragment('grid', $ctx) . '</div><div data-zig-part="pagination">' . $this->fragment('pagination', $ctx) . '</div></main>';
-        if ($this->has_sidebar($settings, $ctx['facets'])) echo '<aside id="zig-download-filters-' . esc_attr($this->get_id()) . '" class="zig-archive__filters zig-download-archive__filters" data-zig-part="facets">' . $this->fragment('facets', $ctx) . '</aside>';
-        echo '</div><div class="zig-archive__error" hidden><button class="zig-archive__retry" type="button">' . esc_html__('تلاش دوباره', 'zig3d-widgets') . '</button></div></section>';
+        echo '<main class="zig-archive__main zig-download-archive__main">';
+        $this->render_mobile_bar($ctx, $has_sidebar, $filters_id);
+        echo '<div class="zig-download-archive__toolbar">' . $this->fragment('toolbar', $ctx) . '</div><div data-zig-part="grid">' . $this->fragment('grid', $ctx) . '</div><div data-zig-part="pagination">' . $this->fragment('pagination', $ctx) . '</div></main>';
+
+        if ($has_sidebar) {
+            /*
+             * همان الگویِ شیتِ موبایلِ آرشیوِ محصولات: دستگیره و دکمهٔ
+             * بازگشت خواهرِ اسلاتِ ‎facets‎اند نه فرزندش — وگرنه هر تیکِ
+             * فیلتر (که فقط همین اسلات را عوض می‌کند) پاکشان می‌کرد.
+             * ‎.zig-archive__filters‎ی مشترک (همان کلاسِ سایدبارِ دسکتاپِ
+             * آرشیوِ محصولات) خودش زیرِ ۷۶۷px به شیتِ تمام‌ارتفاعِ
+             * ‎position:fixed‎ تبدیل می‌شود، بدونِ هیچ CSSِ تازه‌ای اینجا.
+             */
+            printf(
+                '<aside id="%s" class="zig-archive__filters zig-download-archive__filters" aria-label="%s">',
+                esc_attr($filters_id),
+                esc_attr__('فیلترها', 'zig3d-widgets')
+            );
+            echo '<span class="zig-archive__sheet-handle" aria-hidden="true"></span>';
+            echo '<div class="zig-archive__facets" data-zig-part="facets">' . $this->fragment('facets', $ctx) . '</div>';
+            printf(
+                '<button type="button" class="zig-archive__sheet-back" data-zig-close>%s<span>%s</span></button>',
+                Markup::svg_icon('arrow', 'zig-archive__sheet-back-icon'),
+                esc_html__('بازگشت', 'zig3d-widgets')
+            );
+            echo '</aside>';
+        }
+
+        echo '</div>';
+        echo '<div class="zig-archive__sheet-backdrop" data-zig-sheet-backdrop hidden></div>';
+        echo '<div class="zig-archive__error" hidden><button class="zig-archive__retry" type="button">' . esc_html__('تلاش دوباره', 'zig3d-widgets') . '</button></div></section>';
         wp_reset_postdata();
+    }
+
+    /**
+     * نوارِ قرصیِ موبایل: دکمهٔ فیلتر (اگر سایدباری هست) + سرچ.
+     *
+     * بدونِ ترتیب — این ویجت اصلاً مرتب‌سازی ندارد — پس بخشِ عمدهٔ نوار را
+     * سرچ می‌گیرد (‎flex: 1 1 auto‎ی خودِ فرم، نه چیدمانِ دو‌پیلِ ثابتِ
+     * آرشیوِ محصولات).
+     *
+     * همان کلاس‌ها/دیتا-اتریبیوت‌هایِ ‎.zig-archive__mbar‎/‎data-zig-mbar‎/
+     * ‎data-zig-open‎ی آرشیوِ محصولات به‌کار رفته — یعنی همان چرومِ CSS و
+     * همان ‎bindSheets()‎/‎toggleSheet()‎یِ جاوااسکریپت، بدونِ هیچ کدِ
+     * تازه‌ای مخصوصِ این ویجت.
+     */
+    private function render_mobile_bar(array $ctx, bool $has_sidebar, string $filters_id): void {
+        $settings = $ctx['settings'];
+
+        echo '<div class="zig-archive__mbar zig-archive__mbar--search" data-zig-mbar>';
+
+        if ($has_sidebar) {
+            printf(
+                '<button type="button" class="zig-archive__mbar-btn zig-archive__mbar-btn--filter" data-zig-open="filters" aria-expanded="false" aria-controls="%s">%s<span class="zig-archive__mbar-text">%s</span></button>',
+                esc_attr($filters_id),
+                Markup::svg_icon_filled('mbar-filter', 'zig-archive__mbar-icon zig-archive__mbar-icon--filter'),
+                esc_html__('فیلترها', 'zig3d-widgets')
+            );
+        }
+
+        /*
+         * همان ‎data-zig-search‎ی فرمِ جستجویِ دسکتاپ — یعنی دومین عنصری
+         * که با این اتریبیوت پیدا می‌شود، نه یکیِ جدا. جاوااسکریپت هر دو
+         * را می‌بندد و مقدارشان را با هم هم‌گام نگه می‌دارد.
+         */
+        printf(
+            '<form class="zig-archive__mbar-search" role="search">'
+                . '<label class="screen-reader-text" for="zig-download-search-mobile-%1$s">%2$s</label>'
+                . '%3$s'
+                . '<input id="zig-download-search-mobile-%1$s" type="search" name="s" value="%4$s" placeholder="%5$s" data-zig-search>'
+                . '</form>',
+            esc_attr($this->get_id()),
+            esc_html__('جستجوی نرم‌افزار', 'zig3d-widgets'),
+            Markup::svg_icon('search', 'zig-archive__mbar-search-icon'),
+            esc_attr($ctx['state']['search']),
+            esc_attr($settings['search_placeholder'] ?? '')
+        );
+
+        echo '</div>';
     }
 
     public function context(array $settings, ?array $params = null, int $term_id = 0): array {
