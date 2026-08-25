@@ -17,6 +17,36 @@ require_once $root . '/includes/widgets/download-archive.php';
  */
 zig_reset_jetengine();
 
+/*
+ * ‎new WP_Query()‎ در این سوییت به هیچ چیزِ واقعی وصل نیست؛
+ * ‎lib/wp-query-stub.php‎ (استابِ مشترک، نه یک نسخهٔ محلی — همان‌جا
+ * توضیح داده چرا) کافی است چون آنچه پایینِ این فایل سنجیده می‌شود شکلِ
+ * ‎$args‎ است، نه اجرایِ کوئری. ‎render_pagination()‎ی همین فایل هم
+ * زودتر از بلوکِ دسته‌بندی به ‎base_url()‎ → ‎get_queried_object()‎
+ * می‌رسد، پس این استاب‌ها باید همین بالا باشند، نه کنارِ سنجه‌هایی که
+ * واقعاً به آن‌ها نیاز دارند.
+ */
+require_once __DIR__ . '/lib/wp-query-stub.php';
+
+// همان شکلِ menu-test.php — اگر آن فایل زودتر بار شود همان تعریف برنده
+// می‌شود، ولی خروجی برایِ هر دو یکی است.
+if (!function_exists('get_term_link')) {
+    function get_term_link($term, $taxonomy = '') {
+        // ورودیِ واقعیِ get_term_link() یا شناسه است یا خودِ WP_Term —
+        // base_url() اینجا دومی را می‌فرستد.
+        $id = is_object($term) ? (int) ($term->term_id ?? 0) : (int) $term;
+
+        return 'https://zig3d.test/cat/' . $id;
+    }
+}
+
+// همان قراردادِ faq-test.php: پیش‌فرض null، مگر سناریو صریح چیزی بگذارد.
+if (!function_exists('get_queried_object')) {
+    function get_queried_object() {
+        return $GLOBALS['__zig_queried_object'] ?? null;
+    }
+}
+
 final class Zig_Download_Test_Meta_Boxes {
     public function get_fields_for_context($context, $post_type): array {
         $GLOBALS['__zig_field_post_type'] = $post_type;
@@ -311,3 +341,102 @@ $widget_source = file_get_contents($root . '/includes/widgets/download-archive.p
 Tests::ok('Pagination behavior controls exist: scroll_pages/restore_state/label_prev/label_next', in_array('scroll_pages', $controls, true) && in_array('restore_state', $controls, true) && in_array('label_prev', $controls, true) && in_array('label_next', $controls, true));
 Tests::ok('Root attributes wire scroll/restore settings, not hardcoded zeros', false !== strpos($widget_source, "'data-zig-scroll-max' => (string) (int) (\$settings['scroll_pages']") && false !== strpos($widget_source, "'data-zig-restore' => 'yes' === (\$settings['restore_state']"));
 Tests::ok('Pagination outer slot is a plain div, not a nested <nav>', false !== strpos($widget_source, '<div data-zig-part="pagination">') && false === strpos($widget_source, '<nav data-zig-part="pagination">'));
+
+Tests::group('Download Archive › category-page scoping (/downloads/<term>)');
+
+/*
+ * تولیدِ واقعی با ‎'objects'‎ صدا می‌زند (‎Download_Archive_Data::taxonomy_options()‎
+ * همین را می‌خواهد)؛ این استابِ مشترک اصلاً به آرگومانِ دوم توجه نمی‌کند —
+ * پس برایِ این بلوک موقتاً به شکلِ فهرستِ نام‌ها برمی‌گردد (که خودِ کدِ
+ * تولید هم با ‎'names'‎ صریح می‌خواهد)، و در پایان به همان شکلِ اصلی
+ * برمی‌گردد تا بقیهٔ فایل (که به شکلِ آبجکتی نیاز دارند) دست‌نخورده بمانند.
+ */
+$original_taxonomies = $GLOBALS['__zig_taxonomies'];
+$GLOBALS['__zig_taxonomies'] = ['software-category', 'software-label'];
+
+$category_term = new \WP_Term('نرم‌افزار فرز', 'milling-machine-software', 91);
+$category_term->taxonomy = 'software-category';
+
+$unrelated_term = new \WP_Term('برچسبِ بی‌ربط', 'irrelevant-tag', 55);
+$unrelated_term->taxonomy = 'post_tag';
+
+$GLOBALS['__zig_queried_object'] = $category_term;
+$ctx = (new \Zig3d_Widgets\Widgets\Download_Archive())->context([], []);
+Tests::same(
+    'روی آرشیوِ واقعیِ یک ترم، کوئری به همان دسته قید می‌خورد — نه کلِ کاتالوگ',
+    [[
+        'taxonomy'         => 'software-category',
+        'field'            => 'term_id',
+        'terms'            => [91],
+        'include_children' => true,
+    ]],
+    $ctx['query']->args['tax_query'] ?? null
+);
+Tests::same('term_id به بدنهٔ context() هم برمی‌گردد (برایِ data-zig-term)', 91, $ctx['term_id']);
+
+$GLOBALS['__zig_queried_object'] = $unrelated_term;
+$ctx_unrelated = (new \Zig3d_Widgets\Widgets\Download_Archive())->context([], []);
+Tests::ok(
+    'ترمی از تاکسونومیِ بی‌ربط (نه از تاکسونومی‌هایِ خودِ این CPT) نادیده گرفته می‌شود',
+    !isset($ctx_unrelated['query']->args['tax_query'])
+);
+Tests::same('term_id هم صفر می‌ماند', 0, $ctx_unrelated['term_id']);
+
+$GLOBALS['__zig_queried_object'] = null;
+$ctx_plain = (new \Zig3d_Widgets\Widgets\Download_Archive())->context([], []);
+Tests::ok(
+    'بدونِ هیچ ترمِ جاری‌ای (ویجت روی یک برگهٔ دلخواه)، هیچ قیدی اضافه نمی‌شود — رفتارِ قبلی برایِ همین حالت دست‌نخورده',
+    !isset($ctx_plain['query']->args['tax_query'])
+);
+
+/*
+ * مسیرِ آژاکس: کلاینت فقط یک عددِ term_id می‌فرستد (از data-zig-term)، نه
+ * نامِ تاکسونومی — resolve_term() باید آن را رویِ تاکسونومی‌هایِ خودِ این
+ * CPT بسنجد، نه هر ترمی که در تاکسونومیِ دیگری همین شناسه را دارد.
+ */
+$GLOBALS['__zig_terms'][91] = $category_term;
+$GLOBALS['__zig_terms'][55] = $unrelated_term;
+$GLOBALS['__zig_queried_object'] = null; // admin-ajax.php هیچ کوئریِ واقعی‌ای ندارد
+
+Tests::same(
+    'term_idِ فرستاده‌شده از آژاکس هم همان قید را می‌سازد',
+    91,
+    (new \Zig3d_Widgets\Widgets\Download_Archive())->context([], [], 91)['term_id']
+);
+Tests::same(
+    'ولی term_idِ متعلق به تاکسونومیِ دیگر (۵۵) پذیرفته نمی‌شود',
+    0,
+    (new \Zig3d_Widgets\Widgets\Download_Archive())->context([], [], 55)['term_id']
+);
+
+/*
+ * فیلترِ فعالِ سایدبار (filter_<taxonomy>) باید با قیدِ صفحه AND شود، نه
+ * جایگزینش — وگرنه هر تیکِ سایدبار رویِ همین صفحه، دستهٔ خودِ صفحه را دور
+ * می‌زد. کلیدِ واقعیِ این فیلتر نامِ تاکسونومی است
+ * (‎facet_definitions()‎ → ‎sanitize_key($source)‎)، نه اسمِ اسلاتِ
+ * ‎category‎.
+ */
+$GLOBALS['__zig_queried_object'] = $category_term;
+$ctx_filtered = (new \Zig3d_Widgets\Widgets\Download_Archive())->context(
+    ['filter_category_on' => 'yes', 'primary_taxonomy' => 'software-category'],
+    ['filter_software-category' => 'cnc']
+);
+$merged = $ctx_filtered['query']->args['tax_query'] ?? null;
+Tests::same('هر دو گروه با هم می‌آیند، نه یکی جایِ دیگری', 'AND', $merged['relation'] ?? '');
+Tests::same('گروهِ اولِ آن همان قیدِ صفحه است (ترمِ ۹۱)', [91], $merged[0][0]['terms'] ?? null);
+Tests::same('گروهِ دومِ آن همان فیلترِ انتخابیِ کاربر است (cnc)', ['cnc'], $merged[1][0]['terms'] ?? null);
+
+Tests::group('Download Archive › base_url() روی آرشیوِ واقعیِ یک ترم');
+
+$base_url_method = new ReflectionMethod(\Zig3d_Widgets\Widgets\Download_Archive::class, 'base_url');
+$base_url_method->setAccessible(true);
+
+$GLOBALS['__zig_queried_object'] = $category_term;
+Tests::same(
+    'روی آرشیوِ ترم، base_url() از get_term_link() می‌آید — نه سندِ قالبِ المنتور',
+    'https://zig3d.test/cat/91',
+    $base_url_method->invoke(new \Zig3d_Widgets\Widgets\Download_Archive())
+);
+
+$GLOBALS['__zig_queried_object'] = null;
+$GLOBALS['__zig_taxonomies'] = $original_taxonomies;

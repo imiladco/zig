@@ -32,6 +32,21 @@ require_once $root . '/includes/widgets/download-archive.php';
 
 use Zig3d_Widgets\Widgets\Download_Archive;
 
+/*
+ * همان قراردادِ ‎faq-test.php‎: پیش‌فرض null («هیچ ترمی») مگر
+ * ‎$__zig_queried_object‎ صریح چیزِ دیگری بگوید. اینجا هیچ سناریویی آن
+ * را عوض نمی‌کند — دقیقاً مثلِ یک درخواستِ آژاکسِ تازه — ولی چون این
+ * فایل زودتر از ‎faq-test.php‎ در ترتیبِ الفباییِ ‎run.php‎ بار می‌شود،
+ * تعریفِ اینجا برایِ کلِ سوییت برنده می‌شود؛ اگر ثابت null برمی‌گرداند
+ * (نه از رویِ گلوبال)، سناریویِ faq-test.php که بعداً همین گلوبال را
+ * به یک WP_Term تنظیم می‌کند بی‌اثر می‌ماند.
+ */
+if (!function_exists('get_queried_object')) {
+    function get_queried_object() {
+        return $GLOBALS['__zig_queried_object'] ?? null;
+    }
+}
+
 Tests::group('نقطهٔ آژاکسِ آرشیو › مکانیزمِ document_id() (باگِ نوارِ آدرس)');
 
 $widget = zig_widget(Download_Archive::class);

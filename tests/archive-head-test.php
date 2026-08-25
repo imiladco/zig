@@ -25,17 +25,7 @@ if (!function_exists('status_header')) {
     function status_header($code) { $GLOBALS['__zig_status_headers'][] = (int) $code; }
 }
 
-if (!class_exists('WP_Query')) {
-    class WP_Query {
-        public bool $singular = false;
-        public array $writes = [];
-
-        public function is_main_query(): bool { return true; }
-        public function is_singular(): bool { return $this->singular; }
-        public function get($key) { return null; }
-        public function set($key, $value): void { $this->writes[$key] = $value; }
-    }
-}
+require_once __DIR__ . '/lib/wp-query-stub.php';
 
 require_once $root . '/includes/query-state.php';
 require_once $root . '/includes/archive-head.php';

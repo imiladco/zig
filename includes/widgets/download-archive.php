@@ -17,6 +17,14 @@ if (!defined('ABSPATH')) {
 
 final class Download_Archive extends Widget_Base {
     private ?array $facet_post_ids = null;
+
+    /**
+     * دسته‌ای که این ویجت رویش نشسته — همان الگویِ
+     * ‎Product_Archive::$term‎: روی رندرِ سرور از ‎get_queried_object()‎
+     * می‌آید، روی درخواستِ آژاکس (که نه دسته‌ای دارد نه شرطی‌ای) صریح از
+     * ‎term_id‎ی فرستاده‌شده حل می‌شود.
+     */
+    private ?\WP_Term $term = null;
     public function get_name(): string { return 'zig3d-download-archive'; }
     public function get_title(): string { return __('آرشیو دانلود', 'zig3d-widgets'); }
     public function get_icon(): string { return 'eicon-download-button'; }
@@ -298,7 +306,7 @@ final class Download_Archive extends Widget_Base {
             'data-zig-restore' => 'yes' === ($settings['restore_state'] ?? '') ? '1' : '0',
             'data-zig-page' => (string) $ctx['page'], 'data-zig-pages' => (string) max(1, $ctx['pages']),
             'data-zig-endpoint' => Archive_Endpoint::url(), 'data-zig-nonce' => Archive_Endpoint::nonce(),
-            'data-zig-post' => (string) $this->document_id(), 'data-zig-widget' => $this->get_id(), 'data-zig-term' => '0',
+            'data-zig-post' => (string) $this->document_id(), 'data-zig-widget' => $this->get_id(), 'data-zig-term' => (string) $ctx['term_id'],
         ]);
         echo '<section ' . $this->get_render_attribute_string('root') . '>';
 
@@ -392,14 +400,96 @@ final class Download_Archive extends Widget_Base {
     }
 
     public function context(array $settings, ?array $params = null, int $term_id = 0): array {
+        $this->resolve_term($term_id);
+
         $params = null === $params ? (is_array($_GET) ? wp_unslash($_GET) : []) : $params;
         $state = $this->state($settings, $params);
         $post_type = Download_Archive_Data::post_type();
         $args = ['post_type' => $post_type, 'post_status' => 'publish', 'posts_per_page' => max(1, min(48, (int) ($settings['per_page'] ?? 9))), 'paged' => $state['page'], 's' => $state['search']];
+
+        /*
+         * دامنهٔ آرشیو: باگِ واقعیِ نصب. این ویجت رویِ صفحهٔ یک ترمِ
+         * تاکسونومی (مثلِ ‎/downloads/milling-machine-software‎) هیچ‌وقت
+         * به آن ترم قید نمی‌خورد — کوئری بالا همیشه *همهٔ* پست‌هایِ این
+         * CPT را می‌آورد، بی‌توجه به اینکه کاربر رویِ کدام دسته ایستاده.
+         * ‎filter_category‎ی سایدبار یک سؤالِ جداست («کدام‌ها را کاربر
+         * روی همین صفحه انتخاب کرده») و رویِ صفحه‌ای که خودش دستهٔ ثابتی
+         * ندارد اصلاً معنا ندارد که این قید را جایگزین کند؛ برایِ همین
+         * پایین‌تر با آن ادغام می‌شود، نه جایگزینش.
+         */
+        $term = $this->queried_term();
+
+        if ($term instanceof \WP_Term) {
+            $args['tax_query'] = [[
+                'taxonomy'         => $term->taxonomy,
+                'field'            => 'term_id',
+                'terms'            => [(int) $term->term_id],
+                'include_children' => true,
+            ]];
+        }
+
         $this->apply_sort($args, $state['sort'], $settings);
         $this->apply_filters($args, $state['filters'], $settings);
         $query = new \WP_Query($args);
-        return ['settings' => $settings, 'query' => $query, 'state' => $state, 'facets' => $this->facet_definitions($settings), 'sorts' => ['updated', 'newest', 'title'], 'page' => $state['page'], 'pages' => (int) $query->max_num_pages, 'found' => (int) $query->found_posts, 'url' => $this->state_url($state), 'page_state' => $query->found_posts ? 'ok' : 'empty'];
+        return ['settings' => $settings, 'query' => $query, 'state' => $state, 'facets' => $this->facet_definitions($settings), 'sorts' => ['updated', 'newest', 'title'], 'page' => $state['page'], 'pages' => (int) $query->max_num_pages, 'found' => (int) $query->found_posts, 'url' => $this->state_url($state), 'page_state' => $query->found_posts ? 'ok' : 'empty', 'term_id' => $term instanceof \WP_Term ? (int) $term->term_id : 0];
+    }
+
+    /**
+     * دسته‌ای که این ویجت رویش نشسته.
+     *
+     * روی رندرِ سرور همان ‎get_queried_object()‎ است، فقط اگر واقعاً به
+     * یکی از تاکسونومی‌هایِ همین CPT تعلق داشته باشد — وگرنه (مثلاً ویجت
+     * روی یک برگهٔ دلخواهِ المنتور، نه آرشیوِ واقعیِ یک دسته) چیزی برای
+     * قید‌کردن نیست. روی آژاکس چیزی برای پرسیدن نیست؛ ‎resolve_term()‎
+     * پیش از این متد صریح پرش می‌کند.
+     */
+    private function queried_term(): ?\WP_Term {
+        if ($this->term instanceof \WP_Term) {
+            return $this->term;
+        }
+
+        $term = get_queried_object();
+
+        if (!$term instanceof \WP_Term) {
+            return null;
+        }
+
+        $post_type = Download_Archive_Data::post_type();
+
+        if ('' === $post_type || !in_array($term->taxonomy, get_object_taxonomies($post_type, 'names'), true)) {
+            return null;
+        }
+
+        return $term;
+    }
+
+    /**
+     * ترمِ فرستاده‌شده از کلاینت (آژاکس)، اگر واقعاً معتبر باشد.
+     *
+     * ‎get_term($term_id)‎ بدونِ تاکسونومیِ صریح صدا زده می‌شود چون کلاینت
+     * فقط یک عدد می‌فرستد نه نامِ تاکسونومی — ولی نتیجه پیش از پذیرفتنِ
+     * قطعیِ آن با ‎get_object_taxonomies()‎ سنجیده می‌شود، وگرنه شناسه‌ای
+     * که در تاکسونومیِ دیگری (مثلِ برچسبِ یک نوشتهٔ کاملاً بی‌ربط) به‌طور
+     * تصادفی همین عدد را دارد، کوئری را به یک دستهٔ اشتباه قید می‌زد.
+     * ترمی که وجود ندارد یعنی «کلِ آرشیو»، نه خطا: آدرسِ کهنه نباید
+     * درخواست را بشکند.
+     */
+    private function resolve_term(int $term_id): void {
+        if ($term_id <= 0 || $this->term instanceof \WP_Term) {
+            return;
+        }
+
+        $post_type = Download_Archive_Data::post_type();
+
+        if ('' === $post_type) {
+            return;
+        }
+
+        $found = get_term($term_id);
+
+        if ($found instanceof \WP_Term && in_array($found->taxonomy, get_object_taxonomies($post_type, 'names'), true)) {
+            $this->term = $found;
+        }
     }
 
     public function fragment(string $name, array $ctx): string {
@@ -458,7 +548,20 @@ final class Download_Archive extends Widget_Base {
                 $meta[] = $group;
             }
         }
-        if ($tax) $args['tax_query'] = array_merge(['relation' => 'AND'], $tax);
+        if ($tax) {
+            /*
+             * جایگزین نه، ادغام: اگر ‎context()‎ از پیش قیدِ دستهٔ صفحه را
+             * نشانده (بالای همین فایل)، جایگزینِ سرراستِ ‎$args['tax_query']‎
+             * همان قید را بی‌صدا پاک می‌کرد — یعنی چک‌کردنِ هر فیلترِ
+             * سایدبار، دستهٔ صفحه را دور می‌زد. دو گروه، نه یک آرایهٔ تخت:
+             * اگر تخت می‌شدند، یک relation داخلی می‌توانست قیدِ صفحه را هم
+             * اختیاری کند.
+             */
+            $group = array_merge(['relation' => 'AND'], $tax);
+            $args['tax_query'] = isset($args['tax_query'])
+                ? ['relation' => 'AND', $args['tax_query'], $group]
+                : $group;
+        }
         if (count($meta) > 1) $args['meta_query'] = $meta;
     }
 
@@ -758,7 +861,32 @@ final class Download_Archive extends Widget_Base {
         foreach ($state['filters'] as $key => $values) if ($values) $args['filter_' . $key] = implode(',', $values);
         return add_query_arg($args, remove_query_arg(array_merge(['s', 'orderby', 'paged'], array_map(fn($k) => 'filter_' . $k, array_keys($state['filters']))), $this->base_url()));
     }
-    private function base_url(): string { return get_permalink($this->document_id()) ?: home_url('/'); }
+    /**
+     * آدرس پایه، بدون هیچ پارامتری.
+     *
+     * روی آرشیوِ واقعیِ یک دسته، ‎get_term_link()‎ اول سنجیده می‌شود — نه
+     * ‎document_id()‎. دلیلش همان چیزی است که نسخهٔ قبلیِ این فایل با
+     * صفحه‌بندی داشت: وقتی این ویجت رویِ یک قالبِ آرشیوِ ساخته‌شده با
+     * تم‌بیلدرِ المنتور می‌نشیند، «سندِ جاری» همان *قالب* است، نه صفحهٔ
+     * دسته‌ای که کاربر رویش ایستاده — و ‎get_permalink()‎ی آن قالب به
+     * لینکِ داخلیِ خودِ قالب اشاره می‌کند، نه به
+     * ‎/downloads/milling-machine-software/‎. بدونِ این اولویت، هر کلیکِ
+     * صفحه‌بندی یا فیلتر روی چنین آرشیوی، دقیقاً همان‌جایی می‌رفت که
+     * پیش‌ازاین Download_Archive روی آژاکس می‌رفت.
+     */
+    private function base_url(): string {
+        $term = $this->queried_term();
+
+        if ($term instanceof \WP_Term) {
+            $link = get_term_link($term);
+
+            if (is_string($link)) {
+                return $link;
+            }
+        }
+
+        return get_permalink($this->document_id()) ?: home_url('/');
+    }
     private function document_id(): int { if (class_exists('\\Elementor\\Plugin')) { $doc = \Elementor\Plugin::$instance->documents->get_current(); if ($doc) return (int) $doc->get_main_id(); } return (int) get_the_ID(); }
     private function is_edit_mode(): bool { return class_exists('\\Elementor\\Plugin') && isset(\Elementor\Plugin::$instance->editor) && \Elementor\Plugin::$instance->editor->is_edit_mode(); }
 }
