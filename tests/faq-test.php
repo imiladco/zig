@@ -147,12 +147,49 @@ Tests::ok('شناسهٔ پستِ دستی حتی رویِ آرشیوِ ترم ه
 $GLOBALS['__zig_queried_object'] = null;
 
 /* ------------------------------------------------------------------
+ * منبعِ «دستی» — سوال/پاسخ داخلِ خودِ ویجت، بدونِ هیچ ریپیترِ JetEngine
+ * ---------------------------------------------------------------- */
+$manual_render = static function (array $manual_items, array $overrides = []) use ($widget): string {
+    return $widget->zig_render(array_merge([
+        'source_type'   => 'manual',
+        'manual_items'  => $manual_items,
+        'expand_first'  => 'yes',
+    ], $overrides));
+};
+
+$manual_faq_html = $manual_render([
+    ['_id' => 'a', 'question' => 'سوالِ دستیِ اول', 'answer' => 'پاسخِ دستیِ اول'],
+    ['_id' => 'b', 'question' => 'سوالِ دستیِ دوم', 'answer' => ''],
+    // بدونِ سوال: کنار می‌رود، دقیقاً مثلِ حالتِ ریپیتر
+    ['_id' => 'c', 'question' => '', 'answer' => 'این هیچ‌وقت دیده نمی‌شود'],
+]);
+
+Tests::same('دو آیتمِ دستیِ معتبر رندر می‌شوند', 2, substr_count($manual_faq_html, 'zig-faq__item'));
+Tests::ok('متنِ سوالِ دستی در خروجی هست', false !== strpos($manual_faq_html, 'سوالِ دستیِ اول'));
+Tests::ok('پاسخِ دستی در خروجی هست', false !== strpos($manual_faq_html, 'پاسخِ دستیِ اول'));
+Tests::same('سوالِ دستیِ بدونِ پاسخ، answer نمی‌سازد', 1, substr_count($manual_faq_html, 'zig-faq__answer'));
+Tests::ok('سطرِ دستیِ بدونِ سوال حذف شده', false === strpos($manual_faq_html, 'این هیچ‌وقت دیده نمی‌شود'));
+
+Tests::same('بدونِ هیچ آیتمِ دستی‌ای، خروجی خالی است (نه edit mode)', '', $manual_render([]));
+
+/*
+ * جدا از JetEngine: حتی وقتی get_post_meta/get_term_meta هیچ‌چیزی
+ * نمی‌دهند (کلیدِ متایِ اشتباه، یا JetEngine اصلاً نصب نیست)، حالتِ
+ * دستی هم‌چنان کار می‌کند — چون اصلاً به آن‌ها سر نمی‌زند.
+ */
+Tests::ok('حالتِ دستی مستقل از منبعِ ریپیتر است', false !== strpos($manual_render([
+    ['_id' => 'a', 'question' => 'مستقل از ریپیتر', 'answer' => ''],
+]), 'مستقل از ریپیتر'));
+
+/* ------------------------------------------------------------------
  * کنترل‌ها و ثبت
  * ---------------------------------------------------------------- */
 $controls = zig_collect_controls(Faq::class);
 foreach ([
+    'source_type',
     'meta_key', 'source_post_id',
     'field_title', 'field_answer',
+    'manual_items',
     'expand_first',
     'box_bg', 'box_border_color', 'box_border_width', 'box_radius', 'box_divider_color', 'question_padding', 'open_gap',
     'group:question_typography', 'question_color',
@@ -218,3 +255,23 @@ Tests::ok('لاگِ دیباگ پشتِ WP_DEBUG قفل است', false !== strpo
 Tests::ok('لاگ با error_log می‌رود، نه echo رویِ فرانت‌اند', false !== strpos($widget_source, "error_log('[zig3d-faq] '"));
 Tests::ok('لاگ نوع/شناسه/کلید و مقدارِ خام را می‌گوید', false !== strpos($widget_source, "'خواندنِ متا: نوع=%s شناسه=%d کلید=«%s» → %s'"));
 Tests::ok('لاگِ نتیجه تعدادِ سطرهایِ خام/معتبر/ردشده را می‌گوید — کلیدِ عنوانِ اشتباه با اولین نگاه پیدا می‌شود', false !== strpos($widget_source, "'نتیجه: %d سطرِ خام، %d سطرِ معتبر، %d سطرِ بدونِ عنوان رد شد."));
+
+/* ------------------------------------------------------------------
+ * منبعِ دستی: بخش‌هایِ ریپیتر/فیلدها فقط رویِ منبعِ ریپیتر دیده می‌شوند
+ * ---------------------------------------------------------------- */
+Tests::keeps('بخشِ «منبعِ داده» کنترلِ source_type دارد', $widget_source, "'source_type',
+            [
+                'label'   => __('منبع', 'zig3d-widgets'),");
+Tests::keeps('کلیدِ متا/شناسهٔ پستِ دستی فقط رویِ منبعِ ریپیتر دیده می‌شود', $widget_source, "'condition'   => ['source_type' => 'repeater'],");
+Tests::keeps('بخشِ «فیلدها» هم فقط رویِ منبعِ ریپیتر است', $widget_source, "'fields_section',
+            [
+                'label'     => __('فیلدها', 'zig3d-widgets'),
+                'condition' => ['source_type' => 'repeater'],");
+Tests::keeps('بخشِ «آیتم‌ها (دستی)» فقط رویِ منبعِ دستی است', $widget_source, "'manual_section',
+            [
+                'label'     => __('آیتم‌ها (دستی)', 'zig3d-widgets'),
+                'condition' => ['source_type' => 'manual'],");
+Tests::keeps('ریپیترِ دستی فقط سوال/پاسخ دارد، بدونِ کلیدِ متایِ اضافه', $widget_source, "\$repeater->add_control('question', [");
+Tests::keeps('پاسخِ دستی TEXTAREA است — همان مدلِ ساده‌ای که Markup::text از ریپیتر هم می‌پذیرد', $widget_source, "'answer', [
+            'label'       => __('پاسخ', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXTAREA,");

@@ -3,6 +3,7 @@ namespace Zig3d_Widgets\Widgets;
 
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
+use Elementor\Repeater;
 use Elementor\Widget_Base;
 use Zig3d_Widgets\Markup;
 use Zig3d_Widgets\Plugin;
@@ -75,6 +76,7 @@ final class Faq extends Widget_Base {
     protected function register_controls(): void {
         $this->register_source_section();
         $this->register_fields_section();
+        $this->register_manual_section();
         $this->register_layout_section();
         $this->register_box_style_section();
         $this->register_question_style_section();
@@ -93,12 +95,26 @@ final class Faq extends Widget_Base {
         );
 
         $this->add_control(
+            'source_type',
+            [
+                'label'   => __('منبع', 'zig3d-widgets'),
+                'type'    => Controls_Manager::SELECT,
+                'default' => 'repeater',
+                'options' => [
+                    'repeater' => __('ریپیترِ JetEngine (پست/ترمِ جاری)', 'zig3d-widgets'),
+                    'manual'   => __('دستی — همین‌جا در ویجت', 'zig3d-widgets'),
+                ],
+            ]
+        );
+
+        $this->add_control(
             'meta_key',
             [
                 'label'       => __('کلیدِ متای ریپیتر', 'zig3d-widgets'),
                 'type'        => Controls_Manager::TEXT,
                 'default'     => 'faq',
-                'description' => __('نامِ فیلدِ ریپیترِ JetEngine Meta Box رویِ پستِ جاری.', 'zig3d-widgets'),
+                'description' => __('نامِ فیلدِ ریپیترِ JetEngine Meta Box — رویِ پستِ جاری، یا (اگر ویجت رویِ آرشیوِ یک دسته/برچسب باشد) رویِ همان ترم.', 'zig3d-widgets'),
+                'condition'   => ['source_type' => 'repeater'],
             ]
         );
 
@@ -109,7 +125,8 @@ final class Faq extends Widget_Base {
                 'type'        => Controls_Manager::NUMBER,
                 'min'         => 0,
                 'default'     => 0,
-                'description' => __('خالی یا صفر یعنی پستِ جاری. فقط وقتی لازم است که از پستی غیرِ جاری خوانده شود.', 'zig3d-widgets'),
+                'description' => __('خالی یا صفر یعنی پست/ترمِ جاری. فقط وقتی لازم است که از پستی غیرِ جاری خوانده شود؛ همیشه پست است، حتی زیرِ آرشیوِ یک ترم.', 'zig3d-widgets'),
+                'condition'   => ['source_type' => 'repeater'],
             ]
         );
 
@@ -121,11 +138,15 @@ final class Faq extends Widget_Base {
      *
      * «قابل تنظیم بودنِ فیلدها» یعنی کلیدها از پنل به‌دستِ کاربر می‌آیند،
      * نه هاردکد — تا هر کانفیگِ JetEngine‌ای بدونِ تغییرِ کد هم‌اهنگ بماند.
+     * فقط وقتی منبع ریپیتر است معنا دارد — حالتِ دستی زیرفیلد ندارد.
      */
     private function register_fields_section(): void {
         $this->start_controls_section(
             'fields_section',
-            ['label' => __('فیلدها', 'zig3d-widgets')]
+            [
+                'label'     => __('فیلدها', 'zig3d-widgets'),
+                'condition' => ['source_type' => 'repeater'],
+            ]
         );
 
         $this->add_control(
@@ -143,6 +164,56 @@ final class Faq extends Widget_Base {
                 'label'   => __('کلیدِ پاسخ', 'zig3d-widgets'),
                 'type'    => Controls_Manager::TEXT,
                 'default' => 'faq_answer',
+            ]
+        );
+
+        $this->end_controls_section();
+    }
+
+    /**
+     * حالتِ «دستی»: به‌جایِ خواندن از ریپیترِ JetEngine، خودِ سوال/پاسخ‌ها
+     * در پنلِ المنتور تعریف می‌شوند — برایِ صفحه‌ای که JetEngine ندارد یا
+     * فقط چند سوالِ ثابت (مثلاً «سوالاتِ متداولِ سایت») می‌خواهد، بدونِ
+     * نیاز به ساختنِ یک فیلدِ متا فقط برایِ همین یک‌جا.
+     */
+    private function register_manual_section(): void {
+        $this->start_controls_section(
+            'manual_section',
+            [
+                'label'     => __('آیتم‌ها (دستی)', 'zig3d-widgets'),
+                'condition' => ['source_type' => 'manual'],
+            ]
+        );
+
+        $repeater = new Repeater();
+
+        $repeater->add_control('question', [
+            'label'       => __('سوال', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXT,
+            'dynamic'     => ['active' => true],
+            'default'     => __('سوال', 'zig3d-widgets'),
+            'label_block' => true,
+        ]);
+
+        $repeater->add_control('answer', [
+            'label'       => __('پاسخ', 'zig3d-widgets'),
+            'type'        => Controls_Manager::TEXTAREA,
+            'dynamic'     => ['active' => true],
+            'default'     => __('پاسخ', 'zig3d-widgets'),
+            'label_block' => true,
+            'rows'        => 4,
+        ]);
+
+        $this->add_control(
+            'manual_items',
+            [
+                'label'       => __('سوالات', 'zig3d-widgets'),
+                'type'        => Controls_Manager::REPEATER,
+                'fields'      => $repeater->get_controls(),
+                'title_field' => '{{{ question }}}',
+                'default'     => [
+                    ['question' => __('در چه زمینه‌ای فعالیت می‌کند؟', 'zig3d-widgets'), 'answer' => ''],
+                ],
             ]
         );
 
@@ -478,11 +549,15 @@ final class Faq extends Widget_Base {
 
     protected function render(): void {
         $settings = $this->get_settings_for_display();
-        $rows     = $this->rows($settings);
+        $manual   = 'manual' === ($settings['source_type'] ?? 'repeater');
+        $rows     = $manual ? $this->manual_rows($settings) : $this->rows($settings);
 
         if (!$rows) {
             if ($this->is_editing()) {
-                echo '<div class="zig-notice">' . esc_html__('ریپیترِ سوالاتِ متداول خالی است یا کلیدِ متا اشتباه است.', 'zig3d-widgets') . '</div>';
+                $message = $manual
+                    ? __('هنوز سوالی به بخشِ «آیتم‌ها (دستی)» اضافه نشده.', 'zig3d-widgets')
+                    : __('ریپیترِ سوالاتِ متداول خالی است یا کلیدِ متا اشتباه است.', 'zig3d-widgets');
+                echo '<div class="zig-notice">' . esc_html($message) . '</div>';
             }
 
             return;
@@ -497,6 +572,39 @@ final class Faq extends Widget_Base {
         }
 
         echo '</div>';
+    }
+
+    /**
+     * حالتِ «دستی»: خودِ سوال/پاسخ‌ها در تنظیماتِ ویجت‌اند، نه در متایِ
+     * پست/ترم. همان قاعدهٔ «بدونِ سوال یعنی سطر کنار می‌رود» اینجا هم
+     * برقرار است.
+     *
+     * @return array<int,array{title:string,answer:string}>
+     */
+    private function manual_rows(array $settings): array {
+        $items  = (array) ($settings['manual_items'] ?? []);
+        $result = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $title = trim((string) ($item['question'] ?? ''));
+
+            if (!Markup::filled($title)) {
+                continue;
+            }
+
+            $answer = trim((string) ($item['answer'] ?? ''));
+
+            $result[] = [
+                'title'  => $title,
+                'answer' => Markup::filled($answer) ? $answer : '',
+            ];
+        }
+
+        return $result;
     }
 
     /**
