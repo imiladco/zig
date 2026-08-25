@@ -2686,7 +2686,8 @@ a.zig-list__label:focus-visible {
 .zig-page:focus-visible,
 .zig-facet__title:focus-visible,
 .zig-archive__retry:focus-visible,
-.zig-archive__grid .zig-card__title a:focus-visible {
+.zig-archive__grid .zig-card__title a:focus-visible,
+.zig-archive__mbar-btn:focus-visible {
 	outline: var(--zig-focus-width, 2px) solid var(--zig-focus-color, currentColor);
 	outline-offset: var(--zig-focus-offset, 3px);
 }
@@ -2754,12 +2755,31 @@ a.zig-list__label:focus-visible {
 		background: none;
 		border: 0;
 		box-shadow: none;
+		text-shadow: none;
 		font: inherit;
 		font-weight: 600;
 		line-height: 1;
 		cursor: pointer;
 		-webkit-appearance: none;
 		appearance: none;
+	}
+
+	/*
+	 * چرا صریح: ‎<button>‎ی خام است، و قاعده‌هایِ بالا فقط حالتِ پایه را
+	 * ریست می‌کنند نه ‎:hover‎/‎:focus‎/‎:active‎ را — پس استایلِ پیش‌فرضِ
+	 * دکمهٔ تم/کیتِ المنتور (پس‌زمینهٔ هاور + تکس‌شادو) هنوز رویِ همین
+	 * حالت‌ها اثر می‌گذارد، چون اختصاصیتِ آن‌ها با اختصاصیتِ ریستِ ما برابر
+	 * یا کمتر است ولی سلکتورشان دقیق‌تر (حالت‌محور) است.
+	 */
+	.zig-archive__mbar-btn:hover,
+	.zig-archive__mbar-btn:focus,
+	.zig-archive__mbar-btn:active {
+		background: none;
+		text-shadow: none;
+	}
+
+	.zig-archive__mbar-text {
+		text-shadow: none;
 	}
 
 	.zig-archive__mbar-btn--filter {

@@ -169,3 +169,30 @@ Tests::blocks('حاشیهٔ نادرستِ نسخهٔ اول برنگشته', $c
  * ‎currentColor‎ی به‌ارث‌رسیده از دکمهٔ بنفش/خاکستری.
  */
 Tests::keeps('رنگِ آیکون‌هایِ نوار متغیرِ CSSِ مستقلِ خودش را دارد', $css_src, '--zig-mbar-icon-color, rgba(23, 23, 27, 0.9)');
+
+/*
+ * دکمه‌هایِ نوار ‎<button>‎ی خام‌اند؛ استایلِ پیش‌فرضِ تم/کیتِ المنتور
+ * رویِ ‎button‎ معمولاً یک تکس‌شادو و پس‌زمینهٔ هاور دارد که چون ریستِ
+ * پایهٔ ما فقط حالتِ عادی را می‌گیرد نه ‎:hover‎/‎:focus‎ را، هنوز دیده
+ * می‌شود — باید صریح خاموش شود، نه با اختصاصیتِ تصادفی.
+ */
+Tests::keeps('تکس‌شادوی دکمه‌ها صریح خاموش است', $css_src, '.zig-archive__mbar-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		background: none;
+		border: 0;
+		box-shadow: none;
+		text-shadow: none;');
+Tests::keeps('حالتِ هاور/فوکوس/اکتیوِ دکمه صریح خنثی شده (نه فقط حالتِ پایه)', $css_src, '.zig-archive__mbar-btn:hover,
+	.zig-archive__mbar-btn:focus,
+	.zig-archive__mbar-btn:active {
+		background: none;
+		text-shadow: none;
+	}');
+Tests::keeps('برچسبِ متنیِ داخلِ دکمه هم تکس‌شادو ندارد', $css_src, '.zig-archive__mbar-text {
+		text-shadow: none;
+	}');
+Tests::keeps('دکمه‌هایِ نوار حلقهٔ فوکوسِ کیبورد دارند', $css_src, '.zig-archive__mbar-btn:focus-visible {');
