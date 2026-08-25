@@ -2071,7 +2071,7 @@ final class Product_Archive extends Widget_Base {
         $sorts    = Sorting::sanitize_options((array) ($settings['sorting_options'] ?? []));
         $base     = Archive_Query::base_args($this->scope($settings));
         $key      = Archive_Query::context_key($base);
-        $facets   = $this->facets();
+        $facets   = $this->facets($settings);
         $state    = $this->state($facets, $sorts, $params);
         $sort     = Sorting::resolve($sorts, $state->sort(), isset($base['s']));
         $per_page = $this->per_page($settings, $params);
@@ -2278,15 +2278,31 @@ final class Product_Archive extends Widget_Base {
         ];
     }
 
-    /** گروه‌های فیلتر این دسته، از طرحِ خودِ دسته */
-    private function facets(): array {
+    /**
+     * گروه‌های فیلتر این دسته، یا طرحِ کلِ فروشگاه اگر رویِ هیچ دسته‌ای
+     * نباشیم — دقیقاً همان‌جایی که ‎scope()‎ هم دیگر هیچ دسته‌ای را قید
+     * نمی‌کند، پس گرید همهٔ محصولات را نشان می‌دهد. سایدبار هم باید از همان
+     * دامنه فیلتر کشف کند، نه ساکت خالی بماند — همان باگی که کاربر روی
+     * صفحهٔ ‎/shop‎ دید: سایدبارِ فیلتر همیشه خالی بود، حتی وقتی محصولات
+     * ویژگی‌های فیلترپذیر داشتند.
+     *
+     * منبع دستی («دسته‌های انتخابی») از این قاعده کنار است: آن‌جا مدیر خودش
+     * دسته‌ها را چیده و فیلترِ آن دامنهٔ خاص، تصمیمِ دیگری است که این‌جا
+     * گرفته نمی‌شود — نبودِ سایدبار در آن حالت رفتارِ از قبل موجود است، نه
+     * چیزی که این تعمیر عوضش می‌کند.
+     */
+    private function facets(array $settings = []): array {
         $term = $this->queried_term();
 
-        if (!$term instanceof \WP_Term || Schema_Store::TAXONOMY !== $term->taxonomy) {
+        if ($term instanceof \WP_Term && Schema_Store::TAXONOMY === $term->taxonomy) {
+            return Schema_Store::for_term((int) $term->term_id);
+        }
+
+        if ('custom' === ($settings['source'] ?? 'archive')) {
             return [];
         }
 
-        return Schema_Store::for_term((int) $term->term_id);
+        return Schema_Store::for_term(0);
     }
 
     /**
@@ -2318,7 +2334,7 @@ final class Product_Archive extends Widget_Base {
             }
         }
 
-        $honored = Archive_Query::honored_taxonomies($this->facets());
+        $honored = Archive_Query::honored_taxonomies($this->facets($settings));
 
         $invalid = null !== $params && [] !== array_merge(
             Query_State::unknown_filters($params, $honored),

@@ -431,15 +431,31 @@ final class Archive_Head {
         return is_string($raw) ? $raw : '';
     }
 
-    /** گروه‌های فیلترِ دستهٔ جاری، اگر روی دسته باشیم */
+    /**
+     * گروه‌های فیلترِ دستهٔ جاری، یا طرحِ کلِ فروشگاه اگر روی هیچ دسته‌ای
+     * نباشیم.
+     *
+     * قبلاً این متد روی ‎/shop‎ همیشه آرایهٔ خالی می‌داد — «طرحی نداریم» —
+     * درحالی‌که ویجت با همین سؤال، همان چیزی می‌پرسید که حالا از
+     * ‎Schema_Store::for_term(0)‎ می‌گیرد (طرحِ کلِ فروشگاه). این‌جا هم باید
+     * دقیقاً همان تابع را با همان ورودی صدا بزند: ‎applies()‎ این تصمیم را
+     * فقط روی ‎is_shop()‎/‎is_product_taxonomy()‎ اجرا می‌کند، و اگر این
+     * متد و متدِ هم‌نامِ ویجت دو جواب متفاوت بدهند، همان واگرایی‌ای برمی‌گردد
+     * که بالایِ این فایل ازش گفته شده — اپراتورِ گروهی که ویجت OR می‌بیند و
+     * این‌جا AND، یعنی دومین کلیکِ روی هر فیلتری به ‎404‎ می‌رسد.
+     */
     private static function facets(): array {
         $term = get_queried_object();
 
-        if (!$term instanceof \WP_Term || Schema_Store::TAXONOMY !== $term->taxonomy) {
-            return [];
+        if ($term instanceof \WP_Term && Schema_Store::TAXONOMY === $term->taxonomy) {
+            return Schema_Store::for_term((int) $term->term_id);
         }
 
-        return Schema_Store::for_term((int) $term->term_id);
+        if (function_exists('is_shop') && is_shop()) {
+            return Schema_Store::for_term(0);
+        }
+
+        return [];
     }
 
     /* =====================================================================

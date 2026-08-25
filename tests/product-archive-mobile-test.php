@@ -233,3 +233,67 @@ Tests::ok(
 
 $js_src = file_get_contents($root . '/assets/js/zig3d-archive.js');
 Tests::keeps('کلیک روی [data-zig-close] شیت را می‌بندد', $js_src, "closest('[data-zig-close]')");
+
+/* ==========================================================================
+ * باگِ /shop: سایدبارِ فیلترِ همیشه‌خالی + گریدی که رویِ ستونِ باریک جمع می‌شد
+ *
+ * کاربر گزارش داد رویِ صفحهٔ ‎/shop‎ (بدونِ دستهٔ خاص) ویجت «به‌هم‌ریخته»
+ * دیده می‌شود و هیچ گزینه‌ای برایِ «کلِ دسته‌ها» نبوده. دو ریشهٔ جدا داشت:
+ * سایدبار چون Schema_Store::for_term() فقط با شناسهٔ ترمِ واقعی کار
+ * می‌کرد همیشه [] می‌گرفت (پس has_sidebar() هیچ‌وقت true نمی‌شد)، و حتی
+ * بدونِ سایدبار هم گریدِ دوستونهٔ CSS رویِ تنها فرزندِ باقی‌مانده
+ * (‎.zig-archive__main‎) ستونِ باریکِ ۳۱۲px را سوار می‌کرد.
+ * ======================================================================= */
+
+Tests::group('آرشیوِ محصولات › فیلترهایِ صفحهٔ بدونِ دسته (/shop)');
+
+$facets_method = new ReflectionMethod($widget, 'facets');
+$facets_method->setAccessible(true);
+
+/*
+ * ‎get_queried_object()‎ بالایِ همین فایل null برمی‌گرداند — یعنی همان
+ * چیزی که رویِ ‎/shop‎ واقعی هم پیش می‌آید (queried_object آن‌جا یک
+ * WP_Post است، نه WP_Term). با منبعِ «همین آرشیو»، این دیگر نباید زودتر
+ * [] بدهد؛ باید تا Schema_Store::for_term(0) برود. در این سوییتِ استاب
+ * هیچ ویژگیِ ووکامرسی ثبت نشده، پس خروجیِ نهایی هنوز [] است — سنجهٔ
+ * واقعی («بدونِ قیدِ دسته») در ‎archive-query-test.php‎ رویِ ‎base_args()‎
+ * مستقیم است؛ این‌جا فقط ثابت می‌کند مسیر بدونِ فاتال طی می‌شود.
+ */
+Tests::same(
+    'منبعِ «همین آرشیو» بدونِ ترم، بدونِ فاتال از for_term(0) رد می‌شود',
+    $facets_method->invoke($widget, ['source' => 'archive']),
+    []
+);
+
+Tests::same(
+    'منبعِ «دسته‌های انتخابی» دست‌نخورده می‌ماند — قبل از هر چیز [] می‌دهد',
+    $facets_method->invoke($widget, ['source' => 'custom']),
+    []
+);
+
+Tests::keeps(
+    'facets() برایِ منبعِ غیرِ custom به Schema_Store::for_term(0) می‌رود، نه []',
+    $widget_src,
+    "if ('custom' === (\$settings['source'] ?? 'archive')) {
+            return [];
+        }
+
+        return Schema_Store::for_term(0);"
+);
+
+/*
+ * ‎:has(> .zig-archive__filters)‎ لازم است چون کلاسِ دوستونه (از رویِ
+ * ‎filters_position‎) همیشه رویِ ریشه می‌نشیند، حتی وقتی has_sidebar()
+ * ‎<aside>‎ را رندر نمی‌کند — بدونش، تنها فرزندِ باقی‌مانده
+ * (‎.zig-archive__main‎) رویِ ستونِ اولِ گرید (پیش‌فرض ۳۱۲px) جمع می‌شد.
+ */
+Tests::keeps(
+    'گریدِ دوستونهٔ «filters-start» فقط وقتی سایدبار واقعاً رندر شده فعال می‌شود',
+    $css_src,
+    '.zig-archive--filters-start:has(> .zig-archive__filters) {'
+);
+Tests::keeps(
+    'همین قید برایِ «filters-end» هم هست',
+    $css_src,
+    '.zig-archive--filters-end:has(> .zig-archive__filters) {'
+);

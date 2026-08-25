@@ -1281,12 +1281,22 @@ a.zig-list__label:focus-visible {
  * شکستن است تا سایدبار ۲۸۰ پیکسلی روی نمایشگر ۳۶۰ پیکسلی بدنه را له
  * نکند. طرح موبایل جای خودش را دارد.
  */
+/*
+ * ‎:has(> .zig-archive__filters)‎ لازم است، نه تزئین: کلاسِ
+ * ‎zig-archive--filters-start/end‎ همیشه رویِ ریشه می‌نشیند (از رویِ
+ * تنظیمِ ‎filters_position‎)، حتی وقتی ‎<aside>‎ اصلاً رندر نمی‌شود —
+ * ‎has_sidebar()‎ آن را برایِ هر دامنه‌ای بدونِ طرحِ فیلتر (مثلِ صفحهٔ
+ * ‎/shop‎ پیش از این تعمیر) حذف می‌کند. بدونِ این قید، گریدِ دوستونه هنوز
+ * دو مسیر می‌ساخت و تنها فرزندِ باقی‌مانده (‎.zig-archive__main‎، یعنی کلِ
+ * محتوایِ آرشیو) رویِ همان ستونِ باریکِ سایدبار (پیش‌فرض ۳۱۲px) جا
+ * می‌گرفت — دقیقاً همان چیزی که کاربر «به‌هم‌ریخته» دید.
+ */
 @media (min-width: 880px) {
-	.zig-archive--filters-start {
+	.zig-archive--filters-start:has(> .zig-archive__filters) {
 		grid-template-columns: var(--zig-archive-sidebar, 312px) minmax(0, 1fr);
 	}
 
-	.zig-archive--filters-end {
+	.zig-archive--filters-end:has(> .zig-archive__filters) {
 		grid-template-columns: minmax(0, 1fr) var(--zig-archive-sidebar, 312px);
 	}
 
