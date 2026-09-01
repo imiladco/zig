@@ -18,7 +18,9 @@ require_once $root . '/includes/markup.php';
 require_once $root . '/includes/selector.php';
 require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
+require_once $root . '/includes/consultation-endpoint.php';
 require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/widgets/traits/consultation-trigger.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
 require_once $root . '/includes/widgets/traits/pulse.php';
@@ -223,6 +225,44 @@ $evil_type = zig_render(Button::class, ['text' => 'x', 'tag' => 'button', 'butto
 
 Tests::blocks('نوع دکمهٔ دستکاری‌شده رد می‌شود', $evil_type, 'onclick');
 Tests::keeps('و به مقدار امن برمی‌گردد', $evil_type, 'type="button"');
+
+Tests::group('رندر › دکمه، فرمِ مشاوره');
+
+$consult_btn = zig_render(Button::class, [
+    'text'             => 'مشاوره بگیرید',
+    'link'             => ['url' => 'https://zig3d.com/should-be-ignored'],
+    'consultation_on'  => 'yes',
+]);
+
+Tests::keeps('روشن‌بودنِ فرمِ مشاوره تگ را button می‌کند، نه a', $consult_btn, '<button ');
+Tests::blocks('و هیچ a بی‌ربط نمی‌سازد', $consult_btn, '<a ');
+Tests::blocks('پیوندِ تنظیم‌شده نادیده گرفته می‌شود', $consult_btn, 'should-be-ignored');
+Tests::keeps('نشانهٔ data-zig-consultation چاپ می‌شود', $consult_btn, 'data-zig-consultation="1"');
+Tests::keeps('آدرسِ آژاکس هم', $consult_btn, 'data-zig-consultation-endpoint=');
+Tests::keeps('و نانس هم', $consult_btn, 'data-zig-consultation-nonce=');
+Tests::blocks(
+    'بدونِ محصول (ویجتِ دکمه)، ویژگیِ نامِ محصول ساخته نمی‌شود',
+    $consult_btn,
+    'data-zig-consultation-product-name'
+);
+
+$link_only_btn = zig_render(Button::class, ['text' => 'مشاوره بگیرید', 'link' => ['url' => 'https://zig3d.com/x']]);
+
+Tests::blocks('خاموش (پیش‌فرض)، هیچ data-zig-consultation-ای نیست', $link_only_btn, 'data-zig-consultation');
+Tests::keeps('و رفتارِ عادیِ لینک دست‌نخورده می‌ماند', $link_only_btn, '<a ');
+
+/*
+ * ‎get_script_depends()‎ نباید به تنظیمات نگاه کند — المنتور آن را برایِ
+ * هر ویجتِ ثبت‌شده رویِ یک نمونهٔ خامِ بی‌تنظیمات صدا می‌زند (پیش‌نمایشِ
+ * ادیتور)، نه فقط رویِ نمونه‌هایِ واقعیِ صفحه. نسخه‌ای که اینجا صدا زدنِ
+ * ‎get_settings_for_display()‎ داشت دقیقاً همین‌جا با ‎TypeError‎ی خودِ
+ * المنتور می‌ترکید و کلِ ادیتور را (نه فقط این ویجت را) خراب می‌کرد.
+ */
+Tests::same(
+    'فهرستِ اسکریپت‌ها رویِ یک نمونهٔ کاملاً خام هم بدونِ خطا همان مقدارِ ثابت است',
+    (new Button())->get_script_depends(),
+    ['zig3d-consultation']
+);
 
 Tests::group('رندر › دکمه، دسترسی‌پذیری');
 

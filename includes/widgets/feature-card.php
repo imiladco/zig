@@ -426,7 +426,7 @@ final class Feature_Card extends Widget_Base {
         );
         $this->end_controls_tab();
 
-        $this->start_controls_tab($prefix . '_color_hover', ['label' => __('هاور', 'zig3d-widgets')]);
+        $this->start_controls_tab($prefix . '_color_hover_tab', ['label' => __('هاور', 'zig3d-widgets')]);
         $this->add_control(
             $prefix . '_color_hover',
             [

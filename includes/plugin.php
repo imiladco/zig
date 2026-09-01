@@ -33,6 +33,7 @@ final class Plugin {
         'button'        => Widgets\Button::class,
         'product-price' => Widgets\Product_Price::class,
         'product-stock' => Widgets\Product_Stock::class,
+        'product-label' => Widgets\Product_Label::class,
         'product-configurator' => Widgets\Product_Configurator::class,
         'product-archive' => Widgets\Product_Archive::class,
         'download-archive' => Widgets\Download_Archive::class,
@@ -50,6 +51,9 @@ final class Plugin {
         'contact-bar' => Widgets\Contact_Bar::class,
         'menu' => Widgets\Menu::class,
         'post-meta' => Widgets\Post_Meta::class,
+        'toc' => Widgets\Toc::class,
+        'counter' => Widgets\Counter::class,
+        'faq' => Widgets\Faq::class,
     ];
 
     public static function instance(): self {
@@ -89,9 +93,12 @@ final class Plugin {
         add_action('init', [$this, 'boot_filters'], 5);
         add_action('init', [$this, 'boot_download_archive'], 5);
         add_action('init', [$this, 'boot_post_meta'], 5);
+        add_action('init', [$this, 'boot_consultations'], 5);
+        add_action('init', [$this, 'boot_faq'], 5);
 
         if (is_admin()) {
             add_action('init', [$this, 'boot_admin'], 6);
+            add_action('init', [$this, 'boot_consultations_admin'], 6);
         }
 
         $this->watch_facet_cache();
@@ -116,11 +123,30 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/price.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/stock.php';
 
-        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree'] as $file) {
+        foreach (['query-state', 'facets', 'filter-schema', 'schema-store', 'spec-group', 'spec-store', 'spec-value', 'feature-repeater', 'video-gallery-field', 'sorting', 'attributes', 'archive-query', 'seo', 'archive-head', 'archive-response', 'archive-endpoint', 'card', 'product-card', 'search-normalizer', 'search-query', 'search-endpoint', 'menu-tree', 'product-section-settings', 'product-section-guard'] as $file) {
             require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
         }
 
         Schema_Store::register();
+
+        /*
+         * تبِ تنظیماتِ سندِ Single Product. در v1.48.0 غیرفعال شد چون
+         * ذخیرهٔ سند در ادیتور خطایِ ۵۰۰ می‌داد و آن‌وقت این تازه‌ترین
+         * چیزی بود که اضافه شده بود — یعنی محکوم شد چون مظنونِ در دسترس
+         * بود، نه چون شواهدی علیهش بود.
+         *
+         * حالا می‌دانیم آن ۵۰۰ چه بود: فاتالِ حافظه از حلقهٔ بازخوردیِ
+         * ویجتِ توضیحات که ‎post_content‎ـِ همین سند را به ۱۵۰ مگابایت
+         * رسانده بود (v1.55.0 + پاک‌سازیِ دیتابیس). یعنی این فایل از
+         * ابتدا بی‌گناه بوده.
+         *
+         * پس دوباره وصل می‌شود — این‌بار با دو محافظ در خودش: ثبتِ
+         * تکراری تشخیص داده می‌شود (وگرنه نوتیسِ «Cannot redeclare
+         * control» واردِ JSONِ ادیتور می‌شود و ذخیره را بی‌صدا می‌شکند)،
+         * و هر خطایِ دیگری هم گرفته می‌شود تا نهایتاً این تب نیاید، نه
+         * اینکه ادیتور از کار بیفتد.
+         */
+        Product_Section_Settings::boot();
 
         /*
          * کتابخانهٔ گروه‌هایِ مشخصاتِ فنی؛ خواهرِ Schema_Store برایِ
@@ -147,6 +173,16 @@ final class Plugin {
          */
         if (!is_admin()) {
             Archive_Head::boot();
+
+            /*
+             * حذفِ سکشن‌هایِ خالیِ صفحهٔ محصول. در v1.51.0 و دوباره در
+             * v1.53.0 کنار گذاشته شده بود، چون خروجیِ صفحه را خراب
+             * می‌کرد. علتِ آن خرابی در v1.56.0 بازتولید و رفع شد و
+             * روشِ خروجی‌گیری کاملاً عوض شد: دیگر هیچ‌چیزی دوباره
+             * سریالایز نمی‌شود، پس بایت‌هایِ اصلیِ صفحه اصلاً لمس
+             * نمی‌شوند — نگاه کنید به داک‌بلاکِ ‎hide_style()‎.
+             */
+            Product_Section_Guard::boot();
         }
     }
 
@@ -171,6 +207,57 @@ final class Plugin {
         }
 
         Likes_Endpoint::boot();
+    }
+
+    /**
+     * فرمِ درخواستِ مشاوره — بدونِ ووکامرس هم معنا دارد (ویجتِ عمومیِ
+     * «دکمه» می‌تواند بازکنندهٔ همین فرم باشد)، پس مثلِ ‎boot_post_meta()‎
+     * پشتِ ‎class_exists('WooCommerce')‎ قفل نیست. نقطهٔ آژاکس هم باید
+     * بیرون از شرطِ ادمین ثبت شود، همان استدلالِ Archive/Search/Likes:
+     * ‎admin-ajax.php‎ از نظر وردپرس «پنل» است.
+     */
+    public function boot_consultations(): void {
+        foreach (['consultations', 'consultation-endpoint'] as $file) {
+            require_once ZIG3D_WIDGETS_PATH . 'includes/' . $file . '.php';
+        }
+
+        Consultations::maybe_upgrade();
+        Consultation_Endpoint::boot();
+    }
+
+    /** فهرستِ درخواست‌ها در پنل — جدا از ‎boot_admin()‎ چون به ووکامرس نیازی ندارد. */
+    public function boot_consultations_admin(): void {
+        require_once ZIG3D_WIDGETS_PATH . 'includes/admin/consultations-page.php';
+
+        Admin\Consultations_Page::boot();
+    }
+
+    /**
+     * حذفِ سکشنِ خالیِ FAQ (‎.zig-faq-section‎) وقتی ویجت هیچ سوالی رندر
+     * نکرد — بدونِ ووکامرس هم معنا دارد (خودِ ویجتِ FAQ به آن نیازی
+     * ندارد)، پس مثلِ ‎boot_post_meta()‎/‎boot_consultations()‎ پشتِ
+     * ‎class_exists('WooCommerce')‎ قفل نیست. فقط در سایت: در ادمین
+     * چیزی برایِ هایدکردن نیست، و ‎template_redirect‎ اصلاً آن‌جا شلیک
+     * نمی‌شود.
+     */
+    public function boot_faq(): void {
+        if (is_admin()) {
+            return;
+        }
+
+        require_once ZIG3D_WIDGETS_PATH . 'includes/faq-section-guard.php';
+
+        Faq_Section_Guard::boot();
+
+        /*
+         * نگهبانِ سکشن‌هایِ خالیِ سینگلِ نرم‌افزار. کنارِ نگهبانِ FAQ بوت
+         * می‌شود چون هر دو یک شرطِ یکسان دارند: فقط فرانت‌اند، نه ادمین.
+         * خودش رویِ ‎template_redirect‎ بررسی می‌کند که آیا اصلاً رویِ
+         * صفحهٔ تکِ نرم‌افزار هستیم یا نه.
+         */
+        require_once ZIG3D_WIDGETS_PATH . 'includes/software-section-guard.php';
+
+        Software_Section_Guard::boot();
     }
 
     /**
@@ -333,10 +420,20 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/reading-time.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/likes.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/likes-endpoint.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/consultations.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/consultation-endpoint.php';
+
+        /*
+         * بدونِ گیت‌کردن پشتِ ‎WooCommerce‎: منبعِ «دسته‌بندی بلاگ» به
+         * ووکامرس نیازی ندارد. منبعِ «دانلودها» خودش داخلِ ‎Counter_Source‎
+         * با ‎class_exists()‎ سراغِ ‎Download_Archive_Data‎ می‌رود، نه اینجا.
+         */
+        require_once ZIG3D_WIDGETS_PATH . 'includes/counter-source.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/link.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/icon.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/box.php';
         require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/pulse.php';
+        require_once ZIG3D_WIDGETS_PATH . 'includes/widgets/traits/consultation-trigger.php';
 
         /*
          * آرشیو به کل لایهٔ فیلتر تکیه دارد. ‎boot_filters()‎ روی ‎init‎
@@ -436,6 +533,20 @@ final class Plugin {
         );
 
         /*
+         * فرمِ مشاوره هم روی همان کنترلرِ مشترکِ مودال سوار می‌شود؛ فقط
+         * دکمه‌هایی که Consultation_Trigger روشن کرده‌اند این فایل را
+         * می‌آورند (نگاه کنید به get_script_depends()ِ Button/Product_Configurator)،
+         * پس بقیهٔ صفحه‌ها دست‌نخورده می‌مانند.
+         */
+        wp_register_script(
+            'zig3d-consultation',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-consultation.js',
+            ['zig3d-modal'],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
          * آکاردئونِ مشخصاتِ فنی بدونِ این فایل هم کاملاً کار می‌کند — فقط
          * بدونِ انیمیشن و بدونِ تک‌بازشو. اسکریپت فقط آن دو رفتار را
          * پیشرفته می‌کند، پس فایلش هم جداست، نه بخشی از یک فایلِ مشترک.
@@ -443,6 +554,20 @@ final class Plugin {
         wp_register_script(
             'zig3d-specs',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-specs.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * آکاردئونِ سوالاتِ متداول هم بدونِ این فایل کار می‌کند — همان دو
+         * رفتاری که ‎zig3d-specs‎ برایِ مشخصاتِ فنی اضافه می‌کند (تک‌بازشو،
+         * انیمیشنِ ارتفاع)، اینجا رویِ کلاس‌هایِ ویجتِ FAQ. فایلِ جدا، نه
+         * اشتراکِ کد، چون هر ویجت مستقل نگه‌داشته می‌شود.
+         */
+        wp_register_script(
+            'zig3d-faq',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-faq.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true
@@ -522,6 +647,20 @@ final class Plugin {
         wp_register_script(
             'zig3d-post-meta',
             ZIG3D_WIDGETS_URL . 'assets/js/zig3d-post-meta.js',
+            [],
+            ZIG3D_WIDGETS_VERSION,
+            true
+        );
+
+        /*
+         * برخلافِ بقیهٔ اسکریپت‌های بالا، این یکی تزئینی نیست: سرتیترهایی
+         * که فهرستِ مطالب باید فهرستشان کند متعلقِ ویجت‌های دیگرِ همان
+         * صفحه‌اند و فقط مرورگر، بعدِ رندرِ کاملِ صفحه، می‌تواند ببیندشان.
+         * بدونِ این فایل، خروجیِ ویجت یک ‎<ul>‎ کاملاً خالی می‌ماند.
+         */
+        wp_register_script(
+            'zig3d-toc',
+            ZIG3D_WIDGETS_URL . 'assets/js/zig3d-toc.js',
             [],
             ZIG3D_WIDGETS_VERSION,
             true
@@ -667,6 +806,58 @@ final class Plugin {
 
         if (class_exists('\Elementor\Plugin') && isset(\Elementor\Plugin::$instance->files_manager)) {
             \Elementor\Plugin::$instance->files_manager->clear_cache();
+        }
+
+        self::purge_page_caches();
+    }
+
+    /**
+     * پاک‌کردنِ کشِ *صفحهٔ کاملِ* افزونه‌های کشِ رایج، بعد از تغییرِ نسخه.
+     *
+     * لایه‌ای که تا امروز جا افتاده بود: بالا هم CSSِ المنتور پاک می‌شود و
+     * هم ‎?ver‎یِ فایل‌هایِ خودمان عوض می‌شود — ولی اگر یک افزونهٔ کشِ
+     * صفحه (لایت‌اسپید/راکت/…) نسخهٔ قدیمیِ HTML را ذخیره کرده باشد،
+     * بازدیدکننده همان HTMLِ کهنه را می‌گیرد و هیچ‌کدام از آن دو به
+     * چشمش نمی‌آید. یعنی افزونه درست به‌روز شده، ولی صفحه هنوز خرابِ
+     * قبلی است — و از داخلِ پنل هم چیزی پیدا نیست.
+     *
+     * همه پشتِ بررسیِ وجود: هیچ‌کدام وابستگیِ این افزونه نیستند، صرفاً
+     * اگر نصب بودند صدا زده می‌شوند.
+     */
+    private static function purge_page_caches(): void {
+        // LiteSpeed Cache
+        if (function_exists('do_action')) {
+            do_action('litespeed_purge_all');
+        }
+
+        // WP Rocket
+        if (function_exists('rocket_clean_domain')) {
+            rocket_clean_domain();
+        }
+
+        // W3 Total Cache
+        if (function_exists('w3tc_flush_all')) {
+            w3tc_flush_all();
+        }
+
+        // WP Super Cache
+        if (function_exists('wp_cache_clear_cache')) {
+            wp_cache_clear_cache();
+        }
+
+        // WP Fastest Cache
+        if (isset($GLOBALS['wp_fastest_cache']) && method_exists($GLOBALS['wp_fastest_cache'], 'deleteCache')) {
+            $GLOBALS['wp_fastest_cache']->deleteCache(true);
+        }
+
+        // Autoptimize (CSS/JS ترکیب‌شده — نسخهٔ قدیمیِ استایلِ ما داخلش جا می‌ماند)
+        if (class_exists('\autoptimizeCache') && method_exists('\autoptimizeCache', 'clearall')) {
+            \autoptimizeCache::clearall();
+        }
+
+        // کشِ آبجکتِ خودِ وردپرس (ردیس/ممکش) — آخر از همه، تا هرچه بالا نوشته شد بماند
+        if (function_exists('wp_cache_flush_runtime')) {
+            wp_cache_flush_runtime();
         }
     }
 }

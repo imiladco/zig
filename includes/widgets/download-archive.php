@@ -9,6 +9,7 @@ use Zig3d_Widgets\Archive_Endpoint;
 use Zig3d_Widgets\Download_Archive_Data;
 use Zig3d_Widgets\Markup;
 use Zig3d_Widgets\Plugin;
+use Zig3d_Widgets\Price;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -16,6 +17,14 @@ if (!defined('ABSPATH')) {
 
 final class Download_Archive extends Widget_Base {
     private ?array $facet_post_ids = null;
+
+    /**
+     * دسته‌ای که این ویجت رویش نشسته — همان الگویِ
+     * ‎Product_Archive::$term‎: روی رندرِ سرور از ‎get_queried_object()‎
+     * می‌آید، روی درخواستِ آژاکس (که نه دسته‌ای دارد نه شرطی‌ای) صریح از
+     * ‎term_id‎ی فرستاده‌شده حل می‌شود.
+     */
+    private ?\WP_Term $term = null;
     public function get_name(): string { return 'zig3d-download-archive'; }
     public function get_title(): string { return __('آرشیو دانلود', 'zig3d-widgets'); }
     public function get_icon(): string { return 'eicon-download-button'; }
@@ -75,6 +84,31 @@ final class Download_Archive extends Widget_Base {
         $this->add_control('search_placeholder', ['label' => __('متن جستجو', 'zig3d-widgets'), 'type' => Controls_Manager::TEXT, 'default' => __('جستجوی نام نرم‌افزار یا مدل دستگاه...', 'zig3d-widgets')]);
         $this->add_control('count_on', ['label' => __('نمایش تعداد نتایج', 'zig3d-widgets'), 'type' => Controls_Manager::SWITCHER, 'default' => 'yes']);
         $this->add_control('sorting_on', ['label' => __('نمایش مرتب‌سازی', 'zig3d-widgets'), 'type' => Controls_Manager::SWITCHER, 'default' => 'yes']);
+        $this->end_controls_section();
+
+        $this->start_controls_section('sec_pagination', ['label' => __('صفحه‌بندی', 'zig3d-widgets')]);
+        /*
+         * همان چهار کنترل و همان معنا که در آرشیو محصولات هست — پیمایشِ
+         * این ویجت هم از همان زیرساختِ مشترک (‎zig3d-archive.js‎، همان
+         * ‎data-zig-scroll-max‎/‎data-zig-restore‎) استفاده می‌کند، پس
+         * تنظیماتش هم باید یکی باشد.
+         */
+        $this->add_control('scroll_pages', [
+            'label'       => __('حداکثر صفحات اسکرول خودکار', 'zig3d-widgets'),
+            'type'        => Controls_Manager::NUMBER,
+            'default'     => 2,
+            'min'         => 0,
+            'max'         => 20,
+            'description' => __('صفر یعنی همیشه صفحه‌بندی صریح.', 'zig3d-widgets'),
+        ]);
+        $this->add_control('restore_state', [
+            'label'       => __('بازگرداندن موقعیت هنگام برگشت', 'zig3d-widgets'),
+            'type'        => Controls_Manager::SWITCHER,
+            'default'     => 'yes',
+            'description' => __('صفحه و موقعیت اسکرول، هنگام برگشت از صفحهٔ جزئیات.', 'zig3d-widgets'),
+        ]);
+        $this->add_control('label_prev', ['label' => __('متن «قبلی»', 'zig3d-widgets'), 'type' => Controls_Manager::TEXT, 'default' => __('قبلی', 'zig3d-widgets')]);
+        $this->add_control('label_next', ['label' => __('متن «بعدی»', 'zig3d-widgets'), 'type' => Controls_Manager::TEXT, 'default' => __('بعدی', 'zig3d-widgets')]);
         $this->end_controls_section();
 
         $this->start_controls_section('sec_cta', ['label' => __('محتوای کارت و CTA', 'zig3d-widgets')]);
@@ -268,29 +302,194 @@ final class Download_Archive extends Widget_Base {
             'data-zig-archive' => '1',
             'data-zig-state' => $ctx['found'] > 0 ? 'ok' : 'empty',
             'data-zig-debounce' => (string) (int) ($settings['filters_debounce'] ?? 300),
-            'data-zig-scroll-max' => '0', 'data-zig-restore' => '0',
+            'data-zig-scroll-max' => (string) (int) ($settings['scroll_pages'] ?? 0),
+            'data-zig-restore' => 'yes' === ($settings['restore_state'] ?? '') ? '1' : '0',
             'data-zig-page' => (string) $ctx['page'], 'data-zig-pages' => (string) max(1, $ctx['pages']),
             'data-zig-endpoint' => Archive_Endpoint::url(), 'data-zig-nonce' => Archive_Endpoint::nonce(),
-            'data-zig-post' => (string) $this->document_id(), 'data-zig-widget' => $this->get_id(), 'data-zig-term' => '0',
+            'data-zig-post' => (string) $this->document_id(), 'data-zig-widget' => $this->get_id(), 'data-zig-term' => (string) $ctx['term_id'],
         ]);
         echo '<section ' . $this->get_render_attribute_string('root') . '>';
-        echo '<button class="zig-download-archive__filter-trigger" type="button" aria-expanded="false" aria-controls="zig-download-filters-' . esc_attr($this->get_id()) . '">' . esc_html__('فیلترها', 'zig3d-widgets') . '</button>';
+
+        $has_sidebar = $this->has_sidebar($settings, $ctx['facets']);
+        $filters_id  = 'zig-download-filters-' . $this->get_id();
+
         echo '<div class="zig-download-archive__layout">';
-        echo '<main class="zig-archive__main zig-download-archive__main"><div class="zig-download-archive__toolbar">' . $this->fragment('toolbar', $ctx) . '</div><div data-zig-part="grid">' . $this->fragment('grid', $ctx) . '</div><nav data-zig-part="pagination">' . $this->fragment('pagination', $ctx) . '</nav></main>';
-        if ($this->has_sidebar($settings, $ctx['facets'])) echo '<aside id="zig-download-filters-' . esc_attr($this->get_id()) . '" class="zig-archive__filters zig-download-archive__filters" data-zig-part="facets">' . $this->fragment('facets', $ctx) . '</aside>';
-        echo '</div><div class="zig-archive__error" hidden><button class="zig-archive__retry" type="button">' . esc_html__('تلاش دوباره', 'zig3d-widgets') . '</button></div></section>';
+        /*
+         * ‎<div data-zig-part="pagination">‎، نه ‎<nav>‎ — دقیقاً مثلِ آرشیوِ
+         * محصولات: خودِ ‎render_pagination()‎ عنصرِ ‎<nav>‎ی واقعی را چاپ
+         * می‌کند (یا وقتی یک صفحه بیشتر نیست، هیچ‌چیز)؛ اگر بیرونش هم
+         * ‎<nav>‎ بود، یک ‎<nav>‎ی تودرتو می‌ساخت.
+         */
+        echo '<main class="zig-archive__main zig-download-archive__main">';
+        $this->render_mobile_bar($ctx, $has_sidebar, $filters_id);
+        echo '<div class="zig-download-archive__toolbar">' . $this->fragment('toolbar', $ctx) . '</div><div data-zig-part="grid">' . $this->fragment('grid', $ctx) . '</div><div data-zig-part="pagination">' . $this->fragment('pagination', $ctx) . '</div></main>';
+
+        if ($has_sidebar) {
+            /*
+             * همان الگویِ شیتِ موبایلِ آرشیوِ محصولات: دستگیره و دکمهٔ
+             * بازگشت خواهرِ اسلاتِ ‎facets‎اند نه فرزندش — وگرنه هر تیکِ
+             * فیلتر (که فقط همین اسلات را عوض می‌کند) پاکشان می‌کرد.
+             * ‎.zig-archive__filters‎ی مشترک (همان کلاسِ سایدبارِ دسکتاپِ
+             * آرشیوِ محصولات) خودش زیرِ ۷۶۷px به شیتِ تمام‌ارتفاعِ
+             * ‎position:fixed‎ تبدیل می‌شود، بدونِ هیچ CSSِ تازه‌ای اینجا.
+             */
+            printf(
+                '<aside id="%s" class="zig-archive__filters zig-download-archive__filters" aria-label="%s">',
+                esc_attr($filters_id),
+                esc_attr__('فیلترها', 'zig3d-widgets')
+            );
+            echo '<span class="zig-archive__sheet-handle" aria-hidden="true"></span>';
+            echo '<div class="zig-archive__facets" data-zig-part="facets">' . $this->fragment('facets', $ctx) . '</div>';
+            printf(
+                '<button type="button" class="zig-archive__sheet-back" data-zig-close>%s<span>%s</span></button>',
+                Markup::svg_icon('arrow', 'zig-archive__sheet-back-icon'),
+                esc_html__('بازگشت', 'zig3d-widgets')
+            );
+            echo '</aside>';
+        }
+
+        echo '</div>';
+        echo '<div class="zig-archive__sheet-backdrop" data-zig-sheet-backdrop hidden></div>';
+        echo '<div class="zig-archive__error" hidden><button class="zig-archive__retry" type="button">' . esc_html__('تلاش دوباره', 'zig3d-widgets') . '</button></div></section>';
         wp_reset_postdata();
     }
 
+    /**
+     * نوارِ قرصیِ موبایل: دکمهٔ فیلتر (اگر سایدباری هست) + سرچ.
+     *
+     * بدونِ ترتیب — این ویجت اصلاً مرتب‌سازی ندارد — پس بخشِ عمدهٔ نوار را
+     * سرچ می‌گیرد (‎flex: 1 1 auto‎ی خودِ فرم، نه چیدمانِ دو‌پیلِ ثابتِ
+     * آرشیوِ محصولات).
+     *
+     * همان کلاس‌ها/دیتا-اتریبیوت‌هایِ ‎.zig-archive__mbar‎/‎data-zig-mbar‎/
+     * ‎data-zig-open‎ی آرشیوِ محصولات به‌کار رفته — یعنی همان چرومِ CSS و
+     * همان ‎bindSheets()‎/‎toggleSheet()‎یِ جاوااسکریپت، بدونِ هیچ کدِ
+     * تازه‌ای مخصوصِ این ویجت.
+     */
+    private function render_mobile_bar(array $ctx, bool $has_sidebar, string $filters_id): void {
+        $settings = $ctx['settings'];
+
+        echo '<div class="zig-archive__mbar zig-archive__mbar--search" data-zig-mbar>';
+
+        if ($has_sidebar) {
+            printf(
+                '<button type="button" class="zig-archive__mbar-btn zig-archive__mbar-btn--filter" data-zig-open="filters" aria-expanded="false" aria-controls="%s">%s<span class="zig-archive__mbar-text">%s</span></button>',
+                esc_attr($filters_id),
+                Markup::svg_icon_filled('mbar-filter', 'zig-archive__mbar-icon zig-archive__mbar-icon--filter'),
+                esc_html__('فیلترها', 'zig3d-widgets')
+            );
+        }
+
+        /*
+         * همان ‎data-zig-search‎ی فرمِ جستجویِ دسکتاپ — یعنی دومین عنصری
+         * که با این اتریبیوت پیدا می‌شود، نه یکیِ جدا. جاوااسکریپت هر دو
+         * را می‌بندد و مقدارشان را با هم هم‌گام نگه می‌دارد.
+         */
+        printf(
+            '<form class="zig-archive__mbar-search" role="search">'
+                . '<label class="screen-reader-text" for="zig-download-search-mobile-%1$s">%2$s</label>'
+                . '<input id="zig-download-search-mobile-%1$s" type="search" name="s" value="%3$s" placeholder="%4$s" data-zig-search>'
+                . '</form>',
+            esc_attr($this->get_id()),
+            esc_html__('جستجوی نرم‌افزار', 'zig3d-widgets'),
+            esc_attr($ctx['state']['search']),
+            esc_attr($settings['search_placeholder'] ?? '')
+        );
+
+        echo '</div>';
+    }
+
     public function context(array $settings, ?array $params = null, int $term_id = 0): array {
+        $this->resolve_term($term_id);
+
         $params = null === $params ? (is_array($_GET) ? wp_unslash($_GET) : []) : $params;
         $state = $this->state($settings, $params);
         $post_type = Download_Archive_Data::post_type();
         $args = ['post_type' => $post_type, 'post_status' => 'publish', 'posts_per_page' => max(1, min(48, (int) ($settings['per_page'] ?? 9))), 'paged' => $state['page'], 's' => $state['search']];
+
+        /*
+         * دامنهٔ آرشیو: باگِ واقعیِ نصب. این ویجت رویِ صفحهٔ یک ترمِ
+         * تاکسونومی (مثلِ ‎/downloads/milling-machine-software‎) هیچ‌وقت
+         * به آن ترم قید نمی‌خورد — کوئری بالا همیشه *همهٔ* پست‌هایِ این
+         * CPT را می‌آورد، بی‌توجه به اینکه کاربر رویِ کدام دسته ایستاده.
+         * ‎filter_category‎ی سایدبار یک سؤالِ جداست («کدام‌ها را کاربر
+         * روی همین صفحه انتخاب کرده») و رویِ صفحه‌ای که خودش دستهٔ ثابتی
+         * ندارد اصلاً معنا ندارد که این قید را جایگزین کند؛ برایِ همین
+         * پایین‌تر با آن ادغام می‌شود، نه جایگزینش.
+         */
+        $term = $this->queried_term();
+
+        if ($term instanceof \WP_Term) {
+            $args['tax_query'] = [[
+                'taxonomy'         => $term->taxonomy,
+                'field'            => 'term_id',
+                'terms'            => [(int) $term->term_id],
+                'include_children' => true,
+            ]];
+        }
+
         $this->apply_sort($args, $state['sort'], $settings);
         $this->apply_filters($args, $state['filters'], $settings);
         $query = new \WP_Query($args);
-        return ['settings' => $settings, 'query' => $query, 'state' => $state, 'facets' => $this->facet_definitions($settings), 'sorts' => ['updated', 'newest', 'title'], 'page' => $state['page'], 'pages' => (int) $query->max_num_pages, 'found' => (int) $query->found_posts, 'url' => $this->state_url($state), 'page_state' => $query->found_posts ? 'ok' : 'empty'];
+        return ['settings' => $settings, 'query' => $query, 'state' => $state, 'facets' => $this->facet_definitions($settings), 'sorts' => ['updated', 'newest', 'title'], 'page' => $state['page'], 'pages' => (int) $query->max_num_pages, 'found' => (int) $query->found_posts, 'url' => $this->state_url($state), 'page_state' => $query->found_posts ? 'ok' : 'empty', 'term_id' => $term instanceof \WP_Term ? (int) $term->term_id : 0];
+    }
+
+    /**
+     * دسته‌ای که این ویجت رویش نشسته.
+     *
+     * روی رندرِ سرور همان ‎get_queried_object()‎ است، فقط اگر واقعاً به
+     * یکی از تاکسونومی‌هایِ همین CPT تعلق داشته باشد — وگرنه (مثلاً ویجت
+     * روی یک برگهٔ دلخواهِ المنتور، نه آرشیوِ واقعیِ یک دسته) چیزی برای
+     * قید‌کردن نیست. روی آژاکس چیزی برای پرسیدن نیست؛ ‎resolve_term()‎
+     * پیش از این متد صریح پرش می‌کند.
+     */
+    private function queried_term(): ?\WP_Term {
+        if ($this->term instanceof \WP_Term) {
+            return $this->term;
+        }
+
+        $term = get_queried_object();
+
+        if (!$term instanceof \WP_Term) {
+            return null;
+        }
+
+        $post_type = Download_Archive_Data::post_type();
+
+        if ('' === $post_type || !in_array($term->taxonomy, get_object_taxonomies($post_type, 'names'), true)) {
+            return null;
+        }
+
+        return $term;
+    }
+
+    /**
+     * ترمِ فرستاده‌شده از کلاینت (آژاکس)، اگر واقعاً معتبر باشد.
+     *
+     * ‎get_term($term_id)‎ بدونِ تاکسونومیِ صریح صدا زده می‌شود چون کلاینت
+     * فقط یک عدد می‌فرستد نه نامِ تاکسونومی — ولی نتیجه پیش از پذیرفتنِ
+     * قطعیِ آن با ‎get_object_taxonomies()‎ سنجیده می‌شود، وگرنه شناسه‌ای
+     * که در تاکسونومیِ دیگری (مثلِ برچسبِ یک نوشتهٔ کاملاً بی‌ربط) به‌طور
+     * تصادفی همین عدد را دارد، کوئری را به یک دستهٔ اشتباه قید می‌زد.
+     * ترمی که وجود ندارد یعنی «کلِ آرشیو»، نه خطا: آدرسِ کهنه نباید
+     * درخواست را بشکند.
+     */
+    private function resolve_term(int $term_id): void {
+        if ($term_id <= 0 || $this->term instanceof \WP_Term) {
+            return;
+        }
+
+        $post_type = Download_Archive_Data::post_type();
+
+        if ('' === $post_type) {
+            return;
+        }
+
+        $found = get_term($term_id);
+
+        if ($found instanceof \WP_Term && in_array($found->taxonomy, get_object_taxonomies($post_type, 'names'), true)) {
+            $this->term = $found;
+        }
     }
 
     public function fragment(string $name, array $ctx): string {
@@ -349,7 +548,20 @@ final class Download_Archive extends Widget_Base {
                 $meta[] = $group;
             }
         }
-        if ($tax) $args['tax_query'] = array_merge(['relation' => 'AND'], $tax);
+        if ($tax) {
+            /*
+             * جایگزین نه، ادغام: اگر ‎context()‎ از پیش قیدِ دستهٔ صفحه را
+             * نشانده (بالای همین فایل)، جایگزینِ سرراستِ ‎$args['tax_query']‎
+             * همان قید را بی‌صدا پاک می‌کرد — یعنی چک‌کردنِ هر فیلترِ
+             * سایدبار، دستهٔ صفحه را دور می‌زد. دو گروه، نه یک آرایهٔ تخت:
+             * اگر تخت می‌شدند، یک relation داخلی می‌توانست قیدِ صفحه را هم
+             * اختیاری کند.
+             */
+            $group = array_merge(['relation' => 'AND'], $tax);
+            $args['tax_query'] = isset($args['tax_query'])
+                ? ['relation' => 'AND', $args['tax_query'], $group]
+                : $group;
+        }
         if (count($meta) > 1) $args['meta_query'] = $meta;
     }
 
@@ -375,11 +587,94 @@ final class Download_Archive extends Widget_Base {
         return $out;
     }
 
+    /**
+     * فیلترهای اعمال‌شده، به‌صورت چیپ — همان بخشی که آرشیوِ محصولات دارد
+     * و اینجا نبود (‎Product_Archive::render_active()‎). چیپ‌ها و «پاک‌کردنِ
+     * همه» با کلاس‌هایِ *یکسان* ساخته می‌شوند (‎zig-filters__active‎/
+     * ‎zig-filters__chip‎/‎zig-filters__clear‎)، پس CSSِ مشترکِ همان بخش
+     * بدونِ هیچ تغییری اینجا هم اعمال می‌شود.
+     *
+     * برچسبِ هر چیپ از ‎facet_options()‎ می‌آید (همان چیزی که خودِ گروه
+     * برای نمایشِ گزینه‌ها استفاده می‌کند)، نه از مقدارِ خام — وگرنه چیپِ
+     * یک مدلِ دستگاه مثلاً «up400» نشان می‌داد نه برچسبِ خوانای آن.
+     */
+    private function render_active(array $ctx): void {
+        $filters = $ctx['state']['filters'];
+
+        if (!array_filter($filters)) {
+            return;
+        }
+
+        $chips = [];
+
+        foreach ($ctx['facets'] as $facet) {
+            $selected = $filters[$facet['key']] ?? [];
+
+            if (!$selected) {
+                continue;
+            }
+
+            $options = $this->facet_options($facet);
+
+            foreach ($selected as $value) {
+                $chips[] = [
+                    'key'   => $facet['key'],
+                    'value' => (string) $value,
+                    // مقدارِ بی‌گزینه هم چیپ می‌گیرد، وگرنه قیدی می‌ماند که
+                    // کاربر می‌بیندش ولی نمی‌تواند برش دارد
+                    'label' => (string) ($options[$value]['label'] ?? $value),
+                ];
+            }
+        }
+
+        if (!$chips) {
+            return;
+        }
+
+        echo '<div class="zig-filters__active"><div class="zig-filters__active-head">';
+        printf('<h3 class="zig-filters__active-title">%s</h3>', esc_html__('فیلترهای فعال', 'zig3d-widgets'));
+
+        $cleared = $ctx['state'];
+        $cleared['page'] = 1;
+        $cleared['filters'] = array_fill_keys(array_keys($filters), []);
+
+        printf(
+            '<a class="zig-filters__clear" href="%s" data-zig-clear="1">%s%s</a>',
+            esc_url($this->state_url($cleared)),
+            esc_html__('پاک‌کردنِ همه', 'zig3d-widgets'),
+            Markup::svg_icon('trash', 'zig-filters__clear-icon')
+        );
+
+        echo '</div><ul class="zig-filters__chips">';
+
+        foreach ($chips as $chip) {
+            $next = $ctx['state'];
+            $next['page'] = 1;
+            $next['filters'][$chip['key']] = array_values(array_diff($next['filters'][$chip['key']], [$chip['value']]));
+
+            printf(
+                '<li class="zig-filters__chip"><a href="%1$s" rel="nofollow" data-zig-toggle="filter_%2$s|%3$s">'
+                    . '<span class="zig-filters__chip-text">%4$s</span>%5$s'
+                    . '<span class="zig-sr">%6$s</span></a></li>',
+                esc_url($this->state_url($next)),
+                esc_attr($chip['key']),
+                esc_attr($chip['value']),
+                esc_html($chip['label']),
+                Markup::svg_icon('trash', 'zig-filters__chip-icon'),
+                esc_html__('— حذف این فیلتر', 'zig3d-widgets')
+            );
+        }
+
+        echo '</ul></div>';
+    }
+
     private function render_facets(array $ctx): void {
         $active_count = array_sum(array_map('count', $ctx['state']['filters']));
         echo '<div class="zig-filters__card"><div class="zig-filters__head"><h2 class="zig-filters__title"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>' . esc_html__('فیلترها', 'zig3d-widgets') . '</h2>';
         if ($active_count > 0) printf('<span class="zig-filters__badge">%s</span>', esc_html(sprintf(__('%d فیلتر فعال', 'zig3d-widgets'), $active_count)));
-        echo '</div><div class="zig-filters__groups">';
+        echo '</div>';
+        $this->render_active($ctx);
+        echo '<div class="zig-filters__groups">';
         $group_index = 0;
         foreach ($ctx['facets'] as $facet) {
             $options = $this->facet_options($facet);
@@ -498,14 +793,100 @@ final class Download_Archive extends Widget_Base {
     }
     private function value_direction(string $value): string { return preg_match('/[\x{0600}-\x{06FF}]/u', $value) ? 'rtl' : 'ltr'; }
 
-    private function render_pagination(array $ctx): void { if ($ctx['pages'] < 2) return; echo '<div class="zig-pagination">'; for ($i = 1; $i <= $ctx['pages']; $i++) { $next = $ctx['state']; $next['page'] = $i; printf('<a class="zig-page%s" href="%s" data-zig-goto="%d">%d</a>', $i === $ctx['page'] ? ' is-current' : '', esc_url($this->state_url($next)), $i, $i); } echo '</div>'; }
+    /**
+     * دقیقاً همان مارک‌آپ/کلاس‌هایِ صفحه‌بندیِ آرشیوِ محصولات
+     * (‎Product_Archive::render_pagination()‎) — پیوندِ قبلی/بعدی با
+     * ‎rel=prev/next‎، شمارهٔ صفحهٔ جاری با ‎aria-current‎، و ارقامِ فارسی.
+     * چون هر دو ویجت رویِ همان ‎zig3d-archive.js‎ سوارند، همین شباهتِ
+     * مارک‌آپ کافی است تا CSSِ مشترک (‎.zig-archive__pagination‎/
+     * ‎.zig-page--prev‎/‎.zig-page--next‎) بدونِ هیچ تغییرِ CSSای اعمال شود.
+     */
+    private function render_pagination(array $ctx): void {
+        if ($ctx['pages'] < 2) {
+            return;
+        }
+
+        $s    = $ctx['settings'];
+        $page = $ctx['page'];
+
+        echo '<nav class="zig-archive__pagination" aria-label="' . esc_attr__('صفحه‌بندی', 'zig3d-widgets') . '">';
+
+        if ($page > 1) {
+            $prev = $ctx['state'];
+            $prev['page'] = $page - 1;
+            printf(
+                '<a class="zig-page zig-page--prev" href="%s" rel="prev" data-zig-goto="%s">%s</a>',
+                esc_url($this->state_url($prev)),
+                (string) ($page - 1),
+                esc_html($s['label_prev'] ?? '')
+            );
+        }
+
+        for ($number = 1; $number <= $ctx['pages']; ++$number) {
+            if ($number === $page) {
+                printf(
+                    '<span class="zig-page is-current" aria-current="page">%s</span>',
+                    esc_html(Price::persian((string) $number))
+                );
+
+                continue;
+            }
+
+            $next = $ctx['state'];
+            $next['page'] = $number;
+            printf(
+                '<a class="zig-page" href="%s" data-zig-goto="%s">%s</a>',
+                esc_url($this->state_url($next)),
+                (string) $number,
+                esc_html(Price::persian((string) $number))
+            );
+        }
+
+        if ($page < $ctx['pages']) {
+            $forward = $ctx['state'];
+            $forward['page'] = $page + 1;
+            printf(
+                '<a class="zig-page zig-page--next" href="%s" rel="next" data-zig-goto="%s">%s</a>',
+                esc_url($this->state_url($forward)),
+                (string) ($page + 1),
+                esc_html($s['label_next'] ?? '')
+            );
+        }
+
+        echo '</nav>';
+    }
 
     private function state_url(array $state): string {
         $args = []; if ($state['search']) $args['s'] = $state['search']; if ('updated' !== $state['sort']) $args['orderby'] = $state['sort']; if ($state['page'] > 1) $args['paged'] = $state['page'];
         foreach ($state['filters'] as $key => $values) if ($values) $args['filter_' . $key] = implode(',', $values);
         return add_query_arg($args, remove_query_arg(array_merge(['s', 'orderby', 'paged'], array_map(fn($k) => 'filter_' . $k, array_keys($state['filters']))), $this->base_url()));
     }
-    private function base_url(): string { return get_permalink($this->document_id()) ?: home_url('/'); }
+    /**
+     * آدرس پایه، بدون هیچ پارامتری.
+     *
+     * روی آرشیوِ واقعیِ یک دسته، ‎get_term_link()‎ اول سنجیده می‌شود — نه
+     * ‎document_id()‎. دلیلش همان چیزی است که نسخهٔ قبلیِ این فایل با
+     * صفحه‌بندی داشت: وقتی این ویجت رویِ یک قالبِ آرشیوِ ساخته‌شده با
+     * تم‌بیلدرِ المنتور می‌نشیند، «سندِ جاری» همان *قالب* است، نه صفحهٔ
+     * دسته‌ای که کاربر رویش ایستاده — و ‎get_permalink()‎ی آن قالب به
+     * لینکِ داخلیِ خودِ قالب اشاره می‌کند، نه به
+     * ‎/downloads/milling-machine-software/‎. بدونِ این اولویت، هر کلیکِ
+     * صفحه‌بندی یا فیلتر روی چنین آرشیوی، دقیقاً همان‌جایی می‌رفت که
+     * پیش‌ازاین Download_Archive روی آژاکس می‌رفت.
+     */
+    private function base_url(): string {
+        $term = $this->queried_term();
+
+        if ($term instanceof \WP_Term) {
+            $link = get_term_link($term);
+
+            if (is_string($link)) {
+                return $link;
+            }
+        }
+
+        return get_permalink($this->document_id()) ?: home_url('/');
+    }
     private function document_id(): int { if (class_exists('\\Elementor\\Plugin')) { $doc = \Elementor\Plugin::$instance->documents->get_current(); if ($doc) return (int) $doc->get_main_id(); } return (int) get_the_ID(); }
     private function is_edit_mode(): bool { return class_exists('\\Elementor\\Plugin') && isset(\Elementor\Plugin::$instance->editor) && \Elementor\Plugin::$instance->editor->is_edit_mode(); }
 }

@@ -30,6 +30,7 @@ require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
 require_once $root . '/includes/selector.php';
 require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/widgets/traits/consultation-trigger.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
 require_once $root . '/includes/widgets/traits/pulse.php';
@@ -38,6 +39,8 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/schema-store.php';
+require_once $root . '/includes/widgets/product-label.php';
 require_once $root . '/includes/query-state.php';
 require_once $root . '/includes/facets.php';
 require_once $root . '/includes/filter-schema.php';
@@ -63,6 +66,10 @@ require_once $root . '/includes/feature-repeater.php';
 require_once $root . '/includes/widgets/product-feature-showcase.php';
 require_once $root . '/includes/video-gallery-field.php';
 require_once $root . '/includes/widgets/product-video-gallery.php';
+require_once $root . '/includes/widgets/toc.php';
+require_once $root . '/includes/rate-price.php';
+require_once $root . '/includes/configurator.php';
+require_once $root . '/includes/widgets/product-configurator.php';
 
 use Zig3d_Widgets\Selector;
 
@@ -72,6 +79,7 @@ $widgets = [
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
+    'لیبل محصول'    => \Zig3d_Widgets\Widgets\Product_Label::class,
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
     'گالری محصول'   => \Zig3d_Widgets\Widgets\Product_Gallery::class,
     'مشخصات فنی'    => \Zig3d_Widgets\Widgets\Product_Specs::class,
@@ -81,6 +89,8 @@ $widgets = [
     'دستگاه‌های سازگار' => \Zig3d_Widgets\Widgets\Compatible_Devices::class,
     'گالری محیط نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Environment_Gallery::class,
     'جدول مشخصات نرم‌افزار' => \Zig3d_Widgets\Widgets\Software_Info_Table::class,
+    'فهرست مطالب'   => \Zig3d_Widgets\Widgets\Toc::class,
+    'کانفیگ محصول'  => \Zig3d_Widgets\Widgets\Product_Configurator::class,
 ];
 
 /*

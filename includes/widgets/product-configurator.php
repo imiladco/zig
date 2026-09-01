@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
  *     div.zig-configurator
  *       script.zig-configurator__data      دادهٔ واریانت‌ها (فقط محصولِ متغیر)
  *       div.zig-configurator__card         جعبهٔ تیره — فقط تا زیرِ قیمت/موجودی
- *         div.zig-configurator__header
+ *         div.zig-configurator__header     فقط وقتی کشویی برای انتخاب هست
  *           h3.zig-configurator__title
  *           p.zig-configurator__subtitle
  *         div.zig-configurator__fields     یک کشو به‌ازای هر ویژگیِ واریانت‌ساز
@@ -35,7 +35,7 @@ if (!defined('ABSPATH')) {
  *             span.zig-configurator__select-wrap
  *               select.zig-configurator__select
  *               span.zig-configurator__chevron
- *         div.zig-configurator__bottom     ردیفِ قیمت (چپ) و موجودی/زمان (راست)
+ *         div.zig-configurator__bottom     ترتیبِ HTML؛ CSS با row-reverse چپ/راستش می‌کند
  *           div.zig-configurator__price
  *             bdi.zig-configurator__value
  *               span.zig-configurator__amount
@@ -47,12 +47,17 @@ if (!defined('ABSPATH')) {
  *             div.zig-configurator__updated
  *               span.zig-configurator__updated-label
  *               span.zig-configurator__updated-value
- *       div.zig-configurator__actions      بیرونِ جعبهٔ تیره
+ *       div.zig-configurator__actions      بیرونِ جعبهٔ تیره؛ همینطور row-reverse
  *         a|button.zig-configurator__btn.zig-configurator__btn--secondary
  *         a|button.zig-configurator__btn.zig-configurator__btn--primary
  *
- * هیچ «افزودن به سبد خرید»ی اینجا نیست؛ دو دکمهٔ پایین فقط پیوندند، رفتار
- * کلیکشان بعداً مشخص می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
+ * هیچ «افزودن به سبد خرید»ی اینجا نیست؛ دکمهٔ فرعی فقط پیوند است. دکمهٔ
+ * اصلی هم پیوند است، مگر اینکه الگویِ پیامِ واتساپ (‎whatsapp_template‎) پر
+ * باشد — آن‌وقت به‌جایِ ‎primary_link‎، آدرسِ ‎wa.me‎ با پیامِ جایگزین‌شده
+ * (نامِ محصول، لینکِ کوتاهِ محصول، و برایِ محصولِ متغیر، ویژگی‌هایِ
+ * انتخاب‌شدهٔ کاربر) باز می‌شود. توکنِ ویژگی‌ها تنها موردی است که سمتِ
+ * سرور رندر نمی‌شود — چون انتخابِ کاربر خودش سمتِ کلاینت است — و با هر
+ * تغییرِ کشو در ‎zig3d-configurator.js‎ روزآمد می‌شود. کشوها دقیقاً همان ویژگی‌هایی‌اند که خودِ
  * محصول برای واریانت‌سازی استفاده کرده — یکی، دوتا، یا بیشتر، نه لزوماً
  * «کانفیگ» و «متریال». منطقِ محاسبه در ‎Zig3d_Widgets\Configurator‎،
  * ‎Price‎، ‎Stock‎ و ‎Rate_Price‎ است تا بدون بالا آوردن المنتور قابل
@@ -66,6 +71,7 @@ if (!defined('ABSPATH')) {
 final class Product_Configurator extends Widget_Base {
 
     use Traits\Link;
+    use Traits\Consultation_Trigger;
 
     /** نگاشتِ آیکونِ فلشِ کشو به فایلِ صادرشده از فیگما */
     private const DESIGN_ICONS = [
@@ -124,8 +130,20 @@ final class Product_Configurator extends Widget_Base {
         return ['zig3d-widgets'];
     }
 
+    /**
+     * همیشه هر دو فایل — نه فقط وقتی فرمِ مشاوره روشن است.
+     *
+     * المنتور این متد را برایِ *هر ویجتِ ثبت‌شده* یک‌بار، رویِ یک نمونهٔ
+     * خامِ بی‌دیتا صدا می‌زند (پیش‌نمایشِ ادیتور:
+     * ‎Widgets_Manager::enqueue_widgets_scripts()‎)، جایی که هنوز هیچ
+     * تنظیماتی پارس نشده. نسخهٔ قبلی این متد ‎get_settings_for_display()‎
+     * را همین‌جا صدا می‌زد و روی همان نمونهٔ خام با ‎TypeError‎ی خودِ
+     * المنتور می‌ترکید — فاتالی که کلِ ادیتور را (نه فقط صفحه‌هایی که این
+     * ویجت را دارند) خراب کرد. ‎zig3d-consultation.js‎ سبک است و تا کلیکی
+     * رخ ندهد کاری نمی‌کند، پس بارِ اضافه‌اش قابلِ چشم‌پوشی است.
+     */
     public function get_script_depends(): array {
-        return ['zig3d-configurator'];
+        return ['zig3d-configurator', 'zig3d-consultation'];
     }
 
     public function has_widget_inner_wrapper(): bool {
@@ -202,6 +220,7 @@ final class Product_Configurator extends Widget_Base {
                 'type'         => Controls_Manager::SWITCHER,
                 'default'      => 'yes',
                 'return_value' => 'yes',
+                'description'  => __('فقط وقتی محصول کشوهایی برای انتخاب دارد نمایش داده می‌شود؛ محصولِ ساده — یا محصولِ متغیرِ بدونِ ترکیبِ معتبر — همیشه بدونِ عنوان است، چون چیزی برای «انتخاب کانفیگ» نیست.', 'zig3d-widgets'),
             ]
         );
 
@@ -475,6 +494,8 @@ final class Product_Configurator extends Widget_Base {
 
         $this->add_link_control('secondary_link');
 
+        $this->add_consultation_controls('secondary_');
+
         $this->add_control(
             'primary_heading',
             [
@@ -496,6 +517,56 @@ final class Product_Configurator extends Widget_Base {
         );
 
         $this->add_link_control('primary_link');
+
+        $this->add_control(
+            'whatsapp_heading',
+            [
+                'label'     => __('واتساپ برای دکمهٔ اصلی', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
+        $this->add_control(
+            'whatsapp_note',
+            [
+                'type'            => Controls_Manager::RAW_HTML,
+                'raw'             => sprintf(
+                    '<p>%s</p><ul style="margin:.5em 0 0;padding-inline-start:1.2em;list-style:disc;">%s</ul>',
+                    esc_html__('وقتی الگوی پیام پر باشد، دکمهٔ اصلی به‌جایِ پیوندِ بالا، همین پیام را در واتساپ باز می‌کند. برایِ برگشتن به پیوندِ عادی، الگو را خالی کنید. جایگزین‌هایِ قابلِ استفاده در الگو:', 'zig3d-widgets'),
+                    implode('', [
+                        sprintf('<li><code>[نام محصول]</code> — %s</li>', esc_html__('نامِ محصول.', 'zig3d-widgets')),
+                        sprintf('<li><code>[لینک محصول]</code> — %s</li>', esc_html__('پیوندِ کوتاهِ محصول، بر پایهٔ شناسه (همان کوتاه‌کنندهٔ پیش‌فرضِ خودِ وردپرس/ووکامرس).', 'zig3d-widgets')),
+                        sprintf('<li><code>[متغیرهای انتخابی]</code> — %s</li>', esc_html__('فقط برایِ محصولِ متغیر: هر ویژگیِ انتخاب‌شدهٔ کاربر (مثلاً «رنگ: قرمز») در یک خطِ جدا. تا وقتی کاربر چیزی انتخاب نکرده یا ویژگی‌ای انتخاب نشده، آن خط بی‌صدا حذف می‌شود — نه اینکه جایِ خالی یا دونقطهٔ بی‌مقدار بگذارد. این یکی، برخلافِ دو موردِ بالا، سمتِ مرورگر و با هر تغییرِ کشو به‌روز می‌شود.', 'zig3d-widgets')),
+                    ])
+                ),
+                'content_classes' => 'elementor-descriptor',
+            ]
+        );
+
+        $this->add_control(
+            'whatsapp_number',
+            [
+                'label'       => __('شمارهٔ واتساپ', 'zig3d-widgets'),
+                'type'        => Controls_Manager::TEXT,
+                'default'     => '+989108087105',
+                'placeholder' => '+989108087105',
+                'label_block' => true,
+            ]
+        );
+
+        $this->add_control(
+            'whatsapp_template',
+            [
+                'label'       => __('الگوی پیام', 'zig3d-widgets'),
+                'type'        => Controls_Manager::TEXTAREA,
+                'rows'        => 8,
+                'dynamic'     => ['active' => true],
+                'default'     => '',
+                'placeholder' => "سلام وقت بخیر\n\nدرخواست مشاوره و دریافت پیش‌فاکتور در رابطه با محصول زیر را دارم. لطفاً شرایط و اطلاعات تکمیلی را ارسال بفرمایید.\n\n[نام محصول]\n[متغیرهای انتخابی]\n[لینک محصول]",
+                'label_block' => true,
+            ]
+        );
 
         $this->end_controls_section();
     }
@@ -850,6 +921,94 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        $this->add_control(
+            'side_heading',
+            [
+                'label' => __('چیدمانِ موجودی و زمان', 'zig3d-widgets'),
+                'type'  => Controls_Manager::HEADING,
+            ]
+        );
+
+        /*
+         * ‎.zig-configurator__side‎ ستونِ کنارِ قیمت است (بجِ موجودی +
+         * زمانِ به‌روزرسانی)؛ پیش‌فرضِ CSS عمودی است ولی کاربر باید بتواند
+         * جهتش را از تنظیماتِ ویجت عوض کند — همان الگویِ کنترلِ ‎list_direction‎
+         * در ویجتِ TOC.
+         */
+        $this->add_responsive_control(
+            'side_direction',
+            [
+                'label'     => __('جهت', 'zig3d-widgets'),
+                'type'      => Controls_Manager::CHOOSE,
+                'default'   => 'column',
+                'options'   => [
+                    'column'         => ['title' => __('عمودی', 'zig3d-widgets'), 'icon' => 'eicon-arrow-down'],
+                    'column-reverse' => ['title' => __('عمودیِ معکوس', 'zig3d-widgets'), 'icon' => 'eicon-arrow-up'],
+                    'row'            => ['title' => __('افقی', 'zig3d-widgets'), 'icon' => 'eicon-arrow-left'],
+                    'row-reverse'    => ['title' => __('افقیِ معکوس', 'zig3d-widgets'), 'icon' => 'eicon-arrow-right'],
+                ],
+                'toggle'    => false,
+                'selectors' => ['{{WRAPPER}} .zig-configurator__side' => 'flex-direction: {{VALUE}};'],
+            ]
+        );
+
+        /*
+         * پیش‌فرضِ CSS برایِ این ستون ‎align-items: flex-end‎ است (طرح: بجِ
+         * موجودی و زمان هر دو سمتِ راست می‌نشینند). همان الگویِ کنترلِ
+         * ‎align‎ در ویجتِ موجودیِ محصول اینجا هم به کار می‌رود.
+         */
+        $this->add_responsive_control(
+            'side_align',
+            [
+                'label'     => __('تراز', 'zig3d-widgets'),
+                'type'      => Controls_Manager::CHOOSE,
+                'default'   => 'flex-end',
+                'options'   => [
+                    'flex-start' => ['title' => __('ابتدا', 'zig3d-widgets'), 'icon' => 'eicon-text-align-right'],
+                    'center'     => ['title' => __('وسط', 'zig3d-widgets'), 'icon' => 'eicon-text-align-center'],
+                    'flex-end'   => ['title' => __('انتها', 'zig3d-widgets'), 'icon' => 'eicon-text-align-left'],
+                    'stretch'    => ['title' => __('تمام‌عرض', 'zig3d-widgets'), 'icon' => 'eicon-text-align-justify'],
+                ],
+                'selectors' => ['{{WRAPPER}} .zig-configurator__side' => 'align-items: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'side_wrap',
+            [
+                'label'     => __('شکستن به خط بعد', 'zig3d-widgets'),
+                'type'      => Controls_Manager::SELECT,
+                'default'   => 'nowrap',
+                'options'   => [
+                    'nowrap'       => __('نشکند', 'zig3d-widgets'),
+                    'wrap'         => __('بشکند', 'zig3d-widgets'),
+                    'wrap-reverse' => __('بشکند، معکوس', 'zig3d-widgets'),
+                ],
+                'selectors' => ['{{WRAPPER}} .zig-configurator__side' => 'flex-wrap: {{VALUE}};'],
+            ]
+        );
+
+        $this->add_responsive_control(
+            'side_gap',
+            [
+                'label'      => __('فاصله', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px', 'em'],
+                'range'      => ['px' => ['min' => 0, 'max' => 40]],
+                'default'    => ['size' => 10, 'unit' => 'px'],
+                'selectors'  => ['{{WRAPPER}} .zig-configurator__side' => 'gap: {{SIZE}}{{UNIT}};'],
+            ]
+        );
+
+        $this->add_control(
+            'amount_heading',
+            [
+                'label'     => __('قیمت', 'zig3d-widgets'),
+                'type'      => Controls_Manager::HEADING,
+                'separator' => 'before',
+            ]
+        );
+
         $this->add_amount_style_controls('amount', '.zig-configurator__price');
 
         $this->end_controls_section();
@@ -859,11 +1018,23 @@ final class Product_Configurator extends Widget_Base {
     private function add_amount_style_controls(string $prefix, string $selector): void {
         $box = '{{WRAPPER}} ' . $selector;
 
+        /*
+         * عددِ قیمت واقعاً رویِ ‎$box‎ (خودِ ‎.zig-configurator__price‎) چاپ
+         * نمی‌شود؛ داخلِ ‎<bdi>‎/‎<span>‎یِ تودرتو است. اگر تایپوگرافی/رنگ فقط
+         * رویِ ‎$box‎ بنشیند، آن مقدار برایِ فرزندها فقط «ارثی» است — و در
+         * وردپرس/المنتور، تایپوگرافیِ پیش‌فرضِ کیت (‎p, span, div { font-size;
+         * font-weight; }‎) مستقیماً رویِ همان ‎<span>‎ می‌نشیند. در CSS مقدارِ
+         * مستقیم همیشه بر مقدارِ ارثی می‌چربد، فارغ از specificity — پس بدونِ
+         * ‎, $box *‎ عدد همیشه فونتِ پیش‌فرضِ سایت را می‌گرفت، نه مقدارِ
+         * انتخابیِ کاربر در پنل.
+         */
+        $text_box = $box . ', ' . $box . ' *';
+
         $this->add_group_control(
             Group_Control_Typography::get_type(),
             [
                 'name'     => $prefix . '_typography',
-                'selector' => $box,
+                'selector' => $text_box,
             ]
         );
 
@@ -872,7 +1043,7 @@ final class Product_Configurator extends Widget_Base {
             [
                 'label'     => __('رنگ', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'selectors' => [$box => 'color: {{VALUE}};'],
+                'selectors' => [$text_box => 'color: {{VALUE}};'],
             ]
         );
 
@@ -880,7 +1051,7 @@ final class Product_Configurator extends Widget_Base {
             Group_Control_Text_Shadow::get_type(),
             [
                 'name'     => $prefix . '_text_shadow',
-                'selector' => $box,
+                'selector' => $text_box,
             ]
         );
 
@@ -990,6 +1161,24 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        /*
+         * سایزِ نقطه یک کنترلِ مشترک است، نه per-state: رنگش خودش از
+         * ‎currentColor‎ِ همان تبِ حالت می‌آید (‎.zig-configurator__stock-dot‎
+         * در CSS)، پس تکرارش در هر سه تب فقط سه کنترلِ یک‌رفتار می‌ساخت.
+         */
+        $this->add_responsive_control(
+            'stock_dot_size',
+            [
+                'label'      => __('سایز نقطه', 'zig3d-widgets'),
+                'type'       => Controls_Manager::SLIDER,
+                'size_units' => ['px'],
+                'range'      => ['px' => ['min' => 0, 'max' => 20]],
+                'selectors'  => [
+                    '{{WRAPPER}} .zig-configurator__stock-dot' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+                ],
+            ]
+        );
+
         $this->start_controls_tabs('stock_tabs');
 
         foreach ($this->stock_states() as $key => $state) {
@@ -1006,13 +1195,24 @@ final class Product_Configurator extends Widget_Base {
     private function add_stock_state_controls(string $key, array $state): void {
         $box = '{{WRAPPER}} .zig-configurator__stock--' . $key;
 
+        /*
+         * متنِ برچسب رویِ خودِ ‎$box‎ چاپ نمی‌شود، داخلِ
+         * ‎<span class="zig-configurator__stock-label">‎ است. همان دلیلِ
+         * ‎add_amount_style_controls‎: تایپوگرافی/رنگِ فقط-ارثی رویِ
+         * ‎$box‎ در برابرِ تایپوگرافیِ پیش‌فرضِ کیتِ المنتور (که مستقیماً
+         * رویِ ‎span‎ می‌نشیند) می‌بازد، چون مقدارِ مستقیم همیشه بر ارثی
+         * می‌چربد. نقطهٔ موجودی هم از همین رنگ (‎currentColor‎) استفاده
+         * می‌کند، پس مستقیم‌نشستنِ رنگ رویِ خودش هم درست‌تر است.
+         */
+        $text_box = $box . ', ' . $box . ' *';
+
         $this->add_control(
             $key . '_color',
             [
                 'label'     => __('رنگ متن', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
                 'default'   => $state['color'],
-                'selectors' => [$box => 'color: {{VALUE}};'],
+                'selectors' => [$text_box => 'color: {{VALUE}};'],
             ]
         );
 
@@ -1058,7 +1258,7 @@ final class Product_Configurator extends Widget_Base {
             Group_Control_Typography::get_type(),
             [
                 'name'     => $key . '_typography',
-                'selector' => $box,
+                'selector' => $text_box,
             ]
         );
 
@@ -1085,11 +1285,21 @@ final class Product_Configurator extends Widget_Base {
             ]
         );
 
+        /*
+         * متنِ برچسب/مقدار رویِ خودِ ‎.zig-configurator__updated‎ چاپ
+         * نمی‌شود، داخلِ دو ‎<span>‎ی فرزند است. تایپوگرافی/رنگِ فقط-ارثی
+         * رویِ خودِ دیو در برابرِ تایپوگرافیِ پیش‌فرضِ کیتِ المنتور (که
+         * مستقیماً رویِ ‎span‎ می‌نشیند و مقدارِ مستقیم همیشه بر ارثی
+         * می‌چربد) می‌بازد — همین باعث می‌شد این کنترل‌ها هیچ اثری در
+         * فرانت نداشته باشند.
+         */
+        $updated_text_box = '{{WRAPPER}} .zig-configurator__updated, {{WRAPPER}} .zig-configurator__updated *';
+
         $this->add_group_control(
             Group_Control_Typography::get_type(),
             [
                 'name'     => 'updated_typography',
-                'selector' => '{{WRAPPER}} .zig-configurator__updated',
+                'selector' => $updated_text_box,
             ]
         );
 
@@ -1098,7 +1308,7 @@ final class Product_Configurator extends Widget_Base {
             [
                 'label'     => __('رنگ', 'zig3d-widgets'),
                 'type'      => Controls_Manager::COLOR,
-                'selectors' => ['{{WRAPPER}} .zig-configurator__updated' => 'color: {{VALUE}};'],
+                'selectors' => [$updated_text_box => 'color: {{VALUE}};'],
             ]
         );
 
@@ -1292,7 +1502,7 @@ final class Product_Configurator extends Widget_Base {
             return;
         }
 
-        $this->render_card($settings, $fields, $variations, $display, $can_select);
+        $this->render_card($settings, $fields, $variations, $display, $can_select, $product);
     }
 
     /**
@@ -1334,11 +1544,11 @@ final class Product_Configurator extends Widget_Base {
             'has_price'   => true,
             'current'     => $price['current'],
             'stock_state' => $stock['state'],
-            'updated_at'  => Rate_Price::updated_at($product->get_id()),
+            'updated_at'  => Rate_Price::updated_at_for($product),
         ];
     }
 
-    private function render_card(array $settings, array $fields, array $variations, array $display, bool $can_select): void {
+    private function render_card(array $settings, array $fields, array $variations, array $display, bool $can_select, \WC_Product $product): void {
         $persian  = 'yes' === ($settings['persian_digits'] ?? 'yes');
         $currency = Price::currency((string) ($settings['currency_text'] ?? ''));
 
@@ -1354,22 +1564,28 @@ final class Product_Configurator extends Widget_Base {
          */
         echo '<div class="zig-configurator__card">';
 
-        $this->render_header($settings);
-
         if ($can_select) {
+            $this->render_header($settings);
             $this->render_fields($settings, $fields);
         }
 
+        /*
+         * قیمت پیش از موجودی/زمان چاپ می‌شود — همان ترتیبِ طبیعیِ خواندن.
+         * جابه‌جاییِ چپ/راستِ طرح (قیمت چپ، موجودی راست) کارِ خودِ CSS است:
+         * ‎.zig-configurator__bottom‎ با ‎flex-direction: row-reverse‎ همین
+         * دو را بدونِ نیاز به دستکاریِ ترتیبِ HTML جابه‌جا می‌کند.
+         */
         echo '<div class="zig-configurator__bottom">';
         $this->render_price($settings, $display, $persian, $currency);
         echo '<div class="zig-configurator__side">';
         $this->render_stock($settings, $display, $can_select);
         $this->render_updated($settings, $display, $variations, $persian);
-        echo '</div></div>';
+        echo '</div>';
+        echo '</div>';
 
         echo '</div>';
 
-        $this->render_actions($settings);
+        $this->render_actions($settings, $product);
 
         echo '</div>';
     }
@@ -1524,10 +1740,12 @@ final class Product_Configurator extends Widget_Base {
     /**
      * خط زمانِ به‌روزرسانی.
      *
-     * وقتی نه پیش‌فرض و نه هیچ واریانتی زمانی برای نمایش دارند (محصول اصلاً
-     * نرخ‌محور نیست)، این بخش کلاً چاپ نمی‌شود — نه یک برچسبِ بی‌مقدار.
-     * اگر پیش‌فرض زمان ندارد ولی دست‌کم یک واریانت دارد، عنصر با ‎hidden‎
-     * می‌آید تا اسکریپت با انتخابِ همان ترکیب بتواند نمایانش کند.
+     * ‎Rate_Price::updated_at_for()‎ اول نوسان را می‌خواند، بعد به تاریخِ
+     * ذخیرهٔ خودِ محصول برمی‌گردد — پس تقریباً هر محصول/واریانتِ واقعی یک
+     * زمان دارد و این بخش تقریباً همیشه چاپ می‌شود؛ استثنا فقط محصولی است
+     * که حتی یک‌بار هم ذخیره نشده (که در عمل وجود ندارد، ولی سنجیدنش رایگان
+     * است). اگر پیش‌فرض زمان ندارد ولی دست‌کم یک واریانتِ دیگر دارد، عنصر
+     * با ‎hidden‎ می‌آید تا اسکریپت با انتخابِ همان ترکیب بتواند نمایانش کند.
      */
     private function render_updated(array $settings, array $display, array $variations, bool $persian): void {
         if ('yes' !== ($settings['show_updated'] ?? 'yes')) {
@@ -1536,7 +1754,7 @@ final class Product_Configurator extends Widget_Base {
 
         $default_value = $this->updated_value((int) ($display['updated_at'] ?? 0), $persian);
 
-        if ('' === $default_value && !$this->any_rate_based($variations)) {
+        if ('' === $default_value && !$this->any_variation_has_updated_at($variations)) {
             return;
         }
 
@@ -1553,7 +1771,7 @@ final class Product_Configurator extends Widget_Base {
         echo '</div>';
     }
 
-    private function any_rate_based(array $variations): bool {
+    private function any_variation_has_updated_at(array $variations): bool {
         foreach ($variations as $row) {
             if (((int) $row['updated_at']) > 0) {
                 return true;
@@ -1573,7 +1791,7 @@ final class Product_Configurator extends Widget_Base {
         return $persian ? Price::persian($text) : $text;
     }
 
-    private function render_actions(array $settings): void {
+    private function render_actions(array $settings, \WC_Product $product): void {
         $has_secondary = '' !== trim((string) ($settings['secondary_text'] ?? ''));
         $has_primary   = '' !== trim((string) ($settings['primary_text'] ?? ''));
 
@@ -1581,14 +1799,20 @@ final class Product_Configurator extends Widget_Base {
             return;
         }
 
+        /*
+         * دکمهٔ فرعی پیش از دکمهٔ اصلی چاپ می‌شود. جابه‌جاییِ چپ/راستِ طرح
+         * (فرعی چپ، اصلی/بنفش راست) کارِ خودِ CSS است: ‎.zig-configurator__actions‎
+         * با ‎flex-direction: row-reverse‎ همین دو را بدونِ نیاز به دستکاریِ
+         * ترتیبِ HTML جابه‌جا می‌کند.
+         */
         echo '<div class="zig-configurator__actions">';
 
         if ($has_secondary) {
-            $this->render_button($settings, 'secondary');
+            $this->render_button($settings, 'secondary', $product);
         }
 
         if ($has_primary) {
-            $this->render_button($settings, 'primary');
+            $this->render_button($settings, 'primary', $product);
         }
 
         echo '</div>';
@@ -1597,19 +1821,49 @@ final class Product_Configurator extends Widget_Base {
     /**
      * یکی از دو دکمه.
      *
-     * پیوندِ واقعی وقتی آدرسی داده شده — ‎add_link_attributes()‎ خودش
-     * ‎target‎/‎rel‎/ویژگی‌های دلخواه را می‌سازد. بدونِ آدرس، ‎<button>‎ی
-     * غیرفعال از نظرِ ناوبری می‌آید تا رفتارِ کلیک بعداً (وقتی مشخص شود)
-     * رویش سوار شود — نه یک ‎<a>‎ بدونِ ‎href‎ که نه فوکوس می‌گیرد نه لینکی
-     * برایِ صفحه‌خوان است.
+     * دکمهٔ اصلی یک راهِ سوم هم دارد: اگر الگویِ پیامِ واتساپ پر باشد،
+     * جایِ پیوندِ ‎primary_link‎ را می‌گیرد — همان چیزی که ‎whatsapp_url()‎
+     * تصمیمش را می‌گیرد. بدونِ آدرس (نه پیوند، نه واتساپ)، ‎<button>‎ی
+     * غیرفعال از نظرِ ناوبری می‌آید — نه یک ‎<a>‎ بدونِ ‎href‎ که نه فوکوس
+     * می‌گیرد نه لینکی برایِ صفحه‌خوان است.
      */
-    private function render_button(array $settings, string $key): void {
+    private function render_button(array $settings, string $key, \WC_Product $product): void {
         $text       = trim((string) ($settings[$key . '_text'] ?? ''));
         $render_key = 'btn_' . $key;
 
         $this->add_render_attribute($render_key, 'class', ['zig-configurator__btn', 'zig-configurator__btn--' . $key]);
 
-        $tag = $this->apply_link($settings, $render_key, 'button', $key . '_link');
+        $whatsapp = 'primary' === $key ? $this->whatsapp_data($settings, $product) : null;
+
+        if (null !== $whatsapp) {
+            $this->add_render_attribute($render_key, [
+                'href'   => $whatsapp['url'],
+                'target' => '_blank',
+                'rel'    => 'noopener',
+            ]);
+
+            /*
+             * دو ویژگیِ data-* فقط وقتی چاپ می‌شوند که الگو واقعاً به
+             * ویژگی‌هایِ انتخابیِ کاربر نیاز دارد — چیزی که فقط سمتِ
+             * کلاینت (بعد از انتخابِ کشوها) معلوم می‌شود؛ ‎zig3d-configurator.js‎
+             * با همین دو، ‎href‎ را با هر تغییرِ کشو دوباره می‌سازد. الگویی
+             * که این توکن را ندارد، هیچ‌وقت نیازی به روزآمدسازیِ سمتِ کلاینت
+             * ندارد — همان آدرسِ اینجا کافی و همیشه درست است.
+             */
+            if (false !== strpos($whatsapp['template'], self::WHATSAPP_VARIANTS_TOKEN)) {
+                $this->add_render_attribute($render_key, [
+                    'data-zig-wa-base'     => $whatsapp['base'],
+                    'data-zig-wa-template' => $whatsapp['template'],
+                ]);
+            }
+
+            $tag = 'a';
+        } elseif ('secondary' === $key && $this->consultation_active($settings, 'secondary_')) {
+            $this->apply_consultation_attributes($render_key, $product);
+            $tag = 'button';
+        } else {
+            $tag = $this->apply_link($settings, $render_key, 'button', $key . '_link');
+        }
 
         if ('button' === $tag) {
             $this->add_render_attribute($render_key, 'type', 'button');
@@ -1618,6 +1872,90 @@ final class Product_Configurator extends Widget_Base {
         printf('<%s %s>', $tag, $this->get_render_attribute_string($render_key)); // phpcs:ignore WordPress.Security.EscapeOutput -- تگ ثابت، ویژگی‌ها از رندرِ المنتور
         echo esc_html($text);
         printf('</%s>', $tag); // phpcs:ignore WordPress.Security.EscapeOutput -- تگ ثابت
+    }
+
+    /** توکنی که در الگو با ویژگی‌هایِ انتخاب‌شدهٔ کاربر (فقط محصولِ متغیر) جایگزین می‌شود. */
+    private const WHATSAPP_VARIANTS_TOKEN = '[متغیرهای انتخابی]';
+
+    /**
+     * دادهٔ لازم برایِ دکمهٔ واتساپِ اصلی، یا ‎null‎ اگر الگو/شماره خالی باشد.
+     *
+     * ‎url‎ همان آدرسِ کاملِ ‎wa.me‎ برایِ حالتِ اولیه است — پیش از آنکه
+     * کاربر چیزی از کشوها انتخاب کند، پس بدونِ هیچ خطِ ویژگی. ‎base‎/‎template‎
+     * فقط وقتی لازم‌اند که الگو به ‎[متغیرهای انتخابی]‎ نیاز داشته باشد؛
+     * ‎render_button()‎ آن‌ها را رویِ ‎data-*‎ی دکمه می‌گذارد تا جاوااسکریپت
+     * با هر تغییرِ انتخاب، ‎href‎ را دوباره بسازد.
+     *
+     * نکتهٔ فنی‌ای که اینجا باید رعایت شود: خطِ بعدی در پیامِ واتساپ فقط
+     * وقتی درست کار می‌کند که در رشتهٔ PHP کاراکترِ واقعیِ خط‌ِ‌جدید باشد و
+     * *کلِ* پیام یک‌جا با ‎rawurlencode()‎ اینکود شود — آن‌وقت هر ‎"\n"‎
+     * خودش به ‎%0A‎ تبدیل می‌شود. جایگزینیِ دستیِ ‎<br>‎ یا اینکودِ
+     * جداگانهٔ هر خط، همان چیزی است که معمولاً این الگوها را در واتساپ
+     * خراب می‌کند.
+     *
+     * لینکِ محصول از همان مکانیزمِ پیش‌فرضِ وردپرس/ووکامرس می‌آید —
+     * ‎wp_get_shortlink()‎ — که برایِ یک پستِ عادی به ‎?p={ID}‎ می‌رسد: کوتاه،
+     * و مستقیماً از رویِ شناسهٔ محصول قابلِ شناسایی.
+     *
+     * @return array{url:string,base:string,template:string}|null
+     */
+    private function whatsapp_data(array $settings, \WC_Product $product): ?array {
+        $template = trim((string) ($settings['whatsapp_template'] ?? ''));
+
+        if ('' === $template) {
+            return null;
+        }
+
+        $number = preg_replace('/\D+/', '', (string) ($settings['whatsapp_number'] ?? ''));
+
+        if (null === $number || '' === $number) {
+            return null;
+        }
+
+        $partial = str_replace(
+            ['[نام محصول]', '[لینک محصول]'],
+            [$product->get_name(), (string) wp_get_shortlink($product->get_id())],
+            $template
+        );
+
+        $base = 'https://wa.me/' . $number . '?text=';
+
+        return [
+            'url'      => $base . rawurlencode(self::whatsapp_message($partial, [])),
+            'base'     => $base,
+            'template' => $partial,
+        ];
+    }
+
+    /**
+     * جایگزینیِ توکنِ ویژگی‌ها با خط‌هایِ داده‌شده — یا حذفِ کاملِ خط، اگر
+     * توکن تنها چیزِ آن خط بوده و هیچ ویژگی‌ای انتخاب نشده.
+     *
+     * تشخیصِ «تنها چیزِ خط» عمدی است: همینی که تضمین می‌کند نبودِ انتخاب،
+     * جایِ خالی یا دونقطهٔ بی‌مقدار در پیام نمی‌گذارد، بلکه کلِ خط را
+     * بی‌صدا برمی‌دارد. اگر توکن کنارِ متنِ دیگری در همان خط بود (حالتِ
+     * غیرمعمول)، فقط خودِ توکن جایگزین می‌شود، نه کل خط.
+     *
+     * @param string[] $variant_lines
+     */
+    private static function whatsapp_message(string $partial_template, array $variant_lines): string {
+        $block = implode("\n", $variant_lines);
+        $rows  = explode("\n", $partial_template);
+        $out   = [];
+
+        foreach ($rows as $row) {
+            if (self::WHATSAPP_VARIANTS_TOKEN === trim($row)) {
+                if ('' !== $block) {
+                    $out[] = $block;
+                }
+
+                continue;
+            }
+
+            $out[] = str_replace(self::WHATSAPP_VARIANTS_TOKEN, $block, $row);
+        }
+
+        return implode("\n", $out);
     }
 
     /**

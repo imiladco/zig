@@ -48,6 +48,22 @@ Tests::same('فقط منتشرشده', $base['post_status'], 'publish');
  */
 Tests::ok('چسبان‌ها نادیده گرفته می‌شوند', $base['ignore_sticky_posts']);
 
+/*
+ * دامنهٔ «کلِ فروشگاه»: وقتی هیچ دسته‌ای داده نشود، هیچ بندِ product_cat
+ * هم اضافه نمی‌شود — یعنی همان کوئریِ بدونِ قید که Schema_Store::for_term(0)
+ * برایِ کشفِ فیلترهایِ کلِ کاتالوگ رویش سوار می‌شود (رفعِ باگِ سایدبارِ
+ * همیشه‌خالیِ صفحهٔ ‎/shop‎). فقط بندِ دیده‌شدن باقی می‌ماند.
+ */
+Tests::same('بدونِ دسته، فقط بندِ دیده‌شدن می‌ماند', count($base['tax_query']), 1);
+Tests::ok(
+    'و هیچ بندی رویِ product_cat نیست',
+    !in_array(
+        \Zig3d_Widgets\Schema_Store::TAXONOMY,
+        array_column(array_filter($base['tax_query'], 'is_array'), 'taxonomy'),
+        true
+    )
+);
+
 $scoped = Archive_Query::base_args(['categories' => [12, 0, '15', -3]]);
 $clause = end($scoped['tax_query']);
 

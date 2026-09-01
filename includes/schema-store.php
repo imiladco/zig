@@ -207,13 +207,21 @@ final class Schema_Store {
      *
      * پس فقط یک تعریف می‌ماند. کشف هم گران نیست: ‎discover()‎ در ترنزینت
      * کش می‌شود.
+     *
+     * ‎term_id = 0‎ معنایِ ویژه دارد: «هیچ دسته‌ای، کلِ فروشگاه». آرشیوی مثلِ
+     * صفحهٔ ‎/shop‎ روی هیچ ترمی نمی‌نشیند، پس قبلاً این تابع همان‌جا با
+     * ‎term_id < 1‎ خالی برمی‌گشت — یعنی سایدبار فیلتر روی فروشگاه همیشه
+     * خالی بود، حتی وقتی محصولات ویژگی‌هایِ فیلترپذیر داشتند. ‎binding(0)‎
+     * (متایِ یک ترمِ ناموجود) همیشه خودکار برمی‌گردد، پس این حالت هم از
+     * همان مسیرِ AUTO/discover می‌گذرد که برایِ یک دستهٔ واقعی طی می‌شود —
+     * فقط بدونِ قیدِ دسته در کوئریِ پایه.
      */
     public static function for_term(int $term_id): array {
-        if ($term_id < 1) {
+        if ($term_id < 0) {
             return [];
         }
 
-        $base = Archive_Query::base_args(['categories' => [$term_id]]);
+        $base = Archive_Query::base_args($term_id > 0 ? ['categories' => [$term_id]] : []);
 
         return self::resolve(
             $term_id,

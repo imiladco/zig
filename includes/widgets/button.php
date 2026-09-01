@@ -38,6 +38,7 @@ if (!defined('ABSPATH')) {
 final class Button extends Widget_Base {
 
     use Traits\Link;
+    use Traits\Consultation_Trigger;
 
     /**
      * دامنهٔ «هاور یا فوکوس».
@@ -71,6 +72,25 @@ final class Button extends Widget_Base {
 
     public function get_style_depends(): array {
         return ['zig3d-widgets'];
+    }
+
+    /**
+     * ‎get_script_depends()‎ باید ثابت باشد، نه وابسته به تنظیماتِ نمونه.
+     *
+     * المنتور این متد را برایِ *هر ویجتِ ثبت‌شده* یک‌بار، رویِ یک نمونهٔ
+     * خام و بی‌دیتا صدا می‌زند — نه فقط برایِ نمونه‌هایِ واقعیِ روی صفحه —
+     * تا فهرستِ کاملِ اسکریپت‌هایِ ممکن را از پیش جمع کند (پیش‌نمایشِ
+     * ادیتور: ‎Widgets_Manager::enqueue_widgets_scripts()‎). نسخهٔ قبلی این
+     * متد ‎get_settings_for_display()‎ را همین‌جا صدا می‌زد؛ رویِ آن نمونهٔ
+     * خام، تنظیمات هنوز پارس نشده و ‎null‎ است، پس ‎sanitize_settings()‎ی
+     * خودِ المنتور با ‎TypeError‎ می‌ترکید — دقیقاً همان فاتالی که هر
+     * ویرایشگرِ المنتور را (نه فقط صفحه‌هایی که این ویجت را دارند) خراب
+     * کرد. پس این فایل هم — مثلِ ‎Product_Configurator‎/‎Product_Archive‎ —
+     * همیشه همان فهرستِ ثابت را برمی‌گرداند؛ خودِ زیگ‌۳‌مودال بی‌ضرر و
+     * سبک است، فقط وقتی رویِ صفحه واقعاً باز شود کاری می‌کند.
+     */
+    public function get_script_depends(): array {
+        return ['zig3d-consultation'];
     }
 
     public function has_widget_inner_wrapper(): bool {
@@ -108,6 +128,8 @@ final class Button extends Widget_Base {
         );
 
         $this->add_link_control();
+
+        $this->add_consultation_controls();
 
         $this->add_control(
             'tag',
@@ -596,6 +618,10 @@ final class Button extends Widget_Base {
             $this->add_render_attribute('button', 'type', $this->resolve_button_type($settings));
         }
 
+        if ($this->consultation_active($settings)) {
+            $this->apply_consultation_attributes('button');
+        }
+
         /*
          * برچسب صریح، یا اجباراً وقتی دکمه فقط آیکون دارد.
          *
@@ -650,6 +676,10 @@ final class Button extends Widget_Base {
      * به ‎<button>‎ برمی‌گردیم — یک دکمهٔ بی‌کار، ولی دست‌کم عنصری معتبر.
      */
     private function resolve_tag(array $settings): string {
+        if ($this->consultation_active($settings)) {
+            return 'button';
+        }
+
         $choice = (string) ($settings['tag'] ?? 'auto');
 
         if ('button' === $choice) {

@@ -64,27 +64,18 @@ foreach ($GLOBALS['__zig_terms'] as $id => $term) {
     $GLOBALS['__zig_wp_terms'][] = (object) array_merge(['term_id' => (int) $id], $term);
 }
 
-if (!function_exists('get_term')) {
-    function get_term($id, $taxonomy = '') {
-        $terms = $GLOBALS['__zig_terms'] ?? [];
+/*
+ * ‎get_term()‎/‎is_wp_error()‎/‎wp_count_posts()‎ از ‎lib/woocommerce-stub.php‎
+ * می‌آیند — همان رجیستریِ ‎__zig_terms‎ی بالا را می‌خوانند، پس فقط شمارشِ
+ * پست‌تایپِ ‎product‎ (تنها چیزی که ‎menu-tree.php‎ می‌خواهد) اینجا ثبت
+ * می‌شود.
+ */
+$GLOBALS['__zig_wp_post_counts']['product'] = (object) ['publish' => 250];
 
-        if (!isset($terms[$id])) {
-            return null;
-        }
-
-        return (object) array_merge(['term_id' => (int) $id], $terms[$id]);
-    }
-}
 if (!function_exists('get_term_link')) {
     function get_term_link($id, $taxonomy = '') {
         return 'https://zig3d.test/cat/' . (int) $id;
     }
-}
-if (!function_exists('is_wp_error')) {
-    function is_wp_error($thing) { return false; }
-}
-if (!function_exists('wp_count_posts')) {
-    function wp_count_posts($type = 'post') { return (object) ['publish' => 250]; }
 }
 
 /*

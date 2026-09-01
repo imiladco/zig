@@ -18,6 +18,8 @@ if (!class_exists('Elementor\Controls_Manager')) {
 class Controls_Manager {
     const TAB_CONTENT = 'content';
     const TAB_STYLE   = 'style';
+    /* تبِ «تنظیمات»یِ خودِ *سند* (نه ویجت) — همان‌جا که Page Layout/HTML Tag هست */
+    const TAB_SETTINGS = 'settings';
     const TEXT        = 'text';
     const TEXTAREA    = 'textarea';
     const NUMBER      = 'number';

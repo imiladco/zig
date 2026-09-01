@@ -62,8 +62,18 @@
 		this.main = root.querySelector('.zig-archive__main') || root;
 		this.error = root.querySelector('.zig-archive__error');
 		this.retry = root.querySelector('.zig-archive__retry');
-		this.search = root.querySelector('[data-zig-search]');
-		this.filterTrigger = root.querySelector('.zig-download-archive__filter-trigger');
+		/*
+		 * می‌تواند دو تا باشد: فرمِ سرچِ دسکتاپ و فرمِ سرچِ نوارِ موبایل
+		 * (آرشیوِ دانلود) — با CSS فقط یکی‌شان دیده می‌شود، ولی هر دو باید
+		 * گوش بدهند و مقدارشان با هم هم‌گام بماند، وگرنه چرخیدنِ اندازهٔ
+		 * پنجره بینِ دو حالت یک فرمِ خالی نشان می‌دهد.
+		 */
+		this.searches = Array.prototype.slice.call(root.querySelectorAll('[data-zig-search]'));
+
+		/* نوارِ موبایل و شیت‌ها — نگاه کنید به bindSheets() */
+		this.mbar = root.querySelector('[data-zig-mbar]');
+		this.sheetBackdrop = root.querySelector('[data-zig-sheet-backdrop]');
+		this.openSheet = null;
 
 		this.endpoint = root.getAttribute('data-zig-endpoint') || '';
 		this.nonce = root.getAttribute('data-zig-nonce') || '';
@@ -159,6 +169,32 @@
 				return;
 			}
 
+			/*
+			 * دکمه‌هایِ نوارِ موبایل، پیش از هر چیز: کنش‌اند نه ناوبری،
+			 * پس ‎<button>‎اند و اینجا — نه در مسیرِ ‎a[href]‎ — گرفته
+			 * می‌شوند.
+			 */
+			var opener = event.target.closest('[data-zig-open]');
+
+			if (opener && self.root.contains(opener)) {
+				event.preventDefault();
+				self.toggleSheet(opener.getAttribute('data-zig-open'));
+				return;
+			}
+
+			/*
+			 * دکمهٔ «بازگشتِ» ته شیت — همان کاری که دستگیره/پسِ‌زمینه/
+			 * Escape می‌کنند، فقط با یک هدفِ همیشه‌دیده برایِ کسی که ته
+			 * لیستِ فیلترها اسکرول کرده و دستگیرهٔ بالا از دیدش خارج شده.
+			 */
+			var closer = event.target.closest('[data-zig-close]');
+
+			if (closer && self.root.contains(closer)) {
+				event.preventDefault();
+				self.closeSheet();
+				return;
+			}
+
 			var modelsToggle = event.target.closest('.zig-download-card__models-toggle');
 
 			if (modelsToggle && self.root.contains(modelsToggle)) {
@@ -185,6 +221,16 @@
 			}
 
 			event.preventDefault();
+
+			/*
+			 * انتخابِ ترتیب یک تصمیمِ نهایی است، پس شیتِ ترتیب بلافاصله
+			 * بسته می‌شود. فیلتر این‌طور نیست — کاربر ممکن است چند تیک
+			 * پشتِ هم بزند، پس شیتِ فیلتر باز می‌ماند.
+			 */
+			if ('sort' === kind && 'sort' === self.openSheet) {
+				self.closeSheet();
+			}
+
 			self.go(self.applyDelta(link, kind), kind, link);
 		});
 
@@ -196,9 +242,16 @@
 			});
 		}
 
-		if (this.search) {
-			this.search.addEventListener('input', function () {
-				var value = self.search.value.trim();
+		this.searches.forEach(function (input) {
+			input.addEventListener('input', function () {
+				var value = input.value.trim();
+
+				// فرمِ خواهر (دسکتاپ/موبایل) هم همین لحظه همان مقدار را ببیند
+				self.searches.forEach(function (other) {
+					if (other !== input) {
+						other.value = input.value;
+					}
+				});
 
 				if (value) {
 					self.params.set('s', value);
@@ -210,21 +263,13 @@
 				self.go(self.params.toString(), 'filter');
 			});
 
-			if (this.search.form) {
-				this.search.form.addEventListener('submit', function (event) {
+			if (input.form) {
+				input.form.addEventListener('submit', function (event) {
 					event.preventDefault();
 					self.go(self.params.toString(), 'filter', null, true);
 				});
 			}
-		}
-
-		if (this.filterTrigger) {
-			this.filterTrigger.addEventListener('click', function () {
-				var expanded = !self.root.classList.contains('is-filters-open');
-				self.root.classList.toggle('is-filters-open', expanded);
-				self.filterTrigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-			});
-		}
+		});
 
 		/*
 		 * فقط مالکِ تاریخچه به back گوش می‌دهد.
@@ -246,7 +291,225 @@
 			});
 		}
 
+		this.bindSheets();
+		this.syncSortLabel();
 		this.watchScroll();
+	};
+
+	/* ======================================================================
+	 * شیت‌هایِ موبایل (فیلتر / ترتیب)
+	 *
+	 * همان الگویِ ویجتِ سرچ: شیتِ ‎position:fixed‎ که با ‎translateY‎ از
+	 * پایین بالا می‌آید، لایهٔ تیره پشتش، بستن با Esc/کلیک‌رویِ‌لایه/کشیدنِ
+	 * دستگیره، و قفلِ اسکرولِ صفحه. خودِ حرکت کارِ CSS است؛ اینجا فقط
+	 * کلاس‌ها و مقدارِ کشیدن ست می‌شوند.
+	 * =================================================================== */
+
+	var SHEET_DISMISS_RATIO = 0.35;
+	var SHEET_FLING_SPEED = 0.6;
+
+	Archive.prototype.bindSheets = function () {
+		var self = this;
+
+		if (!this.mbar && !this.sheetBackdrop) {
+			return;
+		}
+
+		if (this.sheetBackdrop) {
+			this.sheetBackdrop.addEventListener('click', function () {
+				self.closeSheet();
+			});
+		}
+
+		document.addEventListener('keydown', function (event) {
+			if ('Escape' === event.key && self.openSheet) {
+				self.closeSheet();
+			}
+		});
+
+		var handles = this.root.querySelectorAll('.zig-archive__sheet-handle');
+
+		for (var i = 0; i < handles.length; i++) {
+			this.bindHandle(handles[i]);
+		}
+	};
+
+	Archive.prototype.toggleSheet = function (name) {
+		if (this.openSheet === name) {
+			this.closeSheet();
+		} else {
+			this.openSheetNamed(name);
+		}
+	};
+
+	Archive.prototype.openSheetNamed = function (name) {
+		if ('filters' !== name && 'sort' !== name) {
+			return;
+		}
+
+		// یک شیت در یک زمان — اگر آن‌یکی باز بود، اول جمعش کن
+		this.root.classList.remove('is-sheet-filters', 'is-sheet-sort', 'is-sheet-closing');
+		this.root.style.removeProperty('--zig-archive-sheet-drag');
+
+		this.openSheet = name;
+		this.root.classList.add('is-sheet-open', 'is-sheet-' + name);
+
+		if (this.sheetBackdrop) {
+			this.sheetBackdrop.hidden = false;
+		}
+
+		this.setOpenerState(name, true);
+		this.lockScroll(true);
+	};
+
+	Archive.prototype.closeSheet = function () {
+		var self = this;
+		var name = this.openSheet;
+
+		if (!name) {
+			return;
+		}
+
+		this.setOpenerState(name, false);
+		this.root.style.removeProperty('--zig-archive-sheet-drag');
+		this.root.classList.add('is-sheet-closing');
+		this.openSheet = null;
+		this.lockScroll(false);
+
+		/*
+		 * لایهٔ تیره تا آخرِ لغزش دیده می‌شود، بعد پنهان. ‎250ms‎ کمی از
+		 * گذارِ CSS بیشتر است تا زودتر قطع نشود؛ اگر در این فاصله شیتِ
+		 * دیگری باز شود، ‎openSheetNamed‎ کلاس‌ها را تمیز می‌کند.
+		 */
+		window.setTimeout(function () {
+			if (self.openSheet) {
+				return;
+			}
+
+			self.root.classList.remove('is-sheet-open', 'is-sheet-filters', 'is-sheet-sort', 'is-sheet-closing');
+
+			if (self.sheetBackdrop) {
+				self.sheetBackdrop.hidden = true;
+			}
+		}, 250);
+	};
+
+	Archive.prototype.setOpenerState = function (name, open) {
+		if (!this.mbar) {
+			return;
+		}
+
+		var btn = this.mbar.querySelector('[data-zig-open="' + name + '"]');
+
+		if (btn) {
+			btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+		}
+	};
+
+	/* قفلِ اسکرولِ صفحه پشتِ شیت — روی ‎<html>‎، مثلِ ویجتِ سرچ */
+	Archive.prototype.lockScroll = function (locked) {
+		var root = document.documentElement;
+
+		if (!root) {
+			return;
+		}
+
+		root.classList.toggle('zig-archive-sheet-open', !!locked);
+	};
+
+	/** برچسبِ ترتیبِ فعال روی نوارِ موبایل را با گزینهٔ فعالِ شیت هم‌گام می‌کند */
+	Archive.prototype.syncSortLabel = function () {
+		if (!this.mbar) {
+			return;
+		}
+
+		var label = this.mbar.querySelector('[data-zig-sort-label]');
+		var active = this.root.querySelector('.zig-sorts__pill.is-active');
+
+		if (label && active) {
+			label.textContent = (active.textContent || '').trim();
+		}
+	};
+
+	Archive.prototype.bindHandle = function (handle) {
+		var self = this;
+
+		if (typeof window.PointerEvent !== 'function') {
+			return;
+		}
+
+		var startY = 0;
+		var lastY = 0;
+		var lastTime = 0;
+		var speed = 0;
+		var active = false;
+
+		var sheet = function () {
+			return handle.closest('.zig-archive__sheet, .zig-archive__filters');
+		};
+
+		var offset = function (event) {
+			// فقط پایین؛ کشیدن به بالا هیچ کاری نمی‌کند
+			return Math.max(0, event.clientY - startY);
+		};
+
+		handle.addEventListener('pointerdown', function (event) {
+			if (!self.openSheet || event.isPrimary === false) {
+				return;
+			}
+
+			active = true;
+			startY = event.clientY;
+			lastY = event.clientY;
+			lastTime = event.timeStamp;
+			speed = 0;
+
+			self.root.classList.add('is-sheet-dragging');
+
+			if (handle.setPointerCapture) {
+				handle.setPointerCapture(event.pointerId);
+			}
+		});
+
+		handle.addEventListener('pointermove', function (event) {
+			if (!active) {
+				return;
+			}
+
+			var elapsed = event.timeStamp - lastTime;
+
+			if (elapsed > 0) {
+				speed = (event.clientY - lastY) / elapsed;
+				lastY = event.clientY;
+				lastTime = event.timeStamp;
+			}
+
+			self.root.style.setProperty('--zig-archive-sheet-drag', offset(event) + 'px');
+		});
+
+		var end = function (event) {
+			if (!active) {
+				return;
+			}
+
+			active = false;
+			self.root.classList.remove('is-sheet-dragging');
+
+			var dragged = offset(event);
+			var panel = sheet();
+			var height = panel ? panel.offsetHeight : 0;
+			var farEnough = height > 0 && dragged > height * SHEET_DISMISS_RATIO;
+			var fastEnough = speed > SHEET_FLING_SPEED;
+
+			self.root.style.removeProperty('--zig-archive-sheet-drag');
+
+			if (farEnough || fastEnough) {
+				self.closeSheet();
+			}
+		};
+
+		handle.addEventListener('pointerup', end);
+		handle.addEventListener('pointercancel', end);
 	};
 
 	/**
@@ -551,6 +814,9 @@
 		this.swap('count', data.count);
 		this.swap('sorts', data.sorts);
 
+		// برچسبِ ترتیبِ نوارِ موبایل بعدِ هر تغییرِ ترتیب تازه می‌شود
+		this.syncSortLabel();
+
 		this.page = data.page || 1;
 		this.pages = data.pages || 0;
 
@@ -606,15 +872,23 @@
 			return;
 		}
 
-		var slot = this.root.querySelector('[data-zig-part="' + name + '"]');
+		/*
+		 * ‎querySelectorAll‎ نه ‎querySelector‎: قطعهٔ ‎sorts‎ در موبایل دو
+		 * جا می‌نشیند — نوارِ ترتیبِ دسکتاپ و شیتِ موبایل — و هر دو باید با
+		 * هم به‌روز شوند، وگرنه بعدِ یک تغییرِ ترتیب، آن یکی حالتِ فعالِ
+		 * قدیمی را نگه می‌دارد. بقیهٔ قطعه‌ها یک نمونه‌اند، پس این تغییر
+		 * برایشان بی‌اثر و امن است.
+		 */
+		var slots = this.root.querySelectorAll('[data-zig-part="' + name + '"]');
 
-		if (!slot) {
+		if (!slots.length) {
 			return;
 		}
 
-		slot.innerHTML = html;
-
-		this.reinit(slot);
+		for (var i = 0; i < slots.length; i++) {
+			slots[i].innerHTML = html;
+			this.reinit(slots[i]);
+		}
 	};
 
 	/**

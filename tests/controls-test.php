@@ -24,6 +24,7 @@ require_once $root . '/includes/selector.php';
 require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
 require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/widgets/traits/consultation-trigger.php';
 require_once $root . '/includes/widgets/traits/icon.php';
 require_once $root . '/includes/widgets/traits/box.php';
 require_once $root . '/includes/widgets/traits/pulse.php';
@@ -32,6 +33,8 @@ require_once $root . '/includes/widgets/bullet-list.php';
 require_once $root . '/includes/widgets/button.php';
 require_once $root . '/includes/widgets/product-price.php';
 require_once $root . '/includes/widgets/product-stock.php';
+require_once $root . '/includes/schema-store.php';
+require_once $root . '/includes/widgets/product-label.php';
 require_once $root . '/includes/rate-price.php';
 require_once $root . '/includes/configurator.php';
 require_once $root . '/includes/widgets/product-configurator.php';
@@ -74,6 +77,9 @@ require_once $root . '/includes/reading-time.php';
 require_once $root . '/includes/likes.php';
 require_once $root . '/includes/likes-endpoint.php';
 require_once $root . '/includes/widgets/post-meta.php';
+require_once $root . '/includes/widgets/toc.php';
+require_once $root . '/includes/counter-source.php';
+require_once $root . '/includes/widgets/counter.php';
 
 $widgets = [
     'کارت ویژگی'    => \Zig3d_Widgets\Widgets\Feature_Card::class,
@@ -81,6 +87,7 @@ $widgets = [
     'دکمه'          => \Zig3d_Widgets\Widgets\Button::class,
     'قیمت محصول'    => \Zig3d_Widgets\Widgets\Product_Price::class,
     'وضعیت موجودی'  => \Zig3d_Widgets\Widgets\Product_Stock::class,
+    'لیبل محصول'    => \Zig3d_Widgets\Widgets\Product_Label::class,
     'کانفیگ محصول'  => \Zig3d_Widgets\Widgets\Product_Configurator::class,
     'آرشیو محصولات' => \Zig3d_Widgets\Widgets\Product_Archive::class,
     'آرشیو دانلود' => \Zig3d_Widgets\Widgets\Download_Archive::class,
@@ -98,6 +105,8 @@ $widgets = [
     'اطلاعاتِ تماس' => \Zig3d_Widgets\Widgets\Contact_Bar::class,
     'منویِ اصلی'    => \Zig3d_Widgets\Widgets\Menu::class,
     'متایِ پست'     => \Zig3d_Widgets\Widgets\Post_Meta::class,
+    'فهرست مطالب'   => \Zig3d_Widgets\Widgets\Toc::class,
+    'شمارش‌گر'      => \Zig3d_Widgets\Widgets\Counter::class,
 ];
 
 /*

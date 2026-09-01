@@ -77,6 +77,57 @@ if (!function_exists('add_query_arg')) {
 if (!function_exists('esc_url_raw')) {
     function esc_url_raw($url) { return filter_var((string) $url, FILTER_SANITIZE_URL); }
 }
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field($str) {
+        $str = strip_tags((string) $str);
+        $str = preg_replace('/[\r\n\t]+/', ' ', $str);
+
+        return trim(preg_replace('/ {2,}/', ' ', $str));
+    }
+}
+if (!function_exists('sanitize_textarea_field')) {
+    function sanitize_textarea_field($str) {
+        return trim(strip_tags((string) $str));
+    }
+}
+/** جفتِ ‎add_query_arg‎ بالا — پارامتر(ها) را از رشتهٔ کوئری پاک می‌کند */
+if (!function_exists('remove_query_arg')) {
+    function remove_query_arg($keys, $url = '') {
+        $keys  = (array) $keys;
+        $parts = parse_url((string) $url);
+        $query = [];
+
+        if (isset($parts['query'])) {
+            parse_str($parts['query'], $query);
+
+            foreach ($keys as $key) {
+                unset($query[$key]);
+            }
+        }
+
+        $base = ($parts['scheme'] ?? '') && ($parts['host'] ?? '')
+            ? $parts['scheme'] . '://' . $parts['host'] . ($parts['path'] ?? '')
+            : (string) ($parts['path'] ?? $url);
+
+        return $query ? $base . '?' . http_build_query($query) : $base;
+    }
+}
+if (!function_exists('rest_url')) {
+    function rest_url($path = '') { return 'https://zig3d.test/wp-json/' . ltrim((string) $path, '/'); }
+}
+if (!function_exists('home_url')) {
+    function home_url($path = '') { return 'https://zig3d.test' . ('' !== (string) $path ? '/' . ltrim((string) $path, '/') : ''); }
+}
+if (!function_exists('admin_url')) {
+    function admin_url($path = '') { return 'https://zig3d.test/wp-admin/' . ltrim((string) $path, '/'); }
+}
+if (!function_exists('wp_create_nonce')) {
+    function wp_create_nonce($action = -1) { return 'nonce-' . md5((string) $action); }
+}
+/** همتایِ سبک‌شدهٔ رفتارِ پیش‌فرضِ وردپرس: ‎?p={id}‎ روی خانه */
+if (!function_exists('wp_get_shortlink')) {
+    function wp_get_shortlink($id = 0) { return home_url('/?p=' . (int) $id); }
+}
 /**
  * فقط برایِ رشته‌هایِ سریالایزشدهٔ PHP — دقیقاً همان چیزی که Repeaterِ
  * JetEngine در ‎postmeta‎ ذخیره می‌کند. اگر ورودی از قبل آرایه باشد (مثلِ

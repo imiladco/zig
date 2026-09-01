@@ -160,7 +160,7 @@ final class Configurator {
                 'attributes'  => method_exists($variation, 'get_attributes') ? (array) $variation->get_attributes() : [],
                 'price'       => $price['current'],
                 'stock_state' => $stock['state'],
-                'updated_at'  => class_exists(__NAMESPACE__ . '\\Rate_Price') ? Rate_Price::updated_at((int) $variation->get_id()) : 0,
+                'updated_at'  => class_exists(__NAMESPACE__ . '\\Rate_Price') ? Rate_Price::updated_at_for($variation) : 0,
             ];
         }
 

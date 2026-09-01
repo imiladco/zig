@@ -147,3 +147,153 @@ Tests::ok('Per-heading-level spacing controls default to top:20/rest:0, matching
 Tests::ok('Tables are styled: borders, radius, header and zebra-striped body rows', false !== strpos($css_source, '.zig-description__body table') && false !== strpos($css_source, '.zig-description__body th') && false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body tbody tr:nth-child(even) td'"));
 Tests::ok('Link underline is independently configurable per state (normal vs hover)', false !== strpos($widget_source, "'link_underline'") && false !== strpos($widget_source, "'link_hover_underline'"));
 Tests::ok('Bold text has independent color and font-weight controls', false !== strpos($widget_source, "'{{WRAPPER}} .zig-description__body strong, {{WRAPPER}} .zig-description__body b'"));
+
+/* ------------------------------------------------------------------
+ * انفجارِ بازگشتیِ ‎the_content‎ (باگِ فاتالِ حافظه / خطایِ ۵۰۰)
+ *
+ * روی سایتِ واقعی، ذخیرهٔ سندِ Single Product در ادیتور با فاتالِ
+ * «Allowed memory size exhausted» می‌مرد. زنجیره‌اش این بود:
+ *
+ *   Documents_Manager::ajax_save() → Document::save_elements()
+ *     → DB::save_plain_text() → render_element_plain_content() روی *هر* ویجت
+ *       → Description::render() → apply_filters('the_content')
+ *         → Elementor\Frontend::apply_builder_in_content()
+ *           → رندرِ کاملِ یک سندِ المنتور (با Listing Gridِ جت‌اینجین)
+ *             → حلقه روی ده‌ها پست، هرکدام محتوایِ المنتوریِ دیگر
+ *               → باز همین ویجت → باز همان فیلتر …
+ *
+ * حافظه در همان زنجیره از ~۱۷۰ مگابایت به بیش از ۲ گیگابایت می‌رسید.
+ * ---------------------------------------------------------------- */
+
+require_once __DIR__ . '/lib/elementor-frontend-stub.php';
+
+Tests::group('Description › the_content بدونِ رندرِ بازگشتیِ سندِ المنتور');
+
+$frontend = \Elementor\Plugin::$instance->frontend;
+$builder_callback = [$frontend, 'apply_builder_in_content'];
+
+// همان‌طور که خودِ المنتور روی سایت ثبتش می‌کند
+add_filter('the_content', $builder_callback);
+
+// یک فیلترِ بی‌خطرِ دیگر روی همان قلاب: باید همچنان اجرا شود
+add_filter('the_content', static fn ($content) => $content . '[OTHER-FILTER]', 20);
+
+zig_register_post(9100, ['title' => 'نوشتهٔ آزمون', 'content' => 'متنِ آزمونِ بازگشت.']);
+$GLOBALS['__zig_queried'] = 9100;
+
+$frontend->builder_in_content_calls = 0;
+$recursion_html = $render(['source' => 'post_content', 'render_filters' => 'yes']);
+
+Tests::same(
+    'apply_builder_in_content اصلاً صدا زده نمی‌شود — همان‌جا که انفجارِ بازگشتی شروع می‌شد',
+    $frontend->builder_in_content_calls,
+    0
+);
+
+Tests::blocks('خروجیِ سندِ بازگشتی در HTML نیست', $recursion_html, '[BUILDER-RAN]');
+Tests::keeps('بقیهٔ فیلترهایِ the_content دست‌نخورده اجرا می‌شوند', $recursion_html, '[OTHER-FILTER]');
+Tests::keeps('خودِ محتوا هنوز رندر می‌شود', $recursion_html, 'متنِ آزمونِ بازگشت.');
+
+/*
+ * حذف باید *موقت* باشد: بعدِ رندر، کالبکِ المنتور دقیقاً با همان اولویتِ
+ * قبلی سرِ جایش برگردد — وگرنه این ویجت بی‌سروصدا رندرِ المنتور را برایِ
+ * کلِ باقیِ درخواست خاموش می‌کرد.
+ */
+Tests::same(
+    'کالبکِ المنتور بعدِ رندر با همان اولویت برمی‌گردد',
+    has_filter('the_content', $builder_callback),
+    10
+);
+
+/*
+ * اولویتِ غیرِپیش‌فرض هم باید حفظ شود — ‎has_filter()‎ خوانده می‌شود، نه
+ * فرضِ ۱۰. بدونِ این، یک سایت که کالبک را روی اولویتِ دیگری نشانده باشد،
+ * بعدِ اولین رندر آن را روی ۱۰ می‌دید.
+ */
+remove_filter('the_content', $builder_callback, 10);
+add_filter('the_content', $builder_callback, 37);
+
+$frontend->builder_in_content_calls = 0;
+$render(['source' => 'post_content', 'render_filters' => 'yes']);
+
+Tests::same(
+    'روی اولویتِ غیرِپیش‌فرض هم صدا زده نمی‌شود',
+    $frontend->builder_in_content_calls,
+    0
+);
+Tests::same(
+    'و با همان اولویتِ غیرِپیش‌فرض برمی‌گردد',
+    has_filter('the_content', $builder_callback),
+    37
+);
+
+zig_reset_filters();
+
+Tests::group('Description › حلقهٔ بازخوردیِ post_content (علتِ فاتالِ حافظه)');
+
+/*
+ * بازسازیِ دقیقِ چیزی که سایت را از پا درآورد.
+ *
+ * ویجت داخلِ سندِ المنتور (قالبِ Single Product، پستِ ۱۵۲۷۷) بود. در آنجا
+ * محصولی در کار نیست، پس ‎resolve()‎ به ‎post_content‎ می‌افتاد و
+ * ‎current_post_id()‎ همان *سند* را برمی‌گرداند. المنتور هم هنگامِ ذخیره
+ * خروجیِ رندرِ همهٔ ویجت‌ها را در ‎post_content‎ـِ همان سند می‌نویسد — یعنی
+ * خروجیِ این ویجت دوباره واردِ ورودی‌اش می‌شد و هر ذخیره دو برابرش می‌کرد.
+ * رویِ سایت به ۱۵۰ مگابایت رسید.
+ */
+zig_reset_filters();
+$GLOBALS['__zig_posts'] = [];
+$GLOBALS['__zig_post_meta'] = [];
+
+zig_register_post(15277, ['title' => 'المنتور Single Product', 'content' => 'متنِ ماشین‌ساختِ المنتور']);
+zig_register_post_meta(15277, ['_elementor_edit_mode' => 'builder']);
+$GLOBALS['__zig_post'] = 15277;
+$GLOBALS['__zig_queried'] = 15277;
+
+$html = $render(['source' => 'post_content', 'render_filters' => 'no']);
+
+Tests::blocks(
+    'سندِ ساخته‌شده با المنتور به‌عنوانِ منبعِ محتوا خوانده نمی‌شود',
+    $html,
+    'متنِ ماشین‌ساختِ المنتور'
+);
+Tests::blocks('و اصلاً چیزی رندر نمی‌شود', $html, 'zig-description__body');
+
+/* پستِ عادی (نه سندِ المنتور) باید مثلِ قبل کار کند */
+zig_register_post(720, ['title' => 'نوشتهٔ عادی', 'content' => 'متنِ واقعیِ نوشته']);
+$GLOBALS['__zig_post'] = 720;
+$GLOBALS['__zig_queried'] = 720;
+
+$html = $render(['source' => 'post_content', 'render_filters' => 'no']);
+
+Tests::keeps('پستِ عادی همچنان رندر می‌شود', $html, 'متنِ واقعیِ نوشته');
+
+Tests::group('Description › سقفِ اندازهٔ محتوایِ خام');
+
+/*
+ * لایهٔ دومِ دفاع، مستقل از حلقهٔ بالا: رشتهٔ غول‌آسا هرگز نباید به
+ * ‎the_content‎/‎wp_kses_post‎ برسد — هر دو رویِ چند مگابایت حافظه را
+ * صدها برابر می‌کنند (در لاگِ سایت: ورودیِ ۱۵۰ مگابایتی → اوجِ ۶۶۰ مگابایت
+ * فقط در یک کالبک).
+ */
+zig_register_post(730, ['title' => 'متورم', 'content' => str_repeat('ا', 600000)]);
+$GLOBALS['__zig_post'] = 730;
+$GLOBALS['__zig_queried'] = 730;
+
+Tests::blocks(
+    'محتوایِ بزرگ‌تر از سقف رندر نمی‌شود',
+    $render(['source' => 'post_content', 'render_filters' => 'no']),
+    'zig-description__body'
+);
+
+zig_register_post(731, ['title' => 'عادی', 'content' => str_repeat('ب', 1000)]);
+$GLOBALS['__zig_post'] = 731;
+$GLOBALS['__zig_queried'] = 731;
+
+Tests::keeps(
+    'محتوایِ زیرِ سقف عادی رندر می‌شود',
+    $render(['source' => 'post_content', 'render_filters' => 'no']),
+    'zig-description__body'
+);
+
+zig_reset_filters();

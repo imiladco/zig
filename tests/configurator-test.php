@@ -13,6 +13,7 @@
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/lib/woocommerce-stub.php';
+require_once __DIR__ . '/lib/elementor-stub.php';
 
 $root = dirname(__DIR__);
 
@@ -20,8 +21,15 @@ require_once $root . '/includes/price.php';
 require_once $root . '/includes/stock.php';
 require_once $root . '/includes/rate-price.php';
 require_once $root . '/includes/configurator.php';
+require_once $root . '/includes/markup.php';
+require_once $root . '/includes/design-icons.php';
+require_once $root . '/includes/widgets/traits/link.php';
+require_once $root . '/includes/consultation-endpoint.php';
+require_once $root . '/includes/widgets/traits/consultation-trigger.php';
+require_once $root . '/includes/widgets/product-configurator.php';
 
 use Zig3d_Widgets\Configurator;
+use Zig3d_Widgets\Widgets\Product_Configurator;
 
 /* --------------------------------------------------------------------------
  * تاکسونومیِ ساختگی — برایِ اتریبیوتِ ‎pa_material‎
@@ -47,9 +55,7 @@ if (!function_exists('get_term_by')) {
         return null === $name ? false : (object) ['slug' => $value, 'name' => $name];
     }
 }
-if (!function_exists('is_wp_error')) {
-    function is_wp_error($thing) { return false; }
-}
+// is_wp_error() از lib/woocommerce-stub.php می‌آید
 
 $GLOBALS['__zig_seq'] = 0;
 
@@ -175,3 +181,278 @@ Tests::same('وضعیتش ناموجود است', $oos_rows[1]['stock_state'], Z
 
 /* محصولِ ساده هیچ واریانتی ندارد */
 Tests::same('محصولِ ساده واریانت ندارد', Configurator::variations($simple), []);
+
+/*
+ * افزونهٔ نوسان در این فایلِ تست اصلاً بارگذاری نشده (نه استاب، نه کلاسِ
+ * واقعی)، پس ‎Rate_Price::updated_at_for()‎ همیشه به شاخهٔ fallback
+ * می‌رود — دقیقاً همان چیزی که این تست می‌سنجد: محصولِ متغیرِ بدونِ
+ * نوسان هم دیگر ‎updated_at‎ صفر نمی‌دهد، بلکه تاریخِ ذخیرهٔ خودِ واریانت
+ * را می‌گیرد.
+ */
+$modified_variation = new WC_Product([
+    'id'              => ++$GLOBALS['__zig_seq'],
+    'type'            => 'variation',
+    'regular'         => '100',
+    'variation_attrs' => ['config' => 'a'],
+    'modified'        => 1_650_000_000,
+]);
+
+$with_modified = new WC_Product([
+    'id'                   => ++$GLOBALS['__zig_seq'],
+    'type'                 => 'variable',
+    'variation_attributes' => ['config' => ['a']],
+    'children'             => [$modified_variation->get_id()],
+]);
+
+$modified_rows = Configurator::variations($with_modified);
+
+Tests::same(
+    'بدونِ نوسان، واریانت تاریخِ ذخیرهٔ خودش را می‌گیرد',
+    $modified_rows[0]['updated_at'],
+    1_650_000_000
+);
+
+/* ==========================================================================
+ * رندر › عنوان فقط وقتی کشویی برای انتخاب هست
+ * ======================================================================= */
+
+/*
+ * طبقِ طرحِ محصولِ ساده (فیگما node 997:945)، کارت فقط قیمت/موجودی دارد؛
+ * نه عنوانی، نه کشویی. پیش از این فیکس، ‎render_header()‎ فقط به کلیدِ
+ * ‎show_header‎ (پیش‌فرض «بله») گوش می‌داد و برایِ محصولِ ساده هم عنوانِ
+ * «انتخاب کانفیگ محصول» را چاپ می‌کرد — چیزی که طرح اصلاً ندارد.
+ */
+
+Tests::group('رندر › کانفیگ محصول، عنوان فقط وقتی قابل‌انتخاب است');
+
+$priced_simple = new WC_Product([
+    'id' => ++$GLOBALS['__zig_seq'], 'type' => 'simple', 'price' => '500000', 'regular' => '500000',
+]);
+
+/*
+ * ‎title‎/‎subtitle‎ صریح پاس داده می‌شوند چون استابِ تست، برخلافِ خودِ
+ * المنتور، مقدارِ پیش‌فرضِ کنترل‌ها را خودکار جایگزین نمی‌کند — دقیقاً
+ * همان قراردادِ بقیهٔ فایل‌هایِ تستِ این افزونه.
+ */
+$header_settings = ['show_header' => 'yes', 'title' => 'انتخاب کانفیگ محصول', 'subtitle' => ''];
+
+$simple_out = zig_render(Product_Configurator::class, $header_settings + ['product_id' => $priced_simple->get_id()]);
+
+Tests::blocks('محصولِ ساده هیچ عنوانی نمی‌گیرد', $simple_out, 'zig-configurator__header');
+Tests::blocks('و هیچ کشویی هم نمی‌گیرد', $simple_out, 'zig-configurator__fields');
+Tests::keeps('ولی خودِ کارت و قیمت هنوز رندر می‌شوند', $simple_out, 'zig-configurator__card');
+
+$variable_out = zig_render(Product_Configurator::class, $header_settings + ['product_id' => $product->get_id()]);
+
+Tests::keeps('محصولِ متغیرِ با ترکیبِ معتبر، عنوان می‌گیرد', $variable_out, 'zig-configurator__header');
+Tests::keeps('و کشوها هم رندر می‌شوند', $variable_out, 'zig-configurator__fields');
+
+/* ==========================================================================
+ * رندر › ترتیبِ HTML، جدا از چپ/راستِ دیداری
+ * ======================================================================= */
+
+/*
+ * جابه‌جاییِ چپ/راستِ طرح (قیمت چپ/موجودی راست، فرعی چپ/اصلی راست) کارِ
+ * ‎flex-direction: row-reverse‎ در CSS است، نه ترتیبِ HTML — پس اینجا فقط
+ * ترتیبِ طبیعیِ چاپ (قیمت پیش از موجودی، فرعی پیش از اصلی) سنجیده می‌شود؛
+ * جابه‌جاییِ دیداری خودش قابلِ‌سنجش با این تست‌ها نیست (نه مرورگری در کار
+ * است، نه اجرایِ CSS).
+ */
+
+Tests::group('رندر › کانفیگ محصول، ترتیبِ HTML');
+
+$order_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'     => $priced_simple->get_id(),
+    'secondary_text' => 'دریافت مشاورهٔ تخصصی',
+    'primary_text'   => 'درخواست پیش‌فاکتور',
+]);
+
+Tests::ok(
+    'قیمت پیش از موجودی/زمان چاپ می‌شود',
+    strpos($order_out, 'zig-configurator__price') < strpos($order_out, 'zig-configurator__side')
+);
+
+Tests::ok(
+    'دکمهٔ فرعی پیش از دکمهٔ اصلی چاپ می‌شود',
+    strpos($order_out, 'zig-configurator__btn--secondary') < strpos($order_out, 'zig-configurator__btn--primary')
+);
+
+/* ==========================================================================
+ * رندر › دکمهٔ اصلی به واتساپ
+ * ======================================================================= */
+
+Tests::group('رندر › دکمهٔ اصلی، پیامِ واتساپ');
+
+$whatsapp_product = new WC_Product([
+    'id' => ++$GLOBALS['__zig_seq'], 'type' => 'simple', 'price' => '750000', 'regular' => '750000',
+    'name' => 'محفظهٔ آکواریوم مدل A',
+]);
+
+$whatsapp_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $whatsapp_product->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'primary_link'      => ['url' => 'https://example.com/should-be-ignored'],
+    'whatsapp_number'   => '+98 910 808 7105',
+    'whatsapp_template' => "سلام وقت بخیر\n\n[نام محصول]\n[لینک محصول]",
+]);
+
+Tests::keeps('شمارهٔ واتساپ فقط رقمی در href می‌آید', $whatsapp_out, 'https://wa.me/989108087105?text=');
+Tests::blocks('پیوندِ primary_link وقتی الگو پر است نادیده گرفته می‌شود', $whatsapp_out, 'example.com');
+
+Tests::ok(
+    'نامِ محصول اینکودشده در href هست',
+    false !== strpos($whatsapp_out, rawurlencode('محفظهٔ آکواریوم مدل A'))
+);
+
+Tests::ok(
+    'لینکِ کوتاهِ محصول (بر پایهٔ شناسه) اینکودشده در href هست',
+    false !== strpos($whatsapp_out, rawurlencode((string) wp_get_shortlink($whatsapp_product->get_id())))
+);
+
+Tests::ok(
+    'خطِ بعدیِ الگو به‌صورتِ %0A اینکود شده، نه \n خام یا <br>',
+    false !== strpos($whatsapp_out, '%0A') && false === strpos($whatsapp_out, '<br>')
+);
+
+Tests::keeps('دکمهٔ اصلیِ واتساپ در تبِ جدید باز می‌شود', $whatsapp_out, 'target="_blank"');
+Tests::keeps('و rel="noopener" دارد', $whatsapp_out, 'rel="noopener"');
+
+$no_template_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $whatsapp_product->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'primary_link'      => ['url' => 'https://example.com/still-used'],
+    'whatsapp_template' => '',
+]);
+
+Tests::keeps('با الگویِ خالی، دکمهٔ اصلی به پیوندِ عادی برمی‌گردد', $no_template_out, 'example.com');
+Tests::blocks('و دیگر لینکِ واتساپ نیست', $no_template_out, 'wa.me');
+
+/* ==========================================================================
+ * رندر › دکمهٔ اصلی، ویژگی‌هایِ انتخابیِ محصولِ متغیر (سمتِ کلاینت)
+ * ======================================================================= */
+
+Tests::group('رندر › واتساپ، توکنِ ویژگی‌هایِ انتخابی');
+
+/*
+ * محصولِ متغیرِ همین فایل (‎$product‎) که بالاتر با ترکیبِ ‎config‎ ساخته
+ * شده کافی است؛ اینجا فقط رفتارِ چاپِ ‎data-*‎ سنجیده می‌شود، نه خودِ
+ * منطقِ واریانت‌ها که در گروه‌هایِ بالاتر پوشش دارد.
+ */
+$plain_whatsapp_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $priced_simple->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'whatsapp_number'   => '+989108087105',
+    'whatsapp_template' => "سلام\n[نام محصول]\n[لینک محصول]",
+]);
+
+Tests::blocks(
+    'بدونِ توکنِ ویژگی‌ها در الگو، هیچ data-zig-wa-* چاپ نمی‌شود',
+    $plain_whatsapp_out,
+    'data-zig-wa-'
+);
+
+$variant_whatsapp_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'        => $product->get_id(),
+    'primary_text'      => 'درخواست پیش‌فاکتور',
+    'whatsapp_number'   => '+989108087105',
+    'whatsapp_template' => "سلام\n[نام محصول]\n[متغیرهای انتخابی]\n[لینک محصول]",
+]);
+
+Tests::keeps('با توکنِ ویژگی‌ها در الگو، data-zig-wa-base چاپ می‌شود', $variant_whatsapp_out, 'data-zig-wa-base=');
+Tests::keeps('و data-zig-wa-template هم', $variant_whatsapp_out, 'data-zig-wa-template=');
+Tests::keeps(
+    'الگویِ خام (با نام/لینکِ جایگزین‌شده و توکنِ ویژگی‌ها دست‌نخورده) در data-zig-wa-template هست',
+    $variant_whatsapp_out,
+    esc_attr("سلام\n" . $product->get_name() . "\n[متغیرهای انتخابی]\n" . wp_get_shortlink($product->get_id()))
+);
+Tests::blocks(
+    'href اولیه (پیش از هر انتخابی) دیگر خطِ توکن را ندارد',
+    $variant_whatsapp_out,
+    rawurlencode('متغیرهای انتخابی')
+);
+
+/* ==========================================================================
+ * whatsapp_message() › جایگزینی یا حذفِ کاملِ خطِ توکن
+ * ======================================================================= */
+
+Tests::group('whatsapp_message › ساختِ پیامِ نهایی');
+
+$whatsapp_message = new ReflectionMethod(Product_Configurator::class, 'whatsapp_message');
+$whatsapp_message->setAccessible(true);
+
+Tests::same(
+    'توکن روی خطِ خودش، با انتخاب: کلِ خط با بلوکِ ویژگی‌ها جایگزین می‌شود',
+    $whatsapp_message->invoke(null, "الف\n[متغیرهای انتخابی]\nب", ['رنگ: قرمز', 'سایز: بزرگ']),
+    "الف\nرنگ: قرمز\nسایز: بزرگ\nب"
+);
+
+Tests::same(
+    'توکن روی خطِ خودش، بدونِ هیچ انتخابی: کلِ خط بی‌صدا حذف می‌شود',
+    $whatsapp_message->invoke(null, "الف\n[متغیرهای انتخابی]\nب", []),
+    "الف\nب"
+);
+
+Tests::same(
+    'توکن کنارِ متنِ دیگر روی همان خط: فقط خودِ توکن جایگزین می‌شود',
+    $whatsapp_message->invoke(null, 'مشخصات: [متغیرهای انتخابی]', ['رنگ: قرمز']),
+    'مشخصات: رنگ: قرمز'
+);
+
+Tests::same(
+    'بدونِ توکن در الگو، هیچ چیز تغییر نمی‌کند',
+    $whatsapp_message->invoke(null, "الف\nب", ['رنگ: قرمز']),
+    "الف\nب"
+);
+
+/* ==========================================================================
+ * رندر › دکمهٔ فرعی، فرمِ مشاوره
+ * ======================================================================= */
+
+Tests::group('رندر › دکمهٔ فرعی، فرمِ مشاوره');
+
+$consult_product = new WC_Product([
+    'id' => ++$GLOBALS['__zig_seq'], 'type' => 'simple', 'price' => '500000', 'regular' => '500000',
+    'name' => 'محفظهٔ آکواریوم مدل A',
+]);
+
+$consult_out = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'                => $consult_product->get_id(),
+    'secondary_text'            => 'دریافت مشاورهٔ تخصصی',
+    'secondary_link'            => ['url' => 'https://zig3d.com/should-be-ignored'],
+    'secondary_consultation_on' => 'yes',
+]);
+
+Tests::keeps('روشن‌بودنِ فرمِ مشاوره، دکمهٔ فرعی را button می‌کند', $consult_out, 'zig-configurator__btn--secondary');
+Tests::blocks('پیوندِ ثانویه نادیده گرفته می‌شود', $consult_out, 'should-be-ignored');
+Tests::keeps('نشانهٔ data-zig-consultation چاپ می‌شود', $consult_out, 'data-zig-consultation="1"');
+Tests::keeps(
+    'شناسهٔ محصول رویِ دکمه می‌آید (برایِ ثبت در دیتابیس)',
+    $consult_out,
+    'data-zig-consultation-product-id="' . $consult_product->get_id() . '"'
+);
+Tests::keeps(
+    'نامِ محصول هم',
+    $consult_out,
+    'data-zig-consultation-product-name="' . $consult_product->get_name() . '"'
+);
+
+$consult_off = zig_render(Product_Configurator::class, $header_settings + [
+    'product_id'     => $priced_simple->get_id(),
+    'secondary_text' => 'دریافت مشاورهٔ تخصصی',
+    'secondary_link' => ['url' => 'https://zig3d.com/x'],
+]);
+
+Tests::blocks('خاموش (پیش‌فرض)، هیچ data-zig-consultation-ای نیست', $consult_off, 'data-zig-consultation');
+
+/*
+ * ‎get_script_depends()‎ نباید به تنظیمات نگاه کند — المنتور آن را برایِ
+ * هر ویجتِ ثبت‌شده رویِ یک نمونهٔ خامِ بی‌تنظیمات صدا می‌زند (پیش‌نمایشِ
+ * ادیتور)، نه فقط رویِ نمونه‌هایِ واقعیِ صفحه. نسخه‌ای که اینجا صدا زدنِ
+ * ‎get_settings_for_display()‎ داشت دقیقاً همین‌جا با ‎TypeError‎ی خودِ
+ * المنتور می‌ترکید و کلِ ادیتور را خراب می‌کرد.
+ */
+Tests::same(
+    'فهرستِ اسکریپت‌ها رویِ یک نمونهٔ کاملاً خام هم بدونِ خطا همان مقدارِ ثابت است',
+    (new Product_Configurator())->get_script_depends(),
+    ['zig3d-configurator', 'zig3d-consultation']
+);

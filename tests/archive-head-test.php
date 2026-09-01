@@ -25,17 +25,7 @@ if (!function_exists('status_header')) {
     function status_header($code) { $GLOBALS['__zig_status_headers'][] = (int) $code; }
 }
 
-if (!class_exists('WP_Query')) {
-    class WP_Query {
-        public bool $singular = false;
-        public array $writes = [];
-
-        public function is_main_query(): bool { return true; }
-        public function is_singular(): bool { return $this->singular; }
-        public function get($key) { return null; }
-        public function set($key, $value): void { $this->writes[$key] = $value; }
-    }
-}
+require_once __DIR__ . '/lib/wp-query-stub.php';
 
 require_once $root . '/includes/query-state.php';
 require_once $root . '/includes/archive-head.php';
@@ -73,3 +63,21 @@ Tests::ok('The genuine Woo archive applicability path remains enabled', true ===
 
 $source = file_get_contents($root . '/includes/archive-head.php');
 Tests::ok('No hardcoded Downloads slug or Woo redirect workaround was introduced', false === strpos($source, "is_singular('downloads')") && false === strpos($source, 'wc_template_redirect'));
+
+/*
+ * باگِ /shop: قبلاً facets() روی هر صفحه‌ای که queried_object یک WP_Term
+ * نبود — یعنی خودِ فروشگاه — بی‌قید‌و‌شرط [] می‌داد. سایدبار ویجت هم با
+ * دقیقاً همین شرط ([] === facets) هایید می‌شد، پس /shop همیشه بدونِ هیچ
+ * فیلتری رندر می‌شد، حتی وقتی محصولات ویژگیِ فیلترپذیر داشتند.
+ *
+ * اینجا با ریفلکشن فراخوانی نمی‌شود چون facets() به Schema_Store (و از
+ * آن‌جا Archive_Query/Attributes) نیاز دارد که این فایلِ تست عمداً کوچک
+ * نگه داشته نمی‌کند؛ به‌جایش سیم‌کشیِ خودِ کد سنجیده می‌شود — همان تکنیکِ
+ * دو خط بالاتر. مطابقتش با متدِ هم‌نامِ ویجت (product-archive.php) در
+ * تستِ خودِ آن ویجت است.
+ */
+Tests::keeps(
+    'facets() روی is_shop() به‌جایِ [] به Schema_Store::for_term(0) می‌رود',
+    $source,
+    "if (function_exists('is_shop') && is_shop()) {\n            return Schema_Store::for_term(0);"
+);
