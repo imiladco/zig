@@ -6,32 +6,42 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * حذفِ سکشن‌های خالیِ صفحهٔ تکِ نرم‌افزار — همان کاری که
- * ‎Product_Section_Guard‎ برایِ صفحهٔ محصول می‌کند، ولی با یک تفاوتِ
- * بنیادی در روشِ هدف‌گیری.
+ * حذفِ سکشن‌هایِ خالیِ صفحهٔ تکِ نرم‌افزار.
  *
- * چرا کلاس‌محور نیست: نگهبانِ محصول به کلاسِ CSSی تکیه می‌کند که ادمین
- * دستی رویِ هر سکشن می‌گذارد (‎zig-product-ability‎ و…). رویِ قالبِ
- * «Single Download» هیچ سکشنی ‎_css_classes‎ ندارد — یعنی آن روش
- * این‌جا هیچ‌چیز پیدا نمی‌کند و بی‌صدا بی‌اثر می‌ماند. به‌جایش این کلاس
- * سکشن‌ها را از رویِ **شناسهٔ خودِ المنتور** (‎data-id‎) هدف می‌گیرد، و
- * آن شناسه‌ها را در زمانِ اجرا از خودِ قالب می‌خواند — پس نه ادمین باید
- * چیزی تنظیم کند، نه شناسه‌ای در کد هاردکد می‌شود.
+ * هدف همان چیزی است که ‎Product_Section_Guard‎ برایِ صفحهٔ محصول
+ * می‌کند، ولی روشش عوض شده — و دلیلش ارزشِ نوشتن دارد:
  *
- * قاعدهٔ ایمنی (مهم‌ترین بخش): یک سکشن فقط وقتی نامزدِ حذف است که
- * *همهٔ* ویجت‌هایِ محتوایی‌اش یا مالِ خودمان باشند یا صرفاً «قابِ» همان
- * سکشن (تیتر/پاراگراف/جداکننده). سکشنی که چیزِ دیگری هم دارد — مثلِ
- * سکشنِ بالایِ همان قالب که کنارِ «سیستم‌عامل‌های سازگار» عکس و دکمه و
- * کارت هم دارد — هیچ‌وقت حذف نمی‌شود، حتی اگر ویجتِ ما داخلش خالی
- * دربیاید. بدونِ این قاعده، یک فیلدِ خالی می‌توانست کلِ هدرِ صفحه را
- * ببرد.
+ * نگهبانِ محصول کلِ صفحه را با ‎ob_start()‎ می‌گیرد، با ‎DOMDocument‎
+ * پارس می‌کند، و سکشنِ خالی را با یک ‎<style>‎ی الحاقی *مخفی* می‌کند.
+ * رویِ صفحهٔ واقعیِ همین سایت آن مسیر ۲۹۷ کیلوبایت HTML را پارس می‌کند
+ * (~۱۰ms، ~۴MB) و در نهایت سکشن همچنان در خروجی و در DOM می‌ماند —
+ * فقط دیده نمی‌شود. برایِ خزنده‌ها و مصرف‌کننده‌هایِ ماشینی این یعنی
+ * محتوایِ خالی هنوز آن‌جاست؛ دقیقاً برعکسِ کاری که در لایهٔ schema
+ * داریم می‌کنیم.
+ *
+ * این‌جا به‌جایش از نقطهٔ اتصالِ *رسمیِ* خودِ المنتور استفاده می‌شود:
+ * ‎elementor/frontend/before_render‎ و ‎after_render‎ که به‌ازایِ هر
+ * المنت اجرا می‌شوند — همان مکانیزمی که خودِ Elementor Pro برایِ
+ * Display Conditions به‌کار می‌برد. سکشنِ نامزد در ‎before_render‎ بافر
+ * می‌شود و در ‎after_render‎ اگر معلوم شد چیزی رندر نکرده، بافرش دور
+ * ریخته می‌شود — یعنی واقعاً از خروجی حذف می‌شود، نه پنهان.
+ *
+ * نتیجه: بافر فقط به اندازهٔ همان سکشن (چند کیلوبایت)، بدونِ پارسِ
+ * DOMِ کلِ صفحه، بدونِ وابستگی به رندرشدنِ ‎data-id‎ یا نامِ کلاس‌هایِ
+ * المنتور.
+ *
+ * قاعدهٔ ایمنی دست‌نخورده مانده: سکشن فقط وقتی نامزد است که *همهٔ*
+ * ویجت‌هایِ محتوایی‌اش یا مالِ خودمان باشند یا قابِ همان سکشن
+ * (تیتر/پاراگراف/جداکننده). سکشنی که چیزِ دیگری هم دارد — مثلِ هدرِ
+ * همین قالب که کنارِ «سیستم‌عامل‌هایِ سازگار» عکس و کارت و دکمه هم
+ * دارد — هرگز حذف نمی‌شود.
  */
 final class Software_Section_Guard {
 
     /**
      * ‎widgetType‎ی ویجت‌هایِ خودمان => کلاسِ ریشه‌ای که *فقط وقتی واقعاً
-     * چیزی رندر کردند* چاپ می‌شود. نبودِ این کلاس داخلِ سکشن یعنی آن
-     * ویجت این‌بار ساکت مانده.
+     * چیزی رندر کردند* چاپ می‌شود. نبودِ این کلاس در خروجیِ سکشن یعنی
+     * آن ویجت این‌بار ساکت مانده.
      */
     private const WIDGET_MARKERS = [
         'zig3d-description'                   => 'zig-description',
@@ -45,10 +55,12 @@ final class Software_Section_Guard {
 
     /**
      * ویجت‌هایی که «محتوا» حساب نمی‌شوند — قابِ همان سکشن‌اند و اگر
-     * محتوایِ اصلی نیامد، خودشان هم باید بروند (تیترِ «اطلاعات فنی» بدونِ
-     * جدول بی‌معنا است). حضورشان مانعِ نامزدشدنِ سکشن نمی‌شود.
+     * محتوایِ اصلی نیامد، خودشان هم باید بروند (تیترِ «اطلاعات فنی»
+     * بدونِ جدول بی‌معنا است). حضورشان مانعِ نامزدشدنِ سکشن نمی‌شود.
      *
-     * هم نام‌هایِ کلاسیکِ المنتور و هم معادل‌هایِ اتمیکِ (V4) همان‌ها.
+     * هم نام‌هایِ کلاسیکِ المنتور و هم معادل‌هایِ اتمیکِ (V4) — رویِ این
+     * سایت آزمایشِ ‎e_atomic_elements‎ روشن است و همهٔ المنت‌هایِ قالب
+     * از خانوادهٔ ‎e-*‎ هستند.
      */
     private const CHROME_WIDGETS = [
         'heading', 'e-heading',
@@ -57,22 +69,103 @@ final class Software_Section_Guard {
         'spacer', 'e-spacer',
     ];
 
+    /**
+     * سکشنی که همین حالا بافرش را ما باز کرده‌ایم:
+     * ‎[شناسه، کلاس‌هایِ نشانه، سطحِ بافر هنگامِ باز کردن]‎.
+     *
+     * تک‌عضوی است چون فقط بیرونی‌ترین نامزد را می‌گیریم — نامزدِ تودرتو
+     * داخلِ همان بافر رندر می‌شود و نیازی به بافرِ دوم نیست.
+     *
+     * @var array{0:string,1:string[],2:int}|null
+     */
+    private static ?array $open = null;
+
+    /** @var bool|null کشِ همان‌درخواستیِ ‎should_guard()‎ — به‌ازایِ هر المنت صدا زده می‌شود */
+    private static ?bool $active = null;
+
     public static function boot(): void {
-        add_action('template_redirect', [self::class, 'maybe_start_buffer']);
+        add_action('elementor/frontend/before_render', [self::class, 'before_render']);
+        add_action('elementor/frontend/after_render', [self::class, 'after_render']);
     }
 
-    public static function maybe_start_buffer(): void {
-        if (!self::should_guard()) {
+    /** @param mixed $element ‎\Elementor\Element_Base‎ */
+    public static function before_render($element): void {
+        if (null !== self::$open || !self::should_guard() || !self::is_container($element)) {
             return;
         }
 
-        // بستارِ تک‌آرگومانی لازم است: ‎ob_start‎ کالبک را با دو آرگومان
-        // (‎$buffer, $phase‎) صدا می‌زند و ‎$phase‎ی عددی به پارامترِ دومِ
-        // آرایه‌ایِ ‎filter_html()‎ می‌خورد — همان تلهٔ ‎Product_Section_Guard‎.
-        ob_start(static fn (string $html): string => self::filter_html($html));
+        $markers = self::markers_for($element);
+
+        if (!$markers) {
+            return;
+        }
+
+        self::$open = [(string) $element->get_id(), $markers, ob_get_level()];
+
+        ob_start();
     }
 
+    /** @param mixed $element ‎\Elementor\Element_Base‎ */
+    public static function after_render($element): void {
+        if (null === self::$open) {
+            return;
+        }
+
+        [$id, $markers, $level] = self::$open;
+
+        if ($id !== (string) $element->get_id()) {
+            return;
+        }
+
+        self::$open = null;
+
+        /*
+         * اگر بینِ ‎before‎ و ‎after‎ کسِ دیگری بافرِ ما را بسته باشد،
+         * ‎ob_get_clean()‎ خروجیِ *او* را می‌دزدد. در آن حالت دست نمی‌زنیم
+         * — سکشن سالم چاپ می‌شود، فقط این‌بار حذف نمی‌شود. شکستِ بی‌ضرر،
+         * نه صفحهٔ خراب.
+         */
+        if (ob_get_level() <= $level) {
+            return;
+        }
+
+        $html = (string) ob_get_clean();
+
+        if (self::has_marker($html, $markers)) {
+            echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- خروجیِ خودِ المنتور، دست‌نخورده
+
+            return;
+        }
+
+        // هیچ نشانه‌ای نبود: سکشن چیزی برای نشان‌دادن نداشت و چاپ نمی‌شود.
+    }
+
+    /**
+     * @param string[] $markers
+     */
+    public static function has_marker(string $html, array $markers): bool {
+        foreach ($markers as $marker) {
+            if (false !== strpos($html, $marker)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /* ------------------------------------------------------------------ */
+
     private static function should_guard(): bool {
+        if (null !== self::$active) {
+            return self::$active;
+        }
+
+        self::$active = self::resolve_should_guard();
+
+        return self::$active;
+    }
+
+    private static function resolve_should_guard(): bool {
         if (is_admin() || wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
             return false;
         }
@@ -110,90 +203,96 @@ final class Software_Section_Guard {
         return $edit_mode || $preview_mode;
     }
 
-    /**
-     * بدنهٔ سنجش‌پذیر. ‎$sections‎ اگر داده شود (تست)، هیچ فراخوانیِ
-     * وردپرسی لازم نیست — همان نگاشتِ «شناسهٔ سکشن => کلاس‌هایِ نشانه»
-     * که در تولید از خودِ قالب خوانده می‌شود.
-     *
-     * @param array<string,string[]>|null $sections
-     */
-    public static function filter_html(string $html, ?array $sections = null): string {
-        if ('' === trim($html)) {
-            return $html;
-        }
-
-        $sections ??= self::sections_from_template();
-
-        if (!$sections) {
-            return $html;
-        }
-
-        // پیش‌بررسیِ ارزان: اگر هیچ‌کدام از این شناسه‌ها حتی به‌صورتِ رشته
-        // در صفحه نیست، پارسِ کلِ سند بی‌فایده است.
-        $present = false;
-
-        foreach (array_keys($sections) as $id) {
-            if (false !== strpos($html, 'data-id="' . $id . '"')) {
-                $present = true;
-
-                break;
-            }
-        }
-
-        if (!$present || !self::has_memory_headroom($html)) {
-            return $html;
-        }
-
-        $doc = new \DOMDocument();
-
-        $previous = libxml_use_internal_errors(true);
-        $loaded = $doc->loadHTML(
-            '<?xml encoding="utf-8" ?>' . $html,
-            LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NOBLANKS
-        );
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-
-        if (!$loaded) {
-            return $html;
-        }
-
-        $xpath = new \DOMXPath($doc);
-        $empty = [];
-
-        foreach ($sections as $id => $markers) {
-            $section = self::find_by_data_id($xpath, (string) $id);
-
-            if (null === $section) {
-                continue;
-            }
-
-            foreach ((array) $markers as $marker) {
-                if (self::has_descendant_class($xpath, $section, (string) $marker)) {
-                    continue 2; // این سکشن چیزی رندر کرده — رهایش کن
-                }
-            }
-
-            $empty[] = (string) $id;
-        }
-
-        if (!$empty) {
-            return $html;
-        }
-
-        return $html . self::hide_style($empty);
+    /** @param mixed $element */
+    private static function is_container($element): bool {
+        return is_object($element)
+            && method_exists($element, 'get_id')
+            && method_exists($element, 'get_type')
+            && method_exists($element, 'get_children')
+            && 'widget' !== $element->get_type();
     }
 
     /**
-     * نگاشتِ «شناسهٔ سکشنِ سطح‌بالا => کلاس‌هایِ نشانهٔ داخلش»، مستقیم از
-     * دادهٔ خودِ قالبِ فعالِ این نوعِ پست.
+     * کلاس‌هایِ نشانهٔ این سکشن — یا آرایهٔ خالی اگر اصلاً نامزد نیست.
      *
-     * @param array<int,mixed>|null $data
+     * @param mixed $element
+     * @return string[]
+     */
+    private static function markers_for($element): array {
+        $widgets = [];
+        self::collect_widget_names($element, $widgets);
+
+        return self::markers_for_widgets($widgets);
+    }
+
+    /**
+     * @param mixed $element
+     * @param string[] $widgets
+     */
+    private static function collect_widget_names($element, array &$widgets): void {
+        if (!is_object($element) || !method_exists($element, 'get_type')) {
+            return;
+        }
+
+        if ('widget' === $element->get_type() && method_exists($element, 'get_name')) {
+            $widgets[] = (string) $element->get_name();
+
+            return;
+        }
+
+        if (!method_exists($element, 'get_children')) {
+            return;
+        }
+
+        foreach ((array) $element->get_children() as $child) {
+            self::collect_widget_names($child, $widgets);
+        }
+    }
+
+    /**
+     * قاعدهٔ نامزدی — تابعِ خالص، قلبِ تصمیمِ این کلاس.
+     *
+     * نامزد است اگر و فقط اگر: حداقل یک ویجتِ نشانه‌دارِ ما داشته باشد،
+     * و هر ویجتِ دیگرش صرفاً قاب باشد. اولین ویجتِ ناشناس یعنی این سکشن
+     * محتوایِ مستقل دارد و باید کاملاً رها شود.
+     *
+     * @param string[] $widgets
+     * @return string[]
+     */
+    public static function markers_for_widgets(array $widgets): array {
+        $markers = [];
+
+        foreach ($widgets as $widget) {
+            $widget = (string) $widget;
+
+            if (isset(self::WIDGET_MARKERS[$widget])) {
+                $markers[] = self::WIDGET_MARKERS[$widget];
+
+                continue;
+            }
+
+            if (in_array($widget, self::CHROME_WIDGETS, true)) {
+                continue;
+            }
+
+            return [];
+        }
+
+        return array_values(array_unique($markers));
+    }
+
+    /**
+     * نگاشتِ «شناسهٔ سکشن => نشانه‌ها» از رویِ دادهٔ خامِ یک قالب.
+     *
+     * مسیرِ رندر (بالا) به این نیازی ندارد — درختِ زندهٔ المنت‌ها آن‌جا
+     * در دسترس است. این‌جا می‌ماند چون همان قاعده را رویِ دادهٔ ذخیره‌شده
+     * هم قابلِ‌سنجش می‌کند: می‌شود بدونِ بالاآوردنِ المنتور، رویِ
+     * ‎_elementor_data‎ی واقعیِ یک قالب بررسی کرد که تصمیم چه خواهد بود.
+     *
+     * @param array<int,mixed> $data
      * @return array<string,string[]>
      */
-    public static function sections_from_template(?array $data = null): array {
-        $data ??= self::template_data();
-
+    public static function sections_from_template(array $data): array {
         $out = [];
 
         foreach ($data as $section) {
@@ -208,31 +307,12 @@ final class Software_Section_Guard {
             }
 
             $widgets = [];
-            self::collect_widgets($section, $widgets);
+            self::collect_widget_names_from_array($section, $widgets);
 
-            $markers = [];
-            $guardable = true;
+            $markers = self::markers_for_widgets($widgets);
 
-            foreach ($widgets as $widget) {
-                if (isset(self::WIDGET_MARKERS[$widget])) {
-                    $markers[] = self::WIDGET_MARKERS[$widget];
-
-                    continue;
-                }
-
-                if (in_array($widget, self::CHROME_WIDGETS, true)) {
-                    continue;
-                }
-
-                // چیزی که نه مالِ ماست نه قاب — این سکشن محتوایِ مستقل
-                // دارد و هیچ‌وقت نباید حذف شود.
-                $guardable = false;
-
-                break;
-            }
-
-            if ($guardable && $markers) {
-                $out[$id] = array_values(array_unique($markers));
+            if ($markers) {
+                $out[$id] = $markers;
             }
         }
 
@@ -243,7 +323,7 @@ final class Software_Section_Guard {
      * @param array<string,mixed> $element
      * @param string[] $widgets
      */
-    private static function collect_widgets(array $element, array &$widgets): void {
+    private static function collect_widget_names_from_array(array $element, array &$widgets): void {
         $widget = (string) ($element['widgetType'] ?? '');
 
         if ('' !== $widget) {
@@ -252,151 +332,14 @@ final class Software_Section_Guard {
 
         foreach ((array) ($element['elements'] ?? []) as $child) {
             if (is_array($child)) {
-                self::collect_widgets($child, $widgets);
+                self::collect_widget_names_from_array($child, $widgets);
             }
         }
     }
 
-    /** @return array<int,mixed> */
-    private static function template_data(): array {
-        $template_id = self::active_template_id();
-
-        if ($template_id <= 0) {
-            return [];
-        }
-
-        $raw = get_post_meta($template_id, '_elementor_data', true);
-
-        if (!is_string($raw) || '' === $raw) {
-            return [];
-        }
-
-        $decoded = json_decode($raw, true);
-
-        return is_array($decoded) ? $decoded : [];
-    }
-
-    /**
-     * قالبِ Theme Builderی که شرطش این نوعِ پست است. به‌جایِ هاردکدکردنِ
-     * یک شناسه، شرط‌هایِ ذخیره‌شدهٔ خودِ المنتور خوانده می‌شود — پس اگر
-     * قالب عوض/بازسازی شد، این‌جا چیزی نباید تغییر کند.
-     */
-    private static function active_template_id(): int {
-        $post_type = self::post_type();
-
-        if ('' === $post_type) {
-            return 0;
-        }
-
-        $templates = get_posts([
-            'post_type'      => 'elementor_library',
-            'post_status'    => 'publish',
-            'posts_per_page' => 50,
-            'fields'         => 'ids',
-            'no_found_rows'  => true,
-        ]);
-
-        $needle = 'singular/' . $post_type;
-
-        foreach ((array) $templates as $template_id) {
-            $conditions = get_post_meta((int) $template_id, '_elementor_conditions', true);
-
-            foreach ((array) $conditions as $condition) {
-                if (is_string($condition) && false !== strpos($condition, $needle)) {
-                    return (int) $template_id;
-                }
-            }
-        }
-
-        return 0;
-    }
-
-    /**
-     * هایدکردن با CSS، نه حذف از DOM — دلیلش عیناً همان است که در
-     * ‎Product_Section_Guard::hide_style()‎ مفصل توضیح داده شده:
-     * سریالایزِ دوبارهٔ سند اسکیپِ HTML را می‌شکند. این‌جا سند فقط
-     * *خوانده* می‌شود و خروجی یک الحاقِ محض است.
-     *
-     * ‎!important‎ لازم است چون سلکتورِ ما تک‌ویژگی‌ای است و باید از
-     * سلکتورهایِ چندکلاسهٔ خودِ المنتور بالاتر بایستد.
-     *
-     * @param string[] $ids
-     */
-    private static function hide_style(array $ids): string {
-        $selectors = [];
-
-        foreach ($ids as $id) {
-            if (!preg_match('/^[A-Za-z0-9_-]+$/', $id)) {
-                continue;
-            }
-
-            $selectors[] = sprintf('[data-id="%s"]', $id);
-        }
-
-        if (!$selectors) {
-            return '';
-        }
-
-        return sprintf(
-            '<style id="zig-software-empty-sections">%s{display:none !important}</style>',
-            implode(',', $selectors)
-        );
-    }
-
-    private static function find_by_data_id(\DOMXPath $xpath, string $id): ?\DOMElement {
-        $nodes = $xpath->query(sprintf('.//*[@data-id="%s"]', $id));
-
-        foreach ($nodes as $node) {
-            if ($node instanceof \DOMElement) {
-                return $node;
-            }
-        }
-
-        return null;
-    }
-
-    private static function has_descendant_class(\DOMXPath $xpath, \DOMElement $context, string $class): bool {
-        $query = sprintf(
-            './/*[contains(concat(" ", normalize-space(@class), " "), " %s ")]',
-            $class
-        );
-
-        return $xpath->query($query, $context)->length > 0;
-    }
-
-    /** همان محاسبهٔ ‎Product_Section_Guard::has_memory_headroom()‎ — رجوع کنید به داک‌بلاکِ آن‌جا */
-    private static function has_memory_headroom(string $html, ?string $memory_limit = null, ?int $current_usage = null): bool {
-        $memory_limit ??= (string) ini_get('memory_limit');
-        $limit_bytes = self::parse_memory_limit($memory_limit);
-
-        if ($limit_bytes <= 0) {
-            return true;
-        }
-
-        $current_usage ??= memory_get_usage(true);
-        $estimated_need = strlen($html) * 12;
-
-        $safety_ceiling = (int) ($limit_bytes * 0.85);
-
-        return ($current_usage + $estimated_need) < $safety_ceiling;
-    }
-
-    private static function parse_memory_limit(string $memory_limit): int {
-        $memory_limit = trim($memory_limit);
-
-        if ('' === $memory_limit || '-1' === $memory_limit) {
-            return -1;
-        }
-
-        if (!preg_match('/^(\d+)([KMG]?)$/i', $memory_limit, $matches)) {
-            return -1;
-        }
-
-        $value = (int) $matches[1];
-        $unit = strtoupper($matches[2] ?? '');
-
-        $multiplier = ['K' => 1024, 'M' => 1024 ** 2, 'G' => 1024 ** 3][$unit] ?? 1;
-
-        return $value * $multiplier;
+    /** فقط برایِ تست — هر درخواستِ واقعی خودش یک پردازشِ تازه است */
+    public static function reset(): void {
+        self::$open = null;
+        self::$active = null;
     }
 }
