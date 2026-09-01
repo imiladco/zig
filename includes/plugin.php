@@ -248,6 +248,16 @@ final class Plugin {
         require_once ZIG3D_WIDGETS_PATH . 'includes/faq-section-guard.php';
 
         Faq_Section_Guard::boot();
+
+        /*
+         * نگهبانِ سکشن‌هایِ خالیِ سینگلِ نرم‌افزار. کنارِ نگهبانِ FAQ بوت
+         * می‌شود چون هر دو یک شرطِ یکسان دارند: فقط فرانت‌اند، نه ادمین.
+         * خودش رویِ ‎template_redirect‎ بررسی می‌کند که آیا اصلاً رویِ
+         * صفحهٔ تکِ نرم‌افزار هستیم یا نه.
+         */
+        require_once ZIG3D_WIDGETS_PATH . 'includes/software-section-guard.php';
+
+        Software_Section_Guard::boot();
     }
 
     /**
