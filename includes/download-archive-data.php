@@ -9,6 +9,7 @@ final class Download_Archive_Data {
     public const JETENGINE_CPT_ID = 8;
     public const SIZE_META = '_zig_download_size_bytes';
     public const SIZE_SOURCE_META = '_zig_download_size_source';
+    public const SIZE_HUMAN_META = '_zig_download_size_human';
 
     private static ?array $field_schema = null;
     private static ?array $gallery_fields = null;
@@ -379,6 +380,7 @@ final class Download_Archive_Data {
         }
 
         delete_post_meta($post_id, self::SIZE_META);
+        delete_post_meta($post_id, self::SIZE_HUMAN_META);
         update_post_meta($post_id, self::SIZE_SOURCE_META, $url);
         if ('' === $url || !wp_http_validate_url($url)) {
             return;
@@ -400,6 +402,38 @@ final class Download_Archive_Data {
         }
         if ($bytes > 0) {
             update_post_meta($post_id, self::SIZE_META, $bytes);
+            update_post_meta($post_id, self::SIZE_HUMAN_META, self::persian_size($bytes));
         }
+    }
+
+    /**
+     * حجمِ خوان‌پذیرِ فارسی («۸۵۰ مگابایت») — کنارِ ‎SIZE_META‎ی خام
+     * (بایت) نگه داشته می‌شود، جایگزینش نمی‌شود. دلیلِ وجودش: خودِ
+     * ویجتِ جدولِ مشخصات هنوز از ‎SIZE_META‎ی خام + ‎size_format()‎ی
+     * وردپرس (واحدهایِ لاتین، مثلِ «MB») استفاده می‌کند — این متایِ
+     * جدا، بدونِ دست‌زدن به آن مسیر، همان عدد را به‌شکلِ آماده برایِ
+     * جاهایِ دیگر (مثلِ JetEngine) با واحدهایِ فارسی می‌گذارد.
+     *
+     * تبدیل با پایهٔ ۱۰۲۴ (کیلوبایت/مگابایت/... دودویی، نه اعشاریِ
+     * ۱۰۰۰تایی) — همان مبنایی که ‎size_format()‎ی خودِ وردپرس هم
+     * استفاده می‌کند، تا عددِ نمایش‌داده‌شده با ویجتِ اصلی هم‌خوان بماند.
+     */
+    public static function persian_size(int $bytes): string {
+        if ($bytes <= 0) {
+            return '';
+        }
+
+        $units = ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت', 'ترابایت'];
+        $value = (float) $bytes;
+        $unit  = 0;
+
+        while ($value >= 1024 && $unit < count($units) - 1) {
+            $value /= 1024;
+            $unit++;
+        }
+
+        $decimals = (0 === $unit || floor($value) === $value) ? 0 : 1;
+
+        return number_format($value, $decimals) . ' ' . $units[$unit];
     }
 }

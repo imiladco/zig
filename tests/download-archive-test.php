@@ -164,6 +164,12 @@ Tests::ok('WP_Query uses the resolved string key', false !== strpos($widget_sour
 Tests::ok('No legacy post-type slug is an identity contract', false === strpos($widget_source . $data_source, "'downloads'") && false === strpos($widget_source . $data_source, 'software-downloads'));
 Tests::ok('Frontend cards read only cached file size', false !== strpos($widget_source, 'Download_Archive_Data::SIZE_META') && false === strpos($widget_source, 'wp_safe_remote_'));
 Tests::ok('Remote size discovery uses a dynamically resolved save hook', false !== strpos($data_source, "'save_post_' . \$post_type") && false !== strpos($data_source, 'wp_safe_remote_head'));
+Tests::ok('Human-readable size is synced next to the raw byte meta, not instead of it', false !== strpos($data_source, 'update_post_meta($post_id, self::SIZE_META, $bytes)') && false !== strpos($data_source, 'update_post_meta($post_id, self::SIZE_HUMAN_META, self::persian_size($bytes))'));
+Tests::ok('persian_size(): zero/negative bytes yield no value (never a fabricated size)', '' === \Zig3d_Widgets\Download_Archive_Data::persian_size(0) && '' === \Zig3d_Widgets\Download_Archive_Data::persian_size(-5));
+Tests::ok('persian_size(): sub-kilobyte stays in whole بایت', 'بایت' === explode(' ', \Zig3d_Widgets\Download_Archive_Data::persian_size(512))[1]);
+Tests::ok('persian_size(): ~850MB renders as expected', '850 مگابایت' === \Zig3d_Widgets\Download_Archive_Data::persian_size(891289600));
+Tests::ok('persian_size(): exact power-of-1024 has no decimal', '2 گیگابایت' === \Zig3d_Widgets\Download_Archive_Data::persian_size(2 * 1024 * 1024 * 1024));
+Tests::ok('persian_size(): non-exact values keep one decimal', '1.5 گیگابایت' === \Zig3d_Widgets\Download_Archive_Data::persian_size((int) (1.5 * 1024 * 1024 * 1024)));
 Tests::ok('Archive supports real search, sorts and result count', false !== strpos($widget_source, "'s' => \$state['search']") && false !== strpos($widget_source, 'data-zig-part="count"') && false !== strpos($widget_source, 'data-zig-sort'));
 Tests::ok('No applied-filters duplicate UI exists', false === strpos($widget_source, 'applied-filters'));
 Tests::ok('RTL/LTR values use bidi isolation', false !== strpos($widget_source, '<bdi>') && false !== strpos($widget_source, 'dir="ltr"'));
