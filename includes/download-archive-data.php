@@ -10,6 +10,7 @@ final class Download_Archive_Data {
     public const SIZE_META = '_zig_download_size_bytes';
     public const SIZE_SOURCE_META = '_zig_download_size_source';
     public const SIZE_HUMAN_META = '_zig_download_size_human';
+    private const BACKFILL_OPTION = 'zig3d_download_size_human_backfilled';
 
     private static ?array $field_schema = null;
     private static ?array $gallery_fields = null;
@@ -19,6 +20,64 @@ final class Download_Archive_Data {
 
     public static function boot(): void {
         add_action('init', [self::class, 'register_save_hook'], 99);
+        add_action('admin_init', [self::class, 'backfill_human_size']);
+    }
+
+    /**
+     * یک‌باره، خودکار: پست‌هایی که از قبل ‎SIZE_META‎ (بایتِ خام) کش‌شده
+     * دارند ولی ‎SIZE_HUMAN_META‎ (رشتهٔ فارسی) هنوز ندارند را پر می‌کند.
+     *
+     * چرا لازم است: ‎refresh_file_size()‎ فقط وقتی ‎SIZE_HUMAN_META‎ را
+     * می‌نویسد که واقعاً یک دورِ کاملِ محاسبهٔ حجم اجرا شود — و آن دور
+     * فقط زمانی اجرا می‌شود که ‎download_url‎ عوض شود یا هنوز هیچ حجمی
+     * کش نشده باشد. پست‌هایی که *قبل* از افزوده‌شدنِ ‎SIZE_HUMAN_META‎
+     * ذخیره شده‌اند (حجمِ بایت از قبل کش شده، لینک هم عوض نشده)، دیگر
+     * هیچ‌وقت آن دور را دوباره اجرا نمی‌کنند — پس بدونِ این پاسِ
+     * یک‌باره، برایِ همیشه ‎SIZE_HUMAN_META‎شان خالی می‌ماند.
+     *
+     * با یک آپشن نشانه‌گذاری می‌شود تا فقط یک‌بار اجرا شود — هزینهٔ
+     * اضافه فقط رویِ اولین بازدیدِ ادمین بعد از این آپدیت است.
+     */
+    public static function backfill_human_size(): void {
+        if (get_option(self::BACKFILL_OPTION)) {
+            return;
+        }
+
+        $post_type = self::post_type();
+        if ('' === $post_type) {
+            return;
+        }
+
+        $query = new \WP_Query([
+            'post_type'      => $post_type,
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => self::SIZE_META,
+                    'value'   => 0,
+                    'compare' => '>',
+                    'type'    => 'NUMERIC',
+                ],
+                [
+                    'relation' => 'OR',
+                    ['key' => self::SIZE_HUMAN_META, 'compare' => 'NOT EXISTS'],
+                    ['key' => self::SIZE_HUMAN_META, 'value' => '', 'compare' => '='],
+                ],
+            ],
+        ]);
+
+        foreach ($query->posts as $post_id) {
+            $bytes = (int) get_post_meta($post_id, self::SIZE_META, true);
+            if ($bytes > 0) {
+                update_post_meta($post_id, self::SIZE_HUMAN_META, self::persian_size($bytes));
+            }
+        }
+
+        update_option(self::BACKFILL_OPTION, true, false);
     }
 
     public static function post_type(): string {
@@ -375,7 +434,15 @@ final class Download_Archive_Data {
         $key = (string) apply_filters('zig3d_download_url_meta_key', 'download_url', $post_id);
         $url = esc_url_raw((string) get_post_meta($post_id, $key, true));
         $old = (string) get_post_meta($post_id, self::SIZE_SOURCE_META, true);
-        if ($url === $old && (int) get_post_meta($post_id, self::SIZE_META, true) > 0) {
+        $cached_bytes = (int) get_post_meta($post_id, self::SIZE_META, true);
+        if ($url === $old && $cached_bytes > 0) {
+            // لینک عوض نشده، حجم از قبل کش شده — یک دورِ کاملِ محاسبه لازم
+            // نیست، ولی اگر SIZE_HUMAN_META (مثلاً چون این پست قبل از
+            // افزوده‌شدنش ذخیره شده بود) هنوز خالی است، همین‌جا پرش کن.
+            if ('' === (string) get_post_meta($post_id, self::SIZE_HUMAN_META, true)) {
+                update_post_meta($post_id, self::SIZE_HUMAN_META, self::persian_size($cached_bytes));
+            }
+
             return;
         }
 

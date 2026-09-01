@@ -170,6 +170,16 @@ Tests::ok('persian_size(): sub-kilobyte stays in whole بایت', 'بایت' ===
 Tests::ok('persian_size(): ~850MB renders as expected', '850 مگابایت' === \Zig3d_Widgets\Download_Archive_Data::persian_size(891289600));
 Tests::ok('persian_size(): exact power-of-1024 has no decimal', '2 گیگابایت' === \Zig3d_Widgets\Download_Archive_Data::persian_size(2 * 1024 * 1024 * 1024));
 Tests::ok('persian_size(): non-exact values keep one decimal', '1.5 گیگابایت' === \Zig3d_Widgets\Download_Archive_Data::persian_size((int) (1.5 * 1024 * 1024 * 1024)));
+/*
+ * refresh_file_size() فقط وقتی SIZE_HUMAN_META را می‌نویسد که یک دورِ
+ * کاملِ محاسبهٔ حجم اجرا شود. پست‌هایی که *قبل* از افزوده‌شدنِ
+ * SIZE_HUMAN_META ذخیره شده بودند (لینک عوض نشده، بایت از قبل کش شده)
+ * دیگر آن دور را دوباره اجرا نمی‌کردند — بدونِ رفعِ زیر، برایِ همیشه
+ * SIZE_HUMAN_META شان خالی می‌ماند (باگِ واقعیِ گزارش‌شده).
+ */
+Tests::ok('Cached-size early return still backfills a missing human meta', false !== strpos($data_source, "'' === (string) get_post_meta(\$post_id, self::SIZE_HUMAN_META, true)") && false !== strpos($data_source, 'update_post_meta($post_id, self::SIZE_HUMAN_META, self::persian_size($cached_bytes))'));
+Tests::ok('A one-time admin backfill exists for posts saved before this meta existed', false !== strpos($data_source, "add_action('admin_init', [self::class, 'backfill_human_size'])") && false !== strpos($data_source, 'BACKFILL_OPTION'));
+Tests::ok('Backfill query targets posts with a cached size but no human string yet', false !== strpos($data_source, "'key'     => self::SIZE_META") && false !== strpos($data_source, "'compare' => '>'") && false !== strpos($data_source, "'compare' => 'NOT EXISTS'"));
 Tests::ok('Archive supports real search, sorts and result count', false !== strpos($widget_source, "'s' => \$state['search']") && false !== strpos($widget_source, 'data-zig-part="count"') && false !== strpos($widget_source, 'data-zig-sort'));
 Tests::ok('No applied-filters duplicate UI exists', false === strpos($widget_source, 'applied-filters'));
 Tests::ok('RTL/LTR values use bidi isolation', false !== strpos($widget_source, '<bdi>') && false !== strpos($widget_source, 'dir="ltr"'));
