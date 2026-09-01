@@ -250,6 +250,42 @@ Tests::ok(
     'Frontend asset version was advanced for the current widget assets',
     isset($version_match[1]) && version_compare($version_match[1], '1.24.0', '>=')
 );
+/*
+ * قراردادِ نسخه‌بندی/کش‌شکنی. سه لایه باید هم‌زمان درست بمانند، وگرنه
+ * سایت با کدِ جدید ولی خروجیِ قدیمی سرو می‌شود — همان حالتی که از بیرون
+ * شبیهِ «آپدیت خرابش کرد» دیده می‌شود:
+ *   ۱) هدرِ افزونه و ثابتِ نسخه یکی باشند (وگرنه وردپرس آپدیت را نمی‌بیند)
+ *   ۲) هر فایلِ CSS/JS با همان ثابت ثبت شود (‎?ver‎ برایِ مرورگر/CDN)
+ *   ۳) با تغییرِ نسخه، کشِ المنتور و کشِ صفحهٔ کامل پاک شوند
+ */
+preg_match(
+    "/\*\s*Version:\s*([0-9][^\s*]*)/",
+    (string) file_get_contents($root . '/zig3d-elementor-widgets.php'),
+    $header_version_match
+);
+Tests::ok(
+    'Plugin header version and the runtime constant never drift apart',
+    isset($header_version_match[1], $version_match[1]) && $header_version_match[1] === $version_match[1]
+);
+$plugin_php_source = (string) file_get_contents($root . '/includes/plugin.php');
+Tests::ok(
+    'Every registered style/script is versioned with the plugin constant',
+    0 === preg_match_all('/wp_register_(?:style|script)\(/', $plugin_php_source, $m_reg)
+        || substr_count($plugin_php_source, 'ZIG3D_WIDGETS_VERSION') >= count($m_reg[0])
+);
+Tests::ok(
+    'A version change busts Elementor CSS and full-page caches, not just ?ver',
+    false !== strpos($plugin_php_source, 'files_manager->clear_cache()')
+        && false !== strpos($plugin_php_source, 'self::purge_page_caches()')
+        && false !== strpos($plugin_php_source, "do_action('litespeed_purge_all')")
+        && false !== strpos($plugin_php_source, 'rocket_clean_domain')
+);
+Tests::ok(
+    'Page-cache purging stays behind existence checks (never a hard dependency)',
+    false !== strpos($plugin_php_source, "function_exists('rocket_clean_domain')")
+        && false !== strpos($plugin_php_source, "function_exists('w3tc_flush_all')")
+        && false !== strpos($plugin_php_source, "class_exists('\\autoptimizeCache')")
+);
 Tests::ok('Header regions explicitly own the RTL start edge', false !== strpos($css_source, '.zig-download-card__category,') && false !== strpos($css_source, 'direction: rtl;') && false !== strpos($css_source, 'text-align: start;'));
 Tests::ok('Compatibility chips use RTL start wrapping without distribution', false !== strpos($css_source, '.zig-download-card__models { display: flex; flex-wrap: wrap; justify-content: flex-start;') && false === strpos($css_source, '.zig-download-card__models { display: flex; flex-wrap: wrap; justify-content: space-between;'));
 Tests::ok('Every expandable region includes widget and post identity', false !== strpos($widget_source, "sanitize_html_class(\$this->get_id() . '-' . \$id)"));

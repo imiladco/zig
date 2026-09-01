@@ -797,5 +797,57 @@ final class Plugin {
         if (class_exists('\Elementor\Plugin') && isset(\Elementor\Plugin::$instance->files_manager)) {
             \Elementor\Plugin::$instance->files_manager->clear_cache();
         }
+
+        self::purge_page_caches();
+    }
+
+    /**
+     * پاک‌کردنِ کشِ *صفحهٔ کاملِ* افزونه‌های کشِ رایج، بعد از تغییرِ نسخه.
+     *
+     * لایه‌ای که تا امروز جا افتاده بود: بالا هم CSSِ المنتور پاک می‌شود و
+     * هم ‎?ver‎یِ فایل‌هایِ خودمان عوض می‌شود — ولی اگر یک افزونهٔ کشِ
+     * صفحه (لایت‌اسپید/راکت/…) نسخهٔ قدیمیِ HTML را ذخیره کرده باشد،
+     * بازدیدکننده همان HTMLِ کهنه را می‌گیرد و هیچ‌کدام از آن دو به
+     * چشمش نمی‌آید. یعنی افزونه درست به‌روز شده، ولی صفحه هنوز خرابِ
+     * قبلی است — و از داخلِ پنل هم چیزی پیدا نیست.
+     *
+     * همه پشتِ بررسیِ وجود: هیچ‌کدام وابستگیِ این افزونه نیستند، صرفاً
+     * اگر نصب بودند صدا زده می‌شوند.
+     */
+    private static function purge_page_caches(): void {
+        // LiteSpeed Cache
+        if (function_exists('do_action')) {
+            do_action('litespeed_purge_all');
+        }
+
+        // WP Rocket
+        if (function_exists('rocket_clean_domain')) {
+            rocket_clean_domain();
+        }
+
+        // W3 Total Cache
+        if (function_exists('w3tc_flush_all')) {
+            w3tc_flush_all();
+        }
+
+        // WP Super Cache
+        if (function_exists('wp_cache_clear_cache')) {
+            wp_cache_clear_cache();
+        }
+
+        // WP Fastest Cache
+        if (isset($GLOBALS['wp_fastest_cache']) && method_exists($GLOBALS['wp_fastest_cache'], 'deleteCache')) {
+            $GLOBALS['wp_fastest_cache']->deleteCache(true);
+        }
+
+        // Autoptimize (CSS/JS ترکیب‌شده — نسخهٔ قدیمیِ استایلِ ما داخلش جا می‌ماند)
+        if (class_exists('\autoptimizeCache') && method_exists('\autoptimizeCache', 'clearall')) {
+            \autoptimizeCache::clearall();
+        }
+
+        // کشِ آبجکتِ خودِ وردپرس (ردیس/ممکش) — آخر از همه، تا هرچه بالا نوشته شد بماند
+        if (function_exists('wp_cache_flush_runtime')) {
+            wp_cache_flush_runtime();
+        }
     }
 }
